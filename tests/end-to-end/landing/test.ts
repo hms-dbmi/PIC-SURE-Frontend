@@ -110,7 +110,7 @@ test.describe('Landing page', () => {
         const mockStat: MockLandingStat = stats.find((s) => s.key === stat.key) || notFound;
         const testID = `value-auth-${stat.key}-${stat.label}`;
 
-        test(`Has expected stat of ${stat.label}`, async ({ page }) => {
+        test(`Has expected stat label and value for ${stat.label}`, async ({ page }) => {
           // Given
           await mockApiSuccess(page, mockStat.route, mockStat.api);
           await page.goto('/');
@@ -120,14 +120,6 @@ test.describe('Landing page', () => {
           await expect(
             page.getByTestId('data-summary-auth').getByText(stat.label, { exact: true }),
           ).toBeVisible();
-        });
-        test(`Has expected stat value for ${stat.label}`, async ({ page }) => {
-          // Given
-          await mockApiSuccess(page, mockStat.route, mockStat.api);
-          await page.goto('/');
-          await userIsLoggedIn(page);
-
-          // Then
           await expect(page.getByTestId(testID)).toHaveText(mockStat.value);
         });
         test(`Should display error message if api returns error for ${stat.label}`, async ({
@@ -176,24 +168,13 @@ test.describe('Landing page', () => {
   });
   test.describe('Actions', () => {
     loggedInActions.forEach(({ description, icon, url, title }) => {
-      test(`Logged In user Has expected action of description: ${description}`, async ({
-        page,
-      }) => {
+      test(`Logged In user Has expected action: ${description}`, async ({ page }) => {
         // Given
         await page.goto('/');
         await userIsLoggedIn(page);
         // Then
         await expect(page.getByText(description, { exact: true })).toBeVisible();
-      });
-      test(`Logged In user Has expected icon of: ${icon}`, async ({ page }) => {
-        // Given
-        await page.goto('/');
-        await userIsLoggedIn(page);
-        // Then
-        const iconElement = page.locator(`.${icon.replaceAll(' ', '.')}`);
-        const pattern = new RegExp(`.*${icon}.*`);
-        await expect(iconElement).toBeVisible();
-        await expect(iconElement).toHaveClass(pattern);
+        await expect(page.locator(`.${icon.replaceAll(' ', '.')}`)).toBeVisible();
       });
       test(`Action button "${description}"'s click leads to ${url}`, async ({ page }) => {
         // Given
@@ -287,7 +268,7 @@ test.describe('Logged Out Landing', () => {
         const mockStat: MockLandingStat = stats.find((s) => s.key === stat.key) || notFound;
         const testID = `value-open-${stat.key}-${stat.label}`;
 
-        test(`Has expected stat of ${stat.label}`, async ({ page }) => {
+        test(`Has expected stat label and value for ${stat.label}`, async ({ page }) => {
           // Given
           await mockApiSuccess(page, mockStat.route, mockStat.api);
           await page.goto('/');
@@ -296,13 +277,6 @@ test.describe('Logged Out Landing', () => {
           await expect(
             page.getByTestId('data-summary-open').getByText(stat.label, { exact: true }),
           ).toBeVisible();
-        });
-        test(`Has expected stat value for ${stat.label}`, async ({ page }) => {
-          // Given
-          await mockApiSuccess(page, mockStat.route, mockStat.api);
-          await page.goto('/');
-
-          // Then
           await expect(page.getByTestId(testID)).toHaveText(mockStat.value);
         });
         test(`Should display error message if api returns error for ${stat.label}`, async ({
@@ -319,20 +293,12 @@ test.describe('Logged Out Landing', () => {
   });
 
   loggedOutActions.forEach(({ description, icon, url, title }) => {
-    test(`Has expected action of description: ${description}`, async ({ page }) => {
+    test(`Has expected action: ${description}`, async ({ page }) => {
       // Given
       await page.goto('/');
       // Then
       await expect(page.getByText(description, { exact: true })).toBeVisible();
-    });
-    test(`Has expected icon of: ${icon}`, async ({ page }) => {
-      // Given
-      await page.goto('/');
-      // Then
-      const iconElement = page.locator(`.${icon.replaceAll(' ', '.')}`);
-      const pattern = new RegExp(`.*${icon}.*`);
-      await expect(iconElement).toBeVisible();
-      await expect(iconElement).toHaveClass(pattern);
+      await expect(page.locator(`.${icon.replaceAll(' ', '.')}`)).toBeVisible();
     });
     test(`Button "${description}"'s click leads to ${url}`, async ({ page }) => {
       // Given
@@ -341,7 +307,7 @@ test.describe('Logged Out Landing', () => {
 
       // When
       const action = page.getByTestId(`landing-action-${title}-btn`);
-      await action.isVisible();
+      await expect(action).toBeVisible();
 
       // Then
       if ((await action.getAttribute('target')) !== '_blank') {

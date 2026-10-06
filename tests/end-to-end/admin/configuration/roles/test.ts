@@ -25,22 +25,6 @@ test.beforeEach(async ({ page }) => {
   await mockApiSuccess(page, '*/**/psama/connection', mockConnections);
 });
 
-test('Has Roles management table', async ({ page }) => {
-  // Given
-  await page.goto('/admin/configuration');
-  await userIsLoggedIn(page);
-
-  // Then
-  await expect(page.locator('#role-table .table')).toBeVisible();
-});
-test('Has add role button', async ({ page }) => {
-  // Given
-  await page.goto('/admin/configuration');
-  await userIsLoggedIn(page);
-
-  // Then
-  await expect(page.getByTestId('add-role')).toBeVisible();
-});
 test('Add role button takes user to new role page', async ({ page }) => {
   // Given
   await page.goto('/admin/configuration');

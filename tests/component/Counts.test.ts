@@ -10,11 +10,6 @@ vi.mock('#lib/configuration.svelte.ts', () => ({
   config: { branding: { explorePage: { queryErrorText: '', filterErrorText: '' } }, features: {} },
 }));
 
-vi.mock('#lib/stores/Filter.ts', async () => {
-  const { writable } = await import('svelte/store');
-  return { filters: writable([]) };
-});
-
 const mockState = vi.hoisted(() => ({
   current: {
     loading: false,

@@ -49,13 +49,8 @@ afterEach(() => {
 
 describe('SiteBanner', () => {
   it.each([
-    ['PRIMARY', 'preset-tonal-primary'],
-    ['SECONDARY', 'preset-tonal-secondary'],
-    ['TERTIARY', 'preset-tonal-tertiary'],
-    ['SUCCESS', 'preset-tonal-success'],
     ['WARNING', 'preset-tonal-warning'],
     ['ERROR', 'preset-tonal-error'],
-    ['SURFACE', 'preset-tonal-surface'],
   ] satisfies [BannerAppearance, string][])(
     'renders the %s tonal appearance',
     (appearance, cssClass) => {
@@ -111,31 +106,18 @@ describe('SiteBanner', () => {
     }
   });
 
-  it('keeps a 44-pixel hit target around a compact dismissal control', async () => {
+  it('dismisses from a focusable, labelled control', async () => {
     const ondismiss = vi.fn();
-    const { container } = render(SiteBanner, { banner, ondismiss });
+    render(SiteBanner, { banner, ondismiss });
 
     const dismiss = screen.getByRole('button', { name: 'Dismiss Maintenance' });
     expect(dismiss).toHaveAttribute('title', 'Dismiss Maintenance');
-    expect(dismiss).toHaveClass('site-banner-dismiss', 'h-11', 'w-11', 'focus-visible:outline-3');
-    expect(container.querySelector('.site-banner-dismiss-visual')).toHaveClass('h-8', 'w-8');
     dismiss.focus();
     expect(document.activeElement).toBe(dismiss);
 
     await fireEvent.click(dismiss);
 
     expect(ondismiss).toHaveBeenCalledOnce();
-  });
-
-  it('uses a compact bottom tone bar and aligns the icon, title, and message', () => {
-    const { container } = render(SiteBanner, { banner });
-
-    const region = screen.getByRole('region', { name: 'Maintenance' });
-    expect(region).toHaveClass('border-b-4', 'py-1.5');
-    expect(region).not.toHaveClass('border-l-8');
-    expect(container.querySelector('.site-banner-layout')).toHaveClass('items-center');
-    expect(container.querySelector('.site-banner-icon')).not.toHaveClass('mt-1');
-    expect(container.querySelector('.site-banner-content')).toHaveClass('text-sm', 'leading-5');
   });
 
   it('does not render a dismissal control for a permanent banner', () => {

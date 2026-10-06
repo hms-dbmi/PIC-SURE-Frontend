@@ -261,14 +261,6 @@ export class AdvancedFilteringPage {
     return this.modal.locator('.badge');
   }
 
-  getAndBadges(): Locator {
-    return this.filteringArea.locator('.badge').filter({ hasText: /^AND$/i });
-  }
-
-  getOrBadges(): Locator {
-    return this.filteringArea.locator('.badge').filter({ hasText: /^OR$/i });
-  }
-
   // ==================== AND/OR Segment Controls ====================
 
   getAndRadio(): Locator {
@@ -337,10 +329,6 @@ export class AdvancedFilteringPage {
     await expect(this.modal).toBeVisible();
   }
 
-  async expectModalTitle() {
-    await expect(this.modalTitle).toBeVisible();
-  }
-
   async expectFilterVisible(filterName: string) {
     await expect(this.getFilterByName(filterName)).toBeVisible();
   }
@@ -354,15 +342,8 @@ export class AdvancedFilteringPage {
     await expect(this.getOrRadio()).toBeVisible();
   }
 
-  async expectDragHandlesExist() {
-    const count = await this.getAllDragHandles().count();
-    expect(count).toBeGreaterThan(0);
-  }
-
   async expectAndIsDefault() {
-    const andBadges = this.getAndBadges();
-    const count = await andBadges.count();
-    expect(count).toBeGreaterThan(0);
+    await this.expectBadgeText('AND');
   }
 
   async expectBadgeText(expectedText: 'AND' | 'OR') {
@@ -370,14 +351,6 @@ export class AdvancedFilteringPage {
       hasText: new RegExp(`^${expectedText}$`, 'i'),
     });
     await expect(badges.first()).toBeVisible();
-  }
-
-  async expectApplyButtonVisible() {
-    await expect(this.applyChangesButton).toBeVisible();
-  }
-
-  async expectApplyButtonHasPrimaryStyle() {
-    await expect(this.applyChangesButton).toHaveClass(/preset-filled-primary/);
   }
 
   async expectModalClosed() {

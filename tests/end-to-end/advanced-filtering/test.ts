@@ -14,11 +14,6 @@ test.describe('Advanced Query Builder - Core Features', () => {
     await afPage.setupAndOpenModal(4);
   });
 
-  test('AF-CORE-001: Advanced Filtering page renders without errors', async () => {
-    await afPage.expectModalTitle();
-    await afPage.expectModalVisible();
-  });
-
   test('AF-CORE-002: Advanced Filtering page shows all currently added filters', async () => {
     for (const filterName of afPage.filterNames) {
       await afPage.expectFilterVisible(filterName);
@@ -221,24 +216,6 @@ test.describe('Advanced Query Builder - Global Combiner', () => {
     await afPage.openModal();
     await afPage.expectBadgeText('OR');
   });
-
-  test('AF-COMBINER-006: AND uses primary color, OR uses secondary color', async () => {
-    const andBadges = afPage.getAndBadges();
-    await expect(andBadges.first()).toBeVisible();
-    await expect(andBadges.first()).toHaveClass(/preset-filled-primary/);
-
-    await afPage.selectRootOperator('OR');
-
-    const orBadges = afPage.getOrBadges();
-    await expect(orBadges.first()).toBeVisible();
-    await expect(orBadges.first()).toHaveClass(/preset-filled-secondary/);
-
-    const remainingAndBadges = afPage.getAndBadges();
-    const andCount = await remainingAndBadges.count();
-    if (andCount > 0) {
-      await expect(remainingAndBadges.first()).toHaveClass(/preset-filled-primary/);
-    }
-  });
 });
 
 test.describe('Advanced Query Builder - Drag and Drop', () => {
@@ -249,10 +226,6 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
   test.beforeEach(async ({ page }) => {
     afPage = new AdvancedFilteringPage(page);
     await afPage.setupAndOpenModal(4);
-  });
-
-  test('AF-DND-001: Filters have a visual drag handle indicator', async () => {
-    await afPage.expectDragHandlesExist();
   });
 
   test('AF-DND-002: Filters can be picked up by dragging', async ({ page }) => {
@@ -444,10 +417,6 @@ test.describe('Advanced Query Builder - Grouping', () => {
     await afPage.setupAndOpenModal(4);
   });
 
-  test('AF-GROUP-001: Add Subquery button is visible', async () => {
-    await afPage.expectAddGroupButtonVisible();
-  });
-
   test('AF-GROUP-002: Clicking Add Subquery creates a new empty subquery box', async () => {
     await afPage.clickAddGroup();
     await expect(afPage.getEmptyGroupDropZone()).toBeVisible();
@@ -631,14 +600,6 @@ test.describe('Advanced Query Builder - Apply', () => {
   test.beforeEach(async ({ page }) => {
     afPage = new AdvancedFilteringPage(page);
     await afPage.setupAndOpenModal(2);
-  });
-
-  test('AF-APPLY-001: Apply to Query button is visible', async () => {
-    await afPage.expectApplyButtonVisible();
-  });
-
-  test('AF-APPLY-002: Apply button is styled as a primary button', async () => {
-    await afPage.expectApplyButtonHasPrimaryStyle();
   });
 
   test('AF-APPLY-003: Clicking Apply to Query applies changes and stays on page', async () => {

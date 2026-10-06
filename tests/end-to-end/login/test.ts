@@ -102,23 +102,19 @@ test.describe('Login page', () => {
   test.beforeEach(async ({ page }) => {
     await mockApiConfig(page);
   });
-  test('No navigation bar before login', async ({ page }) => {
+  test('Login page shows the branded layout without navigation', async ({ page }) => {
     // Given
     await page.goto('/login');
-    // When
-    const navBar = page.locator('nav');
     // Then
-    await expect(navBar).not.toBeVisible();
-  });
-  test('Both dots show on login page', async ({ page }) => {
-    // Given
-    await page.goto('/login');
-    // When
-    const topDots = page.locator('.top-dots');
-    const bottomDots = page.locator('.bottom-dots');
-    // Then
-    await expect(topDots).toBeVisible();
-    await expect(bottomDots).toBeVisible();
+    await expect(page.locator('nav')).not.toBeVisible();
+    await expect(page.getByTestId('nav-logo')).toBeVisible();
+    await expect(page.getByTestId('login-title')).toBeVisible();
+    await expect(page.getByTestId('login-description')).toHaveText(
+      branding?.login?.description ?? '',
+    );
+    await expect(page.locator('.top-dots')).toBeVisible();
+    await expect(page.locator('.bottom-dots')).toBeVisible();
+    await expect(page.locator('#main-footer')).toBeVisible();
   });
   test('Site banner pushes the dots down without hiding them behind the footer', async ({
     page,
@@ -141,40 +137,6 @@ test.describe('Login page', () => {
     expect(footerBox).not.toBeNull();
     expect(topDotsBox!.y).toBeGreaterThanOrEqual(bannerBox!.y + bannerBox!.height);
     expect(bottomDotsBox!.y + bottomDotsBox!.height).toBeLessThanOrEqual(footerBox!.y);
-  });
-  test('Logo shows on login page', async ({ page }) => {
-    // Given
-    await page.goto('/login');
-    // When
-    const logo = page.getByTestId('nav-logo');
-    // Then
-    await expect(logo).toBeVisible();
-  });
-  test('Footer shows on login page', async ({ page }) => {
-    // Given
-    await page.goto('/login');
-    // When
-    const footer = page.locator('#main-footer');
-    // Then
-    await expect(footer).toBeVisible();
-  });
-  test('Title shows on the page and matching branding', async ({ page }) => {
-    // Given
-    await page.goto('/login');
-    // When
-    const title = page.getByTestId('login-title');
-    // Then
-    await expect(title).toBeVisible();
-  });
-  test('Description shows on the page and matching branding', async ({ page }) => {
-    // Given
-    await page.goto('/login');
-    // When
-    const subtitle = page.getByTestId('login-description');
-    const expectedBranding = branding?.login?.description;
-    // Then
-    await expect(subtitle).toBeVisible();
-    expect(await subtitle.textContent()).toBe(expectedBranding);
   });
   test('Login button shows on login page', async ({ page }) => {
     // Given

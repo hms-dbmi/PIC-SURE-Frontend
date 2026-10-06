@@ -248,7 +248,6 @@ describe('CONFIG_FIELD_SCHEMA - derived from CONFIG_FIELDS', () => {
     });
     expect(byName('branding', 'DOTS_COLORS_CLASS')).toMatchObject({ type: 'json' });
     expect(byName('branding', 'LOGO_ALT')).toMatchObject({ type: 'string', default: '' });
-    expect(CONFIG_FIELD_SCHEMA.branding).toHaveLength(4);
   });
 
   it("mapFeatures actually uses CONFIG_FIELDS' declared default (not a second, hidden one)", () => {

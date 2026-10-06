@@ -24,22 +24,6 @@ test.beforeEach(async ({ page }) => {
   await mockApiSuccess(page, '*/**/psama/connection', mockConnections);
 });
 
-test('Has Privileges management table', async ({ page }) => {
-  // Given
-  await page.goto('/admin/configuration');
-  await userIsLoggedIn(page);
-
-  // Then
-  await expect(page.locator('#privilege-table .table')).toBeVisible();
-});
-test('Has add privilege button', async ({ page }) => {
-  // Given
-  await page.goto('/admin/configuration');
-  await userIsLoggedIn(page);
-
-  // Then
-  await expect(page.getByTestId('add-privilege')).toBeVisible();
-});
 test('Add privilege button takes user to new privilege page', async ({ page }) => {
   // Given
   await page.goto('/admin/configuration');

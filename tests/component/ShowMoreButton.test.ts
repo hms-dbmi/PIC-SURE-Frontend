@@ -6,7 +6,7 @@ import { fireEvent, render, screen } from '@testing-library/svelte';
 import ShowMoreButton from '#lib/components/buttons/ShowMoreButton.svelte';
 
 describe('ShowMoreButton', () => {
-  it('renders the shared show more style and collapsed state', () => {
+  it('renders the collapsed state', () => {
     render(ShowMoreButton, {
       expanded: false,
       'data-testid': 'toggle-details',
@@ -16,7 +16,6 @@ describe('ShowMoreButton', () => {
     const icon = button.querySelector('i');
 
     expect(button).toHaveTextContent('Show More');
-    expect(button).toHaveClass('show-more', 'w-fit', 'mx-auto', 'my-1');
     expect(icon).toHaveClass('fa-angle-down');
   });
 

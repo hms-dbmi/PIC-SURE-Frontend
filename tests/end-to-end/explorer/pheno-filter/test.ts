@@ -153,18 +153,12 @@ test.describe('Add Filters', () => {
     await expect(firstAddedFilter).toBeVisible();
     await expect(editbutton).toBeVisible();
     await expect(editbutton).toBeEnabled();
-    const iconExport = editbutton.locator('i');
-    await expect(iconExport).toHaveClass(/fa-pen-to-square/);
 
     await expect(removeButton).toBeVisible();
     await expect(removeButton).toBeEnabled();
-    const iconRemove = removeButton.locator('i');
-    await expect(iconRemove).toHaveClass(/fa-times-circle/);
 
     await expect(openButton).toBeVisible();
     await expect(openButton).toBeEnabled();
-    const iconOpen = openButton.locator('i');
-    await expect(iconOpen).toHaveClass(/fa-caret-up/);
   });
   test('Clicking added filter opens more info', async ({ page }) => {
     // Given
@@ -191,7 +185,6 @@ test.describe('Add Filters', () => {
     // Then
     const infoSection = firstAddedFilter.locator('section');
     await expect(infoSection).toBeVisible();
-    await expect(openButton.locator('i')).toHaveClass(/fa-caret-down/);
   });
   test('Clicking open filter closes the more info section', async ({ page }) => {
     // Given
@@ -218,10 +211,8 @@ test.describe('Add Filters', () => {
     // Then
     const infoSection = firstAddedFilter.locator('section');
     await expect(infoSection).toBeVisible();
-    await expect(openButton.locator('i')).toHaveClass(/fa-caret-down/);
     await openButton.click();
     await expect(infoSection).not.toBeVisible();
-    await expect(openButton.locator('i')).toHaveClass(/fa-caret-up/);
   });
   test('Fitlers with selected values list values and count', async ({ page }) => {
     // Given

@@ -365,6 +365,10 @@ test.describe('Visitors dismiss a banner until its content changes', () => {
     await expect(notice).toBeVisible();
     const dismiss = notice.getByRole('button', { name: 'Dismiss Dismissible maintenance' });
     await expect(dismiss).toHaveAttribute('title', 'Dismiss Dismissible maintenance');
+    // WCAG 2.5.5: the compact dismiss icon keeps a 44px hit target
+    const dismissBox = await dismiss.boundingBox();
+    expect(dismissBox?.width).toBeGreaterThanOrEqual(44);
+    expect(dismissBox?.height).toBeGreaterThanOrEqual(44);
     await dismiss.focus();
     await expect(dismiss).toBeFocused();
     await dismiss.press('Enter');

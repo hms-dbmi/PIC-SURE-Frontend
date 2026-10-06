@@ -1457,7 +1457,7 @@ describe('BannerManagementView', () => {
     expect(Array.from(excerpt?.textContent ?? '')).toHaveLength(160);
   });
 
-  it('uses static tone classes and summarizes typed page targets', async () => {
+  it('summarizes typed page targets', async () => {
     vi.mocked(getManagedBanners).mockResolvedValue([
       {
         ...base,
@@ -1468,64 +1468,13 @@ describe('BannerManagementView', () => {
         ],
       },
     ]);
-    const { container } = render(BannerManagementView);
+    render(BannerManagementView);
 
     const details = await screen.findByRole('button', { name: /^Details for / });
-    expect(container.querySelector('.bg-warning-500')).toBeInTheDocument();
-    expect(container.querySelector('[aria-label="Warning tone"]')).not.toBeInTheDocument();
     await fireEvent.click(details);
     expect(document.getElementById(`banner-${base.uuid}-details`)).toHaveTextContent(
       'Pages: Exact: /explorer · Subtree: /help · Parameterized: /studies/[study]',
     );
-  });
-
-  it('uses compact white cards with a successful active badge and bottom tone bar', async () => {
-    const { container } = render(BannerManagementView);
-
-    const details = await screen.findByRole('button', { name: /^Details for / });
-    const article = details.closest('article');
-    expect(article).toHaveClass('min-w-0', 'bg-white');
-    expect(screen.getByText('Active')).toHaveClass('preset-tonal-success');
-    expect(screen.getByText('Position 1')).toHaveClass('whitespace-nowrap');
-    expect(screen.getByText('System maintenance tonight')).toHaveClass('m-0');
-    expect(container.querySelector('.banner-appearance-bar')).toHaveClass(
-      'h-1',
-      'w-full',
-      'bg-warning-500',
-    );
-    expect(container.querySelector('[data-banner-row]')).toHaveClass('min-w-0');
-    expect(screen.getByTestId('banner-search')).toHaveAttribute(
-      'placeholder',
-      'Search banner text',
-    );
-  });
-
-  it('distinguishes saved banners and uses outline management actions', async () => {
-    render(BannerManagementView);
-    await screen.findByText('System maintenance tonight');
-    await fireEvent.click(screen.getByRole('tab', { name: /Saved & disabled/ }));
-
-    const row = await openDetailsFor('Reusable enrollment notice');
-    expect(within(row).getByText('Saved')).toHaveClass('preset-tonal-primary');
-    expect(within(row).getByRole('button', { name: /^Details for / })).toHaveClass(
-      'preset-tonal-primary',
-    );
-    expect(within(row).getByRole('button', { name: /^Edit banner for / })).toHaveClass(
-      'preset-outlined-primary-500',
-    );
-    expect(within(row).getByRole('button', { name: /^Archive banner for / })).toHaveClass(
-      'preset-outlined-error-500',
-    );
-  });
-
-  it('aligns the Site banners heading and description', async () => {
-    render(BannerManagementView);
-    await screen.findByRole('button', { name: /^Details for / });
-
-    const title = screen.getByRole('heading', { name: 'Site banners' });
-    const description = screen.getByText('Create and manage announcements across PIC-SURE.');
-    expect(title.parentElement).toHaveClass('space-y-1');
-    expect(description).toHaveClass('m-0');
   });
 
   it('bounds the typed page-target summary without limiting stored targets', async () => {

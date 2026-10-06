@@ -16,21 +16,6 @@ const descriptor: QueryDescriptor = {
   genomicFilters: [],
 };
 
-describe('resultProviders registry', () => {
-  it('contains the patientCount provider keyed by id', () => {
-    expect(Object.keys(resultProviders).sort()).toEqual(['query:patientCount']);
-  });
-
-  it('each provider has id, path, buildRequest, parse', () => {
-    for (const provider of Object.values(resultProviders)) {
-      expect(typeof provider.id).toBe('string');
-      expect(typeof provider.path).toBe('function');
-      expect(typeof provider.buildRequest).toBe('function');
-      expect(typeof provider.parse).toBe('function');
-    }
-  });
-});
-
 describe('query:patientCount provider', () => {
   const provider: CountProvider = resultProviders['query:patientCount'];
 

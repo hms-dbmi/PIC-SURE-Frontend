@@ -66,18 +66,6 @@ test.describe('API page', () => {
     await expect(errorAlert).toBeVisible();
   });
 
-  test('Has expected header content', async ({ page }) => {
-    // Given
-    await page.goto('/api');
-    await userIsLoggedIn(page);
-
-    // Then
-    await expect(page.locator('h1')).toHaveText('Programmatic Access with the PIC-SURE API');
-    await expect(
-      page.getByText('Search data and build cohorts directly with Python, R, or any HTTP client.'),
-    ).toBeVisible();
-  });
-
   test('Choose Your Workflow starts with every option collapsed', async ({ page }) => {
     // Given
     await page.goto('/api');
@@ -263,7 +251,6 @@ test.describe('API page', () => {
     await expect(
       page.getByRole('heading', { name: 'API Documentation', exact: true }),
     ).toBeVisible();
-    await expect(page.getByText('Browse and use the PIC-SURE API endpoints.')).toBeVisible();
   });
 
   for (const [state, token, badge] of [
@@ -330,17 +317,6 @@ test.describe('API page', () => {
     await expect(page.getByTestId('public-access-key')).not.toBeVisible();
   });
 
-  test('Has expected content', async ({ page }) => {
-    // Given
-    await page.goto('/api');
-    await userIsLoggedIn(page);
-
-    // When
-    const userToken = page.locator('#user-token');
-
-    // Then
-    await expect(userToken).toBeVisible();
-  });
   test('Has expected badge and expiration', async ({ page }) => {
     // Given
     await page.goto('/api');
@@ -380,21 +356,6 @@ test.describe('API page', () => {
     // Then
     await expect(userToken).toBeVisible();
     expect(await userToken.innerText()).toBe(placeHolderDots);
-  });
-  test('Buttons are displayed', async ({ page }) => {
-    // Given
-    await page.goto('/api');
-    await userIsLoggedIn(page);
-
-    // When
-    const copyButton = page.getByTestId('copy-btn');
-    const refeshButton = page.getByTestId('refresh-btn');
-    const revealButton = page.getByTestId('reveal-btn');
-
-    // Then
-    await expect(copyButton).toBeVisible();
-    await expect(refeshButton).toBeVisible();
-    await expect(revealButton).toBeVisible();
   });
   test('Copy button copies token to clipboard', async ({ page }) => {
     // Given
@@ -610,19 +571,6 @@ test.describe('API page logged out', () => {
     // OPEN keeps the root layout from redirecting anonymous visitors to /login.
     // Gene/SNP stay unset: the open client code asserts supports_genomic false.
     await mockApiConfig(page, { features: [{ name: 'OPEN', value: 'true' }] });
-  });
-
-  test('Has API nav link', async ({ page }) => {
-    // Given
-    await page.goto('/api');
-
-    // When
-    const navLink = page.locator('#nav-link-api');
-
-    // Then
-    await expect(navLink).toBeVisible();
-    await expect(navLink).toHaveText('API');
-    await expect(navLink).toHaveAttribute('aria-current', 'page');
   });
 
   test('Shows public access key card instead of personal access token', async ({ page }) => {

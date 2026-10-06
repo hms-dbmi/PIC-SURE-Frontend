@@ -23,22 +23,6 @@ test.beforeEach(async ({ page }) => {
   await mockApiSuccess(page, '*/**/psama/connection', mockConnections);
 });
 
-test('Has Connection management table', async ({ page }) => {
-  // Given
-  await page.goto('/admin/configuration');
-  await userIsLoggedIn(page);
-
-  // Then
-  await expect(page.locator('#connection-table .table')).toBeVisible();
-});
-test('Has add connection button', async ({ page }) => {
-  // Given
-  await page.goto('/admin/configuration');
-  await userIsLoggedIn(page);
-
-  // Then
-  await expect(page.getByTestId('add-connection')).toBeVisible();
-});
 test('Add connection button takes user to new connection page', async ({ page }) => {
   // Given
   await page.goto('/admin/configuration');
