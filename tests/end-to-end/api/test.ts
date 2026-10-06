@@ -81,7 +81,7 @@ test.describe('API page', () => {
       /R Client\s*Recommended\s*Best if you work in R, Jupyter Notebooks, or RStudio\.\s*R 4\.1\+/,
     );
     await expect(http.getByRole('button')).toHaveText(
-      /Direct API Access\s*Advanced\s*Best if you call PIC-SURE endpoints from curl or any HTTP client\.\s*Any HTTP client/,
+      /Direct API Access\s*Advanced\s*Best if you call PIC-SURE endpoints from a custom HTTP client\.\s*Any HTTP client/,
     );
     for (const item of [python, r, http]) {
       await expect(item.getByRole('button')).toHaveAttribute('aria-expanded', 'false');
@@ -182,7 +182,7 @@ test.describe('API page', () => {
       // Then
       const panel = item.getByTestId('accordion-panel');
       await expect(panel.locator('p').first()).toHaveText(
-        "Copy your token above, paste it into a file named token.txt, and save it in the same folder as your notebook. Don't share this file or commit it to GitHub.",
+        "Copy your token above, paste it into a file named token.txt, and save it in the same folder as your code. Don't share this file or commit it to GitHub.",
       );
       await expect(panel.locator('p').first()).toHaveClass(/preset-tonal-primary/);
       const codeBlock = panel.locator('.code-block');
@@ -197,7 +197,11 @@ test.describe('API page', () => {
       await expect(docsLink).toHaveAttribute('href', docsUrl);
       await expect(docsLink).toHaveAttribute('target', '_blank');
       await expect(panel).toContainText(
-        'Looking for example notebooks? Find PIC-SURE tutorials in your Seven Bridges or Terra workspace.',
+        'Looking for example notebooks? Check out the public GitHub repository.',
+      );
+      await expect(panel.getByRole('link', { name: 'public GitHub repository' })).toHaveAttribute(
+        'href',
+        'https://github.com/hms-dbmi/Access-to-Data-using-PIC-SURE-API',
       );
     });
   }
@@ -229,16 +233,20 @@ test.describe('API page', () => {
 
     // Then
     await expect(page).toHaveURL(/#api-access$/);
-    await expect(page.getByRole('heading', { name: 'API Access', exact: true })).toBeInViewport();
+    await expect(
+      page.getByRole('heading', { name: 'API Documentation', exact: true }),
+    ).toBeInViewport();
   });
 
-  test('Has API Access section', async ({ page }) => {
+  test('Has API Documentation section', async ({ page }) => {
     // Given
     await page.goto('/api');
     await userIsLoggedIn(page);
 
     // Then
-    await expect(page.getByRole('heading', { name: 'API Access', exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'API Documentation', exact: true }),
+    ).toBeVisible();
     await expect(page.getByText('Browse and use the PIC-SURE API endpoints.')).toBeVisible();
   });
 
@@ -273,7 +281,7 @@ test.describe('API page', () => {
         'Overview',
         'Authentication',
         'Choose Your Workflow',
-        'API Access',
+        'API Documentation',
       ]);
     });
   }
@@ -680,7 +688,7 @@ test.describe('API page logged out', () => {
       ['Overview', '#api-header'],
       ['Authentication', '#authentication'],
       ['Choose Your Workflow', '#choose-your-workflow'],
-      ['API Access', '#api-access'],
+      ['API Documentation', '#api-access'],
     ];
     await expect(links).toHaveCount(expected.length);
     for (const [index, [label, href]] of expected.entries()) {

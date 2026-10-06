@@ -96,7 +96,7 @@
       audience: 'Best if you work in Python or Jupyter Notebooks.',
       requirements: 'Python 3.10+',
       lang: 'python',
-      tokenLocation: 'in the same folder as your notebook',
+      tokenLocation: 'in the same folder as your code',
       docsLabel: 'Python client documentation',
       docsUrl: 'https://github.com/hms-dbmi/pic-sure-python-adapter-hpds',
     },
@@ -106,14 +106,14 @@
       audience: 'Best if you work in R, Jupyter Notebooks, or RStudio.',
       requirements: 'R 4.1+',
       lang: 'r',
-      tokenLocation: 'in the same folder as your notebook',
+      tokenLocation: 'in the same folder as your code',
       docsLabel: 'R client documentation',
       docsUrl: 'https://github.com/hms-dbmi/pic-sure-r-adapter-hpds',
     },
     {
       id: 'http',
       title: 'Direct API Access',
-      audience: 'Best if you call PIC-SURE endpoints from curl or any HTTP client.',
+      audience: 'Best if you call PIC-SURE endpoints from a custom HTTP client.',
       requirements: 'Any HTTP client',
       lang: 'bash',
       tokenLocation: 'in your working directory',
@@ -128,7 +128,7 @@
     { id: 'api-header', label: 'Overview' },
     { id: 'authentication', label: 'Authentication' },
     { id: 'choose-your-workflow', label: 'Choose Your Workflow' },
-    { id: 'api-access', label: 'API Access' },
+    { id: 'api-access', label: 'API Documentation' },
   ];
   let activeSection: string = $state('api-header');
 
@@ -374,8 +374,13 @@
                   >
                   <!-- eslint-enable svelte/no-navigation-without-resolve -->
                   <p class="mx-0 mt-2">
-                    Looking for example notebooks? Find PIC-SURE tutorials in your Seven Bridges or
-                    Terra workspace.
+                    Looking for example notebooks? Check out the
+                    <a
+                      class="anchor"
+                      href="https://github.com/hms-dbmi/Access-to-Data-using-PIC-SURE-API"
+                      target="_blank"
+                      rel="noopener noreferrer">public GitHub repository</a
+                    >.
                   </p>
                 {/if}
               {/snippet}
@@ -388,11 +393,11 @@
 
   <section id="api-access" class="w-full bg-primary-50-950">
     <div class="w-[70%] mx-auto py-8">
-      <h2>API Access</h2>
+      <h2>API Documentation</h2>
       <p class="mx-0">Browse and use the PIC-SURE API endpoints.</p>
       {#if mounted && !loggedIn}
         <div
-          class="flex gap-4 items-start border border-primary-500 rounded-lg bg-primary-50-950 p-4 mt-6"
+          class="flex gap-4 items-start border border-primary-500 rounded-lg bg-white p-4 mt-6"
           data-testid="api-public-notice"
         >
           <i class="fa-solid fa-globe text-3xl text-primary-500" aria-hidden="true"></i>
