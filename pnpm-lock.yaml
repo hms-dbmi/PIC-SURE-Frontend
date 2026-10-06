@@ -94,8 +94,8 @@ importers:
         specifier: ^1.5.1
         version: 1.5.1(svelte@5.56.4(@typescript-eslint/types@8.70.1))
       '@vincjo/datatables':
-        specifier: ^2.8.0
-        version: 2.8.0(svelte@5.56.4(@typescript-eslint/types@8.70.1))
+        specifier: ^2.8.1
+        version: 2.8.1(svelte@5.56.4(@typescript-eslint/types@8.59.3))
       auth0-js:
         specifier: ^10.2.0
         version: 10.2.0
@@ -1215,10 +1215,10 @@ packages:
   '@ungap/structured-clone@1.3.1':
     resolution: {integrity: sha512-mUFwbeTqrVgDQxFveS+df2yfap6iuP20NAKAsBt5jDEoOTDew+zwLAOilHCeQJOVSvmgCX4ogqIrA0mnyr08yQ==}
 
-  '@vincjo/datatables@2.8.0':
-    resolution: {integrity: sha512-+Qa9E+Xd+xAOKnYEy7Hgq246sLzwq4GjrwLyWHVi9tbvLNXh4mLMObwy962hc6DYgFP4JRd+Y9PVnDlgSpphxw==}
+  '@vincjo/datatables@2.8.1':
+    resolution: {integrity: sha512-rWl17XkriNyX3fFB5GSThLlhlPDKchFMMSCuaeSYbZCokkwSACjTLtk9v3gg4PltUaXMsJ2XjQcpnPeKJ0xa5A==}
     peerDependencies:
-      svelte: '>=5.53.5'
+      svelte: ^5.56.1
 
   '@vitest/expect@4.1.11':
     resolution: {integrity: sha512-VX2x5vNJXET47KAFzwERI+KRMtTTCSWTfSMKsW7JsUsXV4psq++e3DvZpuTDOpHcxytiDs6p2nhVb2tVDiiUYw==}
@@ -3591,7 +3591,7 @@ snapshots:
 
   '@ungap/structured-clone@1.3.1': {}
 
-  '@vincjo/datatables@2.8.0(svelte@5.56.4(@typescript-eslint/types@8.70.1))':
+  '@vincjo/datatables@2.8.1(svelte@5.56.4(@typescript-eslint/types@8.59.3))':
     dependencies:
       svelte: 5.56.4(@typescript-eslint/types@8.70.1)
 
