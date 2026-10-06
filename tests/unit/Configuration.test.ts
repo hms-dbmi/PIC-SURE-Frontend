@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import {
   mapFeatures,
@@ -26,11 +26,9 @@ const TOUCHED_ENV_KEYS = [
 ];
 
 const savedEnv: Record<string, string | undefined> = {};
-const console_def = console;
-
 beforeEach(() => {
-  console.error = () => {};
-  console.warn = () => {};
+  vi.spyOn(console, 'error').mockImplementation(() => {});
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
   for (const key of TOUCHED_ENV_KEYS) {
     savedEnv[key] = import.meta.env[key];
     delete import.meta.env[key];
@@ -45,8 +43,8 @@ afterEach(() => {
       import.meta.env[key] = savedEnv[key];
     }
   }
-  console.error = console_def.error;
-  console.warn = console_def.warn;
+  vi.mocked(console.error).mockRestore();
+  vi.mocked(console.warn).mockRestore();
 });
 
 function apiRow(name: string, value: string): ConfigObject {

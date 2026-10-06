@@ -36,6 +36,9 @@ export default defineConfig(async ({ mode }) => {
     envDir: mode === 'test' ? './tests/end-to-end/env-isolated' : import.meta.dirname,
     test: {
       setupFiles: ['./tests/component/setup.ts'],
+      // Undo vi.stubGlobal/vi.stubEnv after each test so stubs can't leak into later tests
+      unstubGlobals: true,
+      unstubEnvs: true,
     } satisfies ViteUserConfig['test'],
     server: {
       // Forwards to `npm run mock-api` (tests/end-to-end/mock-server), which serves fixture
