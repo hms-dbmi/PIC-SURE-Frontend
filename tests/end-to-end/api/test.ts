@@ -75,13 +75,13 @@ test.describe('API page', () => {
     // Then
     await expect(page.locator('#choose-your-workflow h2')).toHaveText('Choose Your Workflow');
     await expect(python.getByRole('button')).toHaveText(
-      /Python Client\s*Best if you work in Python or Jupyter Notebooks\.\s*Python 3\.10\+/,
+      /Python Client\s*Recommended\s*Best if you work in Python or Jupyter Notebooks\.\s*Python 3\.10\+/,
     );
     await expect(r.getByRole('button')).toHaveText(
-      /R Client\s*Best if you work in R, Jupyter Notebooks, or RStudio\.\s*R 4\.1\+/,
+      /R Client\s*Recommended\s*Best if you work in R, Jupyter Notebooks, or RStudio\.\s*R 4\.1\+/,
     );
     await expect(http.getByRole('button')).toHaveText(
-      /Direct API Access\s*Best if you call PIC-SURE endpoints from curl or any HTTP client\.\s*Any HTTP client/,
+      /Direct API Access\s*Advanced\s*Best if you call PIC-SURE endpoints from curl or any HTTP client\.\s*Any HTTP client/,
     );
     for (const item of [python, r, http]) {
       await expect(item.getByRole('button')).toHaveAttribute('aria-expanded', 'false');
@@ -89,7 +89,16 @@ test.describe('API page', () => {
     await expect(page.locator('#choose-your-workflow [data-testid="accordion-panel"]')).toHaveCount(
       0,
     );
-    await expect(page.locator('#choose-your-workflow .badge')).toHaveCount(0);
+    for (const item of [python, r]) {
+      const badge = item.getByRole('heading', { level: 3 }).locator('.badge');
+      await expect(badge).toBeVisible();
+      await expect(badge).toHaveText('Recommended');
+      await expect(badge).toHaveClass(/preset-tonal-primary/);
+    }
+    const advanced = http.getByRole('heading', { level: 3 }).locator('.badge');
+    await expect(advanced).toBeVisible();
+    await expect(advanced).toHaveText('Advanced');
+    await expect(advanced).toHaveClass(/preset-tonal-warning/);
   });
 
   test('Opening one option closes the other, and clicking the open header closes it', async ({

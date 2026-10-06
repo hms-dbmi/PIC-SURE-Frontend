@@ -328,7 +328,16 @@
               panelPadding="px-6 pb-6"
             >
               {#snippet control()}
-                <span class="block text-xl font-bold">{workflow.title}</span>
+                <span class="flex flex-wrap items-center gap-3">
+                  <span class="text-xl font-bold">{workflow.title}</span>
+                  <span
+                    class="badge shrink-0 {workflow.id === 'http'
+                      ? 'preset-tonal-warning'
+                      : 'preset-tonal-primary'}"
+                  >
+                    {workflow.id === 'http' ? 'Advanced' : 'Recommended'}
+                  </span>
+                </span>
                 <span class="block mt-1 text-base">{workflow.audience}</span>
                 <span class="block mt-1 text-sm font-mono text-surface-600-400">
                   {workflow.requirements}
