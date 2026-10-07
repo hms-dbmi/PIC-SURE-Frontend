@@ -164,16 +164,6 @@ describe('OnThisPage scroll tracking', () => {
     expectCurrent('authentication');
   });
 
-  it('keeps Authentication selected while the hero remains visible below the top', async () => {
-    positions.set('choose-your-workflow', { top: 300, height: 600 });
-    scroller.scrollTop = 150;
-    render(OnThisPage, { entries });
-
-    expectCurrent('authentication');
-    await scrollTo(241);
-    expectCurrent('choose-your-workflow');
-  });
-
   it('switches sections at the 40% line relative to the scroller', async () => {
     render(OnThisPage, { entries });
 
@@ -186,44 +176,6 @@ describe('OnThisPage scroll tracking', () => {
     await scrollTo(1070);
     expectCurrent('api-access');
     await scrollTo(419);
-    expectCurrent('authentication');
-  });
-
-  it('prioritizes the top rule through scrollTop 4 even when later sections cross the line', async () => {
-    positions.set('hero', { top: -500, height: 100 });
-    positions.set('api-header', { top: -500, height: 80 });
-    positions.set('authentication', { top: 0, height: 100 });
-    positions.set('choose-your-workflow', { top: 100, height: 100 });
-    positions.set('api-access', { top: 200, height: 100 });
-    render(OnThisPage, { entries });
-
-    expectCurrent('authentication');
-    await scrollTo(4);
-    expectCurrent('authentication');
-    await scrollTo(5);
-    expectCurrent('api-access');
-  });
-
-  it('selects the last entry at a scrollable bottom even if it cannot reach the threshold', async () => {
-    positions.set('api-access', { top: 2900, height: 100 });
-    render(OnThisPage, { entries });
-
-    await scrollTo(2100);
-    expectCurrent('choose-your-workflow');
-    await scrollTo(scrollHeight - clientHeight);
-    expectCurrent('api-access');
-    await scrollTo(0);
-    expectCurrent('authentication');
-  });
-
-  it('keeps the first entry on a page without overflow, including almost-fitting content', async () => {
-    scrollHeight = clientHeight;
-    const { rerender } = render(OnThisPage, { entries });
-    expectCurrent('authentication');
-
-    scrollHeight = clientHeight + 2;
-    await rerender({ entries: [...entries] });
-    await scrollTo(2);
     expectCurrent('authentication');
   });
 
@@ -249,14 +201,15 @@ describe('OnThisPage scroll tracking', () => {
     expectCurrent('choose-your-workflow');
   });
 
-  it('recalculates on window resize and when content growth moves the bottom', async () => {
+  it('recalculates when observed content growth moves the bottom', async () => {
     positions.set('api-access', { top: 2900, height: 100 });
     scroller.scrollTop = 2200;
     render(OnThisPage, { entries });
     expectCurrent('api-access');
 
     scrollHeight = 4000;
-    await fireEvent(window, new Event('resize'));
+    ControlledResizeObserver.resize(target('api-access'));
+    await tick();
     expectCurrent('choose-your-workflow');
   });
 
@@ -286,29 +239,21 @@ describe('OnThisPage scroll tracking', () => {
     render(OnThisPage, { entries: [] });
     await scrollTo(2200);
     ControlledResizeObserver.resize(scroller);
-    await fireEvent(window, new Event('resize'));
+    ControlledResizeObserver.resize(target('api-access'));
+    await tick();
 
     expect(screen.getByRole('navigation', { name: 'On this page' })).toBeInTheDocument();
     expect(screen.queryAllByRole('link')).toHaveLength(0);
-  });
-
-  it('skips missing section targets during tracking', async () => {
-    target('choose-your-workflow').remove();
-    render(OnThisPage, { entries });
-
-    await scrollTo(500);
-    expectCurrent('authentication');
-    await scrollTo(1070);
-    expectCurrent('api-access');
   });
 
   it('renders safely without the page scroller', () => {
     scroller.remove();
     render(OnThisPage, { entries });
     expect(screen.getAllByRole('link')).toHaveLength(3);
+    expectCurrent('authentication');
   });
 
-  it('disconnects observers and scroll/resize listeners on unmount', async () => {
+  it('disconnects observers and the scroll listener on unmount', async () => {
     const { unmount } = render(OnThisPage, { entries });
     expect(
       ControlledResizeObserver.instances.some((observer) => observer.targets.has(scroller)),
@@ -321,7 +266,8 @@ describe('OnThisPage scroll tracking', () => {
     vi.mocked(target('authentication').getBoundingClientRect).mockClear();
     vi.mocked(scroller.getBoundingClientRect).mockClear();
     await scrollTo(500);
-    await fireEvent(window, new Event('resize'));
+    ControlledResizeObserver.resize(target('api-access'));
+    await tick();
     expect(target('authentication').getBoundingClientRect).not.toHaveBeenCalled();
     expect(scroller.getBoundingClientRect).not.toHaveBeenCalled();
   });

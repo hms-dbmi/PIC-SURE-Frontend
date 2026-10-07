@@ -6,9 +6,10 @@
 </script>
 
 <script lang="ts">
-  import { tick } from 'svelte';
+  import { tick, untrack } from 'svelte';
   import { afterNavigate, goto } from '$app/navigation';
   import { page } from '$app/state';
+  import { getActiveEntry } from './activeEntry';
 
   interface Props {
     entries: TocEntry[];
@@ -17,36 +18,27 @@
 
   const { entries, onselect }: Props = $props();
 
-  let active: string = $state('');
+  let active: string = $state(untrack(() => entries[0]?.id ?? ''));
 
   $effect(() => {
     const targets = entries.map(({ id }) => ({ id, element: document.getElementById(id) }));
+    // The page shell scrolls #page rather than window; TocLayout's sticky rail shares this container.
     const scroller = document.getElementById('page');
-    if (!scroller || targets.length === 0) {
-      active = entries[0]?.id ?? '';
-      return;
-    }
+    if (!scroller || targets.length === 0) return;
 
     const update = () => {
-      const viewportTop = scroller.getBoundingClientRect().top;
-      if (
-        scroller.scrollTop <= 4 ||
-        (targets[0].element && targets[0].element.getBoundingClientRect().top > viewportTop)
-      ) {
-        active = targets[0].id;
-        return;
-      }
-      // Short final sections may never reach the activation line.
-      if (scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 4) {
-        active = targets[targets.length - 1].id;
-        return;
-      }
-      const threshold = viewportTop + scroller.clientHeight * 0.4;
-      let current = targets[0].id;
-      for (const { id, element } of targets) {
-        if (element && element.getBoundingClientRect().top <= threshold) current = id;
-      }
-      active = current;
+      active = getActiveEntry(
+        {
+          top: scroller.getBoundingClientRect().top,
+          scrollTop: scroller.scrollTop,
+          clientHeight: scroller.clientHeight,
+          scrollHeight: scroller.scrollHeight,
+        },
+        targets.map(({ id, element }) => ({
+          id,
+          top: element?.getBoundingClientRect().top ?? null,
+        })),
+      );
     };
     const resize = new ResizeObserver(update);
     resize.observe(scroller);
@@ -55,11 +47,9 @@
     }
     update();
     scroller.addEventListener('scroll', update, { passive: true });
-    window.addEventListener('resize', update);
     return () => {
       resize.disconnect();
       scroller.removeEventListener('scroll', update);
-      window.removeEventListener('resize', update);
     };
   });
 
@@ -82,7 +72,8 @@
     const id = entries.find((entry) => `#${encodeURIComponent(entry.id)}` === to?.url.hash)?.id;
     if (id) {
       await tick();
-      // SvelteKit resets hash focus in a deferred task after afterNavigate.
+      // SvelteKit currently defers its hash focus reset past afterNavigate. This ordering
+      // depends on framework internals; the API Back/Forward E2E test guards upgrades.
       await new Promise<void>((resolve) => setTimeout(resolve, 0));
       if (page.url.href === to?.url.href) visit(id);
     }
