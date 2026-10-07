@@ -716,6 +716,7 @@ test.describe('API page logged out', () => {
     page,
   }) => {
     await page.goto('/api');
+    await expect(page.locator('body.started')).toBeAttached();
     for (const [name, id] of [
       ['Choose Your Workflow', 'choose-your-workflow'],
       ['Authentication', 'authentication'],
@@ -791,6 +792,7 @@ test.describe('API page logged out', () => {
     page,
   }) => {
     await page.goto('/api?source=docs&filter=a%20b');
+    await expect(page.locator('body.started')).toBeAttached();
     const toc = page.getByRole('navigation', { name: 'On this page' });
     await toc.getByRole('link', { name: 'Authentication', exact: true }).click();
     await expect(page).toHaveURL(/\/api\?source=docs&filter=a%20b#authentication$/);
