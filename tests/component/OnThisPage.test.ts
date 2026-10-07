@@ -328,6 +328,29 @@ describe('OnThisPage scroll tracking', () => {
 });
 
 describe('OnThisPage navigation', () => {
+  it('uses the same encoded fragment for native links, clicks, and history', async () => {
+    const id = 'query/results?kind#counts';
+    const section = document.createElement('section');
+    section.id = id;
+    section.innerHTML = '<h2>Query results</h2>';
+    scroller.append(section);
+    const scroll = vi.spyOn(section, 'scrollIntoView');
+    render(OnThisPage, { entries: [{ id, label: 'Query results' }] });
+    const anchor = screen.getByRole('link', { name: 'Query results' });
+    const hash = '#query%2Fresults%3Fkind%23counts';
+
+    expect(anchor).toHaveAttribute('href', hash);
+    await fireEvent.click(anchor);
+    expectDestination(`/api${hash}`);
+    expect(document.activeElement).toBe(section.querySelector('h2'));
+
+    section.querySelector('h2')!.blur();
+    expect(document.activeElement).not.toBe(section.querySelector('h2'));
+    await navigate(`/api${hash}`);
+    expect(scroll).toHaveBeenCalledTimes(2);
+    expect(document.activeElement).toBe(section.querySelector('h2'));
+  });
+
   it('preserves the current pathname and query, scrolls the section, and focuses its heading', async () => {
     mockPage.url = new URL('https://example.org/custom/docs?tab=api&filter=a%20b#authentication');
     const onselect = vi.fn();

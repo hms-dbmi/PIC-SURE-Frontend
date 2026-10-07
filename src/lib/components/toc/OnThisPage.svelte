@@ -116,7 +116,7 @@
       {@const current = active === entry.id}
       <li>
         <a
-          href="#{entry.id}"
+          href="#{encodeURIComponent(entry.id)}"
           class="-ml-0.5 block border-l-4 py-1.5 pl-3 hover:underline {current
             ? 'border-primary-500 font-bold'
             : 'border-transparent text-primary-600-400'}"
