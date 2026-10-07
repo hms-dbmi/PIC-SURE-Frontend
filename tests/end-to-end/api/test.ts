@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import { test, mockApiFail, mockApiSuccess, mockApiConfig } from '../custom-context';
 import { picsureUser, roles as mockRoles, mockExpiredToken, mockToken } from '../mock-data';
 import { userIsLoggedIn } from '../utils';
@@ -7,6 +7,23 @@ import brandingJson from '../../../src/lib/assets/configuration.json' with { typ
 const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
 
 const capabilities = branding?.apiPage?.capabilities || [];
+
+async function expectSectionAligned(page: Page, id: string) {
+  await expect
+    .poll(() =>
+      page.evaluate((sectionId) => {
+        const scroller = document.getElementById('page')!;
+        const section = document.getElementById(sectionId)!;
+        const sectionTop =
+          section.getBoundingClientRect().top -
+          scroller.getBoundingClientRect().top +
+          scroller.scrollTop;
+        const destination = Math.min(sectionTop, scroller.scrollHeight - scroller.clientHeight);
+        return Math.abs(scroller.scrollTop - destination);
+      }, id),
+    )
+    .toBeLessThan(4);
+}
 
 // A JWT whose exp claim is the given number of days from now. The page only
 // decodes the payload, so the signature is a placeholder.
@@ -271,14 +288,11 @@ test.describe('API page', () => {
       );
 
       // Then
-      expect(sectionIds).toEqual([
-        'api-header',
-        'authentication',
-        'choose-your-workflow',
-        'api-access',
-      ]);
+      expect(sectionIds).toEqual(['authentication', 'choose-your-workflow', 'api-access']);
+      await expect(page.locator('h1#api-header')).toHaveText(
+        'Programmatic Access with the PIC-SURE API',
+      );
       await expect(page.getByTestId('toc').locator('a')).toHaveText([
-        'Overview',
         'Authentication',
         'Choose Your Workflow',
         'API Documentation',
@@ -685,7 +699,6 @@ test.describe('API page logged out', () => {
 
     // Then
     const expected: Array<[string, string]> = [
-      ['Overview', '#api-header'],
       ['Authentication', '#authentication'],
       ['Choose Your Workflow', '#choose-your-workflow'],
       ['API Documentation', '#api-access'],
@@ -695,6 +708,8 @@ test.describe('API page logged out', () => {
       await expect(links.nth(index)).toHaveText(label);
       await expect(links.nth(index)).toHaveAttribute('href', href);
     }
+    await expect(page.getByRole('navigation', { name: 'On this page' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Overview', exact: true })).toHaveCount(0);
   });
 
   test('Each table of contents link scrolls on its first click, including repeat visits', async ({
@@ -704,22 +719,13 @@ test.describe('API page logged out', () => {
     for (const [name, id] of [
       ['Choose Your Workflow', 'choose-your-workflow'],
       ['Authentication', 'authentication'],
-      ['Overview', 'api-header'],
+      ['API Documentation', 'api-access'],
       ['Choose Your Workflow', 'choose-your-workflow'],
     ]) {
       await page.getByTestId('toc').getByRole('link', { name, exact: true }).click();
       await expect(page).toHaveURL(new RegExp(`#${id}$`));
-      await expect
-        .poll(() =>
-          page.evaluate((sectionId) => {
-            const scroller = document.getElementById('page')!;
-            const section = document.getElementById(sectionId)!;
-            return Math.abs(
-              section.getBoundingClientRect().top - scroller.getBoundingClientRect().top,
-            );
-          }, id),
-        )
-        .toBeLessThan(4);
+      await expectSectionAligned(page, id);
+      await expect(page.locator(`#${id} h2`).first()).toBeFocused();
     }
   });
 
@@ -738,37 +744,127 @@ test.describe('API page logged out', () => {
     await expect(code).not.toContainText('/proxy/');
   });
 
-  test('Table of contents indicates the section in view', async ({ page }) => {
-    // Given
+  test('Table of contents tracks the top, Workflow, and scrollable bottom', async ({ page }) => {
     await page.goto('/api');
     const toc = page.getByTestId('toc');
     const authLink = toc.getByRole('link', { name: 'Authentication' });
-    await expect(toc.getByRole('link', { name: 'Overview' })).toHaveAttribute(
+    const workflowLink = toc.getByRole('link', { name: 'Choose Your Workflow' });
+    const docsLink = toc.getByRole('link', { name: 'API Documentation' });
+    await expect(authLink).toHaveAttribute('aria-current', 'true');
+    await expect(toc.locator('a[aria-current="true"]')).toHaveCount(1);
+
+    await page.evaluate(() => {
+      document.getElementById('choose-your-workflow')!.scrollIntoView({ behavior: 'instant' });
+    });
+    await expect(workflowLink).toHaveAttribute('aria-current', 'true');
+    await expect(authLink).not.toHaveAttribute('aria-current', 'true');
+
+    const hasOverflow = await page.locator('#page').evaluate((scroller) => {
+      scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'instant' });
+      return scroller.scrollHeight > scroller.clientHeight;
+    });
+    expect(hasOverflow).toBe(true);
+    await expect(docsLink).toHaveAttribute('aria-current', 'true');
+    await expect(toc.locator('a[aria-current="true"]')).toHaveCount(1);
+
+    await page.locator('#page').evaluate((scroller) => {
+      scroller.scrollTo({ top: 0, behavior: 'instant' });
+    });
+    await expect(authLink).toHaveAttribute('aria-current', 'true');
+    await expect(page).toHaveURL(/\/api$/);
+  });
+
+  test('Table of contents is visible at 1280px and hidden at 1279px', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/api');
+    await expect(page.getByTestId('toc')).toBeVisible();
+
+    await page.setViewportSize({ width: 1279, height: 800 });
+    await expect(page.getByTestId('toc')).toBeHidden();
+    await expect(page.locator('#choose-your-workflow h2')).toBeVisible();
+
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await expect(page.getByTestId('toc')).toBeVisible();
+  });
+
+  test('Table of contents preserves query parameters and restores heading focus through history', async ({
+    page,
+  }) => {
+    await page.goto('/api?source=docs&filter=a%20b');
+    const toc = page.getByRole('navigation', { name: 'On this page' });
+    await toc.getByRole('link', { name: 'Authentication', exact: true }).click();
+    await expect(page).toHaveURL(/\/api\?source=docs&filter=a%20b#authentication$/);
+    await expect(page.locator('#authentication h2')).toBeFocused();
+
+    await toc.getByRole('link', { name: 'Choose Your Workflow', exact: true }).click();
+    await expect(page).toHaveURL(/\/api\?source=docs&filter=a%20b#choose-your-workflow$/);
+    await expect(page.locator('#choose-your-workflow h2')).toBeFocused();
+
+    await page.goBack();
+    await expect(page).toHaveURL(/\/api\?source=docs&filter=a%20b#authentication$/);
+    await expectSectionAligned(page, 'authentication');
+    await expect(page.locator('#authentication h2')).toBeFocused();
+
+    await page.goForward();
+    await expect(page).toHaveURL(/\/api\?source=docs&filter=a%20b#choose-your-workflow$/);
+    await expectSectionAligned(page, 'choose-your-workflow');
+    await expect(page.locator('#choose-your-workflow h2')).toBeFocused();
+  });
+
+  test('Hero spans the section bands and the right rail stays beside the content while scrolling', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/api');
+    const toc = page.getByRole('navigation', { name: 'On this page' });
+    await expect(toc).toBeVisible();
+
+    const layout = await page.evaluate(() => {
+      const rect = (selector: string) => {
+        const { left, right, top, bottom, width } = document
+          .querySelector(selector)!
+          .getBoundingClientRect();
+        return { left, right, top, bottom, width };
+      };
+      return {
+        page: rect('#api-page'),
+        hero: rect('#api-page header'),
+        title: rect('#api-header'),
+        rail: rect('[aria-label="On this page"]'),
+        bands: ['authentication', 'choose-your-workflow', 'api-access'].map((id) => ({
+          band: rect(`#${id}`),
+          heading: rect(`#${id} h2`),
+        })),
+      };
+    });
+    expect(layout.hero.width).toBeCloseTo(layout.page.width, 0);
+    expect(layout.hero.bottom).toBeLessThanOrEqual(layout.bands[0].band.top + 1);
+    expect(layout.rail.top).toBeGreaterThanOrEqual(layout.hero.bottom);
+    for (const { band, heading } of layout.bands) {
+      expect(band.left).toBeCloseTo(layout.hero.left, 0);
+      expect(band.width).toBeCloseTo(layout.hero.width, 0);
+      expect(heading.left).toBeCloseTo(layout.title.left, 0);
+      expect(heading.right).toBeLessThan(layout.rail.left);
+    }
+
+    await page.locator('#choose-your-workflow').evaluate((section) => {
+      section.scrollIntoView({ behavior: 'instant' });
+    });
+    await expect(toc.getByRole('link', { name: 'Choose Your Workflow' })).toHaveAttribute(
       'aria-current',
       'true',
     );
-    await expect(authLink).not.toHaveAttribute('aria-current', 'true');
-
-    // When
-    await page.evaluate(() => {
-      const scroller = document.getElementById('page');
-      const section = document.getElementById('authentication');
-      if (!scroller || !section) return;
-      scroller.scrollTop +=
-        section.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
+    const before = (await toc.boundingBox())!;
+    const scrolledBy = await page.locator('#page').evaluate((scroller) => {
+      const before = scroller.scrollTop;
+      scroller.scrollBy({ top: 100, behavior: 'instant' });
+      return scroller.scrollTop - before;
     });
-
-    // Then
-    await expect(authLink).toHaveAttribute('aria-current', 'true');
-  });
-
-  test('Table of contents is hidden on narrow viewports', async ({ page }) => {
-    // Given
-    await page.setViewportSize({ width: 1024, height: 800 });
-    await page.goto('/api');
-
-    // Then
-    await expect(page.getByTestId('toc')).toBeHidden();
+    expect(scrolledBy).toBeGreaterThan(50);
+    await expect
+      .poll(async () => Math.abs((await toc.boundingBox())!.y - before.y))
+      .toBeLessThan(2);
+    expect((await toc.boundingBox())!.x).toBeCloseTo(before.x, 0);
   });
 
   test('Legacy /analyze/api redirects to /api when logged out', async ({ page }) => {
