@@ -6,7 +6,7 @@
 </script>
 
 <script lang="ts">
-  import { tick, untrack } from 'svelte';
+  import { tick } from 'svelte';
   import { afterNavigate, goto } from '$app/navigation';
   import { page } from '$app/state';
   import { getActiveEntry } from './activeEntry';
@@ -18,7 +18,9 @@
 
   const { entries, onselect }: Props = $props();
 
-  let active: string = $state(untrack(() => entries[0]?.id ?? ''));
+  // Seed the initial marker; scroll tracking updates it after mount.
+  // svelte-ignore state_referenced_locally
+  let active: string = $state(entries[0]?.id ?? '');
 
   $effect(() => {
     const targets = entries.map(({ id }) => ({ id, element: document.getElementById(id) }));
