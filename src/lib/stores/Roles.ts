@@ -71,13 +71,6 @@ export async function deleteRole(uuid: string) {
   }
 }
 
-export async function addManualRole(studyId: string) {
-  const res = await api.post(Psama.StudyAccess, studyId);
-  if (res.status !== 200) {
-    throw new Error('Failed to add manual role');
-  }
-  return res;
-}
 export default {
   subscribe: roles.subscribe,
   roles,

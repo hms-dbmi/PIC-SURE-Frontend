@@ -65,7 +65,6 @@ export const Psama = {
   },
   Connection: 'psama/connection',
   Priviege: 'psama/privilege',
-  StudyAccess: 'psama/studyAccess',
   Role: 'psama/role',
   TOS: 'psama/tos',
   Users: USER,

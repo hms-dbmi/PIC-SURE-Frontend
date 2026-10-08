@@ -4,7 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 
 const navigation = vi.hoisted(() => ({
-  callback: undefined as ((navigation?: { to?: { url: URL } | null }) => Promise<void>) | undefined,
+  callback: undefined as
+    | ((navigation?: { type?: string; to?: { url: URL } | null }) => Promise<void>)
+    | undefined,
 }));
 const authentication = vi.hoisted(() => ({
   setHasValidToken: undefined as unknown as (value: boolean) => void,
@@ -12,7 +14,9 @@ const authentication = vi.hoisted(() => ({
 }));
 
 vi.mock('$app/navigation', () => ({
-  afterNavigate: (callback: (navigation?: { to?: { url: URL } | null }) => Promise<void>) => {
+  afterNavigate: (
+    callback: (navigation?: { type?: string; to?: { url: URL } | null }) => Promise<void>,
+  ) => {
     navigation.callback = callback;
   },
 }));
@@ -87,8 +91,8 @@ describe('SiteBannerRegion', () => {
       headers: { Accept: 'application/json' },
     });
     expect(screen.getByTestId('site-banner-region')).toHaveClass('w-full');
-    const notice = screen.getByRole('article', { name: 'Maintenance' });
-    expect(notice.tagName).toBe('ARTICLE');
+    const notice = screen.getByRole('region', { name: 'Maintenance' });
+    expect(notice.tagName).toBe('SECTION');
     expect(notice).toHaveTextContent('Scheduled maintenance details');
     expect(createLog).not.toHaveBeenCalled();
     expect(log).not.toHaveBeenCalled();
@@ -125,9 +129,10 @@ describe('SiteBannerRegion', () => {
 
     await navigation.callback?.();
 
-    expect(
-      screen.getAllByTestId('site-banner').map((element) => element.getAttribute('aria-label')),
-    ).toEqual(['First from server', 'Second from server']);
+    expect(screen.getAllByRole('heading').map((heading) => heading.textContent)).toEqual([
+      'First from server',
+      'Second from server',
+    ]);
   });
 
   it('retains valid records in server order when another record is malformed', async () => {
@@ -145,9 +150,10 @@ describe('SiteBannerRegion', () => {
 
     await navigation.callback?.();
 
-    expect(
-      screen.getAllByTestId('site-banner').map((element) => element.getAttribute('aria-label')),
-    ).toEqual(['Maintenance', 'Second valid banner']);
+    expect(screen.getAllByRole('heading').map((heading) => heading.textContent)).toEqual([
+      'Maintenance',
+      'Second valid banner',
+    ]);
     expect(createLog).toHaveBeenCalledWith('ERROR', 'banner.feed_malformed_records', {
       malformedRecords: 1,
     });
@@ -169,9 +175,9 @@ describe('SiteBannerRegion', () => {
 
     await navigation.callback?.();
 
-    expect(screen.getByRole('article', { name: 'Maintenance' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
     expect(
-      screen.queryByRole('article', { name: 'Future inline announcement' }),
+      screen.queryByRole('region', { name: 'Future inline announcement' }),
     ).not.toBeInTheDocument();
     expect(createLog).not.toHaveBeenCalled();
     expect(log).not.toHaveBeenCalled();
@@ -275,7 +281,7 @@ describe('SiteBannerRegion', () => {
 
     await navigation.callback?.();
 
-    expect(screen.getByRole('article', { name: 'Maintenance' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
   });
 
   it('fails safely without banners when an old backend does not have the versioned feed', async () => {
@@ -314,8 +320,8 @@ describe('SiteBannerRegion', () => {
 
     await navigation.callback?.();
 
-    expect(screen.queryByRole('article', { name: 'Maintenance' })).not.toBeInTheDocument();
-    expect(screen.getByRole('article', { name: 'Permanent notice' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Maintenance' })).not.toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Permanent notice' })).toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: /Dismiss Permanent notice/ }),
     ).not.toBeInTheDocument();
@@ -336,7 +342,7 @@ describe('SiteBannerRegion', () => {
 
     await navigation.callback?.();
 
-    expect(screen.getByRole('article', { name: 'Restored maintenance' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Restored maintenance' })).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Dismiss Restored maintenance' }),
     ).toBeInTheDocument();
@@ -355,8 +361,8 @@ describe('SiteBannerRegion', () => {
 
     await fireEvent.click(screen.getByRole('button', { name: 'Dismiss Maintenance' }));
 
-    expect(screen.queryByRole('article', { name: 'Maintenance' })).not.toBeInTheDocument();
-    expect(screen.getByRole('article', { name: 'Second notice' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Maintenance' })).not.toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Second notice' })).toBeInTheDocument();
     expect(sessionStorage.getItem(dismissalStorageKey)).toBe(
       JSON.stringify({ [banner.uuid]: banner.presentationHash }),
     );
@@ -381,7 +387,7 @@ describe('SiteBannerRegion', () => {
     expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
 
     await navigation.callback?.({ to: { url: new URL('https://picsure.example/status') } });
-    expect(screen.getByRole('article', { name: 'Maintenance' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
   });
 
   it('shows a changed hash only when its signed-in audience and parameterized page also match', async () => {
@@ -422,7 +428,7 @@ describe('SiteBannerRegion', () => {
     expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
 
     await navigation.callback?.(matchingPage);
-    expect(screen.getByRole('article', { name: 'Maintenance' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 
@@ -451,7 +457,7 @@ describe('SiteBannerRegion', () => {
 
     await navigation.callback?.();
 
-    expect(screen.getByRole('article', { name: 'Maintenance' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
   });
 
   it('fails open when stored dismissal data is malformed', async () => {
@@ -461,7 +467,7 @@ describe('SiteBannerRegion', () => {
 
     await navigation.callback?.();
 
-    expect(screen.getByRole('article', { name: 'Maintenance' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
   });
 
   it('ignores non-string dismissal entries without discarding valid entries', async () => {
@@ -480,8 +486,8 @@ describe('SiteBannerRegion', () => {
 
     await navigation.callback?.();
 
-    expect(screen.getByRole('article', { name: 'Maintenance' })).toBeInTheDocument();
-    expect(screen.queryByRole('article', { name: 'Second notice' })).not.toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Second notice' })).not.toBeInTheDocument();
   });
 
   it('fails open when storage cannot be read and keeps the clicked banner hidden when storage cannot be written', async () => {
@@ -492,7 +498,7 @@ describe('SiteBannerRegion', () => {
       fetchMock.mockResolvedValue(new Response(JSON.stringify([banner]), { status: 200 }));
       render(SiteBannerRegion);
       await navigation.callback?.();
-      expect(screen.getByRole('article', { name: 'Maintenance' })).toBeInTheDocument();
+      expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
     } finally {
       getItem.mockRestore();
     }
@@ -532,7 +538,7 @@ describe('SiteBannerRegion audience targeting', () => {
       await navigation.callback?.();
 
       if (rendered) {
-        expect(screen.getByRole('article', { name: 'Maintenance' })).toBeInTheDocument();
+        expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
       } else {
         expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
       }
@@ -565,9 +571,10 @@ describe('SiteBannerRegion audience targeting', () => {
 
     await navigation.callback?.();
 
-    expect(
-      screen.getAllByTestId('site-banner').map((element) => element.getAttribute('aria-label')),
-    ).toEqual(['For everyone', 'For signed-out visitors']);
+    expect(screen.getAllByRole('heading').map((heading) => heading.textContent)).toEqual([
+      'For everyone',
+      'For signed-out visitors',
+    ]);
     expect(log).not.toHaveBeenCalled();
   });
 
@@ -610,9 +617,10 @@ describe('SiteBannerRegion audience targeting', () => {
 
     await navigation.callback?.({ to: { url: new URL('https://picsure.example/admin/users') } });
 
-    expect(
-      screen.getAllByTestId('site-banner').map((element) => element.getAttribute('aria-label')),
-    ).toEqual(['First matching page', 'Second matching page']);
+    expect(screen.getAllByRole('heading').map((heading) => heading.textContent)).toEqual([
+      'First matching page',
+      'Second matching page',
+    ]);
   });
 
   it('accepts and normalizes well-formed noncanonical targets from the versioned feed', async () => {
@@ -635,7 +643,7 @@ describe('SiteBannerRegion audience targeting', () => {
 
     await navigation.callback?.({ to: { url: new URL('https://picsure.example/admin/users') } });
 
-    expect(screen.getByRole('article', { name: 'Maintenance' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
     expect(createLog).not.toHaveBeenCalled();
     expect(log).not.toHaveBeenCalled();
   });
@@ -650,7 +658,7 @@ describe('SiteBannerRegion audience targeting', () => {
     render(SiteBannerRegion);
 
     await navigation.callback?.({ to: { url: new URL('https://picsure.example/help?topic=one') } });
-    expect(screen.getByRole('article', { name: 'Maintenance' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
 
     await navigation.callback?.({ to: { url: new URL('https://picsure.example/status#notice') } });
     expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
@@ -694,15 +702,15 @@ describe('SiteBannerRegion audience targeting', () => {
     render(SiteBannerRegion);
 
     await navigation.callback?.();
-    expect(screen.getByRole('article', { name: 'For signed-in users' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'For signed-in users' })).toBeInTheDocument();
 
     authentication.setHasValidToken(false);
     authentication.setTokenStatus(false);
 
     await waitFor(() =>
-      expect(screen.getByRole('article', { name: 'For signed-out visitors' })).toBeInTheDocument(),
+      expect(screen.getByRole('region', { name: 'For signed-out visitors' })).toBeInTheDocument(),
     );
-    expect(screen.queryByRole('article', { name: 'For signed-in users' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'For signed-in users' })).not.toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledOnce();
   });
 
@@ -727,8 +735,8 @@ describe('SiteBannerRegion audience targeting', () => {
 
     await navigation.callback?.();
 
-    expect(screen.getByRole('article', { name: 'For signed-out visitors' })).toBeInTheDocument();
-    expect(screen.queryByRole('article', { name: 'For signed-in users' })).not.toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'For signed-out visitors' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'For signed-in users' })).not.toBeInTheDocument();
   });
 });
 
@@ -753,13 +761,13 @@ describe('banner feed navigation races', () => {
       });
       await navigation.callback?.({ to: { url: new URL('https://example.test/new') } });
       await waitFor(() =>
-        expect(screen.getByRole('article', { name: 'Latest notice' })).toBeInTheDocument(),
+        expect(screen.getByRole('region', { name: 'Latest notice' })).toBeInTheDocument(),
       );
       if (outcome === 'failure') rejectOld(new Error('old request failed'));
       else resolveOld(new Response(JSON.stringify([banner])));
       await oldRequest;
-      expect(screen.getByRole('article', { name: 'Latest notice' })).toBeInTheDocument();
-      expect(screen.queryByRole('article', { name: 'Maintenance' })).not.toBeInTheDocument();
+      expect(screen.getByRole('region', { name: 'Latest notice' })).toBeInTheDocument();
+      expect(screen.queryByRole('region', { name: 'Maintenance' })).not.toBeInTheDocument();
       expect(log).not.toHaveBeenCalled();
     },
   );
@@ -780,15 +788,20 @@ describe('banner feed navigation races', () => {
     expect(log).not.toHaveBeenCalled();
   });
 
-  it('groups multiple announcements under one named region', async () => {
+  it('exposes each banner, dismissible or not, as its own named region', async () => {
     fetchMock.mockResolvedValueOnce(
-      new Response(JSON.stringify([banner, { ...banner, uuid: 'other', title: 'Second notice' }])),
+      new Response(
+        JSON.stringify([
+          banner,
+          { ...banner, uuid: 'other', title: 'Second notice', dismissible: false },
+        ]),
+      ),
     );
     render(SiteBannerRegion);
     await navigation.callback?.();
-    await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(2));
-    expect(screen.getAllByRole('region')).toHaveLength(1);
-    expect(screen.getByRole('region', { name: 'Site announcements' })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getAllByRole('region')).toHaveLength(2));
+    expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Second notice' })).toBeInTheDocument();
   });
 });
 
@@ -871,6 +884,41 @@ describe('public banner accessibility', () => {
     expect(focus).not.toHaveBeenCalled();
   });
 
+  it('announces only banners that arrive after the page load', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify([banner])));
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify([banner, secondBanner])));
+    render(SiteBannerRegion);
+    const status = screen.getByRole('status');
+    const announcements: string[] = [];
+    const observer = new MutationObserver(() => announcements.push(status.textContent ?? ''));
+    observer.observe(status, { childList: true, characterData: true, subtree: true });
+
+    await navigation.callback?.({ type: 'enter' });
+    expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
+    await navigation.callback?.({ type: 'link' });
+    await waitFor(() =>
+      expect(status).toHaveTextContent('1 new or updated site announcement. Service update'),
+    );
+    expect(announcements.filter(Boolean)).toEqual([
+      '1 new or updated site announcement. Service update',
+    ]);
+    observer.disconnect();
+  });
+
+  it('counts the banners left out of a long announcement', async () => {
+    const titles = ['First', 'Second', 'Third', 'Fourth'];
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify(titles.map((title) => ({ ...banner, uuid: title, title })))),
+    );
+    render(SiteBannerRegion);
+    await navigation.callback?.();
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent(
+        '4 new or updated site announcements. First. Second. And 2 more.',
+      ),
+    );
+  });
+
   it('announces new and changed visible banners without repeating an unchanged navigation or dismissal', async () => {
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify([banner])));
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify([banner])));
@@ -916,9 +964,9 @@ describe('public banner accessibility', () => {
     observer.observe(status, { childList: true, characterData: true, subtree: true });
 
     await navigate('/elsewhere');
-    expect(screen.queryByRole('article')).not.toBeInTheDocument();
+    expect(screen.queryByRole('region')).not.toBeInTheDocument();
     await navigate('/help');
-    expect(screen.getByRole('article', { name: 'Maintenance' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
     expect(changes).not.toHaveBeenCalled();
 
     fetchMock.mockImplementation(
@@ -994,7 +1042,7 @@ describe('public banner accessibility', () => {
     expect(screen.getByRole('status')).not.toHaveTextContent('Service update');
   });
 
-  it('uses distinct short text names for untitled banners without script content', async () => {
+  it('uses distinct fixed names for untitled banners and announces their text', async () => {
     fetchMock.mockResolvedValue(
       new Response(
         JSON.stringify([
@@ -1009,23 +1057,20 @@ describe('public banner accessibility', () => {
     );
     render(SiteBannerRegion);
     await navigation.callback?.();
-    expect(
-      screen.getByRole('article', { name: 'Site announcement 1: Maintenance details' }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('article', { name: 'Site announcement 2: Maintenance details' }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: 'Dismiss Site announcement 2: Maintenance details' }),
-    ).toBeInTheDocument();
-    await fireEvent.click(
-      screen.getByRole('button', { name: 'Dismiss Site announcement 1: Maintenance details' }),
+    expect(screen.getByRole('region', { name: 'Site announcement 1' })).toHaveTextContent(
+      'Maintenance details',
     );
-    expect(
-      screen.getByRole('article', { name: 'Site announcement 2: Maintenance details' }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: 'Dismiss Site announcement 2: Maintenance details' }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Site announcement 2' })).toHaveTextContent(
+      'Maintenance details',
+    );
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent(
+        '2 new or updated site announcements. Maintenance details. Maintenance details',
+      ),
+    );
+    expect(screen.getByRole('status')).not.toHaveTextContent('secret');
+    await fireEvent.click(screen.getByRole('button', { name: 'Dismiss Site announcement 1' }));
+    expect(screen.getByRole('region', { name: 'Site announcement 2' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Dismiss Site announcement 2' })).toBeInTheDocument();
   });
 });
