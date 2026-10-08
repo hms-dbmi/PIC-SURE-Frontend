@@ -3,9 +3,11 @@ import { describe, it, expect } from 'vitest';
 import {
   getApiKeyStatus,
   formatInstant,
+  formatKeyPrefix,
   toPlatformKeyRequest,
   extractApiError,
   type ApiKeyMetadata,
+  type ApiKeyType,
 } from '$lib/models/ApiKey';
 
 const baseKey: ApiKeyMetadata = {
@@ -49,6 +51,25 @@ describe('getApiKeyStatus', () => {
       expiresAt: '2026-01-02T00:00:00Z',
     };
     expect(getApiKeyStatus(key, now)).toBe('Revoked');
+  });
+});
+
+describe('formatKeyPrefix', () => {
+  it('includes the user type segment before the display prefix', () => {
+    expect(formatKeyPrefix('USER', 'abc12345')).toBe('picsure_u_abc12345…');
+  });
+
+  it('includes the platform type segment before the display prefix', () => {
+    expect(formatKeyPrefix('PLATFORM', 'abc12345')).toBe('picsure_p_abc12345…');
+  });
+
+  it('falls back to the untyped prefix for a key type it does not know', () => {
+    expect(formatKeyPrefix('SESSION' as ApiKeyType, 'abc12345')).toBe('picsure_abc12345…');
+  });
+
+  it('falls back for a key type that names an inherited property', () => {
+    expect(formatKeyPrefix('constructor' as ApiKeyType, 'abc12345')).toBe('picsure_abc12345…');
+    expect(formatKeyPrefix('__proto__' as ApiKeyType, 'abc12345')).toBe('picsure_abc12345…');
   });
 });
 
