@@ -3,11 +3,10 @@ import { log, createLog, getSessionId } from '$lib/logger';
 
 /**
  * Open-access sessions: a short-lived PSAMA-signed token each anonymous browser gets for itself and
- * sends as its API key, so anonymous traffic never carries the deployment's PLATFORM key. The token
+ * sends as its bearer token, so anonymous traffic never carries the deployment's PLATFORM key. The token
  * lives in localStorage and is read fresh on every call, so a refresh in one tab reaches the others.
  */
 
-export const API_KEY_HEADER = 'X-PICSURE-API-Key';
 export const SESSION_REFRESH_HEADER = 'X-PICSURE-Session-Refresh';
 // the gateway's 401 error codes for "the key was the problem"; any other 401 is the access rules
 const KEY_ERRORS = new Set(['api_key_invalid', 'api_key_missing']);

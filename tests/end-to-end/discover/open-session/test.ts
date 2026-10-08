@@ -5,7 +5,6 @@ import { facetResultPath, facetsResponse, searchResultPath, searchResults } from
 test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
 
 const SESSION_PATH = '*/**/psama/open/session';
-const API_KEY_HEADER = 'x-picsure-api-key';
 
 function b64url(value: object): string {
   return Buffer.from(JSON.stringify(value)).toString('base64url');
@@ -16,15 +15,19 @@ function session(sub: string, expiresInSeconds: number): string {
   return `picsure_s_${b64url({ alg: 'HS256' })}.${b64url({ sub, exp })}.sig-${sub}-${exp}`;
 }
 
+function bearer(headers: Record<string, string>): string | undefined {
+  return headers['authorization']?.replace(/^Bearer /, '');
+}
+
 const SUB_1 = '11111111-1111-4111-8111-111111111111';
 const SUB_2 = '22222222-2222-4222-8222-222222222222';
 
-// the dictionary requests the discover page makes through api.ts, with the API key each carried
+// the dictionary requests the discover page makes through api.ts, with the API key each carried as its bearer
 function recordDataRequests(page: Page): { url: string; apiKey?: string }[] {
   const seen: { url: string; apiKey?: string }[] = [];
   page.on('request', (request) => {
     if (new URL(request.url()).pathname.startsWith('/picsure/dictionary/')) {
-      seen.push({ url: request.url(), apiKey: request.headers()[API_KEY_HEADER] });
+      seen.push({ url: request.url(), apiKey: bearer(request.headers()) });
     }
   });
   return seen;
@@ -92,7 +95,7 @@ test.describe('Open-access session for anonymous discover', () => {
     const issued = await mockIssuance(page, [rejected, replacement]);
     const requests = recordDataRequests(page);
     await page.route(searchResultPath, (route) =>
-      route.request().headers()[API_KEY_HEADER] === rejected
+      bearer(route.request().headers()) === rejected
         ? route.fulfill({
             status: 401,
             json: {

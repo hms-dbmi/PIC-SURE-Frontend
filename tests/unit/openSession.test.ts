@@ -66,8 +66,8 @@ describe('open-access sessions through api.ts', () => {
   let fetchMock: ReturnType<typeof vi.fn>;
   let api: typeof import('$lib/api');
 
-  function apiKeyOf(init: RequestInit): string | undefined {
-    return (init.headers as Record<string, string>)['X-PICSURE-API-Key'];
+  function bearerOf(init: RequestInit): string | undefined {
+    return (init.headers as Record<string, string>)['Authorization']?.replace(/^Bearer /, '');
   }
 
   function dataCalls(): RequestInit[] {
@@ -109,7 +109,7 @@ describe('open-access sessions through api.ts', () => {
     await api.get('picsure/query/sync');
 
     expect(issuanceCalls()).toHaveLength(1);
-    expect(apiKeyOf(dataCalls()[0])).toBe(T1);
+    expect(bearerOf(dataCalls()[0])).toBe(T1);
     expect(localStorage.getItem(STORAGE_KEY)).toBe(T1);
   });
 
@@ -117,7 +117,7 @@ describe('open-access sessions through api.ts', () => {
     await Promise.all(Array.from({ length: 10 }, () => api.get('picsure/query/sync')));
 
     expect(issuanceCalls()).toHaveLength(1);
-    expect(dataCalls().map(apiKeyOf)).toEqual(Array(10).fill(T1));
+    expect(dataCalls().map(bearerOf)).toEqual(Array(10).fill(T1));
   });
   it('reuses a live stored session without acquiring', async () => {
     localStorage.setItem(STORAGE_KEY, T2);
@@ -125,7 +125,7 @@ describe('open-access sessions through api.ts', () => {
     await api.get('picsure/query/sync');
 
     expect(issuanceCalls()).toHaveLength(0);
-    expect(apiKeyOf(dataCalls()[0])).toBe(T2);
+    expect(bearerOf(dataCalls()[0])).toBe(T2);
   });
 
   it('renews an expired stored session before sending, with no 401 round trip', async () => {
@@ -138,7 +138,7 @@ describe('open-access sessions through api.ts', () => {
 
     expect(issuanceCalls()).toHaveLength(1);
     expect(dataCalls()).toHaveLength(1);
-    expect(apiKeyOf(dataCalls()[0])).toBe(T1);
+    expect(bearerOf(dataCalls()[0])).toBe(T1);
   });
 
   it('stores a refresh for the same session and sends it next', async () => {
@@ -151,7 +151,7 @@ describe('open-access sessions through api.ts', () => {
     await api.get('picsure/query/sync');
 
     expect(localStorage.getItem(STORAGE_KEY)).toBe(refreshed);
-    expect(apiKeyOf(dataCalls()[1])).toBe(refreshed);
+    expect(bearerOf(dataCalls()[1])).toBe(refreshed);
   });
 
   it('drops a refresh for a different session', async () => {
@@ -195,11 +195,11 @@ describe('open-access sessions through api.ts', () => {
   it('replaces a rejected session and retries once, without logging out', async () => {
     localStorage.setItem(STORAGE_KEY, T1);
     issued = [T2];
-    data = (_url, init) => (apiKeyOf(init) === T1 ? keyInvalid() : json(200, { ok: true }));
+    data = (_url, init) => (bearerOf(init) === T1 ? keyInvalid() : json(200, { ok: true }));
 
     await expect(api.get('picsure/query/sync')).resolves.toEqual({ ok: true });
 
-    expect(dataCalls().map(apiKeyOf)).toEqual([T1, T2]);
+    expect(dataCalls().map(bearerOf)).toEqual([T1, T2]);
     expect(localStorage.getItem(STORAGE_KEY)).toBe(T2);
     expect(mockLogout).not.toHaveBeenCalled();
   });
@@ -210,7 +210,7 @@ describe('open-access sessions through api.ts', () => {
     let failA: () => void = () => {};
     let failB: () => void = () => {};
     data = (url, init) => {
-      if (apiKeyOf(init) !== T1) return json(200, { ok: true });
+      if (bearerOf(init) !== T1) return json(200, { ok: true });
       return new Promise<Response>((resolve) => {
         if (url.includes('/a')) failA = () => resolve(keyInvalid());
         else failB = () => resolve(keyInvalid());
@@ -227,7 +227,7 @@ describe('open-access sessions through api.ts', () => {
 
     expect(issuanceCalls()).toHaveLength(1);
     expect(localStorage.getItem(STORAGE_KEY)).toBe(T2);
-    expect(dataCalls().map(apiKeyOf)).toEqual([T1, T1, T2, T2]);
+    expect(dataCalls().map(bearerOf)).toEqual([T1, T1, T2, T2]);
   });
 
   it('joins the in-flight acquisition when a stale 401 arrives during it', async () => {
@@ -239,7 +239,7 @@ describe('open-access sessions through api.ts', () => {
       });
     let failB: () => void = () => {};
     data = (url, init) => {
-      if (apiKeyOf(init) !== T1) return json(200, { ok: true });
+      if (bearerOf(init) !== T1) return json(200, { ok: true });
       if (url.includes('/a')) return keyInvalid();
       return new Promise<Response>((resolve) => {
         failB = () => resolve(keyInvalid());
@@ -263,13 +263,13 @@ describe('open-access sessions through api.ts', () => {
     localStorage.setItem(STORAGE_KEY, T1);
     const T3 = session('33333333-3333-4333-8333-333333333333', nowSeconds + 900);
     issued = [T2, T3];
-    data = (_url, init) => (apiKeyOf(init) === T3 ? json(200, { ok: true }) : keyInvalid());
+    data = (_url, init) => (bearerOf(init) === T3 ? json(200, { ok: true }) : keyInvalid());
 
     await expect(api.get('picsure/query/sync')).rejects.toThrow('401');
     expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
     await expect(api.get('picsure/query/sync')).resolves.toEqual({ ok: true });
 
-    expect(dataCalls().map(apiKeyOf)).toEqual([T1, T2, T3]);
+    expect(dataCalls().map(bearerOf)).toEqual([T1, T2, T3]);
   });
 
   it('keeps using a fresh session when the browser clock runs fast', async () => {
@@ -292,7 +292,7 @@ describe('open-access sessions through api.ts', () => {
 
     await expect(api.get('picsure/query/sync')).resolves.toEqual({ ok: true });
 
-    expect(apiKeyOf(dataCalls()[0])).toBe(T1);
+    expect(bearerOf(dataCalls()[0])).toBe(T1);
   });
 
   it('posts no body, marks issuance as anonymous traffic, and refuses redirects', async () => {
@@ -312,7 +312,7 @@ describe('open-access sessions through api.ts', () => {
     await api.get('picsure/query/sync');
 
     expect(issuanceCalls()).toHaveLength(1);
-    expect(dataCalls().map(apiKeyOf)).toEqual([undefined, undefined]);
+    expect(dataCalls().map(bearerOf)).toEqual([undefined, undefined]);
   });
 
   it('treats an issuance error as retryable, not as sessions disabled', async () => {
@@ -324,7 +324,7 @@ describe('open-access sessions through api.ts', () => {
     await api.get('picsure/query/sync');
 
     expect(issuanceCalls()).toHaveLength(2);
-    expect(dataCalls().map(apiKeyOf)).toEqual([undefined, T1]);
+    expect(dataCalls().map(bearerOf)).toEqual([undefined, T1]);
   });
 
   it('ignores an issuance response without a session token', async () => {
@@ -333,16 +333,16 @@ describe('open-access sessions through api.ts', () => {
     await api.get('picsure/query/sync');
 
     expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
-    expect(apiKeyOf(dataCalls()[0])).toBeUndefined();
+    expect(bearerOf(dataCalls()[0])).toBeUndefined();
   });
 
-  it('leaves the stored session alone for bearer requests', async () => {
+  it('leaves the stored session alone for logged-in requests', async () => {
     localStorage.setItem('token', 'user-bearer-token');
     localStorage.setItem(STORAGE_KEY, T1);
 
     await api.get('picsure/query/sync');
 
-    expect(apiKeyOf(dataCalls()[0])).toBeUndefined();
+    expect(bearerOf(dataCalls()[0])).toBe('user-bearer-token');
     expect(issuanceCalls()).toHaveLength(0);
     expect(localStorage.getItem(STORAGE_KEY)).toBe(T1);
   });

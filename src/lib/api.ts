@@ -6,7 +6,6 @@ import { config } from '$lib/configuration.svelte';
 import { isWafCaptchaResponse, handleWafCaptcha } from '$lib/wafCaptcha';
 import { joinUrl } from '$lib/paths';
 import {
-  API_KEY_HEADER,
   acceptSessionRefresh,
   forgetOpenSession,
   isSessionKeyError,
@@ -67,8 +66,8 @@ async function send({
   }
 
   // a token-less data request: no stored token, or authenticate:false (a logged-in user querying
-  // the open variant). It carries this browser's open-access session, never a bearer. Non-picsure
-  // paths (e.g. psama key generation) get no session
+  // the open variant). Its bearer is this browser's open-access session instead of a login token.
+  // Non-picsure paths (e.g. psama key generation) get no session
   let openRequest = false;
   let sessionToken: string | null = null;
   if (browser) {
@@ -82,7 +81,7 @@ async function send({
         openRequest = true;
         sessionToken = await unlessAborted(openSessionToken(), options?.signal);
         if (sessionToken) {
-          opts.headers[API_KEY_HEADER] = sessionToken;
+          opts.headers['Authorization'] = `${BEARER}${sessionToken}`;
           // fetch would re-send the key to wherever a redirect points; data paths never redirect
           opts.redirect = 'error';
         }
@@ -107,7 +106,7 @@ async function send({
       if (retryToken) {
         res = await fetch(url, {
           ...opts,
-          headers: { ...opts.headers, [API_KEY_HEADER]: retryToken },
+          headers: { ...opts.headers, Authorization: `${BEARER}${retryToken}` },
           redirect: 'error',
         });
         acceptSessionRefresh(res);

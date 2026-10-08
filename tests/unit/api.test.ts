@@ -55,7 +55,6 @@ const mockAcceptSessionRefresh = vi.fn();
 const mockForgetOpenSession = vi.fn();
 const mockRecoverOpenSession = vi.fn<(sent: string) => Promise<string | null>>(async () => null);
 vi.mock('$lib/openSession', () => ({
-  API_KEY_HEADER: 'X-PICSURE-API-Key',
   openSessionToken: () => mockOpenSessionToken(),
   acceptSessionRefresh: (...args: unknown[]) => mockAcceptSessionRefresh(...args),
   forgetOpenSession: (...args: unknown[]) => mockForgetOpenSession(...args),
@@ -207,7 +206,7 @@ describe('api', () => {
   });
 
   describe('authenticate=false', () => {
-    it('does not send Authorization header even when token exists', async () => {
+    it('does not send the login token even when one exists', async () => {
       (localStorage.getItem as Mock).mockReturnValue('my-token');
       await get('picsure/test', undefined, false);
 
@@ -535,7 +534,7 @@ describe('api', () => {
         body: JSON.stringify({ errorType, message: 'x', requestId: null }),
       });
 
-    it('sends token-less picsure requests directly, with the session as the API key', async () => {
+    it('sends token-less picsure requests directly, with the session as the bearer', async () => {
       mockOpenSessionToken.mockResolvedValue(SESSION);
       await get('picsure/query/sync');
 
@@ -543,22 +542,21 @@ describe('api', () => {
         'https://example.com/picsure/query/sync',
         expect.any(Object),
       );
-      expect(fetchMock.mock.calls[0][1].headers['X-PICSURE-API-Key']).toBe(SESSION);
+      expect(fetchMock.mock.calls[0][1].headers['Authorization']).toBe(`Bearer ${SESSION}`);
     });
 
     it('sends a token-less request keyless when there is no session', async () => {
       await get('picsure/query/sync');
 
-      expect(fetchMock.mock.calls[0][1].headers['X-PICSURE-API-Key']).toBeUndefined();
+      expect(fetchMock.mock.calls[0][1].headers['Authorization']).toBeUndefined();
     });
 
-    it('never sends the session with a bearer token', async () => {
+    it('sends the login token instead of the session when there is one', async () => {
       (localStorage.getItem as Mock).mockReturnValue('my-token');
       mockOpenSessionToken.mockResolvedValue(SESSION);
       await get('picsure/query/sync');
 
       expect(mockOpenSessionToken).not.toHaveBeenCalled();
-      expect(fetchMock.mock.calls[0][1].headers['X-PICSURE-API-Key']).toBeUndefined();
       expect(fetchMock.mock.calls[0][1].headers['Authorization']).toBe('Bearer my-token');
     });
 
@@ -568,9 +566,8 @@ describe('api', () => {
       await post('picsure/query/sync', {}, undefined, false);
 
       const headers = fetchMock.mock.calls[0][1].headers;
-      expect(headers['Authorization']).toBeUndefined();
+      expect(headers['Authorization']).toBe(`Bearer ${SESSION}`);
       expect(headers['request-source']).toBe('Open');
-      expect(headers['X-PICSURE-API-Key']).toBe(SESSION);
     });
 
     it('gives non-picsure paths no session', async () => {
@@ -602,8 +599,8 @@ describe('api', () => {
 
       expect(mockRecoverOpenSession).toHaveBeenCalledWith(SESSION);
       expect(fetchMock).toHaveBeenCalledTimes(2);
-      expect(fetchMock.mock.calls[1][1].headers['X-PICSURE-API-Key']).toBe(
-        'picsure_s_new.payload.signature',
+      expect(fetchMock.mock.calls[1][1].headers['Authorization']).toBe(
+        'Bearer picsure_s_new.payload.signature',
       );
       expect(mockLogout).not.toHaveBeenCalled();
     });
