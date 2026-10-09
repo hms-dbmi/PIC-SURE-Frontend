@@ -1,20 +1,7 @@
 import { expect } from '@playwright/test';
 import { test, mockApiConfig } from '../../custom-context';
 import { userIsLoggedIn } from '../../utils';
-
-const banner = {
-  uuid: '11111111-1111-1111-1111-111111111111',
-  htmlContent: '<p>Scheduled maintenance</p>',
-  title: 'Maintenance',
-  appearance: 'WARNING',
-  icon: 'WARNING',
-  dismissible: true,
-  audience: 'EVERYONE',
-  placement: 'SITE_TOP',
-  pageTargets: [{ kind: 'ALL' }],
-  priority: 10,
-  presentationHash: 'abc123',
-};
+import { mockBanner as banner } from '../../mock-data';
 
 test.describe('Visitors receive banners across navigation', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
@@ -34,7 +21,7 @@ test.describe('Visitors receive banners across navigation', () => {
 
     const bannerRegion = page.getByTestId('site-banner-region');
     await expect(bannerRegion).toBeVisible();
-    await expect(page.getByRole('article', { name: 'Maintenance' })).toContainText(
+    await expect(page.getByRole('region', { name: 'Maintenance' })).toContainText(
       'Scheduled maintenance',
     );
     await expect
@@ -83,9 +70,9 @@ test.describe('Signed-out visitors can read banners and reach login', () => {
     await page.goto('/');
 
     await expect(page).toHaveURL('/login');
-    await expect(page.getByRole('article', { name: 'Maintenance' })).toBeVisible();
-    await expect(page.getByRole('article', { name: 'Signed-out notice' })).toBeVisible();
-    await expect(page.getByRole('article', { name: 'Signed-in notice' })).toHaveCount(0);
+    await expect(page.getByRole('region', { name: 'Maintenance' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Signed-out notice' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Signed-in notice' })).toHaveCount(0);
     await expect(page.getByTestId('site-banner-region')).toHaveCount(1);
     await expect
       .poll(() =>
@@ -103,9 +90,9 @@ test.describe('Signed-out visitors can read banners and reach login', () => {
 
     await page.goto('/login/error');
 
-    await expect(page.getByRole('article', { name: 'Maintenance' })).toBeVisible();
-    await expect(page.getByRole('article', { name: 'Signed-out notice' })).toBeVisible();
-    await expect(page.getByRole('article', { name: 'Signed-in notice' })).toHaveCount(0);
+    await expect(page.getByRole('region', { name: 'Maintenance' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Signed-out notice' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Signed-in notice' })).toHaveCount(0);
     await expect(page.getByTestId('site-banner-region')).toHaveCount(1);
   });
 
@@ -277,23 +264,23 @@ test.describe('Admins review and target published banners', () => {
     });
 
     await page.goto('/');
-    await expect(page.getByRole('article', { name: 'Release notice' })).toHaveCount(0);
-    await expect(page.getByRole('article', { name: 'For everyone' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Release notice' })).toHaveCount(0);
+    await expect(page.getByRole('region', { name: 'For everyone' })).toBeVisible();
 
     await page.locator('#nav-link-help').click();
     await expect(page).toHaveURL('/help');
-    await expect(page.getByRole('article', { name: 'Release notice' })).toContainText(
+    await expect(page.getByRole('region', { name: 'Release notice' })).toContainText(
       'Saved query limits are changing',
     );
-    await expect(page.getByRole('article', { name: 'For everyone' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'For everyone' })).toBeVisible();
 
     // A signed-out visitor who never enters the authorized shell. The tab-scoped `user` blob
     // deliberately stays behind: only the session token decides audience.
     await page.evaluate(() => localStorage.removeItem('token'));
     await page.goto('/help');
 
-    await expect(page.getByRole('article', { name: 'For everyone' })).toBeVisible();
-    await expect(page.getByRole('article', { name: 'Release notice' })).toHaveCount(0);
+    await expect(page.getByRole('region', { name: 'For everyone' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Release notice' })).toHaveCount(0);
     // The signed-out browser was still served the signed-in record over an uncredentialed
     // read: audience is presentation, not authorization.
     expect(servedAudiences.at(-1)).toContain('SIGNED_IN');
@@ -301,8 +288,8 @@ test.describe('Admins review and target published banners', () => {
 
     await page.goto('/');
     await expect(page).toHaveURL('/');
-    await expect(page.getByRole('article', { name: 'For everyone' })).toBeVisible();
-    await expect(page.getByRole('article', { name: 'Release notice' })).toHaveCount(0);
+    await expect(page.getByRole('region', { name: 'For everyone' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Release notice' })).toHaveCount(0);
   });
 });
 
@@ -375,7 +362,7 @@ test.describe('Visitors dismiss a banner until its content changes', () => {
     });
 
     await page.goto('/');
-    const notice = page.getByRole('article', { name: 'Dismissible maintenance' });
+    const notice = page.getByRole('region', { name: 'Dismissible maintenance' });
     await expect(notice).toBeVisible();
     const dismiss = notice.getByRole('button', { name: 'Dismiss Dismissible maintenance' });
     await expect(dismiss).toHaveAttribute('title', 'Dismiss Dismissible maintenance');
@@ -391,12 +378,12 @@ test.describe('Visitors dismiss a banner until its content changes', () => {
     await page.locator('#nav-link-help').click();
     await expect(page).toHaveURL('/help');
     await expect.poll(() => feedRequests).toBeGreaterThanOrEqual(2);
-    await expect(page.getByRole('article', { name: 'Dismissible maintenance' })).toHaveCount(0);
+    await expect(page.getByRole('region', { name: 'Dismissible maintenance' })).toHaveCount(0);
 
     const requestsBeforeReload = feedRequests;
     await page.reload();
     await expect.poll(() => feedRequests).toBeGreaterThan(requestsBeforeReload);
-    await expect(page.getByRole('article', { name: 'Dismissible maintenance' })).toHaveCount(0);
+    await expect(page.getByRole('region', { name: 'Dismissible maintenance' })).toHaveCount(0);
 
     await page.goto('/admin/configuration');
     await page.getByRole('tab', { name: 'Site banners' }).click();
@@ -412,7 +399,7 @@ test.describe('Visitors dismiss a banner until its content changes', () => {
 
     await page.goto('/');
     await expect(
-      page.getByRole('article', { name: 'Updated dismissible maintenance' }),
+      page.getByRole('region', { name: 'Updated dismissible maintenance' }),
     ).toContainText('Updated maintenance notice');
     expect(await page.evaluate(() => sessionStorage.getItem('site-banner-dismissals-v1'))).toBe(
       `{"${dismissalBanner.uuid}":"${dismissalBanner.presentationHash}"}`,
@@ -518,7 +505,7 @@ test.describe('Admins create, edit, and publish banners', () => {
       '  Second  paragraph',
     );
     const previewContent = page
-      .getByRole('article', { name: 'Site announcement' })
+      .getByRole('region', { name: 'Site announcement' })
       .locator('.site-banner-content');
     await expect(previewContent.locator('p')).toHaveCount(2);
     expect(await previewContent.locator('p').nth(1).textContent()).toBe('  Second  paragraph');
@@ -554,7 +541,7 @@ test.describe('Admins create, edit, and publish banners', () => {
     ).toBe(true);
     await expect(editor.locator('li').nth(1)).toHaveText('Second item');
     const previewList = page
-      .getByRole('article', { name: 'Site announcement' })
+      .getByRole('region', { name: 'Site announcement' })
       .locator('.site-banner-content ul');
     await expect(previewList.locator('li')).toHaveCount(2);
     await expect(previewList.locator('li').nth(0)).toHaveText('First item');
@@ -709,7 +696,7 @@ test.describe('Admins create, edit, and publish banners', () => {
     await page.getByRole('textbox', { name: 'Title' }).fill('Planned maintenance');
     await page.getByRole('combobox', { name: 'Icon' }).selectOption('WARNING');
 
-    const preview = page.getByRole('article', { name: 'Planned maintenance' });
+    const preview = page.getByRole('region', { name: 'Planned maintenance' });
     await expect(preview).toHaveClass(/preset-tonal-warning/);
     await expect(
       preview.getByRole('link', { name: 'System maintenance status page' }),
@@ -762,7 +749,7 @@ test.describe('Admins create, edit, and publish banners', () => {
     expect(publicationRequests).toBe(1);
 
     await page.goto('/');
-    await expect(page.getByRole('article', { name: 'Corrected maintenance notice' })).toContainText(
+    await expect(page.getByRole('region', { name: 'Corrected maintenance notice' })).toContainText(
       'Corrected visitor notice',
     );
     expect(submitted).toMatchObject({
@@ -806,9 +793,7 @@ test.describe('Admins create, edit, and publish banners', () => {
     await page.goto('/');
     await userIsLoggedIn(page);
     await expect(page.getByTestId('site-banner-region')).toHaveCount(0);
-    await expect(page.getByRole('article', { name: 'Corrected maintenance notice' })).toHaveCount(
-      0,
-    );
+    await expect(page.getByRole('region', { name: 'Corrected maintenance notice' })).toHaveCount(0);
 
     await page.goto('/admin/configuration');
     await page.getByRole('tab', { name: 'Site banners' }).click();
@@ -835,9 +820,7 @@ test.describe('Admins create, edit, and publish banners', () => {
     await page.goto('/');
     await userIsLoggedIn(page);
     await expect(page.getByTestId('site-banner-region')).toHaveCount(0);
-    await expect(page.getByRole('article', { name: 'Corrected maintenance notice' })).toHaveCount(
-      0,
-    );
+    await expect(page.getByRole('region', { name: 'Corrected maintenance notice' })).toHaveCount(0);
   });
 
   test('keeps editor state and shows a stable error when publication fails', async ({ page }) => {
@@ -1236,18 +1219,14 @@ test.describe('Admins reorder banners to control display priority', () => {
     await page.goto('/help');
     await expect(page.getByTestId('site-banner')).toHaveCount(4);
     await expect
-      .poll(() =>
-        page
-          .getByTestId('site-banner')
-          .evaluateAll((elements) => elements.map((element) => element.getAttribute('aria-label'))),
-      )
+      .poll(() => page.getByTestId('site-banner').getByRole('heading').allTextContents())
       .toEqual(['Third notice', 'Second notice', 'First notice', 'Concurrent arrival']);
   });
 });
 
 test.describe('Visitors dismiss announcements with the keyboard', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
-  test('announces new notices and retains focus after each dismissal', async ({ page }) => {
+  test('reads notices in page order and retains focus after each dismissal', async ({ page }) => {
     await mockApiConfig(page, { features: [{ name: 'OPEN', value: 'true' }] });
     await page.route('**/picsure/operations/banners/active', (route) =>
       route.fulfill({
@@ -1263,17 +1242,13 @@ test.describe('Visitors dismiss announcements with the keyboard', () => {
       }),
     );
     await page.goto('/help');
-    await expect(
-      page.getByRole('status').filter({ hasText: '2 new or updated site announcements.' }),
-    ).toBeAttached();
-    const first = page.getByRole('button', {
-      name: 'Dismiss Site announcement 1: Maintenance tonight',
-    });
+    await expect(page.getByRole('region', { name: 'Site announcement 2' })).toContainText(
+      'Maintenance tonight',
+    );
+    const first = page.getByRole('button', { name: 'Dismiss Site announcement 1' });
     await first.focus();
     await first.press('Enter');
-    const remaining = page.getByRole('button', {
-      name: 'Dismiss Site announcement 2: Maintenance tonight',
-    });
+    const remaining = page.getByRole('button', { name: 'Dismiss Site announcement 2' });
     await expect(remaining).toBeFocused();
     await remaining.press('Enter');
     await expect(page.getByText('End of site announcements.', { exact: true })).toBeFocused();

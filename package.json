@@ -37,7 +37,7 @@
     "@skeletonlabs/floating-ui-svelte": "^0.3.9",
     "@skeletonlabs/skeleton": "^3.2.0",
     "@skeletonlabs/skeleton-svelte": "^1.5.1",
-    "@vincjo/datatables": "^2.8.0",
+    "@vincjo/datatables": "^2.8.1",
     "auth0-js": "^10.2.0",
     "driver.js": "^1.4.0",
     "gtagjs": "^0.0.10",
@@ -46,7 +46,7 @@
     "sanitize-html": "^2.17.7",
     "shiki": "^4.4.3",
     "swagger-ui-dist": "^5.33.0",
-    "uuid": "^14.0.0"
+    "uuid": "^14.0.2"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -64,10 +64,10 @@
     "@types/plotly.js-basic-dist-min": "^2.12.4",
     "@types/quill": "^2.0.14",
     "@types/sanitize-html": "^2.16.1",
-    "@typescript-eslint/eslint-plugin": "^8.59.3",
-    "@typescript-eslint/parser": "^8.59.3",
+    "@typescript-eslint/eslint-plugin": "^8.70.1",
+    "@typescript-eslint/parser": "^8.70.1",
     "dotenv": "^17.4.2",
-    "eslint": "^10.3.0",
+    "eslint": "^10.11.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-svelte": "^3.17.1",
     "globals": "^17.11.0",

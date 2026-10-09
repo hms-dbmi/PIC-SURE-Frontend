@@ -34,7 +34,6 @@ export type Features = Indexable & {
   login: {
     open: boolean;
   };
-  manualRole: boolean;
   restoreV2queries: boolean;
   termsOfService: boolean;
   wafCaptchaRecovery: boolean;
@@ -476,14 +475,6 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
         'Makes Data Dashboard rows clickable, opening a drawer with more detail about the selected row.',
     },
 
-    // --- Collaboration ---
-    MANUAL_ROLE: {
-      group: 'Collaboration',
-      type: 'boolean',
-      default: false,
-      description: "Enables the 'Manual Role' admin page and its navigation item (BDC-specific).",
-    },
-
     // --- Navigation ---
     CONFIRM_EXTERNAL_NAVIGATION: {
       group: 'Navigation',
@@ -739,7 +730,6 @@ export function mapFeatures(apiFeatures: ConfigObject[]): Features {
     login: {
       open: parse('OPEN'),
     },
-    manualRole: parse('MANUAL_ROLE'),
     restoreV2queries: parse('RESTORE_V2_QUERY'),
     termsOfService: parse('ENABLE_TOS'),
     useQueryTemplate: parse('USE_QUERY_TEMPLATE'),

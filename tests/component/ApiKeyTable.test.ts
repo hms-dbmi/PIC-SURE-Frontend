@@ -106,9 +106,9 @@ describe('ApiKeyTable', () => {
     mockPage([activeKey, revokedKey, expiredKey]);
     render(ApiKeyTable, { props: { keyType: 'USER', tableName: 'UserApiKeys' } });
 
-    expect(await screen.findByText('picsure_abc12345…')).toBeInTheDocument();
-    expect(screen.getByText('picsure_def67890…')).toBeInTheDocument();
-    expect(screen.getByText('picsure_ghi13579…')).toBeInTheDocument();
+    expect(await screen.findByText('picsure_u_abc12345…')).toBeInTheDocument();
+    expect(screen.getByText('picsure_p_def67890…')).toBeInTheDocument();
+    expect(screen.getByText('picsure_u_ghi13579…')).toBeInTheDocument();
 
     expect(screen.getByText('Active')).toBeInTheDocument();
     expect(screen.getByText('Revoked')).toBeInTheDocument();
@@ -122,7 +122,7 @@ describe('ApiKeyTable', () => {
     mockPage([activeKey]);
     render(ApiKeyTable, { props: { keyType: 'PLATFORM', tableName: 'PlatformApiKeys' } });
 
-    await screen.findByText('picsure_abc12345…');
+    await screen.findByText('picsure_u_abc12345…');
     expect(storeMocks.loadApiKeys).toHaveBeenCalledWith(0, expect.any(Number), 'PLATFORM');
   });
 
@@ -130,7 +130,7 @@ describe('ApiKeyTable', () => {
     mockPage([activeKey, revokedKey, expiredKey]);
     render(ApiKeyTable, { props: { keyType: 'USER', tableName: 'UserApiKeys' } });
 
-    await screen.findByText('picsure_abc12345…');
+    await screen.findByText('picsure_u_abc12345…');
     expect(screen.getByTestId('api-key-uuid-active-revoke-btn')).toBeInTheDocument();
     expect(screen.queryByTestId('api-key-uuid-revoked-revoke-btn')).not.toBeInTheDocument();
     expect(screen.queryByTestId('api-key-uuid-expired-revoke-btn')).not.toBeInTheDocument();

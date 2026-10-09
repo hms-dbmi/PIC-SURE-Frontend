@@ -349,10 +349,6 @@ on('POST', path(`${Psama.TOS}/update`), ({ body, res }) => {
   text(res, typeof body === 'string' ? body : '', 200, 'text/html');
 });
 
-on('POST', path(Psama.StudyAccess), ({ res }) => {
-  json(res, { status: 200 });
-});
-
 /* ---------------------------------------------------------------------------------------
  * Admin: roles, privileges, connections, users, applications
  * ------------------------------------------------------------------------------------- */
