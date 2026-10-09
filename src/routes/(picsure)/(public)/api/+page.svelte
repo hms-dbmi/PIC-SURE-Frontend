@@ -24,8 +24,8 @@
 
   function apiExample(code: string | undefined) {
     return (code || 'Code not set')
-      .replace(PROJECT_HOSTNAME, `${page.url.origin}/picsure`)
-      .replace(PROJECT_HOSTNAME.replace(/\/picsure$/, ''), page.url.origin);
+      .replaceAll(PROJECT_HOSTNAME, `${page.url.origin}/picsure`)
+      .replaceAll(PROJECT_HOSTNAME.replace(/\/picsure$/, ''), page.url.origin);
   }
   type ApiLanguage = 'python' | 'r';
 

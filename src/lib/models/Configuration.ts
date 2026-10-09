@@ -877,7 +877,9 @@ export function mapBranding(hostname: string, apiBranding: ConfigObject[] = []):
   // The Python client takes the deployment root and adds /picsure and /psama itself.
   const origin = hostname.replace(/\/picsure\/?$/, '');
   const replaceHostname = (codeBlock: string) =>
-    codeBlock.replace('{{PICSURE_NETWORK_URL}}', hostname).replace('{{PICSURE_ORIGIN}}', origin);
+    codeBlock
+      .replaceAll('{{PICSURE_NETWORK_URL}}', hostname)
+      .replaceAll('{{PICSURE_ORIGIN}}', origin);
   Object.keys(codeBlocks).forEach((key: string) => {
     if (typeof codeBlocks[key] === 'string') {
       codeBlocks[key] = replaceHostname(codeBlocks[key]);
