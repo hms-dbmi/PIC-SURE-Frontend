@@ -366,7 +366,7 @@ test.describe('Admin on API Keys tab', () => {
     await page.goto(API_KEYS_TAB);
 
     // Then
-    await expect(page.getByTestId('UserApiKeys-table')).toContainText('picsure_abc12345…');
+    await expect(page.getByTestId('UserApiKeys-table')).toContainText('picsure_u_abc12345…');
     await expect(page).toHaveURL(/\/admin\/configuration\?tab=api-keys$/);
   });
 
