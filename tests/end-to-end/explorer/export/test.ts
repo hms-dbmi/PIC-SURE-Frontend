@@ -320,6 +320,11 @@ test.describe('Export Page', () => {
     await expect(tabGroup).toBeVisible();
     await expect(codeBlock).toBeVisible();
     await expect(codeBlock).toContainText('python');
+    await expect(codeBlock).toContainText('%pip install picsure');
+    await expect(codeBlock).toContainText(`session.runQueryByID(queryID, type="participant")`);
+    await expect(codeBlock).toContainText(`queryID = "${newDatasetResponse.picsureResultId}"`);
+    await expect(codeBlock).not.toContainText('github.com');
+    await expect(codeBlock).toContainText(`platform="${new URL(page.url()).origin}"`);
     const tab = tabGroup.getByTestId('tabs-control').nth(2);
     await expect(tab).toBeVisible();
     await expect(tab).toHaveText('Download');
