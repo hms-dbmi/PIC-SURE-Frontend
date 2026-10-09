@@ -49,8 +49,7 @@ test.describe('API page', () => {
       ],
     });
     await mockApiSuccess(context, '*/**/psama/role', mockRoles);
-    const user = picsureUser;
-    user.token = mockExpiredToken;
+    const user = { ...picsureUser, token: mockExpiredToken };
     await mockApiSuccess(context, '*/**/psama/user/me?hasToken', user);
   });
 
@@ -451,7 +450,7 @@ test.describe('API page', () => {
 
     // Then
     await expect(userToken).toBeVisible();
-    expect(await userToken.innerText()).toBe(picsureUser.token);
+    expect(await userToken.innerText()).toBe(mockExpiredToken);
   });
   test('Reveal button text changes when clicked', async ({ page }) => {
     // Given
@@ -476,7 +475,7 @@ test.describe('API page', () => {
     await refreshButton.click();
 
     // Then
-    expect(await userToken.innerText()).not.toBe(picsureUser.token);
+    expect(await userToken.innerText()).not.toBe(mockExpiredToken);
   });
   test('Refresh button changes expiration, updates button text, disables button', async ({
     page,
@@ -588,8 +587,7 @@ test.describe('API page', () => {
 test.describe('Legacy analyze routes redirect to /api', () => {
   test.beforeEach(async ({ context }) => {
     await mockApiSuccess(context, '*/**/psama/role', mockRoles);
-    const user = picsureUser;
-    user.token = mockExpiredToken;
+    const user = { ...picsureUser, token: mockExpiredToken };
     await mockApiSuccess(context, '*/**/psama/user/me?hasToken', user);
   });
 
