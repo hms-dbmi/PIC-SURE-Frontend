@@ -15,6 +15,8 @@
   import UserToken from '$lib/components/UserToken.svelte';
   import PublicAccessKey from '$lib/components/PublicAccessKey.svelte';
   import CodeBlock from '$lib/components/CodeBlock.svelte';
+  import TocLayout from '$lib/components/toc/TocLayout.svelte';
+  import TocSection from '$lib/components/toc/TocSection.svelte';
 
   let mounted = $state(false);
   let loggedIn = $derived(mounted && $tokenStatus);
@@ -125,18 +127,13 @@
   let openWorkflows: string[] = $state([]);
 
   const tocEntries = [
-    { id: 'api-header', label: 'Overview' },
     { id: 'authentication', label: 'Authentication' },
     { id: 'choose-your-workflow', label: 'Choose Your Workflow' },
     { id: 'api-access', label: 'API Documentation' },
   ];
-  let activeSection: string = $state('api-header');
 
   onMount(() => {
     mounted = true;
-
-    const scroller = document.getElementById('page');
-    if (!scroller) return;
 
     const deepLink = window.location.hash.match(/^#workflow-(python|r|http)$/);
     // The item's panel slides open and the token card in Authentication loads after
@@ -164,31 +161,7 @@
       });
     }
 
-    // The page ends override the 40% threshold: Authentication already crosses it
-    // on load, and the last section may never reach it.
-    const updateActive = () => {
-      if (scroller.scrollTop <= 4) {
-        activeSection = tocEntries[0].id;
-        return;
-      }
-      if (scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 4) {
-        activeSection = tocEntries[tocEntries.length - 1].id;
-        return;
-      }
-      const threshold = scroller.getBoundingClientRect().top + scroller.clientHeight * 0.4;
-      let current = tocEntries[0].id;
-      for (const { id } of tocEntries) {
-        const el = document.getElementById(id);
-        if (el && el.getBoundingClientRect().top <= threshold) current = id;
-      }
-      activeSection = current;
-    };
-    updateActive();
-    scroller.addEventListener('scroll', updateActive, { passive: true });
-    return () => {
-      scroller.removeEventListener('scroll', updateActive);
-      unpin();
-    };
+    return unpin;
   });
 
   async function navigateSection(event: MouseEvent, id: string) {
@@ -211,9 +184,7 @@
     log(createLog('ACTION', 'api.workflow_toggle', { open: value[0] ?? null }));
   }
 
-  function tocClick(event: MouseEvent, id: string) {
-    void navigateSection(event, id);
-    activeSection = id;
+  function tocClick(id: string) {
     log(createLog('NAVIGATION', 'api.toc_click', { section: id }));
   }
 </script>
@@ -222,52 +193,27 @@
   <title>{config.branding.applicationName} | API</title>
 </svelte:head>
 
-<div id="api-page" class="relative w-full pb-6">
-  <div
-    class="absolute inset-y-0 left-0 w-[13%] hidden xl:block bg-surface-50-950 border-r border-surface-200"
-  >
-    <nav aria-label="Table of contents" data-testid="toc" class="sticky top-8 pl-6 pr-2">
-      <span class="text-sm font-bold">On this page</span>
-      <ul class="mt-2 space-y-2 text-sm">
-        {#each tocEntries as entry}
-          <li>
-            <a
-              href="#{entry.id}"
-              class="hover:underline {activeSection === entry.id
-                ? 'font-bold text-primary-500'
-                : ''}"
-              aria-current={activeSection === entry.id ? 'true' : undefined}
-              onclick={(event) => tocClick(event, entry.id)}>{entry.label}</a
-            >
-          </li>
-        {/each}
-      </ul>
-    </nav>
-  </div>
-
-  <section id="api-header" class="w-full">
-    <div class="w-[70%] mx-auto pt-12 pb-10">
-      <h1>Programmatic Access with the PIC-SURE API</h1>
-      <p class="mx-0">
+<div id="api-page" class="w-full pb-6">
+  <TocLayout entries={tocEntries} onselect={tocClick}>
+    {#snippet hero()}
+      <h1 id="api-header">Programmatic Access with the PIC-SURE API</h1>
+      <p class="mx-0 max-w-3xl text-lg">
         Search data and build cohorts directly with Python, R, or any HTTP client. Build
         reproducible cohort-building pipelines.
       </p>
-    </div>
-  </section>
-
-  <section id="authentication" class="w-full bg-primary-50-950">
-    <div class="w-[70%] mx-auto py-12">
+    {/snippet}
+    <TocSection id="authentication">
       <h2>Authentication</h2>
       <p class="mx-0">
         Your personal access token authenticates all programmatic requests to PIC-SURE.
       </p>
       <div class="flex flex-wrap gap-8 mt-4">
         {#if loggedIn}
-          <div class="basis-[55rem] grow-0 min-w-0 max-w-full">
+          <div class="flex-1 basis-96 min-w-0 max-w-full">
             <UserToken />
           </div>
         {:else}
-          <div class="basis-[60%] grow-0 min-w-0 max-w-full">
+          <div class="flex-1 basis-96 min-w-0 max-w-full">
             <PublicAccessKey enabled={config.branding.apiPage?.publicKeyEnabled ?? false} />
           </div>
         {/if}
@@ -301,11 +247,9 @@
           {/if}
         </div>
       </div>
-    </div>
-  </section>
+    </TocSection>
 
-  <section id="choose-your-workflow" class="w-full">
-    <div class="w-[70%] mx-auto py-12">
+    <TocSection id="choose-your-workflow" tinted>
       <h2>Choose Your Workflow</h2>
       <p class="mx-0">Select the access method that fits your project.</p>
       <Accordion
@@ -388,11 +332,9 @@
           </div>
         {/each}
       </Accordion>
-    </div>
-  </section>
+    </TocSection>
 
-  <section id="api-access" class="w-full bg-primary-50-950">
-    <div class="w-[70%] mx-auto py-8">
+    <TocSection id="api-access">
       <h2>API Documentation</h2>
       <p class="mx-0">Browse and use the PIC-SURE API endpoints.</p>
       {#if mounted && !loggedIn}
@@ -414,8 +356,8 @@
         </div>
       {/if}
       <ApiDocumentation />
-    </div>
-  </section>
+    </TocSection>
+  </TocLayout>
 </div>
 
 <style>
