@@ -12,7 +12,7 @@ test.describe('Filter warning navigation', () => {
     });
     await mockApiSuccess(page, searchResultPath, searchResults);
     await mockApiSuccess(page, facetResultPath, facetsResponse);
-    await mockApiSuccess(page, '*/**/picsure/hpds/open/v3/query/sync', {
+    await mockApiSuccess(page, '*/**/picsure/hpds/open/query/sync', {
       '\\_studies_consents\\': 100,
     });
   });
