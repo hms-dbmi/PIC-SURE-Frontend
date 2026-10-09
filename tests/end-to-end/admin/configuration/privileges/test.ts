@@ -249,45 +249,16 @@ test('Delete gives error message on api failure', async ({ page }) => {
 
 test.describe('Admin on Configuration page', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/adminUser.json' });
-  test('Action and add button(s) are disabled when not top admin', async ({ page }) => {
-    // Given
-    await page.goto('/admin/configuration');
-    await userIsLoggedIn(page);
+  for (const path of ['new', `${mockPrivileges[0].uuid}/edit`]) {
+    test(`privilege/${path} redirects to the configuration page when not top admin`, async ({
+      page,
+    }) => {
+      // When
+      await page.goto(`/admin/configuration/privilege/${path}`);
 
-    // Then
-    // Check that all edit buttons are disabled
-    for (const privilege of mockPrivileges) {
-      await expect(page.getByTestId(`privilege-${privilege.uuid}-edit-btn`)).toBeDisabled();
-    }
-
-    // Check that all delete buttons are disabled
-    for (const privilege of mockPrivileges) {
-      await expect(page.getByTestId(`privilege-${privilege.uuid}-delete-btn`)).toBeDisabled();
-    }
-    // Check that add privilege button is disabled
-    await expect(page.getByTestId('add-privilege')).toHaveClass(/opacity-50 pointer-events-none/);
-  });
-  test('Error alert is visible when not top admin', async ({ page }) => {
-    // Given
-    await page.goto('/admin/configuration');
-    await userIsLoggedIn(page);
-
-    // Then
-    await expect(page.getByTestId('top-admin-only-error')).toBeVisible();
-  });
-  test('Can still navigate to edit page but its actions and inputs are disabled', async ({
-    page,
-  }) => {
-    // Given
-    await page.goto('/admin/configuration');
-    await userIsLoggedIn(page);
-
-    // When
-    await page.locator('#privilege-table table tbody tr').first().click();
-    // Then
-    await expect(page.getByTestId('privilege-form')).toBeVisible();
-    await expect(page.getByTestId('privilege-form')).toHaveAttribute('disabled', '');
-    await expect(page.getByTestId('privilege-save-btn')).toBeDisabled();
-    await expect(page.getByTestId('privilege-cancel-btn')).not.toBeDisabled();
-  });
+      // Then
+      await expect(page).toHaveURL(/\/admin\/configuration$/);
+      await expect(page.getByTestId('privilege-form')).toHaveCount(0);
+    });
+  }
 });
