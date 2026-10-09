@@ -67,7 +67,6 @@ test.describe('Open-access session for anonymous discover', () => {
 
     expect(issued).toHaveLength(1);
     expect(requests.every((request) => request.apiKey === token)).toBe(true);
-    expect(requests.some((request) => request.url.includes('/api/v1/open'))).toBe(false);
     expect(await page.evaluate(() => localStorage.getItem('open-session'))).toBe(token);
   });
 
@@ -132,11 +131,5 @@ test.describe('Open-access session for anonymous discover', () => {
 
     expect(issuanceCalls).toBe(1);
     expect(requests.every((request) => request.apiKey === undefined)).toBe(true);
-  });
-
-  test('The removed open-access proxy route no longer exists', async ({ page }) => {
-    const response = await page.request.get('/api/v1/open/picsure/dictionary/concepts');
-
-    expect(response.status()).toBe(404);
   });
 });

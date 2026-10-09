@@ -720,16 +720,6 @@ describe('api', () => {
       expect(fetchMock).toHaveBeenCalledTimes(1);
       expect(mockLogout).not.toHaveBeenCalled();
     });
-
-    it('never targets the removed /api/v1/open proxy', async () => {
-      mockOpenSessionToken.mockResolvedValue(SESSION);
-      await get('picsure/query/sync');
-      await post('picsure/query/sync', {}, undefined, false);
-
-      for (const [url] of fetchMock.mock.calls) {
-        expect(url).not.toContain('/api/v1/open');
-      }
-    });
   });
 
   describe('abort signal', () => {

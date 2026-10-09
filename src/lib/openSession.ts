@@ -3,8 +3,8 @@ import { log, createLog, getSessionId } from '$lib/logger';
 
 /**
  * Open-access sessions: a short-lived PSAMA-signed token each anonymous browser gets for itself and
- * sends as its bearer token, so anonymous traffic never carries the deployment's PLATFORM key. The token
- * lives in localStorage and is read fresh on every call, so a refresh in one tab reaches the others.
+ * sends as its bearer token. The token lives in localStorage and is read fresh on every call, so a
+ * refresh in one tab reaches the others.
  */
 
 export const SESSION_REFRESH_HEADER = 'X-PICSURE-Session-Refresh';
