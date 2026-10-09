@@ -363,10 +363,16 @@ on('POST', path(Psama.Role), ({ body, res }) => {
   state.roles.push(created);
   json(res, { content: [created] });
 });
-on('PUT', path(Psama.Role), ({ body, res }) => {
-  const [role] = body as { uuid: string }[];
+on('PATCH', path(Psama.Role), ({ body, res }) => {
+  const [role] = body as { uuid: string; privileges?: (string | { uuid: string })[] }[];
   const index = state.roles.findIndex((r) => r.uuid === role.uuid);
-  const updated = { ...(index > -1 ? state.roles[index] : {}), ...role };
+  // The client now PATCHes privileges as bare uuids; the real API responds with privilege objects.
+  const privileges = role.privileges?.map((p) => (typeof p === 'string' ? { uuid: p } : p));
+  const updated = {
+    ...(index > -1 ? state.roles[index] : {}),
+    ...role,
+    ...(privileges && { privileges }),
+  };
   if (index > -1) state.roles[index] = updated;
   else state.roles.push(updated);
   json(res, { content: [updated] });
@@ -386,7 +392,7 @@ on('POST', path(Psama.Priviege), ({ body, res }) => {
   state.privileges.push(created);
   json(res, [created]);
 });
-on('PUT', path(Psama.Priviege), ({ body, res }) => {
+on('PATCH', path(Psama.Priviege), ({ body, res }) => {
   const [privilege] = body as { uuid: string }[];
   const index = state.privileges.findIndex((p) => p.uuid === privilege.uuid);
   const updated = { ...(index > -1 ? state.privileges[index] : {}), ...privilege };
@@ -406,7 +412,7 @@ on('POST', path(Psama.Connection), ({ body, res }) => {
   state.connections.push(created);
   json(res, { content: [created] });
 });
-on('PUT', path(Psama.Connection), ({ body, res }) => {
+on('PATCH', path(Psama.Connection), ({ body, res }) => {
   const [connection] = body as { uuid: string }[];
   const index = state.connections.findIndex((c) => c.uuid === connection.uuid);
   const updated = { ...(index > -1 ? state.connections[index] : {}), ...connection };
@@ -429,7 +435,7 @@ on('POST', path(Psama.Users), ({ body, res }) => {
   state.users.push(created);
   json(res, [created]);
 });
-on('PUT', path(Psama.Users), ({ body, res }) => {
+on('PATCH', path(Psama.Users), ({ body, res }) => {
   const [user] = body as { uuid: string }[];
   const index = state.users.findIndex((u) => u.uuid === user.uuid);
   const updated = { ...(index > -1 ? state.users[index] : {}), ...user };

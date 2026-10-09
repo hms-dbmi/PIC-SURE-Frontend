@@ -42,12 +42,7 @@ export async function addRole(role: Role) {
 }
 
 export async function updateRole(role: Role) {
-  const res = await api.put(Psama.Role, [
-    {
-      ...role,
-      privileges: role.privileges.map((p) => ({ uuid: p })),
-    },
-  ]);
+  const res = await api.patch(Psama.Role, [role]);
   const newRole = mapRole(res.content[0]);
 
   const store: Role[] = get(roles);
