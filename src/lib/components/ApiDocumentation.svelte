@@ -167,17 +167,19 @@
 
 <div class="api-documentation mt-6" data-testid="api-documentation">
   {#if available.length > 0}
-    <label for="api-document-service" class="block font-bold mb-2">API documentation</label>
-    <select
-      id="api-document-service"
-      class="select mb-4 max-w-full"
-      bind:value={selected}
-      onchange={() => void load(false)}
-    >
-      {#each available as service (service.name)}
-        <option value={service.name}>{service.title}</option>
-      {/each}
-    </select>
+    <div class="flex flex-wrap items-center gap-3 mb-4">
+      <label for="api-document-service" class="font-bold">Select service:</label>
+      <select
+        id="api-document-service"
+        class="select w-auto! max-w-full bg-white! py-2!"
+        bind:value={selected}
+        onchange={() => void load(false)}
+      >
+        {#each available as service (service.name)}
+          <option value={service.name}>{service.title}</option>
+        {/each}
+      </select>
+    </div>
   {/if}
   {#if loading}
     <p role="status" class="mx-0">
