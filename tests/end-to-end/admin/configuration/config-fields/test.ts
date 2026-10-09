@@ -248,7 +248,8 @@ test.describe('Admin on Configuration page', () => {
   });
 
   test('Read-only notice shows only on the tabs admins cannot fully edit', async ({ page }) => {
-    // Given
+    // Given: an unmocked key list 404s and replaces the API Keys table with an error
+    await mockApiSuccess(page, '**/psama/apiKey?*', { keys: [], totalCount: 0, page: 0, size: 10 });
     await page.goto('/admin/configuration');
     await userIsLoggedIn(page);
 
