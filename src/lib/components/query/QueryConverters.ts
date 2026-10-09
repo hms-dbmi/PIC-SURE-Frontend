@@ -1,11 +1,11 @@
-import { config } from '$lib/configuration.svelte';
+import { config } from '#lib/configuration.svelte.ts';
 import {
   QueryV3,
   type QueryInterfaceV3,
   type PhenotypicFilterInterface,
   type PhenotypicClause,
   type GenomicFilterInterfacev3,
-} from '$lib/models/query/Query';
+} from '#lib/models/query/Query.ts';
 import {
   type Filter,
   type FilterInterface,
@@ -15,13 +15,13 @@ import {
   createFilterGroup,
   createRequiredFilter,
   createAnyRecordOfFilter,
-} from '$lib/models/Filter.svelte';
-import type { SearchResult } from '$lib/models/Search';
-import { getConceptDetails, getConceptTree, ENSURE_MAX_DEPTH } from '$lib/stores/Dictionary';
-import { LogicTree } from '$lib/models/LogicTree.svelte';
-import { createGroup } from '$lib/stores/Filter';
-import { mapSearchResultAsExport } from '$lib/stores/Export';
-import type { ExportInterface } from '$lib/models/Export';
+} from '#lib/models/Filter.svelte.ts';
+import type { SearchResult } from '#lib/models/Search.ts';
+import { getConceptDetails, getConceptTree, ENSURE_MAX_DEPTH } from '#lib/stores/Dictionary.ts';
+import { LogicTree } from '#lib/models/LogicTree.svelte.ts';
+import { createGroup } from '#lib/stores/Filter.ts';
+import { mapSearchResultAsExport } from '#lib/stores/Export.ts';
+import type { ExportInterface } from '#lib/models/Export.ts';
 
 const defaultSearchResult = (conceptPath: string, type: string = 'Categorical') => {
   const paths: string[] = conceptPath.split('\\').filter(Boolean);

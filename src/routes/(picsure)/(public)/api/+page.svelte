@@ -6,17 +6,17 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
 
-  import { config, PROJECT_HOSTNAME } from '$lib/configuration.svelte';
-  import { getApiConnectionResource } from '$lib/stores/Resources';
-  import { tokenStatus } from '$lib/stores/User';
-  import { log, createLog } from '$lib/logger';
+  import { config, PROJECT_HOSTNAME } from '#lib/configuration.svelte.ts';
+  import { getApiConnectionResource } from '#lib/stores/Resources.ts';
+  import { tokenStatus } from '#lib/stores/User.ts';
+  import { log, createLog } from '#lib/logger.ts';
 
-  import ApiDocumentation from '$lib/components/ApiDocumentation.svelte';
-  import UserToken from '$lib/components/UserToken.svelte';
-  import PublicAccessKey from '$lib/components/PublicAccessKey.svelte';
-  import CodeBlock from '$lib/components/CodeBlock.svelte';
-  import TocLayout from '$lib/components/toc/TocLayout.svelte';
-  import TocSection from '$lib/components/toc/TocSection.svelte';
+  import ApiDocumentation from '#lib/components/ApiDocumentation.svelte';
+  import UserToken from '#lib/components/UserToken.svelte';
+  import PublicAccessKey from '#lib/components/PublicAccessKey.svelte';
+  import CodeBlock from '#lib/components/CodeBlock.svelte';
+  import TocLayout from '#lib/components/toc/TocLayout.svelte';
+  import TocSection from '#lib/components/toc/TocSection.svelte';
 
   let mounted = $state(false);
   let loggedIn = $derived(mounted && $tokenStatus);
@@ -175,7 +175,7 @@
     )
       return;
     event.preventDefault();
-    await goto(resolve(`/api#${id}`), { noScroll: true, keepFocus: true });
+    await goto(resolve(`api#${id}`), { reset: false });
     document.getElementById(id)?.scrollIntoView();
   }
 
@@ -240,7 +240,7 @@
               Looking for authorized access?
               <a
                 class="anchor"
-                href="{resolve('/login')}?redirectTo=/api"
+                href="{resolve('login')}?redirectTo=/api"
                 data-testid="api-login-link">Login</a
               >
             </p>
@@ -304,7 +304,7 @@
                   {@const section = workflow.docsSection}
                   <a
                     class="anchor"
-                    href={resolve(`/api#${section}`)}
+                    href={resolve(`api#${section}`)}
                     onclick={(event) => void navigateSection(event, section)}
                     >{workflow.docsLabel}</a
                   >
@@ -349,7 +349,7 @@
               You are browsing as a public user. Only open API endpoints are available. To use
               authorized resources, please <a
                 class="anchor"
-                href="{resolve('/login')}?redirectTo=/api">log in</a
+                href="{resolve('login')}?redirectTo=/api">log in</a
               >.
             </p>
           </div>

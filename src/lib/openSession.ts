@@ -1,5 +1,5 @@
-import { joinUrl, Psama } from '$lib/paths';
-import { log, createLog, getSessionId } from '$lib/logger';
+import { joinUrl, Psama } from '#lib/paths.ts';
+import { log, createLog, getSessionId } from '#lib/logger.ts';
 
 /**
  * Open-access sessions: a short-lived PSAMA-signed token each anonymous browser gets for itself and

@@ -1,15 +1,15 @@
 import { get, derived, writable, type Readable, type Writable } from 'svelte/store';
-import { genericUUID, objectUUID } from '$lib/utilities/UUID';
+import { genericUUID, objectUUID } from '#lib/utilities/UUID.ts';
 
-import { browser } from '$app/environment';
-import { ensureConsentsLoaded, user } from '$lib/stores/User';
-import { getConceptDetails } from '$lib/stores/Dictionary';
-import { log, createLog, registerAssociatedStudies, getPageContext } from '$lib/logger';
+import { browser } from '$app/env';
+import { ensureConsentsLoaded, user } from '#lib/stores/User.ts';
+import { getConceptDetails } from '#lib/stores/Dictionary.ts';
+import { log, createLog, registerAssociatedStudies, getPageContext } from '#lib/logger.ts';
 
-import { type Filter, type FilterInterface, createFilterGroup } from '$lib/models/Filter.svelte';
-import type { SearchResult } from '$lib/models/Search';
-import type { OperatorType } from '$lib/models/query/Query';
-import { LogicTree } from '$lib/models/LogicTree.svelte';
+import { type Filter, type FilterInterface, createFilterGroup } from '#lib/models/Filter.svelte.ts';
+import type { SearchResult } from '#lib/models/Search.ts';
+import type { OperatorType } from '#lib/models/query/Query.ts';
+import { LogicTree } from '#lib/models/LogicTree.svelte.ts';
 
 const genomicFilterTypes = ['snp', 'genomic'];
 

@@ -3,32 +3,33 @@
   import { resolve } from '$app/paths';
   import { afterNavigate, beforeNavigate, goto, replaceState } from '$app/navigation';
   import { page } from '$app/state';
+  import { appPath } from '#lib/paths.ts';
   import { Tabs } from '@skeletonlabs/skeleton-svelte';
 
-  import type { Indexable } from '$lib/types';
-  import { config } from '$lib/configuration.svelte';
+  import type { Indexable } from '#lib/types.ts';
+  import { config } from '#lib/configuration.svelte.ts';
 
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import Content from '$lib/components/Content.svelte';
-  import Datatable from '$lib/components/datatable/StaticTable.svelte';
-  import TabItem from '$lib/components/TabItem.svelte';
-  import TermsEditor from '$lib/components/admin/configuration/TermsEditor.svelte';
-  import RoleActions from '$lib/components/admin/configuration/cell/RoleActions.svelte';
-  import PrivilegeActions from '$lib/components/admin/configuration/cell/PrivilegeActions.svelte';
-  import ConnectionActions from '$lib/components/admin/configuration/cell/ConnectionActions.svelte';
-  import Application from '$lib/components/admin/configuration/cell/Application.svelte';
-  import RequiredFields from '$lib/components/admin/configuration/cell/RequiredFields.svelte';
-  import ConfigKindTab from '$lib/components/admin/configuration/ConfigKindTab.svelte';
-  import BannerManagementView from '$lib/components/admin/configuration/BannerManagementView.svelte';
-  import ApiKeysPanel from '$lib/components/admin/api-key/ApiKeysPanel.svelte';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
+  import Content from '#lib/components/Content.svelte';
+  import Datatable from '#lib/components/datatable/StaticTable.svelte';
+  import TabItem from '#lib/components/TabItem.svelte';
+  import TermsEditor from '#lib/components/admin/configuration/TermsEditor.svelte';
+  import RoleActions from '#lib/components/admin/configuration/cell/RoleActions.svelte';
+  import PrivilegeActions from '#lib/components/admin/configuration/cell/PrivilegeActions.svelte';
+  import ConnectionActions from '#lib/components/admin/configuration/cell/ConnectionActions.svelte';
+  import Application from '#lib/components/admin/configuration/cell/Application.svelte';
+  import RequiredFields from '#lib/components/admin/configuration/cell/RequiredFields.svelte';
+  import ConfigKindTab from '#lib/components/admin/configuration/ConfigKindTab.svelte';
+  import BannerManagementView from '#lib/components/admin/configuration/BannerManagementView.svelte';
+  import ApiKeysPanel from '#lib/components/admin/api-key/ApiKeysPanel.svelte';
 
-  import { privileges, loadPrivileges } from '$lib/stores/Privileges';
-  import { roles, loadRoles } from '$lib/stores/Roles';
-  import { loadApplications } from '$lib/stores/Application';
-  import { connections, loadConnections } from '$lib/stores/Connections';
-  import { isTopAdmin } from '$lib/stores/User';
+  import { privileges, loadPrivileges } from '#lib/stores/Privileges.ts';
+  import { roles, loadRoles } from '#lib/stores/Roles.ts';
+  import { loadApplications } from '#lib/stores/Application.ts';
+  import { connections, loadConnections } from '#lib/stores/Connections.ts';
+  import { isTopAdmin } from '#lib/stores/User.ts';
 
-  import Loading from '$lib/components/Loading.svelte';
+  import Loading from '#lib/components/Loading.svelte';
 
   // Tab label -> its ?tab= value, so links (e.g. the old /admin/api-keys route) can open a tab.
   const TAB_PARAMS: Record<string, string> = {
@@ -48,7 +49,7 @@
     ),
   );
 
-  function tabFromUrl(url: URL): string | undefined {
+  function tabFromUrl(url: typeof page.url): string | undefined {
     const requested = url.searchParams.get('tab');
     return visibleTabs.find((tab) => TAB_PARAMS[tab] === requested);
   }
@@ -62,7 +63,7 @@
   function showTab(tab: string) {
     tabSet = tab;
     requestedTab = tab;
-    replaceState(resolve(`/admin/configuration?tab=${TAB_PARAMS[tab]}`), page.state);
+    replaceState(resolve(`admin/configuration?tab=${TAB_PARAMS[tab]}`), page.state);
   }
 
   // A link that only changes the query (e.g. the nav's Configuration link, or the old
@@ -153,7 +154,7 @@
 
   const rowClickHandler = (path: string) => (row: Indexable) => {
     const uuid = row?.uuid;
-    goto(resolve(`/admin/configuration/${path}/${uuid}/edit` as '/'));
+    goto(resolve(appPath(`admin/configuration/${path}/${uuid}/edit`)));
   };
   const roleRowCLick = rowClickHandler('role');
   const privilegeRowClick = rowClickHandler('privilege');
@@ -197,7 +198,7 @@
                   <a
                     data-testid="add-role"
                     class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-                    href={resolve('/admin/configuration/role/new')}
+                    href={resolve('admin/configuration/role/new')}
                   >
                     + Add Role
                   </a>
@@ -227,7 +228,7 @@
                   <a
                     data-testid="add-privilege"
                     class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-                    href={resolve('/admin/configuration/privilege/new')}
+                    href={resolve('admin/configuration/privilege/new')}
                   >
                     + Add Privilege
                   </a>
@@ -257,7 +258,7 @@
                   <a
                     data-testid="add-connection"
                     class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-                    href={resolve('/admin/configuration/connection/new')}
+                    href={resolve('admin/configuration/connection/new')}
                   >
                     + Add Connection
                   </a>

@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  import { config } from '$lib/configuration.svelte';
-  import { isUserLoggedIn } from '$lib/stores/User';
+  import { config } from '#lib/configuration.svelte.ts';
+  import { isUserLoggedIn } from '#lib/stores/User.ts';
 
   interface Props {
     header?: Snippet;

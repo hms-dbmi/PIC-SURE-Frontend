@@ -1,10 +1,10 @@
 <script lang="ts">
-  import Modal from '$lib/components/Modal.svelte';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import CopyButton from '$lib/components/buttons/CopyButton.svelte';
+  import Modal from '#lib/components/Modal.svelte';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
+  import CopyButton from '#lib/components/buttons/CopyButton.svelte';
 
-  import { isTopAdmin } from '$lib/stores/User';
-  import { mintPlatformKey } from '$lib/stores/ApiKeys';
+  import { isTopAdmin } from '#lib/stores/User.ts';
+  import { mintPlatformKey } from '#lib/stores/ApiKeys.ts';
   import {
     extractApiError,
     formatInstant,
@@ -12,7 +12,7 @@
     toPlatformKeyRequest,
     type MintedPlatformKey,
     type PlatformKeyExpiry,
-  } from '$lib/models/ApiKey';
+  } from '#lib/models/ApiKey.ts';
 
   let open = $state(false);
   let name = $state('');

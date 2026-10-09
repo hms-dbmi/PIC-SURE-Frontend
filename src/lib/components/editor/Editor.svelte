@@ -5,7 +5,7 @@
   import 'quill/dist/quill.snow.css';
   import '../../../styles/editor.css';
 
-  import { sanitizeHTML } from '$lib/utilities/HTML';
+  import { sanitizeHTML } from '#lib/utilities/HTML.ts';
 
   let {
     content = $bindable(),

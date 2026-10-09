@@ -1,5 +1,5 @@
 import { redirect } from '@sveltejs/kit';
-import { config } from '$lib/configuration.svelte';
+import { config } from '#lib/configuration.svelte.ts';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = async ({ parent }) => {

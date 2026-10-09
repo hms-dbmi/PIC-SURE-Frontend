@@ -1,4 +1,4 @@
-import type { Sort } from '$lib/models/api/Sort';
+import type { Sort } from '#lib/models/api/Sort.ts';
 
 export interface Pageable {
   offset?: number;

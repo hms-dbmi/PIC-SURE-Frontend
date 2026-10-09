@@ -1,15 +1,15 @@
 <script lang="ts">
   import { page } from '$app/state';
 
-  import { config } from '$lib/configuration.svelte';
+  import { config } from '#lib/configuration.svelte.ts';
 
-  import { type Connection } from '$lib/models/Connection';
-  import { getConnection } from '$lib/stores/Connections';
+  import { type Connection } from '#lib/models/Connection.ts';
+  import { getConnection } from '#lib/stores/Connections.ts';
 
-  import Content from '$lib/components/Content.svelte';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import ConnectionForm from '$lib/components/admin/configuration/ConnectionForm.svelte';
-  import Loading from '$lib/components/Loading.svelte';
+  import Content from '#lib/components/Content.svelte';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
+  import ConnectionForm from '#lib/components/admin/configuration/ConnectionForm.svelte';
+  import Loading from '#lib/components/Loading.svelte';
 
   let connection: Connection = $state({
     id: '',

@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
   import { Modal } from '@skeletonlabs/skeleton-svelte';
-  import { open as drawerState } from '$lib/stores/Drawer';
+  import { open as drawerState } from '#lib/stores/Drawer.ts';
 
   let {
     position = 'right',

@@ -4,15 +4,15 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // the real api.ts and openSession.ts together; only the network is faked
 
-vi.mock('$app/environment', () => ({ browser: true }));
+vi.mock('$app/env', () => ({ browser: true }));
 
 const mockLogout = vi.fn();
-vi.mock('$lib/stores/User', () => ({
+vi.mock('#lib/stores/User.ts', () => ({
   logout: (...args: unknown[]) => mockLogout(...args),
   login: vi.fn(),
 }));
 
-vi.mock('$lib/logger', () => ({
+vi.mock('#lib/logger.ts', () => ({
   log: vi.fn(),
   createLog: vi.fn((...args: unknown[]) => args),
   getSessionId: () => 'test-session-id',
@@ -25,10 +25,10 @@ vi.mock('@sveltejs/kit', () => ({
   isHttpError: () => false,
 }));
 
-vi.mock('$lib/configuration.svelte', () => ({
+vi.mock('#lib/configuration.svelte.ts', () => ({
   config: { features: { wafCaptchaRecovery: false } },
 }));
-vi.mock('$lib/wafCaptcha', () => ({
+vi.mock('#lib/wafCaptcha.ts', () => ({
   isWafCaptchaResponse: () => false,
   handleWafCaptcha: () => false,
 }));
@@ -64,7 +64,7 @@ describe('open-access sessions through api.ts', () => {
   let issuance: Handler;
   let data: Handler;
   let fetchMock: ReturnType<typeof vi.fn>;
-  let api: typeof import('$lib/api');
+  let api: typeof import('#lib/api.ts');
 
   function bearerOf(init: RequestInit): string | undefined {
     return (init.headers as Record<string, string>)['Authorization']?.replace(/^Bearer /, '');
@@ -95,7 +95,7 @@ describe('open-access sessions through api.ts', () => {
     );
     vi.stubGlobal('fetch', fetchMock);
     // fresh module state (single-flight promise, "sessions unavailable") for every test
-    api = await import('$lib/api');
+    api = await import('#lib/api.ts');
   });
 
   afterEach(() => {

@@ -3,7 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { tick } from 'svelte';
-import type { AfterNavigate } from '@sveltejs/kit';
+import type { AfterNavigate } from '$app/navigation';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn(), afterNavigate: vi.fn() }));
 const { mockPage } = vi.hoisted(() => ({
@@ -12,7 +12,7 @@ const { mockPage } = vi.hoisted(() => ({
 vi.mock('$app/state', () => ({ page: mockPage }));
 
 import { afterNavigate, goto } from '$app/navigation';
-import OnThisPage, { type TocEntry } from '$lib/components/toc/OnThisPage.svelte';
+import OnThisPage, { type TocEntry } from '#lib/components/toc/OnThisPage.svelte';
 
 const entries: TocEntry[] = [
   { id: 'authentication', label: 'Authentication' },
@@ -73,7 +73,7 @@ function expectDestination(path: string) {
   expect(goto).toHaveBeenCalledTimes(1);
   const [destination, options] = vi.mocked(goto).mock.calls[0];
   expect(new URL(String(destination), mockPage.url).href).toBe(new URL(path, mockPage.url).href);
-  expect(options).toEqual({ noScroll: true, keepFocus: true });
+  expect(options).toEqual({ reset: false });
 }
 
 function link(id: string) {

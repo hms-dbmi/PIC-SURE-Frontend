@@ -1,13 +1,13 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
-  import ExportStepper from '$lib/components/explorer/export/ExportStepper.svelte';
-  import { allFilters } from '$lib/stores/Filter';
-  import { exports } from '$lib/stores/Export';
-  import { stepperState } from '$lib/stores/Stepper';
-  import type { ExportRowInterface } from '$lib/models/ExportRow';
-  import Content from '$lib/components/Content.svelte';
-  import { config } from '$lib/configuration.svelte';
-  import { isUserLoggedIn } from '$lib/stores/User';
+  import ExportStepper from '#lib/components/explorer/export/ExportStepper.svelte';
+  import { allFilters } from '#lib/stores/Filter.ts';
+  import { exports } from '#lib/stores/Export.ts';
+  import { stepperState } from '#lib/stores/Stepper.ts';
+  import type { ExportRowInterface } from '#lib/models/ExportRow.ts';
+  import Content from '#lib/components/Content.svelte';
+  import { config } from '#lib/configuration.svelte.ts';
+  import { isUserLoggedIn } from '#lib/stores/User.ts';
   import { goto } from '$app/navigation';
 
   let exportRows: ExportRowInterface[] = $exports.map((exp) => {
@@ -62,7 +62,7 @@
         <button
           class="btn preset-filled-primary-500 m-4"
           onclick={() => {
-            goto(resolve('/login'));
+            goto(resolve('login'));
           }}>Go to Login</button
         >
       </div>
@@ -78,7 +78,7 @@
         <button
           class="btn preset-filled-primary-500 m-4"
           onclick={() => {
-            goto(resolve('/explorer?startTour=true'));
+            goto(resolve('explorer?startTour=true'));
           }}>Learn How</button
         >
       </div>

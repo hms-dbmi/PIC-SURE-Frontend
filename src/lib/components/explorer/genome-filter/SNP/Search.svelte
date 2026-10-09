@@ -1,10 +1,10 @@
 <script lang="ts">
-  import type { SNP } from '$lib/models/GenomeFilter';
-  import { getSNPCounts } from '$lib/stores/SNPFilter';
-  import { config } from '$lib/configuration.svelte';
+  import type { SNP } from '#lib/models/GenomeFilter.ts';
+  import { getSNPCounts } from '#lib/stores/SNPFilter.ts';
+  import { config } from '#lib/configuration.svelte.ts';
 
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import Loading from '$lib/components/Loading.svelte';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
+  import Loading from '#lib/components/Loading.svelte';
 
   const {
     search = '',

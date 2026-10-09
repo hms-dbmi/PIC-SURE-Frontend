@@ -14,8 +14,8 @@ import {
   deprecatedApiRows,
   groupedConfigFieldSchema,
   type ConfigFieldSchema,
-} from '$lib/models/Configuration';
-import configJson from '$lib/assets/configuration.json' with { type: 'json' };
+} from '#lib/models/Configuration.ts';
+import configJson from '#lib/assets/configuration.json' with { type: 'json' };
 
 const TOUCHED_ENV_KEYS = [
   'VITE_CONFIG_MODE',

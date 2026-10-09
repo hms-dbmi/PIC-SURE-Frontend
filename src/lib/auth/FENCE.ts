@@ -1,9 +1,9 @@
-import type { AuthData } from '$lib/models/AuthProvider';
-import AuthProvider from '$lib/models/AuthProvider';
-import { browser } from '$app/environment';
-import * as api from '$lib/api';
-import type { User } from '$lib/models/User';
-import { Psama } from '$lib/paths';
+import type { AuthData } from '#lib/models/AuthProvider.ts';
+import AuthProvider from '#lib/models/AuthProvider.ts';
+import { browser } from '$app/env';
+import * as api from '#lib/api.ts';
+import type { User } from '#lib/models/User.ts';
+import { Psama } from '#lib/paths.ts';
 
 interface FenceData extends AuthData {
   uri: string;

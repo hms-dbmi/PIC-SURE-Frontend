@@ -5,9 +5,11 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/sve
 
 const navigation = vi.hoisted(() => ({ beforeNavigate: vi.fn(), goto: vi.fn() }));
 vi.mock('$app/navigation', () => navigation);
-vi.mock('$app/paths', () => ({ resolve: (path: string) => path }));
+vi.mock('$app/paths', () => ({
+  resolve: (path: string) => (path.startsWith('/') ? path : `/${path}`),
+}));
 
-vi.mock('$lib/services/BannerManagement', () => ({
+vi.mock('#lib/services/BannerManagement.ts', () => ({
   archiveBanner: vi.fn(),
   disableBanner: vi.fn(),
   getManagedBanners: vi.fn(),
@@ -30,9 +32,9 @@ vi.mock('@dnd-kit-svelte/svelte', async () => ({
 vi.mock('@dnd-kit-svelte/svelte/sortable', () => ({
   useSortable: () => ({ ref: vi.fn(), handleRef: vi.fn() }),
 }));
-vi.mock('$lib/toaster', () => ({ toaster: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('#lib/toaster.ts', () => ({ toaster: { success: vi.fn(), error: vi.fn() } }));
 
-import BannerManagementView from '$lib/components/admin/configuration/BannerManagementView.svelte';
+import BannerManagementView from '#lib/components/admin/configuration/BannerManagementView.svelte';
 import {
   archiveBanner,
   disableBanner,
@@ -41,9 +43,9 @@ import {
   restoreBanner,
   saveBanner,
   updatePublishedBanner,
-} from '$lib/services/BannerManagement';
-import { toaster } from '$lib/toaster';
-import type { ManagedBanner } from '$lib/models/Banner';
+} from '#lib/services/BannerManagement.ts';
+import { toaster } from '#lib/toaster.ts';
+import type { ManagedBanner } from '#lib/models/Banner.ts';
 
 const base: ManagedBanner = {
   uuid: '11111111-1111-1111-1111-111111111111',

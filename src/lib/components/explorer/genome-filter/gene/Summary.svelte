@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { selectedGenes, selectedFrequency, consequences } from '$lib/stores/GeneFilter';
+  import { selectedGenes, selectedFrequency, consequences } from '#lib/stores/GeneFilter.ts';
 </script>
 
 <div class="overflow-auto flex">

@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/api', () => ({ get: vi.fn(), post: vi.fn(), put: vi.fn() }));
+vi.mock('#lib/api.ts', () => ({ get: vi.fn(), post: vi.fn(), put: vi.fn() }));
 
-import * as api from '$lib/api';
+import * as api from '#lib/api.ts';
 import {
   archiveBanner,
   disableBanner,
@@ -14,8 +14,8 @@ import {
   saveBanner,
   updatePublishedBanner,
   updateSavedBanner,
-} from '$lib/services/BannerManagement';
-import type { BannerDraft, ManagedBanner } from '$lib/models/Banner';
+} from '#lib/services/BannerManagement.ts';
+import type { BannerDraft, ManagedBanner } from '#lib/models/Banner.ts';
 
 const draft: BannerDraft = {
   htmlContent:

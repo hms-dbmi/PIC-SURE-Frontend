@@ -1,6 +1,6 @@
 import type { PlotlyHTMLElement, Root, Data, Config, Layout } from 'plotly.js-basic-dist-min';
-import { config } from '$lib/configuration.svelte';
-import { truncate } from '$lib/utilities/Strings';
+import { config } from '#lib/configuration.svelte.ts';
+import { truncate } from '#lib/utilities/Strings.ts';
 
 const MAX_TITLE_LENGTH = 60;
 

@@ -2,13 +2,13 @@
   import { Accordion } from '@skeletonlabs/skeleton-svelte';
   import { scale } from 'svelte/transition';
   import { elasticInOut } from 'svelte/easing';
-  import type { DictionaryFacetResult } from '$lib/models/api/Dictionary';
-  import type { Facet } from '$lib/models/Search';
-  import { updateFacets, selectedFacets } from '$lib/stores/Search';
-  import { hiddenFacets, openFacets } from '$lib/stores/Dictionary';
-  import { log, createLog, getPageContext } from '$lib/logger';
+  import type { DictionaryFacetResult } from '#lib/models/api/Dictionary.ts';
+  import type { Facet } from '#lib/models/Search.ts';
+  import { updateFacets, selectedFacets } from '#lib/stores/Search.ts';
+  import { hiddenFacets, openFacets } from '#lib/stores/Dictionary.ts';
+  import { log, createLog, getPageContext } from '#lib/logger.ts';
 
-  import ShowMoreButton from '$lib/components/buttons/ShowMoreButton.svelte';
+  import ShowMoreButton from '#lib/components/buttons/ShowMoreButton.svelte';
   import FacetItem from './FacetItem.svelte';
 
   interface Props {

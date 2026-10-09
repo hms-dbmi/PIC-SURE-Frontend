@@ -1,8 +1,8 @@
 <script lang="ts">
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import ApiKeyTable from '$lib/components/admin/api-key/ApiKeyTable.svelte';
-  import MintPlatformKeyModal from '$lib/components/admin/api-key/MintPlatformKeyModal.svelte';
-  import { isTopAdmin } from '$lib/stores/User';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
+  import ApiKeyTable from '#lib/components/admin/api-key/ApiKeyTable.svelte';
+  import MintPlatformKeyModal from '#lib/components/admin/api-key/MintPlatformKeyModal.svelte';
+  import { isTopAdmin } from '#lib/stores/User.ts';
 </script>
 
 {#if !$isTopAdmin}

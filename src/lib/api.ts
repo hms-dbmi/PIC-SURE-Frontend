@@ -1,17 +1,17 @@
-import { error, isHttpError, type NumericRange } from '@sveltejs/kit';
-import { logout, login } from '$lib/stores/User';
-import { browser } from '$app/environment';
-import { log, createLog, getSessionId } from '$lib/logger';
-import { config } from '$lib/configuration.svelte';
-import { isWafCaptchaResponse, handleWafCaptcha } from '$lib/wafCaptcha';
-import { joinUrl } from '$lib/paths';
+import { error, isHttpError } from '@sveltejs/kit';
+import { logout, login } from '#lib/stores/User.ts';
+import { browser } from '$app/env';
+import { log, createLog, getSessionId } from '#lib/logger.ts';
+import { config } from '#lib/configuration.svelte.ts';
+import { isWafCaptchaResponse, handleWafCaptcha } from '#lib/wafCaptcha.ts';
+import { joinUrl } from '#lib/paths.ts';
 import {
   acceptSessionRefresh,
   forgetOpenSession,
   isSessionKeyError,
   openSessionToken,
   recoverOpenSession,
-} from '$lib/openSession';
+} from '#lib/openSession.ts';
 
 const BEARER = 'Bearer ';
 const CONSENT_DENIED = 'consent_denied';
@@ -209,7 +209,7 @@ async function handleResponse(res: Response, openRequest = false) {
     const resText = await res.text();
     const consentMessage = parseConsentDenial(resText);
     if (consentMessage) {
-      error(res.status, { message: consentMessage, errorType: CONSENT_DENIED });
+      error(res.status, consentMessage, { errorType: CONSENT_DENIED });
     }
     log(createLog('AUTH', 'session.forbidden', undefined, { status: 403 }));
     if (browser) {
@@ -225,7 +225,7 @@ async function handleResponse(res: Response, openRequest = false) {
 
 function fail(status: number, resText: string): never {
   log(createLog('ERROR', 'error.unknown', undefined, { status, error: { message: resText } }));
-  error(status as NumericRange<400, 599>, resText);
+  error(status, resText);
 }
 
 function parseConsentDenial(responseBody: string): string | undefined {

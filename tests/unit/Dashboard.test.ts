@@ -4,19 +4,21 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockApi = vi.hoisted(() => ({ get: vi.fn() }));
 
-vi.mock('$app/environment', () => ({ browser: true }));
+vi.mock('$app/env', () => ({ browser: true }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost') } }));
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
-vi.mock('$app/paths', () => ({ resolve: (path: string) => path }));
-vi.mock('$lib/configuration.svelte', () => ({
+vi.mock('$app/paths', () => ({
+  resolve: (path: string) => (path.startsWith('/') ? path : `/${path}`),
+}));
+vi.mock('#lib/configuration.svelte.ts', () => ({
   config: { features: { explorer: { open: false }, login: { open: false } } },
   routes: [],
 }));
-vi.mock('$lib/api', () => mockApi);
+vi.mock('#lib/api.ts', () => mockApi);
 
 import { get } from 'svelte/store';
-import { loadDashboardData, rows } from '$lib/stores/Dashboard';
-import { user, setToken, removeToken } from '$lib/stores/User';
+import { loadDashboardData, rows } from '#lib/stores/Dashboard.ts';
+import { user, setToken, removeToken } from '#lib/stores/User.ts';
 
 const dashboardResp = {
   columns: [],

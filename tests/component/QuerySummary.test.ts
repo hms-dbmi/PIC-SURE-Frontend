@@ -3,27 +3,27 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 
-import QuerySummary from '$lib/components/query/QuerySummary.svelte';
-import { loadQuerySummaryData } from '$lib/components/query/QueryConverters';
-import { QueryVersion } from '$lib/models/Dataset';
-import { LogicTree } from '$lib/models/LogicTree.svelte';
-import { QueryV3 } from '$lib/models/query/Query';
-import type { QueryV2 } from '$lib/compat/QueryV2';
-import type { FilterInterface, FilterGroupInterface } from '$lib/models/Filter.svelte';
+import QuerySummary from '#lib/components/query/QuerySummary.svelte';
+import { loadQuerySummaryData } from '#lib/components/query/QueryConverters.ts';
+import { QueryVersion } from '#lib/models/Dataset.ts';
+import { LogicTree } from '#lib/models/LogicTree.svelte.ts';
+import { QueryV3 } from '#lib/models/query/Query.ts';
+import type { QueryV2 } from '#lib/compat/QueryV2.ts';
+import type { FilterInterface, FilterGroupInterface } from '#lib/models/Filter.svelte.ts';
 
 const mockBypassPath = 'some_path';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
-vi.mock('$lib/toaster', () => ({ toaster: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('#lib/toaster.ts', () => ({ toaster: { success: vi.fn(), error: vi.fn() } }));
 const mockConfig = vi.hoisted(() => ({
   features: { restoreV2queries: false },
   settings: { dataset: { bypassConceptLookup: ['\\some_path\\'] } },
 }));
-vi.mock('$lib/configuration.svelte', () => ({ config: mockConfig }));
+vi.mock('#lib/configuration.svelte.ts', () => ({ config: mockConfig }));
 
-vi.mock('$lib/stores/Filter', async () => {
+vi.mock('#lib/stores/Filter.ts', async () => {
   const { writable } = await import('svelte/store');
-  const { createFilterGroup } = await import('$lib/models/Filter.svelte');
+  const { createFilterGroup } = await import('#lib/models/Filter.svelte.ts');
   return {
     allFilters: writable([]),
     genomicFilters: writable([]),
@@ -33,13 +33,13 @@ vi.mock('$lib/stores/Filter', async () => {
 });
 
 const mockConceptPath = vi.hoisted(() => vi.fn());
-vi.mock('$lib/stores/Dictionary', async () => {
+vi.mock('#lib/stores/Dictionary.ts', async () => {
   return {
     getConceptDetails: mockConceptPath,
   };
 });
 
-vi.mock('$lib/stores/Export', async () => {
+vi.mock('#lib/stores/Export.ts', async () => {
   const { writable } = await import('svelte/store');
   return {
     exports: writable([]),
@@ -47,7 +47,7 @@ vi.mock('$lib/stores/Export', async () => {
   };
 });
 
-vi.mock('$lib/components/query/QueryConverters', () => ({
+vi.mock('#lib/components/query/QueryConverters.ts', () => ({
   loadQuerySummaryData: vi.fn(),
   pathToSearchResult: vi.fn(),
   estimateV3: vi.fn().mockReturnValue({ filters: 3, exports: 3 }),
@@ -141,8 +141,8 @@ describe('QuerySummary', () => {
       picsureId: null,
       id: null,
     });
-    const actual = await vi.importActual<typeof import('$lib/components/query/QueryConverters')>(
-      '$lib/components/query/QueryConverters',
+    const actual = await vi.importActual<typeof import('#lib/components/query/QueryConverters.ts')>(
+      '#lib/components/query/QueryConverters.ts',
     );
     mockLoadQuerySummaryData.mockImplementation(actual.loadQuerySummaryData);
 

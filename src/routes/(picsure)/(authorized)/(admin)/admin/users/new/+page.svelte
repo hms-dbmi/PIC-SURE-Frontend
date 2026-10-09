@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { config } from '$lib/configuration.svelte';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import Content from '$lib/components/Content.svelte';
-  import UserForm from '$lib/components/admin/user/UserForm.svelte';
+  import { config } from '#lib/configuration.svelte.ts';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
+  import Content from '#lib/components/Content.svelte';
+  import UserForm from '#lib/components/admin/user/UserForm.svelte';
 
-  import RoleStore from '$lib/stores/Roles';
-  import ConnectionsStore from '$lib/stores/Connections';
-  import Loading from '$lib/components/Loading.svelte';
+  import RoleStore from '#lib/stores/Roles.ts';
+  import ConnectionsStore from '#lib/stores/Connections.ts';
+  import Loading from '#lib/components/Loading.svelte';
 
   const { roleList, loadRoles } = RoleStore;
   const { connections, loadConnections } = ConnectionsStore;
