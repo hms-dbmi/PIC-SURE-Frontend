@@ -126,7 +126,7 @@ describe('BannerEditor', () => {
     expect(screen.getByRole('radio', { name: 'Specific pages' })).not.toBeChecked();
     expect(screen.getByRole('textbox', { name: 'Title' })).toHaveValue('');
     expect(screen.getByRole('combobox', { name: 'Icon' })).toHaveValue('NONE');
-    expect(screen.getByRole('article', { name: 'Site announcement' })).toHaveClass(
+    expect(screen.getByRole('region', { name: 'Site announcement' })).toHaveClass(
       'preset-tonal-primary',
     );
     expect(
@@ -957,7 +957,7 @@ describe('BannerEditor', () => {
     expect(editor.querySelector('p')?.textContent?.replaceAll('\u00a0', ' ')).toBe(
       'First sentence with  two spaces',
     );
-    const preview = screen.getByRole('article', { name: 'Site announcement' });
+    const preview = screen.getByRole('region', { name: 'Site announcement' });
     expect(preview.querySelectorAll('p')).toHaveLength(2);
     expect(preview.querySelector('p')?.textContent).toBe('First sentence with  two spaces');
   });
@@ -991,7 +991,7 @@ describe('BannerEditor', () => {
       expect(editor.querySelector('img')).not.toBeInTheDocument();
       expect(editor).toHaveTextContent('Visible headingSafe ql-align-center');
     });
-    const preview = screen.getByRole('article', { name: 'Site announcement' });
+    const preview = screen.getByRole('region', { name: 'Site announcement' });
     expect(preview).toHaveTextContent('Visible headingSafe ql-align-center');
     expect(preview).not.toHaveTextContent('text-center');
     expect(preview.querySelector('h1')).not.toBeInTheDocument();
@@ -1050,7 +1050,9 @@ describe('BannerEditor', () => {
       await fireEvent.input(editor);
 
       await waitFor(() =>
-        expect(screen.getByRole('article').querySelector('a')).toHaveAttribute('href', href),
+        expect(
+          screen.getByRole('region', { name: 'Site announcement' }).querySelector('a'),
+        ).toHaveAttribute('href', href),
       );
       expect(editor.querySelector('a')).toHaveAttribute('href', href);
       expect(

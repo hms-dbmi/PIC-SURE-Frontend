@@ -7,7 +7,9 @@ import { get } from 'svelte/store';
 
 export const prerender = false;
 
-export const load: LayoutLoad = () => {
+export const load: LayoutLoad = async ({ parent }) => {
+  // Wait for the authorized layout to load the user in a fresh tab.
+  await parent();
   if (browser) {
     const userPrivileges = get(user)?.privileges || [];
     if (!get(isTopAdmin) && !userPrivileges.includes(PicsurePrivileges.ADMIN)) {

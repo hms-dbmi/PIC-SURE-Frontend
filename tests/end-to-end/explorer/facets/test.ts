@@ -1,4 +1,4 @@
-import { expect, type Route } from '@playwright/test';
+import { expect, type Locator, type Route } from '@playwright/test';
 import { mockApiFail, test, mockApiSuccess, mockApiConfig } from '../../custom-context';
 import {
   searchResults,
@@ -11,6 +11,17 @@ import {
 import { userIsLoggedIn } from '../../utils';
 
 const MAX_FACETS_TO_SHOW = 5;
+
+// Changing a facet refetches facets and re-renders the sidebar accordion, so a category
+// click that lands mid-render is dropped. Retry until the category is in the wanted state.
+async function setCategoryOpen(control: Locator, open: boolean) {
+  await expect(async () => {
+    if ((await control.getAttribute('aria-expanded')) !== String(open)) {
+      await control.click({ timeout: 2000 });
+    }
+    await expect(control).toHaveAttribute('aria-expanded', String(open), { timeout: 2000 });
+  }).toPass({ timeout: 15000 });
+}
 
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
@@ -571,7 +582,7 @@ test.describe('Facet & search', () => {
     await facetCheckBox.click();
     const badge = page.locator(`#${facetsResponse[0].facets[0].name}.badge`);
     await expect(badge).not.toBeVisible();
-    await facetCategory.click();
+    await setCategoryOpen(facetCategory, false);
     // Then
     await expect(badge).toBeVisible();
   });
@@ -617,13 +628,13 @@ test.describe('Facet & search', () => {
 
     //When
     await expect(badge).not.toBeVisible();
-    await facetCategory.click();
+    await setCategoryOpen(facetCategory, false);
     await expect(badge).toBeVisible();
-    await facetCategory.click();
+    await setCategoryOpen(facetCategory, true);
     await facetCheckBox.click(); // to Default state
 
     // Then
-    await facetCategory.click();
+    await setCategoryOpen(facetCategory, false);
     await expect(badge).not.toBeVisible();
   });
   test('Unselecting facet using badge removes badge & unchecks facet', async ({ page }) => {
@@ -646,14 +657,13 @@ test.describe('Facet & search', () => {
 
     //When
     await expect(badge).not.toBeVisible();
-    await facetCategory.click();
+    await setCategoryOpen(facetCategory, false);
     await expect(badge).toBeVisible();
     await badge.locator('button').click();
-    await facetCategory.click();
 
     // Then
     await expect(badge).not.toBeVisible();
-    await facetCategory.click();
+    await setCategoryOpen(facetCategory, true);
     await expect(facetCheckBox).not.toBeChecked();
   });
   test('Facet toggles included', async ({ page }) => {

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
-  import { Tabs } from '@skeletonlabs/skeleton-svelte';
+  import { Accordion } from '@skeletonlabs/skeleton-svelte';
 
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
@@ -15,7 +15,8 @@
   import UserToken from '#lib/components/UserToken.svelte';
   import PublicAccessKey from '#lib/components/PublicAccessKey.svelte';
   import CodeBlock from '#lib/components/CodeBlock.svelte';
-  import TabItem from '#lib/components/TabItem.svelte';
+  import TocLayout from '#lib/components/toc/TocLayout.svelte';
+  import TocSection from '#lib/components/toc/TocSection.svelte';
 
   let mounted = $state(false);
   let loggedIn = $derived(mounted && $tokenStatus);
@@ -24,7 +25,9 @@
   const codeBlocks = $derived(config.branding.explorePage.codeBlocks);
 
   function apiExample(code: string | undefined) {
-    return (code || 'Code not set').replace(PROJECT_HOSTNAME, `${page.url.origin}/picsure`);
+    return (code || 'Code not set')
+      .replaceAll(PROJECT_HOSTNAME, `${page.url.origin}/picsure`)
+      .replaceAll(PROJECT_HOSTNAME.replace(/\/picsure$/, ''), page.url.origin);
   }
   type ApiLanguage = 'python' | 'r';
 
@@ -50,7 +53,7 @@
       .replace('{{SUPPORTS_GENOMIC}}', booleanLiteral(values.supportsGenomic, language));
   }
 
-  function getQuickStartCode(authenticated: boolean) {
+  function getClientCode(authenticated: boolean) {
     const connection = getApiConnectionResource(authenticated);
     const values: ApiCodeBlockValues = {
       // consents are no longer an opt-in feature flag: PSAMA returns them for every
@@ -69,94 +72,96 @@
     return {
       python: renderApiCodeBlock(pythonTemplate, 'python', values),
       r: renderApiCodeBlock(rTemplate, 'r', values),
-      api: apiExample(codeBlocks.CurlAPI),
+      http: apiExample(codeBlocks.CurlAPI),
     };
   }
 
-  let quickStartCode = $derived(getQuickStartCode(loggedIn));
+  let clientCode = $derived(getClientCode(loggedIn));
 
   interface Workflow {
-    id: string;
+    id: 'python' | 'r' | 'http';
     title: string;
-    badge: string;
-    badgeClass: string;
-    bullets: string[];
-    tab: string;
+    audience: string;
+    requirements: string;
+    lang: 'python' | 'r' | 'bash';
+    tokenLocation: string;
+    docsLabel: string;
+    // An external docs URL, or the id of a section on this page.
+    docsUrl?: string;
+    docsSection?: string;
   }
 
   const workflows: Workflow[] = [
     {
       id: 'python',
       title: 'Python Client',
-      badge: 'Recommended',
-      badgeClass: 'preset-filled-primary-500',
-      bullets: ['Requires Python version 3.10.20 or later', 'Python Jupyter Notebooks'],
-      tab: 'Python',
+      audience: 'Best if you work in Python or Jupyter Notebooks.',
+      requirements: 'Python 3.10+',
+      lang: 'python',
+      tokenLocation: 'in the same folder as your code',
+      docsLabel: 'Python client documentation',
+      docsUrl: 'https://github.com/hms-dbmi/pic-sure-python-adapter-hpds',
     },
     {
       id: 'r',
       title: 'R Client',
-      badge: 'Recommended',
-      badgeClass: 'preset-filled-primary-500',
-      bullets: ['Requires R version 4.1 or later', 'R Jupyter Notebooks or RStudio'],
-      tab: 'R',
+      audience: 'Best if you work in R, Jupyter Notebooks, or RStudio.',
+      requirements: 'R 4.1+',
+      lang: 'r',
+      tokenLocation: 'in the same folder as your code',
+      docsLabel: 'R client documentation',
+      docsUrl: 'https://github.com/hms-dbmi/pic-sure-r-adapter-hpds',
     },
     {
       id: 'http',
       title: 'Direct API Access',
-      badge: 'Advanced',
-      badgeClass: 'preset-filled-warning-500',
-      bullets: ['Interact directly with PIC-SURE API endpoints'],
-      tab: 'API',
+      audience: 'Best if you call PIC-SURE endpoints from a custom HTTP client.',
+      requirements: 'Any HTTP client',
+      lang: 'bash',
+      tokenLocation: 'in your working directory',
+      docsLabel: 'API reference',
+      docsSection: 'api-access',
     },
   ];
 
-  let tabSet: string = $state('Python');
+  let openWorkflows: string[] = $state([]);
 
   const tocEntries = [
-    { id: 'api-header', label: 'Overview' },
-    { id: 'choose-your-workflow', label: 'Choose Your Workflow' },
     { id: 'authentication', label: 'Authentication' },
-    { id: 'quick-start', label: 'Quick Start' },
-    { id: 'api-access', label: 'API Access' },
+    { id: 'choose-your-workflow', label: 'Choose Your Workflow' },
+    { id: 'api-access', label: 'API Documentation' },
   ];
-  let activeSection: string = $state('api-header');
 
   onMount(() => {
     mounted = true;
 
-    const scroller = document.getElementById('page');
-    if (!scroller) return;
-
-    // Deep links like /api#quick-start-python pre-select the language tab. The
-    // suffixed ids have no DOM element, so scroll to the section ourselves.
-    const deepLink = window.location.hash.match(/^#quick-start-(python|r|api)$/);
+    const deepLink = window.location.hash.match(/^#workflow-(python|r|http)$/);
+    // The item's panel slides open and the token card in Authentication loads after
+    // the first scroll, so the item moves and the page grows; re-align until the
+    // visitor takes over.
+    const deepLinkTarget = () => document.getElementById(`workflow-${deepLink?.[1]}`);
+    const alignDeepLink = () => deepLinkTarget()?.scrollIntoView({ behavior: 'instant' });
+    const pin = new ResizeObserver(alignDeepLink);
+    const unpinEvents = ['wheel', 'touchmove', 'keydown', 'pointerdown'] as const;
+    let pinned = true;
+    const unpin = () => {
+      pinned = false;
+      pin.disconnect();
+      for (const type of unpinEvents) window.removeEventListener(type, unpin, true);
+    };
     if (deepLink) {
-      tabSet = { python: 'Python', r: 'R', api: 'API' }[deepLink[1]] ?? tabSet;
-      // Tab selection changes the layout; align only after Svelte renders it.
+      openWorkflows = [deepLink[1]];
+      for (const type of unpinEvents) window.addEventListener(type, unpin, true);
       void tick().then(() => {
-        document.getElementById('quick-start')?.scrollIntoView({ behavior: 'instant' });
+        alignDeepLink();
+        if (!pinned) return;
+        for (const el of [document.getElementById('authentication'), deepLinkTarget()]) {
+          if (el) pin.observe(el);
+        }
       });
     }
 
-    // The TOC marks the last section whose top has crossed into the upper 40% of
-    // the scroll viewport; reaching the bottom always selects the final section.
-    const updateActive = () => {
-      if (scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 4) {
-        activeSection = 'api-access';
-        return;
-      }
-      const threshold = scroller.getBoundingClientRect().top + scroller.clientHeight * 0.4;
-      let current = tocEntries[0].id;
-      for (const { id } of tocEntries) {
-        const el = document.getElementById(id);
-        if (el && el.getBoundingClientRect().top <= threshold) current = id;
-      }
-      activeSection = current;
-    };
-    updateActive();
-    scroller.addEventListener('scroll', updateActive, { passive: true });
-    return () => scroller.removeEventListener('scroll', updateActive);
+    return unpin;
   });
 
   async function navigateSection(event: MouseEvent, id: string) {
@@ -174,15 +179,12 @@
     document.getElementById(id)?.scrollIntoView();
   }
 
-  function quickStart(event: MouseEvent, workflow: Workflow) {
-    tabSet = workflow.tab;
-    void navigateSection(event, 'quick-start');
-    log(createLog('NAVIGATION', 'api.quick_start', { workflow: workflow.id }));
+  function toggleWorkflow(value: string[]) {
+    openWorkflows = value;
+    log(createLog('ACTION', 'api.workflow_toggle', { open: value[0] ?? null }));
   }
 
-  function tocClick(event: MouseEvent, id: string) {
-    void navigateSection(event, id);
-    activeSection = id;
+  function tocClick(id: string) {
     log(createLog('NAVIGATION', 'api.toc_click', { section: id }));
   }
 </script>
@@ -191,84 +193,27 @@
   <title>{config.branding.applicationName} | API</title>
 </svelte:head>
 
-<div id="api-page" class="relative w-full pb-6">
-  <div
-    class="absolute inset-y-0 left-0 w-[13%] hidden xl:block bg-surface-50-950 border-r border-surface-200"
-  >
-    <nav aria-label="Table of contents" data-testid="toc" class="sticky top-8 pl-6 pr-2">
-      <span class="text-sm font-bold">On this page</span>
-      <ul class="mt-2 space-y-2 text-sm">
-        {#each tocEntries as entry}
-          <li>
-            <a
-              href="#{entry.id}"
-              class="hover:underline {activeSection === entry.id
-                ? 'font-bold text-primary-500'
-                : ''}"
-              aria-current={activeSection === entry.id ? 'true' : undefined}
-              onclick={(event) => tocClick(event, entry.id)}>{entry.label}</a
-            >
-          </li>
-        {/each}
-      </ul>
-    </nav>
-  </div>
-
-  <div class="api-panel flex flex-col">
-    <section id="api-header" class="w-full">
-      <div class="w-[70%] mx-auto pt-12 pb-10">
-        <h1>Programmatic Access with the PIC-SURE API</h1>
-        <p class="mx-0">
-          Search data and build cohorts directly with Python, R, or any HTTP client. Build
-          reproducible cohort-building pipelines.
-        </p>
-      </div>
-    </section>
-
-    <section id="choose-your-workflow" class="w-full flex-1 bg-primary-50-950">
-      <div class="w-[70%] mx-auto py-12">
-        <h2>Choose Your Workflow</h2>
-        <p class="mx-0">Select the access method that fits your project.</p>
-        <div class="flex flex-wrap gap-6 mt-4">
-          {#each workflows as workflow}
-            <div
-              data-testid="workflow-card-{workflow.id}"
-              class="card border border-surface-200 bg-surface-50-950 p-6 flex flex-col flex-1 basis-64 min-h-96"
-            >
-              <header class="flex items-center justify-between gap-2">
-                <h3 class="text-xl font-bold">{workflow.title}</h3>
-                <span class="badge {workflow.badgeClass}">{workflow.badge}</span>
-              </header>
-              <ul class="list-inside list-disc space-y-2 my-4">
-                {#each workflow.bullets as bullet}
-                  <li>{bullet}</li>
-                {/each}
-              </ul>
-              <a
-                href="#quick-start"
-                class="btn preset-filled-primary-500 mt-auto"
-                onclick={(event) => quickStart(event, workflow)}>Quick Start</a
-              >
-            </div>
-          {/each}
-        </div>
-      </div>
-    </section>
-  </div>
-
-  <section id="authentication" class="api-panel w-full">
-    <div class="w-[70%] mx-auto py-12">
+<div id="api-page" class="w-full pb-6">
+  <TocLayout entries={tocEntries} onselect={tocClick}>
+    {#snippet hero()}
+      <h1 id="api-header">Programmatic Access with the PIC-SURE API</h1>
+      <p class="mx-0 max-w-3xl text-lg">
+        Search data and build cohorts directly with Python, R, or any HTTP client. Build
+        reproducible cohort-building pipelines.
+      </p>
+    {/snippet}
+    <TocSection id="authentication">
       <h2>Authentication</h2>
       <p class="mx-0">
         Your personal access token authenticates all programmatic requests to PIC-SURE.
       </p>
       <div class="flex flex-wrap gap-8 mt-4">
         {#if loggedIn}
-          <div class="basis-[60%] grow-0 min-w-0 max-w-full">
+          <div class="flex-1 basis-96 min-w-0 max-w-full">
             <UserToken />
           </div>
         {:else}
-          <div class="basis-[60%] grow-0 min-w-0 max-w-full">
+          <div class="flex-1 basis-96 min-w-0 max-w-full">
             <PublicAccessKey enabled={config.branding.apiPage?.publicKeyEnabled ?? false} />
           </div>
         {/if}
@@ -302,47 +247,99 @@
           {/if}
         </div>
       </div>
-    </div>
-  </section>
+    </TocSection>
 
-  <section id="quick-start" class="api-panel w-full bg-primary-50-950">
-    <div class="w-[70%] mx-auto py-12">
-      <h2>Quick Start</h2>
-      <p class="mx-0">Copy and run the example code below to get started.</p>
-      <Tabs
-        value={tabSet}
-        onValueChange={(e) => {
-          tabSet = e.value;
-          log(createLog('ACTION', 'api.tab_change', { tab: e.value }));
-        }}
+    <TocSection id="choose-your-workflow" tinted>
+      <h2>Choose Your Workflow</h2>
+      <p class="mx-0">Select the access method that fits your project.</p>
+      <Accordion
+        value={openWorkflows}
+        onValueChange={(e) => toggleWorkflow(e.value)}
+        collapsible
+        spaceY="space-y-4"
+        classes="mt-4"
       >
-        {#snippet list()}
-          <TabItem bind:group={tabSet} value="Python">Python</TabItem>
-          <TabItem bind:group={tabSet} value="R">R</TabItem>
-          <TabItem bind:group={tabSet} value="API">API</TabItem>
-        {/snippet}
-        {#snippet content()}
-          <Tabs.Panel value="Python">
-            <CodeBlock lang="python" code={quickStartCode.python} />
-          </Tabs.Panel>
-          <Tabs.Panel value="R">
-            <CodeBlock lang="r" code={quickStartCode.r} />
-          </Tabs.Panel>
-          <Tabs.Panel value="API">
-            <CodeBlock lang="bash" code={quickStartCode.api} />
-          </Tabs.Panel>
-        {/snippet}
-      </Tabs>
-    </div>
-  </section>
+        {#snippet iconOpen()}<i class="fa-solid fa-angle-up text-xl"></i>{/snippet}
+        {#snippet iconClosed()}<i class="fa-solid fa-angle-down text-xl"></i>{/snippet}
+        {#each workflows as workflow}
+          <div id="workflow-{workflow.id}" data-testid="workflow-{workflow.id}">
+            <Accordion.Item
+              value={workflow.id}
+              base="rounded-container border border-surface-200 bg-white dark:bg-surface-950 data-[state=open]:border-primary-500"
+              controlHover="hover:bg-surface-100-900"
+              controlPadding="p-6"
+              controlRounded="rounded-container"
+              panelPadding="px-6 pb-6"
+            >
+              {#snippet control()}
+                <span class="flex flex-wrap items-center gap-3">
+                  <span class="text-xl font-bold">{workflow.title}</span>
+                  <span
+                    class="badge shrink-0 {workflow.id === 'http'
+                      ? 'preset-tonal-warning'
+                      : 'preset-tonal-primary'}"
+                  >
+                    {workflow.id === 'http' ? 'Advanced' : 'Recommended'}
+                  </span>
+                </span>
+                <span class="block mt-1 text-base">{workflow.audience}</span>
+                <span class="block mt-1 text-sm font-mono text-surface-600-400">
+                  {workflow.requirements}
+                </span>
+              {/snippet}
+              {#snippet panel()}
+                <p class="mx-0 mb-4 p-4 rounded-base preset-tonal-primary">
+                  Copy your token above, paste it into a file named <code class="code"
+                    >token.txt</code
+                  >, and save it {workflow.tokenLocation}. Don't share this file or commit it to
+                  GitHub.
+                </p>
+                <CodeBlock lang={workflow.lang} code={clientCode[workflow.id]} />
+                <p
+                  class="mx-0 mt-6 mb-1 text-sm font-bold uppercase tracking-wide text-surface-600-400"
+                >
+                  More info
+                </p>
+                {#if workflow.docsSection}
+                  {@const section = workflow.docsSection}
+                  <a
+                    class="anchor"
+                    href={resolve(`api#${section}`)}
+                    onclick={(event) => void navigateSection(event, section)}
+                    >{workflow.docsLabel}</a
+                  >
+                {:else}
+                  <!-- eslint-disable svelte/no-navigation-without-resolve -- external docs URL -->
+                  <a
+                    class="anchor"
+                    href={workflow.docsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer">{workflow.docsLabel}</a
+                  >
+                  <!-- eslint-enable svelte/no-navigation-without-resolve -->
+                  <p class="mx-0 mt-2">
+                    Looking for example notebooks? Check out the
+                    <a
+                      class="anchor"
+                      href="https://github.com/hms-dbmi/Access-to-Data-using-PIC-SURE-API"
+                      target="_blank"
+                      rel="noopener noreferrer">public GitHub repository</a
+                    >.
+                  </p>
+                {/if}
+              {/snippet}
+            </Accordion.Item>
+          </div>
+        {/each}
+      </Accordion>
+    </TocSection>
 
-  <section id="api-access" class="w-full">
-    <div class="w-[70%] mx-auto py-8">
-      <h2>API Access</h2>
+    <TocSection id="api-access">
+      <h2>API Documentation</h2>
       <p class="mx-0">Browse and use the PIC-SURE API endpoints.</p>
       {#if mounted && !loggedIn}
         <div
-          class="flex gap-4 items-start border border-primary-500 rounded-lg bg-primary-50-950 p-4 mt-6"
+          class="flex gap-4 items-start border border-primary-500 rounded-lg bg-white p-4 mt-6"
           data-testid="api-public-notice"
         >
           <i class="fa-solid fa-globe text-3xl text-primary-500" aria-hidden="true"></i>
@@ -359,17 +356,11 @@
         </div>
       {/if}
       <ApiDocumentation />
-    </div>
-  </section>
+    </TocSection>
+  </TocLayout>
 </div>
 
 <style>
-  /* 100cqh = the height of the #page scroll viewport (a size container; see
-     app.css). 100vh would overshoot because the nav bar sits outside it. */
-  .api-panel {
-    min-height: 100cqh;
-  }
-
   @media (prefers-reduced-motion: no-preference) {
     :global(#page) {
       scroll-behavior: smooth;

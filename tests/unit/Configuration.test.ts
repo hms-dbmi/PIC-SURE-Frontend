@@ -15,6 +15,7 @@ import {
   groupedConfigFieldSchema,
   type ConfigFieldSchema,
 } from '#lib/models/Configuration.ts';
+import configJson from '#lib/assets/configuration.json' with { type: 'json' };
 
 const TOUCHED_ENV_KEYS = [
   'VITE_CONFIG_MODE',
@@ -334,6 +335,28 @@ describe('mapBranding', () => {
     import.meta.env.VITE_MAX_DATA_POINTS_FOR_EXPORT = '42';
     const branding = mapBranding('', []);
     expect(branding.explorePage.codeBlocks.PythonAPI).not.toContain('{{PICSURE_NETWORK_URL}}');
+  });
+  it('gives Python blocks the deployment root and R blocks the /picsure URL', () => {
+    const { codeBlocks } = mapBranding('https://picsure.example.org/picsure', []).explorePage;
+    for (const key of ['PythonAPI', 'PythonAPIOpen', 'PythonExport']) {
+      expect(codeBlocks[key]).toContain('platform="https://picsure.example.org"');
+      expect(codeBlocks[key]).not.toContain('{{PICSURE_ORIGIN}}');
+    }
+    expect(codeBlocks.RAPI).toContain('platform="https://picsure.example.org/picsure"');
+  });
+  it('fills every placeholder in a code block, not just the first', () => {
+    const { codeBlocks } = configJson.explorePage;
+    const original = codeBlocks.CurlAPI;
+    codeBlocks.CurlAPI =
+      '{{PICSURE_NETWORK_URL}} {{PICSURE_NETWORK_URL}} {{PICSURE_ORIGIN}} {{PICSURE_ORIGIN}}';
+    try {
+      const branding = mapBranding('https://picsure.example.org/picsure', []);
+      expect(branding.explorePage.codeBlocks.CurlAPI).toBe(
+        'https://picsure.example.org/picsure https://picsure.example.org/picsure https://picsure.example.org https://picsure.example.org',
+      );
+    } finally {
+      codeBlocks.CurlAPI = original;
+    }
   });
   it('falls back to the application name when no logo alt is configured', () => {
     const branding = mapBranding('', []);

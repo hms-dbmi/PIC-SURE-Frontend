@@ -85,7 +85,7 @@
   {#await getUser(true, true)}
     <Loading ring size="medium" />
   {:then}
-    <div id="user-token" class="card preset-filled-sureface-500">
+    <div id="user-token" class="card bg-surface-50-950">
       <header class="card-header flex w-full items-center gap-4">
         <i class="fa-solid fa-user-shield text-3xl text-success-500"></i>
         <div>
@@ -155,7 +155,7 @@
   #user-token-container {
     display: flex;
     justify-content: center;
-    width: 52rem;
+    width: 55rem;
     max-width: 100%;
   }
   #user-token-container #user-token {
@@ -167,7 +167,7 @@
   }
   #user-token-container #user-token section {
     width: 100%;
-    max-width: 50rem;
+    max-width: 53rem;
     grid-template-columns: min-content auto;
   }
   #user-token-container #user-token section label {

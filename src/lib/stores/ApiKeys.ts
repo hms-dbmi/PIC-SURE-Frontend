@@ -5,6 +5,7 @@ import { Psama } from '#lib/paths.ts';
 import type {
   ApiKeyMetadata,
   ApiKeyPage,
+  ApiKeyType,
   MintedPlatformKey,
   PlatformKeyRequest,
 } from '#lib/models/ApiKey.ts';
@@ -16,11 +17,7 @@ export function refreshApiKeys() {
   listVersion.update((version) => version + 1);
 }
 
-export async function loadApiKeys(
-  page = 0,
-  size = 100,
-  keyType?: 'USER' | 'PLATFORM',
-): Promise<ApiKeyPage> {
+export async function loadApiKeys(page = 0, size = 100, keyType?: ApiKeyType): Promise<ApiKeyPage> {
   const typeParam = keyType ? `&keyType=${keyType}` : '';
   return api.get(`${Psama.ApiKey.Admin}?page=${page}&size=${size}${typeParam}`);
 }

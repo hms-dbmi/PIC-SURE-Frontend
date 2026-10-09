@@ -21,7 +21,7 @@ test.describe('Visitors receive banners across navigation', () => {
 
     const bannerRegion = page.getByTestId('site-banner-region');
     await expect(bannerRegion).toBeVisible();
-    await expect(page.getByRole('article', { name: 'Maintenance' })).toContainText(
+    await expect(page.getByRole('region', { name: 'Maintenance' })).toContainText(
       'Scheduled maintenance',
     );
     await expect
@@ -70,9 +70,9 @@ test.describe('Signed-out visitors can read banners and reach login', () => {
     await page.goto('/');
 
     await expect(page).toHaveURL('/login');
-    await expect(page.getByRole('article', { name: 'Maintenance' })).toBeVisible();
-    await expect(page.getByRole('article', { name: 'Signed-out notice' })).toBeVisible();
-    await expect(page.getByRole('article', { name: 'Signed-in notice' })).toHaveCount(0);
+    await expect(page.getByRole('region', { name: 'Maintenance' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Signed-out notice' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Signed-in notice' })).toHaveCount(0);
     await expect(page.getByTestId('site-banner-region')).toHaveCount(1);
     await expect
       .poll(() =>
@@ -90,9 +90,9 @@ test.describe('Signed-out visitors can read banners and reach login', () => {
 
     await page.goto('/login/error');
 
-    await expect(page.getByRole('article', { name: 'Maintenance' })).toBeVisible();
-    await expect(page.getByRole('article', { name: 'Signed-out notice' })).toBeVisible();
-    await expect(page.getByRole('article', { name: 'Signed-in notice' })).toHaveCount(0);
+    await expect(page.getByRole('region', { name: 'Maintenance' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Signed-out notice' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Signed-in notice' })).toHaveCount(0);
     await expect(page.getByTestId('site-banner-region')).toHaveCount(1);
   });
 
@@ -264,23 +264,23 @@ test.describe('Admins review and target published banners', () => {
     });
 
     await page.goto('/');
-    await expect(page.getByRole('article', { name: 'Release notice' })).toHaveCount(0);
-    await expect(page.getByRole('article', { name: 'For everyone' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Release notice' })).toHaveCount(0);
+    await expect(page.getByRole('region', { name: 'For everyone' })).toBeVisible();
 
     await page.locator('#nav-link-help').click();
     await expect(page).toHaveURL('/help');
-    await expect(page.getByRole('article', { name: 'Release notice' })).toContainText(
+    await expect(page.getByRole('region', { name: 'Release notice' })).toContainText(
       'Saved query limits are changing',
     );
-    await expect(page.getByRole('article', { name: 'For everyone' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'For everyone' })).toBeVisible();
 
     // A signed-out visitor who never enters the authorized shell. The tab-scoped `user` blob
     // deliberately stays behind: only the session token decides audience.
     await page.evaluate(() => localStorage.removeItem('token'));
     await page.goto('/help');
 
-    await expect(page.getByRole('article', { name: 'For everyone' })).toBeVisible();
-    await expect(page.getByRole('article', { name: 'Release notice' })).toHaveCount(0);
+    await expect(page.getByRole('region', { name: 'For everyone' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Release notice' })).toHaveCount(0);
     // The signed-out browser was still served the signed-in record over an uncredentialed
     // read: audience is presentation, not authorization.
     expect(servedAudiences.at(-1)).toContain('SIGNED_IN');
@@ -288,8 +288,8 @@ test.describe('Admins review and target published banners', () => {
 
     await page.goto('/');
     await expect(page).toHaveURL('/');
-    await expect(page.getByRole('article', { name: 'For everyone' })).toBeVisible();
-    await expect(page.getByRole('article', { name: 'Release notice' })).toHaveCount(0);
+    await expect(page.getByRole('region', { name: 'For everyone' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Release notice' })).toHaveCount(0);
   });
 });
 
@@ -362,7 +362,7 @@ test.describe('Visitors dismiss a banner until its content changes', () => {
     });
 
     await page.goto('/');
-    const notice = page.getByRole('article', { name: 'Dismissible maintenance' });
+    const notice = page.getByRole('region', { name: 'Dismissible maintenance' });
     await expect(notice).toBeVisible();
     const dismiss = notice.getByRole('button', { name: 'Dismiss Dismissible maintenance' });
     await expect(dismiss).toHaveAttribute('title', 'Dismiss Dismissible maintenance');
@@ -378,15 +378,14 @@ test.describe('Visitors dismiss a banner until its content changes', () => {
     await page.locator('#nav-link-help').click();
     await expect(page).toHaveURL('/help');
     await expect.poll(() => feedRequests).toBeGreaterThanOrEqual(2);
-    await expect(page.getByRole('article', { name: 'Dismissible maintenance' })).toHaveCount(0);
+    await expect(page.getByRole('region', { name: 'Dismissible maintenance' })).toHaveCount(0);
 
     const requestsBeforeReload = feedRequests;
     await page.reload();
     await expect.poll(() => feedRequests).toBeGreaterThan(requestsBeforeReload);
-    await expect(page.getByRole('article', { name: 'Dismissible maintenance' })).toHaveCount(0);
+    await expect(page.getByRole('region', { name: 'Dismissible maintenance' })).toHaveCount(0);
 
-    await page.goto('/admin/configuration');
-    await page.getByRole('tab', { name: 'Site banners' }).click();
+    await page.goto('/admin/configuration?tab=banners');
     const row = page.locator(`[data-banner-row="${dismissalBanner.uuid}"]`);
     await row.getByRole('button', { name: /^Details for / }).click();
     await row.getByRole('button', { name: /^Edit banner for / }).click();
@@ -399,7 +398,7 @@ test.describe('Visitors dismiss a banner until its content changes', () => {
 
     await page.goto('/');
     await expect(
-      page.getByRole('article', { name: 'Updated dismissible maintenance' }),
+      page.getByRole('region', { name: 'Updated dismissible maintenance' }),
     ).toContainText('Updated maintenance notice');
     expect(await page.evaluate(() => sessionStorage.getItem('site-banner-dismissals-v1'))).toBe(
       `{"${dismissalBanner.uuid}":"${dismissalBanner.presentationHash}"}`,
@@ -427,12 +426,7 @@ test.describe('Admins create, edit, and publish banners', () => {
   test('loads management on tab selection and protects dirty configuration-tab changes', async ({
     page,
   }) => {
-    let accessControlLoads = 0;
     let managementLoads = 0;
-    await page.route('**/psama/role', (route) => {
-      accessControlLoads += 1;
-      return route.fulfill({ json: [] });
-    });
     await page.route('**/picsure/operations/banners', (route) => {
       if (route.request().method() === 'GET') {
         managementLoads += 1;
@@ -441,8 +435,8 @@ test.describe('Admins create, edit, and publish banners', () => {
       return route.fallback();
     });
 
-    await page.goto('/admin/configuration');
-    await expect.poll(() => accessControlLoads).toBeGreaterThan(0);
+    await page.goto('/admin/configuration?tab=branding');
+    await expect(page.getByTestId('config-tab-branding')).toBeVisible();
     expect(managementLoads).toBe(0);
     await page.getByRole('tab', { name: 'Site banners' }).click();
     await expect.poll(() => managementLoads).toBe(1);
@@ -474,7 +468,7 @@ test.describe('Admins create, edit, and publish banners', () => {
 
     await page.getByRole('link', { name: 'Help' }).click();
     await expect(page.getByRole('heading', { name: 'Unsaved Changes' })).toBeVisible();
-    await expect(page).toHaveURL(/\/admin\/configuration$/);
+    await expect(page).toHaveURL(/\/admin\/configuration\?tab=banners$/);
     await page.getByRole('button', { name: 'Keep editing' }).click();
 
     await page.getByRole('tab', { name: 'Branding' }).click();
@@ -485,9 +479,79 @@ test.describe('Admins create, edit, and publish banners', () => {
     await expect(page.getByTestId('config-tab-branding').getByText('LOGO_ALT')).toBeVisible();
   });
 
-  test('keeps sentence spaces, Enter, and a second paragraph while editing', async ({ page }) => {
+  test('loads management once when a link opens the Site banners tab', async ({ page }) => {
+    // Given
+    let managementLoads = 0;
+    await page.route('**/picsure/operations/banners', (route) => {
+      if (route.request().method() !== 'GET') return route.fallback();
+      managementLoads += 1;
+      return route.fulfill({ json: [] });
+    });
+    await page.goto('/admin/configuration?tab=branding');
+    await expect(page.getByTestId('config-tab-branding')).toBeVisible();
+
+    // When
+    await page.evaluate(() => {
+      const link = document.createElement('a');
+      link.href = '/admin/configuration?tab=banners';
+      document.body.append(link);
+      link.click();
+    });
+
+    // Then
+    await expect(page.getByRole('button', { name: '+ Create banner' })).toBeVisible();
+    await page.waitForLoadState('networkidle');
+    expect(managementLoads).toBe(1);
+  });
+
+  test('asks once before a configuration link discards unsaved banner changes', async ({
+    page,
+  }) => {
+    // Given
+    const editor = page
+      .getByTestId('banner-editor-form')
+      .locator('#banner-content-editor .ql-editor');
+    const startEditing = async () => {
+      await page.getByRole('button', { name: '+ Create banner' }).click();
+      await editor.fill('Unsaved configuration-link content');
+    };
     await page.goto('/admin/configuration');
-    await page.getByRole('tab', { name: 'Site banners' }).click();
+    await startEditing();
+
+    // When: the nav's Configuration link opens Site banners, the tab that's already open
+    await page.locator('#nav-link-admin-configuration').click();
+    await page.getByRole('button', { name: 'Keep editing' }).click();
+
+    // Then
+    await expect(editor).toContainText('Unsaved configuration-link content');
+
+    // When
+    await page.locator('#nav-link-admin-configuration').click();
+    await page.getByRole('button', { name: 'Discard changes' }).click();
+
+    // Then
+    await expect(page.getByTestId('banner-editor-form')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: '+ Create banner' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Unsaved Changes' })).toHaveCount(0);
+
+    // When: a link opens another tab
+    await startEditing();
+    await page.evaluate(() => {
+      const link = document.createElement('a');
+      link.href = '/admin/configuration?tab=branding';
+      document.body.append(link);
+      link.click();
+    });
+    await page.getByRole('button', { name: 'Discard changes' }).click();
+
+    // Then
+    await expect(page.getByTestId('config-tab-branding')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Unsaved Changes' })).toHaveCount(0);
+    await expect(page).toHaveURL(/\/admin\/configuration\?tab=branding$/);
+  });
+
+  test('keeps sentence spaces, Enter, and a second paragraph while editing', async ({ page }) => {
+    await page.goto('/admin/configuration?tab=banners');
     await page.getByRole('button', { name: '+ Create banner' }).click();
     const bannerForm = page.getByTestId('banner-editor-form');
     const editor = bannerForm.locator('#banner-content-editor .ql-editor');
@@ -505,7 +569,7 @@ test.describe('Admins create, edit, and publish banners', () => {
       '  Second  paragraph',
     );
     const previewContent = page
-      .getByRole('article', { name: 'Site announcement' })
+      .getByRole('region', { name: 'Site announcement' })
       .locator('.site-banner-content');
     await expect(previewContent.locator('p')).toHaveCount(2);
     expect(await previewContent.locator('p').nth(1).textContent()).toBe('  Second  paragraph');
@@ -515,8 +579,7 @@ test.describe('Admins create, edit, and publish banners', () => {
   });
 
   test('keeps a bullet list stable while adding items', async ({ page }) => {
-    await page.goto('/admin/configuration');
-    await page.getByRole('tab', { name: 'Site banners' }).click();
+    await page.goto('/admin/configuration?tab=banners');
     await page.getByRole('button', { name: '+ Create banner' }).click();
     const bannerForm = page.getByTestId('banner-editor-form');
     const editor = bannerForm.locator('#banner-content-editor .ql-editor');
@@ -541,7 +604,7 @@ test.describe('Admins create, edit, and publish banners', () => {
     ).toBe(true);
     await expect(editor.locator('li').nth(1)).toHaveText('Second item');
     const previewList = page
-      .getByRole('article', { name: 'Site announcement' })
+      .getByRole('region', { name: 'Site announcement' })
       .locator('.site-banner-content ul');
     await expect(previewList.locator('li')).toHaveCount(2);
     await expect(previewList.locator('li').nth(0)).toHaveText('First item');
@@ -672,8 +735,7 @@ test.describe('Admins create, edit, and publish banners', () => {
       return route.fallback();
     });
 
-    await page.goto('/admin/configuration');
-    await page.getByRole('tab', { name: 'Site banners' }).click();
+    await page.goto('/admin/configuration?tab=banners');
     await page.getByRole('button', { name: '+ Create banner' }).click();
     const bannerForm = page.getByTestId('banner-editor-form');
     const editor = bannerForm.locator('#banner-content-editor .ql-editor');
@@ -696,7 +758,7 @@ test.describe('Admins create, edit, and publish banners', () => {
     await page.getByRole('textbox', { name: 'Title' }).fill('Planned maintenance');
     await page.getByRole('combobox', { name: 'Icon' }).selectOption('WARNING');
 
-    const preview = page.getByRole('article', { name: 'Planned maintenance' });
+    const preview = page.getByRole('region', { name: 'Planned maintenance' });
     await expect(preview).toHaveClass(/preset-tonal-warning/);
     await expect(
       preview.getByRole('link', { name: 'System maintenance status page' }),
@@ -705,7 +767,7 @@ test.describe('Admins create, edit, and publish banners', () => {
 
     await page.getByRole('button', { name: 'Save for later' }).click();
 
-    await expect(page).toHaveURL(/\/admin\/configuration$/);
+    await expect(page).toHaveURL(/\/admin\/configuration\?tab=banners$/);
     await expect(page.getByTestId('toast-root')).toHaveAttribute('data-type', 'success');
     const savedRow = page.locator(`[data-banner-row="${savedBanner.uuid}"]`);
     await expect(savedRow).toBeVisible();
@@ -721,7 +783,7 @@ test.describe('Admins create, edit, and publish banners', () => {
 
     await page.getByRole('link', { name: 'Help' }).click();
     await expect(page.getByRole('heading', { name: 'Unsaved Changes' })).toBeVisible();
-    await expect(page).toHaveURL(/\/admin\/configuration$/);
+    await expect(page).toHaveURL(/\/admin\/configuration\?tab=banners$/);
     await page.getByRole('button', { name: 'Keep editing' }).click();
     await expect(page.getByRole('textbox', { name: 'Title' })).toHaveValue('Publish this draft');
 
@@ -749,7 +811,7 @@ test.describe('Admins create, edit, and publish banners', () => {
     expect(publicationRequests).toBe(1);
 
     await page.goto('/');
-    await expect(page.getByRole('article', { name: 'Corrected maintenance notice' })).toContainText(
+    await expect(page.getByRole('region', { name: 'Corrected maintenance notice' })).toContainText(
       'Corrected visitor notice',
     );
     expect(submitted).toMatchObject({
@@ -773,8 +835,7 @@ test.describe('Admins create, edit, and publish banners', () => {
       pageTargets: [{ kind: 'ALL' }],
     });
 
-    await page.goto('/admin/configuration');
-    await page.getByRole('tab', { name: 'Site banners' }).click();
+    await page.goto('/admin/configuration?tab=banners');
     const rowToDisable = page.locator(`[data-banner-row="${savedBanner.uuid}"]`);
     await rowToDisable.getByRole('button', { name: /^Details for / }).click();
     await rowToDisable.getByRole('button', { name: /^Disable banner for / }).click();
@@ -793,12 +854,9 @@ test.describe('Admins create, edit, and publish banners', () => {
     await page.goto('/');
     await userIsLoggedIn(page);
     await expect(page.getByTestId('site-banner-region')).toHaveCount(0);
-    await expect(page.getByRole('article', { name: 'Corrected maintenance notice' })).toHaveCount(
-      0,
-    );
+    await expect(page.getByRole('region', { name: 'Corrected maintenance notice' })).toHaveCount(0);
 
-    await page.goto('/admin/configuration');
-    await page.getByRole('tab', { name: 'Site banners' }).click();
+    await page.goto('/admin/configuration?tab=banners');
     await page.getByRole('tab', { name: /Saved & disabled/ }).click();
     const rowToArchive = page.locator(`[data-banner-row="${savedBanner.uuid}"]`);
     await rowToArchive.getByRole('button', { name: /^Details for / }).click();
@@ -822,9 +880,7 @@ test.describe('Admins create, edit, and publish banners', () => {
     await page.goto('/');
     await userIsLoggedIn(page);
     await expect(page.getByTestId('site-banner-region')).toHaveCount(0);
-    await expect(page.getByRole('article', { name: 'Corrected maintenance notice' })).toHaveCount(
-      0,
-    );
+    await expect(page.getByRole('region', { name: 'Corrected maintenance notice' })).toHaveCount(0);
   });
 
   test('keeps editor state and shows a stable error when publication fails', async ({ page }) => {
@@ -833,8 +889,7 @@ test.describe('Admins create, edit, and publish banners', () => {
       await route.fulfill({ status: 503, json: { error: 'internal details must not be shown' } });
     });
 
-    await page.goto('/admin/configuration');
-    await page.getByRole('tab', { name: 'Site banners' }).click();
+    await page.goto('/admin/configuration?tab=banners');
     await page.getByRole('button', { name: '+ Create banner' }).click();
     const bannerForm = page.getByTestId('banner-editor-form');
     const editor = bannerForm.locator('#banner-content-editor .ql-editor');
@@ -844,7 +899,7 @@ test.describe('Admins create, edit, and publish banners', () => {
 
     await page.getByRole('button', { name: 'Publish now' }).click();
 
-    await expect(page).toHaveURL(/\/admin\/configuration$/);
+    await expect(page).toHaveURL(/\/admin\/configuration\?tab=banners$/);
     const toast = page.getByTestId('toast-root');
     await expect(toast).toHaveAttribute('data-type', 'error');
     await expect(toast).toContainText('Banner could not be published');
@@ -978,8 +1033,7 @@ test.describe('Admins schedule banners through their lifecycle', () => {
       return route.fallback();
     });
 
-    await page.goto('/admin/configuration');
-    await page.getByRole('tab', { name: 'Site banners' }).click();
+    await page.goto('/admin/configuration?tab=banners');
     await page.getByRole('button', { name: '+ Create banner' }).click();
     const form = page.getByTestId('banner-editor-form');
     await form.locator('#banner-content-editor .ql-editor').fill('Minute-boundary maintenance');
@@ -996,8 +1050,7 @@ test.describe('Admins schedule banners through their lifecycle', () => {
     await page.clock.setFixedTime(new Date(serverNow));
     await page.goto('/help');
     await expect(page.getByTestId('site-banner')).toContainText('Minute-boundary maintenance');
-    await page.goto('/admin/configuration');
-    await page.getByRole('tab', { name: 'Site banners' }).click();
+    await page.goto('/admin/configuration?tab=banners');
     await expect(row).toContainText('Active');
 
     serverNow = endAt;
@@ -1024,8 +1077,7 @@ test.describe('Admins schedule banners through their lifecycle', () => {
     await emptyFeed;
     await expect(page.getByTestId('site-banner')).toHaveCount(0);
 
-    await page.goto('/admin/configuration');
-    await page.getByRole('tab', { name: 'Site banners' }).click();
+    await page.goto('/admin/configuration?tab=banners');
     await page.getByRole('tab', { name: 'Expired' }).click();
     await row.getByRole('button', { name: /^Details for / }).click();
     await row.getByRole('button', { name: /^Restore banner for / }).click();
@@ -1163,8 +1215,7 @@ test.describe('Admins reorder banners to control display priority', () => {
     });
 
     await page.setViewportSize({ width: 1280, height: 2_000 });
-    await page.goto('/admin/configuration');
-    await page.getByRole('tab', { name: 'Site banners' }).click();
+    await page.goto('/admin/configuration?tab=banners');
     const rows = page.locator('[data-banner-row]');
     await expect(rows).toHaveCount(4);
     await expect(page.getByTestId('banner-overlap-warning')).toContainText('4');
@@ -1173,13 +1224,13 @@ test.describe('Admins reorder banners to control display priority', () => {
     await expect(rows.nth(0)).toContainText('Second notice');
     expect(reorderRequests).toBe(0);
 
-    await page.getByRole('tab', { name: 'Access Control' }).click();
+    await page.getByRole('tab', { name: 'Branding' }).click();
     await expect(page.getByRole('heading', { name: 'Unsaved Changes' })).toBeVisible();
     await page.getByRole('button', { name: 'Keep ordering' }).click();
     await expect(rows.nth(0)).toContainText('Second notice');
-    await page.getByRole('tab', { name: 'Access Control' }).click();
+    await page.getByRole('tab', { name: 'Branding' }).click();
     await page.getByRole('button', { name: 'Discard order changes' }).click();
-    await expect(page.getByRole('heading', { name: 'Roles Management' })).toBeVisible();
+    await expect(page.getByTestId('config-tab-branding')).toBeVisible();
 
     await page.getByRole('tab', { name: 'Site banners' }).click();
     await expect(rows.nth(0)).toContainText('First notice');
@@ -1194,7 +1245,7 @@ test.describe('Admins reorder banners to control display priority', () => {
     await expect(rows.filter({ hasText: 'Concurrent arrival' })).toHaveCount(1);
     await expect(page.getByTestId('banner-overlap-warning')).toContainText('4');
 
-    await page.getByRole('tab', { name: 'Access Control' }).click();
+    await page.getByRole('tab', { name: 'Branding' }).click();
     await page.getByRole('tab', { name: 'Site banners' }).click();
     await expect(rows).toHaveCount(4);
     const keyboardHandle = page.getByRole('button', { name: /Reorder banner: Third notice/ });
@@ -1223,18 +1274,14 @@ test.describe('Admins reorder banners to control display priority', () => {
     await page.goto('/help');
     await expect(page.getByTestId('site-banner')).toHaveCount(4);
     await expect
-      .poll(() =>
-        page
-          .getByTestId('site-banner')
-          .evaluateAll((elements) => elements.map((element) => element.getAttribute('aria-label'))),
-      )
+      .poll(() => page.getByTestId('site-banner').getByRole('heading').allTextContents())
       .toEqual(['Third notice', 'Second notice', 'First notice', 'Concurrent arrival']);
   });
 });
 
 test.describe('Visitors dismiss announcements with the keyboard', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
-  test('announces new notices and retains focus after each dismissal', async ({ page }) => {
+  test('reads notices in page order and retains focus after each dismissal', async ({ page }) => {
     await mockApiConfig(page, { features: [{ name: 'OPEN', value: 'true' }] });
     await page.route('**/picsure/operations/banners/active', (route) =>
       route.fulfill({
@@ -1250,17 +1297,13 @@ test.describe('Visitors dismiss announcements with the keyboard', () => {
       }),
     );
     await page.goto('/help');
-    await expect(
-      page.getByRole('status').filter({ hasText: '2 new or updated site announcements.' }),
-    ).toBeAttached();
-    const first = page.getByRole('button', {
-      name: 'Dismiss Site announcement 1: Maintenance tonight',
-    });
+    await expect(page.getByRole('region', { name: 'Site announcement 2' })).toContainText(
+      'Maintenance tonight',
+    );
+    const first = page.getByRole('button', { name: 'Dismiss Site announcement 1' });
     await first.focus();
     await first.press('Enter');
-    const remaining = page.getByRole('button', {
-      name: 'Dismiss Site announcement 2: Maintenance tonight',
-    });
+    const remaining = page.getByRole('button', { name: 'Dismiss Site announcement 2' });
     await expect(remaining).toBeFocused();
     await remaining.press('Enter');
     await expect(page.getByText('End of site announcements.', { exact: true })).toBeFocused();
