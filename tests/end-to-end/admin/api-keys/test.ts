@@ -86,16 +86,16 @@ test.describe('api keys list', () => {
 
     // Then
     const platformTable = page.getByTestId('PlatformApiKeys-table');
-    await expect(platformTable).toContainText('picsure_def67890…');
+    await expect(platformTable).toContainText('picsure_p_def67890…');
     await expect(platformTable).toContainText('Revoked');
-    await expect(platformTable).not.toContainText('picsure_abc12345…');
+    await expect(platformTable).not.toContainText('picsure_u_abc12345…');
 
     const userTable = page.getByTestId('UserApiKeys-table');
-    await expect(userTable).toContainText('picsure_abc12345…');
-    await expect(userTable).toContainText('picsure_ghi13579…');
+    await expect(userTable).toContainText('picsure_u_abc12345…');
+    await expect(userTable).toContainText('picsure_u_ghi13579…');
     await expect(userTable).toContainText('Active');
     await expect(userTable).toContainText('Expired');
-    await expect(userTable).not.toContainText('picsure_def67890…');
+    await expect(userTable).not.toContainText('picsure_p_def67890…');
   });
 
   test('Shows the server total in the table footer', async ({ context, page }) => {

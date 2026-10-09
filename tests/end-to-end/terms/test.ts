@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import {
   test,
   mockApiSuccess,
@@ -44,6 +44,14 @@ Psama.Logout = '*/**/psama/logout';
 
 const mockTerms = '<h1>Terms of Service</h1><p>Please accept the terms to use this site.</p>';
 
+// Clicks that land before Svelte hydration are silently dropped, so retry until the modal opens
+async function openTerms(page: Page) {
+  await expect(async () => {
+    await page.getByTestId('terms-of-service-btn').click({ timeout: 2000 });
+    await expect(page.locator('#modal-component')).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 15000 });
+}
+
 test.beforeEach(async ({ page }) => {
   await mockApiConfig(page, {
     features: [
@@ -76,7 +84,7 @@ test.describe('Not logged in', () => {
     await page.goto('/');
 
     // When
-    await page.getByTestId('terms-of-service-btn').click();
+    await openTerms(page);
 
     // Then
     await expect(page.locator('#terms-of-service')).toBeVisible();
@@ -86,7 +94,7 @@ test.describe('Not logged in', () => {
     // Given
     await mockHTMLBodySuccess(page, Psama.Latest, mockTerms);
     await page.goto('/');
-    await page.getByTestId('terms-of-service-btn').click();
+    await openTerms(page);
     await expect(page.locator('#terms-of-service')).toBeVisible();
 
     // When
@@ -195,7 +203,7 @@ test.describe('Logged in', () => {
 
       // When
       await userIsLoggedIn(page);
-      await page.getByTestId('terms-of-service-btn').click();
+      await openTerms(page);
 
       // Then
       await expect(page.locator('#terms-of-service')).toBeVisible();
@@ -210,7 +218,7 @@ test.describe('Logged in', () => {
       await page.getByTestId('terms-accept-btn').click();
       await expect(page.locator('#terms-of-service')).not.toBeVisible({ timeout: 10000 });
       await userIsLoggedIn(page);
-      await page.getByTestId('terms-of-service-btn').click();
+      await openTerms(page);
       await expect(page.locator('#terms-of-service')).toBeVisible();
       await expect(page.getByTestId('modal-close-button')).toBeVisible();
 
