@@ -46,7 +46,16 @@ export async function addUser(user: UserRequest) {
 }
 
 export async function updateUser(user: UserRequest) {
-  const res: User[] = await api.put(Psama.Users, [user]);
+  const res: User[] = await api.patch(Psama.Users, [
+    {
+      uuid: user.uuid,
+      email: user.email,
+      active: user.active,
+      generalMetadata: user.generalMetadata,
+      connection: user.connection,
+      roles: user.roles,
+    },
+  ]);
   const newUser: ExtendedUser = mapExtendedUser(res[0]);
 
   const store: ExtendedUser[] = get(users);
