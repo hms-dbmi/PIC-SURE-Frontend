@@ -50,6 +50,19 @@ vi.mock('$lib/wafCaptcha', () => ({
   handleWafCaptcha: (...args: unknown[]) => mockHandleWafCaptcha(...args),
 }));
 
+const mockOpenSessionToken = vi.fn<() => Promise<string | null>>(async () => null);
+const mockAcceptSessionRefresh = vi.fn();
+const mockForgetOpenSession = vi.fn();
+const mockRecoverOpenSession = vi.fn<(sent: string) => Promise<string | null>>(async () => null);
+vi.mock('$lib/openSession', () => ({
+  openSessionToken: () => mockOpenSessionToken(),
+  acceptSessionRefresh: (...args: unknown[]) => mockAcceptSessionRefresh(...args),
+  forgetOpenSession: (...args: unknown[]) => mockForgetOpenSession(...args),
+  isSessionKeyError: (errorType: unknown) =>
+    errorType === 'api_key_invalid' || errorType === 'api_key_missing',
+  recoverOpenSession: (sent: string) => mockRecoverOpenSession(sent),
+}));
+
 import { get, post, put, del, isAbortError } from '$lib/api';
 
 function mockFetchResponse(overrides: {
@@ -70,7 +83,7 @@ function mockFetchResponse(overrides: {
 
   const headerMap = new Map(Object.entries({ 'Content-Type': contentType, ...headers }));
 
-  return {
+  const response = {
     ok,
     status,
     url: 'https://example.com/picsure/test',
@@ -78,8 +91,11 @@ function mockFetchResponse(overrides: {
       get: (key: string) => headerMap.get(key) ?? null,
     },
     text: vi.fn().mockResolvedValue(body),
+    json: vi.fn(async () => JSON.parse(body)),
     arrayBuffer: vi.fn().mockResolvedValue(overrides.arrayBuffer ?? new ArrayBuffer(0)),
+    clone: () => response,
   };
+  return response;
 }
 
 describe('api', () => {
@@ -92,6 +108,8 @@ describe('api', () => {
     mockIsWafCaptchaResponse.mockReturnValue(false);
     mockHandleWafCaptcha.mockReturnValue(true);
     mockGetSessionId.mockReturnValue('test-session-id');
+    mockOpenSessionToken.mockResolvedValue(null);
+    mockRecoverOpenSession.mockResolvedValue(null);
 
     fetchMock = vi.fn().mockResolvedValue(mockFetchResponse({}));
     vi.stubGlobal('fetch', fetchMock);
@@ -122,7 +140,7 @@ describe('api', () => {
     it('get() sends a GET request', async () => {
       await get('picsure/query');
       expect(fetchMock).toHaveBeenCalledWith(
-        'https://example.com/api/v1/open/picsure/query',
+        'https://example.com/picsure/query',
         expect.objectContaining({ method: 'GET' }),
       );
     });
@@ -130,7 +148,7 @@ describe('api', () => {
     it('post() sends a POST request', async () => {
       await post('picsure/query', { foo: 'bar' });
       expect(fetchMock).toHaveBeenCalledWith(
-        'https://example.com/api/v1/open/picsure/query',
+        'https://example.com/picsure/query',
         expect.objectContaining({ method: 'POST' }),
       );
     });
@@ -138,7 +156,7 @@ describe('api', () => {
     it('put() sends a PUT request', async () => {
       await put('picsure/query', { foo: 'bar' });
       expect(fetchMock).toHaveBeenCalledWith(
-        'https://example.com/api/v1/open/picsure/query',
+        'https://example.com/picsure/query',
         expect.objectContaining({ method: 'PUT' }),
       );
     });
@@ -146,7 +164,7 @@ describe('api', () => {
     it('del() sends a DELETE request', async () => {
       await del('picsure/query');
       expect(fetchMock).toHaveBeenCalledWith(
-        'https://example.com/api/v1/open/picsure/query',
+        'https://example.com/picsure/query',
         expect.objectContaining({ method: 'DELETE' }),
       );
     });
@@ -188,7 +206,7 @@ describe('api', () => {
   });
 
   describe('authenticate=false', () => {
-    it('does not send Authorization header even when token exists', async () => {
+    it('does not send the login token even when one exists', async () => {
       (localStorage.getItem as Mock).mockReturnValue('my-token');
       await get('picsure/test', undefined, false);
 
@@ -304,7 +322,8 @@ describe('api', () => {
   });
 
   describe('error handling', () => {
-    it('calls logout with session message on 401', async () => {
+    it('calls logout with session message on a 401 for a bearer request', async () => {
+      (localStorage.getItem as Mock).mockReturnValue('my-token');
       fetchMock.mockResolvedValue(
         mockFetchResponse({ ok: false, status: 401, body: 'Unauthorized' }),
       );
@@ -500,59 +519,206 @@ describe('api', () => {
       await get('picsure/query/sync');
 
       expect(fetchMock).toHaveBeenCalledWith(
-        'https://example.com/api/v1/open/picsure/query/sync',
+        'https://example.com/picsure/query/sync',
         expect.any(Object),
       );
     });
   });
 
-  describe('open-access proxy routing', () => {
-    it('routes token-less picsure requests through the open proxy', async () => {
-      await get('picsure/query/sync');
+  describe('open-access sessions', () => {
+    const SESSION = 'picsure_s_header.payload.signature';
+    const keyError = (errorType: string) =>
+      mockFetchResponse({
+        ok: false,
+        status: 401,
+        body: JSON.stringify({ errorType, message: 'x', requestId: null }),
+      });
 
-      expect(fetchMock).toHaveBeenCalledWith(
-        'https://example.com/api/v1/open/picsure/query/sync',
-        expect.any(Object),
-      );
-    });
-
-    it('sends picsure requests directly when a token exists', async () => {
-      (localStorage.getItem as Mock).mockReturnValue('my-token');
+    it('sends token-less picsure requests directly, with the session as the bearer', async () => {
+      mockOpenSessionToken.mockResolvedValue(SESSION);
       await get('picsure/query/sync');
 
       expect(fetchMock).toHaveBeenCalledWith(
         'https://example.com/picsure/query/sync',
         expect.any(Object),
       );
+      expect(fetchMock.mock.calls[0][1].headers['Authorization']).toBe(`Bearer ${SESSION}`);
     });
 
-    it('proxies token-less picsure requests even when authenticate:false suppresses the token', async () => {
-      // a logged-in user querying the open-access variant still needs the platform key
-      (localStorage.getItem as Mock).mockReturnValue('my-token');
-      await post('picsure/query/sync', {}, undefined, false);
+    it('sends a token-less request keyless when there is no session', async () => {
+      await get('picsure/query/sync');
 
-      expect(fetchMock).toHaveBeenCalledWith(
-        'https://example.com/api/v1/open/picsure/query/sync',
-        expect.any(Object),
-      );
+      expect(fetchMock.mock.calls[0][1].headers['Authorization']).toBeUndefined();
     });
 
-    it('does not attach a token to authenticate:false requests', async () => {
+    it('sends the login token instead of the session when there is one', async () => {
       (localStorage.getItem as Mock).mockReturnValue('my-token');
+      mockOpenSessionToken.mockResolvedValue(SESSION);
+      await get('picsure/query/sync');
+
+      expect(mockOpenSessionToken).not.toHaveBeenCalled();
+      expect(fetchMock.mock.calls[0][1].headers['Authorization']).toBe('Bearer my-token');
+    });
+
+    it('sends the session, not the token, when authenticate:false suppresses the token', async () => {
+      (localStorage.getItem as Mock).mockReturnValue('my-token');
+      mockOpenSessionToken.mockResolvedValue(SESSION);
       await post('picsure/query/sync', {}, undefined, false);
 
       const headers = fetchMock.mock.calls[0][1].headers;
-      expect(headers['Authorization']).toBeUndefined();
+      expect(headers['Authorization']).toBe(`Bearer ${SESSION}`);
       expect(headers['request-source']).toBe('Open');
     });
 
-    it('never proxies non-picsure paths', async () => {
+    it('gives non-picsure paths no session', async () => {
+      mockOpenSessionToken.mockResolvedValue(SESSION);
       await get('psama/open/validate');
 
+      expect(mockOpenSessionToken).not.toHaveBeenCalled();
       expect(fetchMock).toHaveBeenCalledWith(
         'https://example.com/psama/open/validate',
         expect.any(Object),
       );
+    });
+
+    it('offers every open response to the refresh handler', async () => {
+      mockOpenSessionToken.mockResolvedValue(SESSION);
+      await get('picsure/query/sync');
+
+      expect(mockAcceptSessionRefresh).toHaveBeenCalledWith(await fetchMock.mock.results[0].value);
+    });
+
+    it('retries once with the recovered session after a key-caused 401', async () => {
+      mockOpenSessionToken.mockResolvedValue(SESSION);
+      mockRecoverOpenSession.mockResolvedValue('picsure_s_new.payload.signature');
+      fetchMock
+        .mockResolvedValueOnce(keyError('api_key_invalid'))
+        .mockResolvedValueOnce(mockFetchResponse({ body: '{"ok":true}' }));
+
+      await expect(get('picsure/query/sync')).resolves.toEqual({ ok: true });
+
+      expect(mockRecoverOpenSession).toHaveBeenCalledWith(SESSION);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(fetchMock.mock.calls[1][1].headers['Authorization']).toBe(
+        'Bearer picsure_s_new.payload.signature',
+      );
+      expect(mockLogout).not.toHaveBeenCalled();
+    });
+
+    it('surfaces a second key-caused 401 without looping or logging out', async () => {
+      mockOpenSessionToken.mockResolvedValue(SESSION);
+      mockRecoverOpenSession.mockResolvedValue('picsure_s_new.payload.signature');
+      fetchMock.mockResolvedValue(keyError('api_key_invalid'));
+
+      await expect(get('picsure/query/sync')).rejects.toThrow('401');
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(mockRecoverOpenSession).toHaveBeenCalledTimes(1);
+      expect(mockLogout).not.toHaveBeenCalled();
+    });
+
+    it('forgets the retry token when it is rejected too', async () => {
+      mockOpenSessionToken.mockResolvedValue(SESSION);
+      mockRecoverOpenSession.mockResolvedValue('picsure_s_new.payload.signature');
+      fetchMock.mockResolvedValue(keyError('api_key_invalid'));
+
+      await expect(get('picsure/query/sync')).rejects.toThrow('401');
+
+      expect(mockForgetOpenSession).toHaveBeenCalledWith('picsure_s_new.payload.signature');
+    });
+
+    it('offers the retry response to the refresh handler too', async () => {
+      mockOpenSessionToken.mockResolvedValue(SESSION);
+      mockRecoverOpenSession.mockResolvedValue('picsure_s_new.payload.signature');
+      fetchMock
+        .mockResolvedValueOnce(keyError('api_key_invalid'))
+        .mockResolvedValueOnce(mockFetchResponse({ body: '{"ok":true}' }));
+
+      await get('picsure/query/sync');
+
+      expect(mockAcceptSessionRefresh).toHaveBeenCalledTimes(2);
+      expect(mockAcceptSessionRefresh).toHaveBeenLastCalledWith(
+        await fetchMock.mock.results[1].value,
+      );
+      expect(mockForgetOpenSession).not.toHaveBeenCalled();
+    });
+
+    it('logs a rejected session without the token', async () => {
+      mockOpenSessionToken.mockResolvedValue(SESSION);
+      fetchMock.mockResolvedValue(keyError('api_key_invalid'));
+
+      await expect(get('picsure/query/sync')).rejects.toThrow('401');
+
+      expect(mockCreateLog).toHaveBeenCalledWith('AUTH', 'open_session.rejected', undefined, {
+        status: 401,
+      });
+      expect(JSON.stringify(mockCreateLog.mock.calls)).not.toContain(SESSION);
+    });
+
+    it('neither retries nor logs out on an open 401 without an error code', async () => {
+      mockOpenSessionToken.mockResolvedValue(SESSION);
+      fetchMock.mockResolvedValue(
+        mockFetchResponse({ ok: false, status: 401, body: 'Unauthorized' }),
+      );
+
+      await expect(get('picsure/query/sync')).rejects.toThrow('401');
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(mockRecoverOpenSession).not.toHaveBeenCalled();
+      expect(mockLogout).not.toHaveBeenCalled();
+    });
+
+    it('refuses redirects on a request carrying the session, and only then', async () => {
+      mockOpenSessionToken.mockResolvedValueOnce(SESSION).mockResolvedValueOnce(null);
+      await get('picsure/query/sync');
+      await get('picsure/query/sync');
+
+      expect(fetchMock.mock.calls[0][1].redirect).toBe('error');
+      expect('redirect' in fetchMock.mock.calls[1][1]).toBe(false);
+    });
+
+    it('stops waiting for an acquisition when the request is aborted', async () => {
+      mockOpenSessionToken.mockReturnValue(new Promise(() => {}));
+      const controller = new AbortController();
+
+      const request = get('picsure/query/sync', undefined, undefined, {
+        signal: controller.signal,
+      });
+      controller.abort();
+
+      await expect(request).rejects.toSatisfy(isAbortError);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('does not retry a 401 from the access rules, and does not log out', async () => {
+      mockOpenSessionToken.mockResolvedValue(SESSION);
+      fetchMock.mockResolvedValue(keyError('unauthorized'));
+
+      await expect(get('picsure/query/sync')).rejects.toThrow('401');
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(mockRecoverOpenSession).not.toHaveBeenCalled();
+      expect(mockLogout).not.toHaveBeenCalled();
+    });
+
+    it('does not retry a keyless request, and does not log out', async () => {
+      fetchMock.mockResolvedValue(keyError('api_key_missing'));
+
+      await expect(get('picsure/query/sync')).rejects.toThrow('401');
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(mockRecoverOpenSession).not.toHaveBeenCalled();
+      expect(mockLogout).not.toHaveBeenCalled();
+    });
+
+    it('gives up when recovery has no session to offer', async () => {
+      mockOpenSessionToken.mockResolvedValue(SESSION);
+      fetchMock.mockResolvedValue(keyError('api_key_invalid'));
+
+      await expect(get('picsure/query/sync')).rejects.toThrow('401');
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(mockLogout).not.toHaveBeenCalled();
     });
   });
 
@@ -565,7 +731,7 @@ describe('api', () => {
       });
 
       expect(fetchMock).toHaveBeenCalledWith(
-        'https://example.com/api/v1/open/picsure/query',
+        'https://example.com/picsure/query',
         expect.objectContaining({ signal: controller.signal }),
       );
     });
