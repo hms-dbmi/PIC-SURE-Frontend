@@ -6,6 +6,7 @@ import {
   privileges as privilegesSeed,
   applications as applicationsSeed,
   users as usersSeed,
+  apiKeys as apiKeysSeed,
 } from '../mock-data';
 
 // Loosely typed on purpose: handlers build partial rows (a create request plus a
@@ -23,6 +24,7 @@ export const state = {
   privileges: structuredClone(privilegesSeed) as Row[],
   applications: structuredClone(applicationsSeed) as Row[],
   users: structuredClone(usersSeed) as Row[],
+  apiKeys: structuredClone(apiKeysSeed) as unknown as Row[],
   // Keyed by the raw `kind` string the app sends (e.g. "ui:featureFlag", from
   // VITE_API_CONFIG_FEATURES) rather than 'features'/'settings'/'branding' - that mapping
   // lives in Configuration.ts behind `import.meta.env`, which only Vite resolves, not this
