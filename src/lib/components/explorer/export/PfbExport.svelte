@@ -38,7 +38,7 @@
   async function getSignedUrl(): Promise<string | null> {
     const path = `${Picsure.Query}/${getDatasetId()}/signed-url`;
     try {
-      const res = await api.post(path, getQueryRequest());
+      const res = await api.get(path);
       return res.signedUrl || null;
     } catch (error) {
       console.error('Error getting signed URL:', error);
