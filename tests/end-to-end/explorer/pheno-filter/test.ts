@@ -21,7 +21,7 @@ import {
 } from '../../../../src/lib/models/Filter.svelte';
 import type { SearchResult } from '../../../../src/lib/models/Search';
 
-const countResultPath = '*/**/picsure/hpds/auth/v3/query/sync';
+const countResultPath = '*/**/picsure/hpds/auth/query/sync';
 
 test.beforeEach(async ({ page }) => {
   await mockApiConfig(page, {
@@ -756,7 +756,7 @@ test.describe('Query V3 OR features', () => {
 
   test.beforeEach(({ page }) => {
     page.on('request', (request) => {
-      if (request.url().includes('/picsure/hpds/auth/v3/query/sync')) {
+      if (request.url().includes('/picsure/hpds/auth/query/sync')) {
         const data = request.postData();
         if (data !== null) {
           querySyncRequest.push(data);

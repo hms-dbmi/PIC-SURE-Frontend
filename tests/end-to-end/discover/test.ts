@@ -25,7 +25,7 @@ test.describe('Discover for unauthenticated users', () => {
         { name: 'ENABLE_HIERARCHY', value: 'true' },
         { name: 'ENABLE_SNP_QUERY', value: 'true' },
         // Required so useOpenAccess() routes counts through the open-access
-        // sync endpoint (picsure/hpds/open/v3/query/sync) instead of v3/query/sync.
+        // sync endpoint (picsure/hpds/open/query/sync) instead of query/sync.
         { name: 'OPEN_EXPLORER', value: 'false' },
       ],
     });
@@ -49,7 +49,7 @@ test.describe('Discover for unauthenticated users', () => {
       detailResponseCat,
     );
     await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
-    await mockApiSuccess(page, '*/**/picsure/hpds/open/v3/query/sync', crossCountSyncResponsePlus3);
+    await mockApiSuccess(page, '*/**/picsure/hpds/open/query/sync', crossCountSyncResponsePlus3);
     await page.goto('/discover?search=somedata');
 
     // When
@@ -77,7 +77,7 @@ test.describe('Discover for unauthenticated users', () => {
     );
     await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
     const bigNumberSync = { '\\_studies_consents\\': '1477888±3' };
-    await mockApiSuccess(page, '*/**/picsure/hpds/open/v3/query/sync', bigNumberSync);
+    await mockApiSuccess(page, '*/**/picsure/hpds/open/query/sync', bigNumberSync);
     await page.goto('/discover?search=somedata');
 
     // When
@@ -103,7 +103,7 @@ test.describe('Discover for unauthenticated users', () => {
     await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
     await mockApiSuccess(
       page,
-      '*/**/picsure/hpds/open/v3/query/sync',
+      '*/**/picsure/hpds/open/query/sync',
       crossCountSyncResponseLessThan10,
     );
     await page.goto('/discover?search=somedata');
@@ -121,7 +121,7 @@ test.describe('Discover for unauthenticated users', () => {
   });
   test('Search results with allowFiltering false are not filterable', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, '*/**/picsure/hpds/open/v3/query/sync', '9999');
+    await mockApiSuccess(page, '*/**/picsure/hpds/open/query/sync', '9999');
     await page.goto('/discover?search=somedata');
 
     // When
@@ -133,7 +133,7 @@ test.describe('Discover for unauthenticated users', () => {
   });
   test('Search results with allowFiltering true are filterable', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, '*/**/picsure/hpds/open/v3/query/sync', '9999');
+    await mockApiSuccess(page, '*/**/picsure/hpds/open/query/sync', '9999');
     await page.goto('/discover?search=somedata');
 
     // When
@@ -169,7 +169,7 @@ test.describe('Discover for unauthenticated users', () => {
     );
     await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
     const bigNumberSync = { '\\_studies_consents\\': '1477888±3' };
-    await mockApiSuccess(page, '*/**/picsure/hpds/open/v3/query/sync', bigNumberSync);
+    await mockApiSuccess(page, '*/**/picsure/hpds/open/query/sync', bigNumberSync);
     await page.goto('/discover?search=somedata');
 
     // When

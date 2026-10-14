@@ -8,7 +8,13 @@
   import ApiKeyActions from '$lib/components/admin/api-key/cell/ApiKeyActions.svelte';
 
   import { loadApiKeys, listVersion } from '$lib/stores/ApiKeys';
-  import { getApiKeyStatus, formatInstant, extractApiError } from '$lib/models/ApiKey';
+  import {
+    getApiKeyStatus,
+    formatInstant,
+    formatKeyPrefix,
+    extractApiError,
+    type ApiKeyType,
+  } from '$lib/models/ApiKey';
   import { getDefaultRows } from '$lib/components/datatable/stores';
   import { subscribeOnChange } from '$lib/utilities/Subscribers';
 
@@ -23,7 +29,7 @@
     status: string;
   }
 
-  const { keyType, tableName }: { keyType: 'USER' | 'PLATFORM'; tableName: string } = $props();
+  const { keyType, tableName }: { keyType: ApiKeyType; tableName: string } = $props();
 
   let loadError = $state('');
 
@@ -56,7 +62,7 @@
       return page.keys.map(
         (key): ApiKeyRow => ({
           uuid: key.uuid,
-          prefix: `picsure_${key.displayPrefix}…`,
+          prefix: formatKeyPrefix(key.keyType, key.displayPrefix),
           name: key.name || '',
           email: key.email || '',
           created: formatInstant(key.createdAt),

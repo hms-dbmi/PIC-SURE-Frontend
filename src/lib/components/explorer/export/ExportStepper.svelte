@@ -97,7 +97,7 @@
 
     return withBackoff(
       async () => {
-        const res = (await api.post(`${Picsure.QueryV3}${queryFragment}`, getQueryRequest())) as {
+        const res = (await api.post(`${Picsure.Query}${queryFragment}`, getQueryRequest())) as {
           picsureResultId: string;
           status: string;
           resultMetadata: { picsureQueryId: string };

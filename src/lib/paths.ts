@@ -34,11 +34,10 @@ export const Picsure = {
   NamedDataSet: `${PREFIX}/operations/dataset/named`,
   Dictionary: DICT,
   Facets: `${DICT}/facets`,
-  Search: `${HPDS_AUTH}/search`,
   SearchValues: `${HPDS_AUTH}/search/values`,
-  QueryOpenV3Sync: `${HPDS_OPEN}/v3/query/sync`,
-  QueryV3: `${HPDS_AUTH}/v3/query`,
-  QueryV3Sync: `${HPDS_AUTH}/v3/query/sync`,
+  QueryOpenSync: `${HPDS_OPEN}/query/sync`,
+  Query: `${HPDS_AUTH}/query`,
+  QuerySync: `${HPDS_AUTH}/query/sync`,
   Visualization: {
     Distributions: `${VIZ}/auth/distributions`,
     DistributionsOpen: `${VIZ}/open/distributions`,
@@ -47,7 +46,6 @@ export const Picsure = {
 
 export const Internal = {
   Log: `${API}/log`,
-  OpenProxy: `${API}/open`,
 };
 
 const USER = 'psama/user';
@@ -62,6 +60,7 @@ export const Psama = {
   Auth: 'psama/authentication',
   Open: {
     ApiKey: 'psama/open/apiKey',
+    Session: 'psama/open/session',
   },
   Connection: 'psama/connection',
   Priviege: 'psama/privilege',

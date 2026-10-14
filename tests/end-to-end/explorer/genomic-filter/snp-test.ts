@@ -9,7 +9,7 @@ import {
 } from '../../mock-data';
 import { userIsLoggedIn } from '../../utils';
 
-const queryResultPathV3 = '*/**/picsure/hpds/auth/v3/query/sync';
+const queryResultPath = '*/**/picsure/hpds/auth/query/sync';
 
 const validSnp = 'chr17,35269878,GT,A';
 const validSnpConstraint = 'Heterozygous';
@@ -71,7 +71,7 @@ test('Search request returns 0, indicating no SNP was found', async ({ page }) =
   await page.getByTestId('snp-option').click();
 
   // When
-  await mockApiSuccess(page, queryResultPathV3, 0);
+  await mockApiSuccess(page, queryResultPath, 0);
   await page.getByTestId('snp-search-box').fill(validSnp);
   await page.getByTestId('snp-search-btn').click();
 
@@ -87,7 +87,7 @@ test('Search returns > 0, indicating SNP was found', async ({ page }) => {
   await page.getByTestId('snp-option').click();
 
   // When
-  await mockApiSuccess(page, queryResultPathV3, 12);
+  await mockApiSuccess(page, queryResultPath, 12);
   await page.getByTestId('snp-search-box').fill(validSnp);
   await page.getByTestId('snp-search-btn').click();
 
@@ -102,7 +102,7 @@ test('Apply Filters button enables once genotype interest selection is made', as
   await expect(page.getByTestId('snp-option')).toBeVisible();
   await page.getByTestId('snp-option').click();
 
-  await mockApiSuccess(page, queryResultPathV3, 12);
+  await mockApiSuccess(page, queryResultPath, 12);
   await page.getByTestId('snp-search-box').fill(validSnp);
   await page.getByTestId('snp-search-btn').click();
 
@@ -120,7 +120,7 @@ test.describe('Summary Panel', () => {
     await page.getByTestId('genomic-filter-btn').click();
     await expect(page.getByTestId('snp-option')).toBeVisible();
     await page.getByTestId('snp-option').click();
-    await mockApiSuccess(page, queryResultPathV3, 12);
+    await mockApiSuccess(page, queryResultPath, 12);
     await page.getByTestId('snp-search-box').fill(validSnp);
     await page.getByTestId('snp-search-btn').click();
     await page.getByTestId('snp-constraint').selectOption({ label: validSnpConstraint });
@@ -198,7 +198,7 @@ test('Apply Filter adds to sidepanel', async ({ page }) => {
   await expect(page.getByTestId('snp-option')).toBeVisible();
   await page.getByTestId('snp-option').click();
 
-  await mockApiSuccess(page, queryResultPathV3, 12);
+  await mockApiSuccess(page, queryResultPath, 12);
   await page.getByTestId('snp-search-box').fill(validSnp);
   await page.getByTestId('snp-search-btn').click();
 
@@ -206,7 +206,7 @@ test('Apply Filter adds to sidepanel', async ({ page }) => {
   await page.getByTestId('snp-save-btn').click();
 
   // When
-  await mockApiSuccess(page, queryResultPathV3, 200);
+  await mockApiSuccess(page, queryResultPath, 200);
   await page.getByTestId('add-filter-btn').click();
 
   // Then
@@ -221,12 +221,12 @@ test('Clicking edit filter button in results panel returns to snp filter with co
   await page.getByTestId('genomic-filter-btn').click();
   await expect(page.getByTestId('snp-option')).toBeVisible();
   await page.getByTestId('snp-option').click();
-  await mockApiSuccess(page, queryResultPathV3, 12);
+  await mockApiSuccess(page, queryResultPath, 12);
   await page.getByTestId('snp-search-box').fill(validSnp);
   await page.getByTestId('snp-search-btn').click();
   await page.getByTestId('snp-constraint').selectOption({ label: validSnpConstraint });
   await page.getByTestId('snp-save-btn').click();
-  await mockApiSuccess(page, queryResultPathV3, 200);
+  await mockApiSuccess(page, queryResultPath, 200);
   await page.getByTestId('add-filter-btn').click();
 
   // When
@@ -251,12 +251,12 @@ test('Editing filter from results panel updates results panel on save', async ({
   await page.getByTestId('genomic-filter-btn').click();
   await expect(page.getByTestId('snp-option')).toBeVisible();
   await page.getByTestId('snp-option').click();
-  await mockApiSuccess(page, queryResultPathV3, 12);
+  await mockApiSuccess(page, queryResultPath, 12);
   await page.getByTestId('snp-search-box').fill(validSnp);
   await page.getByTestId('snp-search-btn').click();
   await page.getByTestId('snp-constraint').selectOption({ label: validSnpConstraint });
   await page.getByTestId('snp-save-btn').click();
-  await mockApiSuccess(page, queryResultPathV3, 200);
+  await mockApiSuccess(page, queryResultPath, 200);
   await page.getByTestId('add-filter-btn').click();
 
   // When
@@ -289,12 +289,12 @@ test('Clicking Genomic Filtering after adding a snp filter navigates to edit fil
   await page.getByTestId('genomic-filter-btn').click();
   await expect(page.getByTestId('snp-option')).toBeVisible();
   await page.getByTestId('snp-option').click();
-  await mockApiSuccess(page, queryResultPathV3, 12);
+  await mockApiSuccess(page, queryResultPath, 12);
   await page.getByTestId('snp-search-box').fill(validSnp);
   await page.getByTestId('snp-search-btn').click();
   await page.getByTestId('snp-constraint').selectOption({ label: validSnpConstraint });
   await page.getByTestId('snp-save-btn').click();
-  await mockApiSuccess(page, queryResultPathV3, 200);
+  await mockApiSuccess(page, queryResultPath, 200);
   await page.getByTestId('add-filter-btn').click();
 
   // When

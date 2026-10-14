@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import {
   test,
   mockApiSuccess,
@@ -44,6 +44,14 @@ Psama.Logout = '*/**/psama/logout';
 
 const mockTerms = '<h1>Terms of Service</h1><p>Please accept the terms to use this site.</p>';
 
+// Clicks that land before Svelte hydration are silently dropped, so retry until the modal opens
+async function openTerms(page: Page) {
+  await expect(async () => {
+    await page.getByTestId('terms-of-service-btn').click({ timeout: 2000 });
+    await expect(page.locator('#modal-component')).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 15000 });
+}
+
 test.beforeEach(async ({ page }) => {
   await mockApiConfig(page, {
     features: [
@@ -55,7 +63,7 @@ test.beforeEach(async ({ page }) => {
     settings: [],
   });
   await mockApiSuccess(page, 'https://www.googletagmanager.com/**/*', {});
-  await mockApiSuccess(page, '*/**/picsure/hpds/auth/v3/query/sync', 99);
+  await mockApiSuccess(page, '*/**/picsure/hpds/auth/query/sync', 99);
   await mockApiSuccess(page, '*/**/picsure/dictionary/concepts*', mockSearchResults);
   await mockApiSuccess(page, '*/**/picsure/dictionary/facets', facetsResponse);
 });
@@ -76,7 +84,7 @@ test.describe('Not logged in', () => {
     await page.goto('/');
 
     // When
-    await page.getByTestId('terms-of-service-btn').click();
+    await openTerms(page);
 
     // Then
     await expect(page.locator('#terms-of-service')).toBeVisible();
@@ -86,7 +94,7 @@ test.describe('Not logged in', () => {
     // Given
     await mockHTMLBodySuccess(page, Psama.Latest, mockTerms);
     await page.goto('/');
-    await page.getByTestId('terms-of-service-btn').click();
+    await openTerms(page);
     await expect(page.locator('#terms-of-service')).toBeVisible();
 
     // When
@@ -195,7 +203,7 @@ test.describe('Logged in', () => {
 
       // When
       await userIsLoggedIn(page);
-      await page.getByTestId('terms-of-service-btn').click();
+      await openTerms(page);
 
       // Then
       await expect(page.locator('#terms-of-service')).toBeVisible();
@@ -210,7 +218,7 @@ test.describe('Logged in', () => {
       await page.getByTestId('terms-accept-btn').click();
       await expect(page.locator('#terms-of-service')).not.toBeVisible({ timeout: 10000 });
       await userIsLoggedIn(page);
-      await page.getByTestId('terms-of-service-btn').click();
+      await openTerms(page);
       await expect(page.locator('#terms-of-service')).toBeVisible();
       await expect(page.getByTestId('modal-close-button')).toBeVisible();
 
@@ -310,7 +318,7 @@ test.describe('Logged in', () => {
       await expect(toast).toHaveAttribute('data-type', 'success');
       expect(tosUpdateRequest).toBeTruthy();
       await expect(page.getByTestId('publish-terms')).not.toBeVisible();
-      await expect(page).toHaveURL(RegExp('/admin/configuration$'));
+      await expect(page).toHaveURL(RegExp('/admin/configuration\\?tab=terms$'));
     });
     test('Confirm button with api failure gives error and stays on page', async ({ page }) => {
       // Given
@@ -328,7 +336,7 @@ test.describe('Logged in', () => {
       await expect(toast).toHaveAttribute('data-type', 'error');
       expect(tosUpdateRequest).toBeTruthy();
       await expect(page.getByTestId('publish-terms')).not.toBeVisible();
-      await expect(page).toHaveURL(RegExp('/admin/configuration$'));
+      await expect(page).toHaveURL(RegExp('/admin/configuration\\?tab=terms$'));
     });
   });
 
@@ -344,13 +352,20 @@ test.describe('Logged in', () => {
       ]);
     });
 
-    test('Non-super-admin user has error and publish is disabled', async ({ page }) => {
-      // When
+    test('Admin can edit and publish terms', async ({ page }) => {
+      // Given
+      mockHTMLBodySuccess(page, Psama.Update, '');
       await gotoTermsEditor(page);
+      await expect(page.getByTestId('top-admin-only-error')).toHaveCount(0);
+
+      // When
+      await page.locator('#editor div.ql-editor').fill('Some new text');
+      await page.getByTestId('publish-terms-btn').click();
+      await page.getByText('Confirm', { exact: true }).click();
 
       // Then
-      await expect(page.getByTestId('admin-warning')).toBeVisible();
-      await expect(page.getByTestId('publish-terms-btn')).toBeDisabled();
+      await expect(page.getByTestId('toast-root')).toHaveAttribute('data-type', 'success');
+      expect(tosUpdateRequest).toBeTruthy();
     });
   });
 });

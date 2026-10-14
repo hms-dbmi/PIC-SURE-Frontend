@@ -13,7 +13,7 @@ import {
 } from '../../mock-data';
 import { getOption, clickNthFilterIcon, userIsLoggedIn } from '../../utils';
 
-const SyncQueryV3 = '*/**/picsure/hpds/auth/v3/query/sync';
+const SyncQueryPath = '*/**/picsure/hpds/auth/query/sync';
 
 interface Results {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -28,7 +28,7 @@ const successResults: Results = {
 };
 
 function mockSyncAPI(context: BrowserContext | Page, resultMap: Results) {
-  return context.route(SyncQueryV3, (route: Route) => {
+  return context.route(SyncQueryPath, (route: Route) => {
     const request = route.request().postDataJSON();
     const result = resultMap[request.query.expectedResultType];
     if (result && result.pass) {
@@ -53,7 +53,7 @@ test.describe('variant explorer', () => {
           { name: 'VARIANT_EXPLORER', value: 'true' },
         ],
       });
-      await mockApiSuccess(page, SyncQueryV3, '9999');
+      await mockApiSuccess(page, SyncQueryPath, '9999');
       await mockApiSuccess(page, '*/**/picsure/dictionary/facets', facetsResponse);
       // Add genomic filter steps
       await page.goto('/explorer');
@@ -160,7 +160,7 @@ test.describe('variant explorer', () => {
         ],
         settings,
       });
-      await mockApiSuccess(page, SyncQueryV3, '9999');
+      await mockApiSuccess(page, SyncQueryPath, '9999');
       await mockApiSuccess(page, '*/**/picsure/dictionary/facets', facetsResponse);
       await page.goto('/explorer');
       await userIsLoggedIn(page);

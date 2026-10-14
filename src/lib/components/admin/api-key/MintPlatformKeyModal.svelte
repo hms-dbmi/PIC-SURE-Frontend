@@ -8,6 +8,7 @@
   import {
     extractApiError,
     formatInstant,
+    formatKeyPrefix,
     toPlatformKeyRequest,
     type MintedPlatformKey,
     type PlatformKeyExpiry,
@@ -23,6 +24,9 @@
   // once set, the same modal swaps from the form to the see-once reveal; keeping it a single
   // Modal instance avoids a second dialog whose layer collides with the closing form dialog
   let minted: MintedPlatformKey | null = $state(null);
+  let mintedPrefix = $derived.by(() =>
+    minted ? formatKeyPrefix(minted.keyType, minted.displayPrefix) : '',
+  );
 
   // keys expire at 00:00 UTC, so the earliest selectable day must be computed in UTC too
   const minExpiryDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
@@ -95,7 +99,7 @@
         />
       </div>
       <p class="my-2">
-        Key prefix: <code class="code">picsure_{minted.displayPrefix}…</code>
+        Key prefix: <code class="code">{mintedPrefix}</code>
         &middot; Expires: {formatInstant(minted.expiresAt, 'Never')}
       </p>
       <footer class="flex justify-end mt-6">

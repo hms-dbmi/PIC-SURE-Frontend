@@ -101,7 +101,7 @@
     const crossCountFields = concepts.content.map((concept) => concept.conceptPath);
     crossCountQuery.select = crossCountFields;
 
-    const crossCountResponse: Record<string, number> = await api.post(Picsure.QueryV3Sync, {
+    const crossCountResponse: Record<string, number> = await api.post(Picsure.QuerySync, {
       query: crossCountQuery,
     });
 
