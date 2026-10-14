@@ -16,7 +16,7 @@ test.beforeEach(async ({ page }) => {
   await mockApiConfig(page);
   await mockApiSuccess(page, facetResultPath, facetsResponse);
   await mockApiSuccess(page, '*/**/picsure/dictionary/concepts*', detailResponseCat);
-  await mockApiSuccess(page, '*/**/picsure/hpds/auth/v3/query/sync', '9999');
+  await mockApiSuccess(page, '*/**/picsure/hpds/auth/query/sync', '9999');
 });
 
 const HIERARCHY_AND_EXPORT_FEATURES = [

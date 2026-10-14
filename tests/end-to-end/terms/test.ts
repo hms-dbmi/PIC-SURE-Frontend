@@ -63,7 +63,7 @@ test.beforeEach(async ({ page }) => {
     settings: [],
   });
   await mockApiSuccess(page, 'https://www.googletagmanager.com/**/*', {});
-  await mockApiSuccess(page, '*/**/picsure/hpds/auth/v3/query/sync', 99);
+  await mockApiSuccess(page, '*/**/picsure/hpds/auth/query/sync', 99);
   await mockApiSuccess(page, '*/**/picsure/dictionary/concepts*', mockSearchResults);
   await mockApiSuccess(page, '*/**/picsure/dictionary/facets', facetsResponse);
 });

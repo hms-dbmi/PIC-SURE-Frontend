@@ -94,7 +94,7 @@ async function getConceptCount({ isOpenAccess }: RequestMapOptions): Promise<Pat
 
 function blank({ addFilters, isOpenAccess }: RequestMapOptions): Promise<PatientCount> {
   const request = addFilters ? getQueryRequestV3('COUNT') : getBlankQueryRequestV3('COUNT');
-  const path = useOpenAccess(isOpenAccess) ? Picsure.QueryOpenV3Sync : Picsure.QueryV3Sync;
+  const path = useOpenAccess(isOpenAccess) ? Picsure.QueryOpenSync : Picsure.QuerySync;
   return api.post(path, request).then(rejectIfQueryError);
 }
 
@@ -143,7 +143,7 @@ async function getOpenPatientCount({ addFilters }: RequestMapOptions): Promise<P
     }),
   );
   return api
-    .post(Picsure.QueryOpenV3Sync, request)
+    .post(Picsure.QueryOpenSync, request)
     .then(rejectIfQueryError)
     .then((counts) => countResult([counts['\\_studies_consents\\'] || 0]));
 }
@@ -157,7 +157,7 @@ function getAuthPatientCount({ addFilters }: RequestMapOptions): Promise<Patient
       expectedResultType: request.query.expectedResultType,
     }),
   );
-  return api.post(Picsure.QueryV3Sync, request).then(rejectIfQueryError);
+  return api.post(Picsure.QuerySync, request).then(rejectIfQueryError);
 }
 
 function patientCount(options: RequestMapOptions): Promise<PatientCount> {
@@ -172,7 +172,7 @@ function getCrossCounts(field: string, type: ExpectedResultType) {
     const request = addFilters
       ? getQueryRequestV3(type, mapper)
       : getBlankQueryRequestV3(type, mapper);
-    const path = useOpenAccess(isOpenAccess) ? Picsure.QueryOpenV3Sync : Picsure.QueryV3Sync;
+    const path = useOpenAccess(isOpenAccess) ? Picsure.QueryOpenSync : Picsure.QuerySync;
     log(
       createLog('QUERY', 'query.execute', {
         isOpenAccess,
@@ -202,7 +202,7 @@ function getConsentCount(type: ExpectedResultType) {
     const request = addFilters
       ? getQueryRequestV3(type, mapper)
       : getBlankQueryRequestV3(type, mapper);
-    const path = useOpenAccess(isOpenAccess) ? Picsure.QueryOpenV3Sync : Picsure.QueryV3Sync;
+    const path = useOpenAccess(isOpenAccess) ? Picsure.QueryOpenSync : Picsure.QuerySync;
     return api.post(path, request).then(rejectIfQueryError);
   };
 }
