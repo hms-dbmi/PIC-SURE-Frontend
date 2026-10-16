@@ -100,8 +100,8 @@ importers:
         specifier: ^10.2.0
         version: 10.2.0
       driver.js:
-        specifier: ^1.4.0
-        version: 1.4.0
+        specifier: ^1.9.0
+        version: 1.9.0
       gtagjs:
         specifier: ^0.0.10
         version: 0.0.10
@@ -204,7 +204,7 @@ importers:
         version: 5.56.4(@typescript-eslint/types@8.70.1)
       svelte-check:
         specifier: ^4.7.3
-        version: 4.7.3(picomatch@4.0.5)(svelte@5.56.4(@typescript-eslint/types@8.70.1))(typescript@6.0.3)
+        version: 4.7.3(picomatch@4.0.7)(svelte@5.56.4(@typescript-eslint/types@8.70.1))(typescript@6.0.3)
       svelte-eslint-parser:
         specifier: ^1.6.1
         version: 1.6.1(svelte@5.56.4(@typescript-eslint/types@8.70.1))
@@ -1605,8 +1605,8 @@ packages:
     resolution: {integrity: sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw==}
     engines: {node: '>=12'}
 
-  driver.js@1.4.0:
-    resolution: {integrity: sha512-Gm64jm6PmcU+si21sQhBrTAM1JvUrR0QhNmjkprNLxohOBzul9+pNHXgQaT9lW84gwg9GMLB3NZGuGolsz5uew==}
+  driver.js@1.9.0:
+    resolution: {integrity: sha512-+YWVdNVUrY1/2spszQshohWYY4soIjNBnMFS6lfmousT8igos2lmswhlqyuuNMhr+qbV0EjJ+L6i2FECPr6Ygg==}
 
   dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
@@ -1670,7 +1670,7 @@ packages:
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
       eslint: ^8.57.1 || ^9.0.0 || ^10.0.0
-      svelte: '>=5.53.5'
+      svelte: '>=5.51.5'
     peerDependenciesMeta:
       svelte:
         optional: true
@@ -4121,7 +4121,7 @@ snapshots:
 
   dotenv@17.4.2: {}
 
-  driver.js@1.4.0: {}
+  driver.js@1.9.0: {}
 
   dunder-proto@1.0.1:
     dependencies:
@@ -5045,12 +5045,12 @@ snapshots:
 
   supports-preserve-symlinks-flag@1.0.0: {}
 
-  svelte-check@4.7.3(picomatch@4.0.5)(svelte@5.56.4(@typescript-eslint/types@8.70.1))(typescript@6.0.3):
+  svelte-check@4.7.3(picomatch@4.0.7)(svelte@5.56.4(@typescript-eslint/types@8.70.1))(typescript@6.0.3):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       '@sveltejs/load-config': 0.2.0
       chokidar: 4.0.3
-      fdir: 6.5.0(picomatch@4.0.5)
+      fdir: 6.5.0(picomatch@4.0.7)
       picocolors: 1.1.1
       sade: 1.8.1
       svelte: 5.56.4(@typescript-eslint/types@8.70.1)
