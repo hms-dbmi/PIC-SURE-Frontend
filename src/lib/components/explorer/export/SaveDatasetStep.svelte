@@ -64,7 +64,7 @@
           ...request.query.select,
           ...$exports.map(({ conceptPath }) => conceptPath),
         ];
-        return api.post(Picsure.QueryV3, request).then((res: DataSetResponse) => {
+        return api.post(Picsure.Query, request).then((res: DataSetResponse) => {
           setDatasetId(res.picsureResultId || 'Error');
           if (res.picsureResultId) {
             log(

@@ -15,7 +15,7 @@
   }
 
   async function deleteRow() {
-    if (!isTopAdmin) return;
+    if (!$isTopAdmin) return;
     try {
       await deleteRole(data.cell);
       toaster.success({

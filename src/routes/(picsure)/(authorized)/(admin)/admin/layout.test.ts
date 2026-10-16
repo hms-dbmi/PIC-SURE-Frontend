@@ -26,9 +26,9 @@ function isRedirect(e: unknown): e is Redirect {
   return typeof e === 'object' && e !== null && 'status' in e && 'location' in e;
 }
 
-async function captureRedirect(): Promise<Redirect | null> {
+async function captureRedirect(parent = async () => ({})): Promise<Redirect | null> {
   try {
-    await load({} as Parameters<typeof load>[0]);
+    await load({ parent } as unknown as Parameters<typeof load>[0]);
     return null;
   } catch (e) {
     if (isRedirect(e)) return e;
@@ -52,6 +52,16 @@ describe('admin layout guard', () => {
     store.value = { privileges: [PicsurePrivileges.ADMIN] };
 
     expect(await captureRedirect()).toBeNull();
+  });
+
+  it('checks privileges only after the parent layout has loaded the user', async () => {
+    // A fresh tab has a token but no user until the authorized layout hydrates it.
+    const parent = async () => {
+      store.value = { privileges: [PicsurePrivileges.ADMIN] };
+      return {};
+    };
+
+    expect(await captureRedirect(parent)).toBeNull();
   });
 
   it('redirects to / for a user who is neither', async () => {

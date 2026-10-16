@@ -73,6 +73,7 @@ describe('MintPlatformKeyModal', () => {
 
     const key = await screen.findByTestId('minted-api-key');
     expect(key).toHaveTextContent(FAKE_KEY);
+    expect(screen.getByText('picsure_p_zzz99999…')).toBeInTheDocument();
 
     const warning = screen.getByRole('alert');
     expect(warning).toHaveTextContent(/shown only once/i);

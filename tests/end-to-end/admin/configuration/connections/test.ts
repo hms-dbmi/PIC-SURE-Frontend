@@ -410,44 +410,16 @@ test.describe('Required Fields', () => {
 
 test.describe('Admin on Configuration page', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/adminUser.json' });
-  test('Action and add button(s) are disabled when not top admin', async ({ page }) => {
-    // Given
-    await page.goto('/admin/configuration');
-    await userIsLoggedIn(page);
+  for (const path of ['new', `${mockConnections[0].uuid}/edit`]) {
+    test(`connection/${path} redirects to the configuration page when not top admin`, async ({
+      page,
+    }) => {
+      // When
+      await page.goto(`/admin/configuration/connection/${path}`);
 
-    // Then
-    // Check that all edit buttons are disabled
-    for (const connection of mockConnections) {
-      await expect(page.getByTestId(`connection-${connection.uuid}-edit-btn`)).toBeDisabled();
-    }
-
-    // Check that all delete buttons are disabled
-    for (const connection of mockConnections) {
-      await expect(page.getByTestId(`connection-${connection.uuid}-delete-btn`)).toBeDisabled();
-    }
-    // Check that add connection button is disabled
-    await expect(page.getByTestId('add-connection')).toHaveClass(/opacity-50 pointer-events-none/);
-  });
-  test('Error alert is visible when not top admin', async ({ page }) => {
-    // Given
-    await page.goto('/admin/configuration');
-    await userIsLoggedIn(page);
-    // Then
-    await expect(page.getByTestId('top-admin-only-error')).toBeVisible();
-  });
-  test('Can still navigate to edit page but its actions and inputs are disabled', async ({
-    page,
-  }) => {
-    // Given
-    await page.goto('/admin/configuration');
-    await userIsLoggedIn(page);
-    // When
-    await page.locator('#connection-table table tbody tr').first().click();
-    // Then
-    await expect(page.getByTestId('connection-form')).toBeVisible();
-    await expect(page.getByTestId('connection-form')).toHaveAttribute('disabled', '');
-    await expect(page.getByTestId('required-field-new-btn')).toBeDisabled();
-    await expect(page.getByTestId('connection-save-btn')).toBeDisabled();
-    await expect(page.getByTestId('connection-cancel-btn')).not.toBeDisabled();
-  });
+      // Then
+      await expect(page).toHaveURL(/\/admin\/configuration$/);
+      await expect(page.getByTestId('connection-form')).toHaveCount(0);
+    });
+  }
 });
