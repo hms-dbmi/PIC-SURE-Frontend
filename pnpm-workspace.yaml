@@ -1,5 +1,5 @@
 allowBuilds:
-  '@scarf/scarf': set this to true or false
+  '@scarf/scarf': false
   '@tailwindcss/oxide': true
   esbuild: true
 
