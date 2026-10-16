@@ -1,0 +1,91 @@
+name: Quality Gates
+
+# Extra evidence for low-risk PRs, which skip human review: coverage of the lines a PR adds, and
+# whether it adds duplicated code (new clones versus origin/<base>). Both run for every PR, not just risk:low ones,
+# so the numbers are always visible. Make them required checks in the branch ruleset: they
+# are what stands in for a reviewer on risk:low PRs.
+#
+# Already covered by tests.yml: lint, typecheck, vitest, playwright.
+# SAST is CodeQL "default setup" (Settings > Code security), which needs no workflow.
+# Secrets are covered by GitHub secret scanning + push protection (same settings page).
+# tests.yml's `audit` job is continue-on-error, so it is advisory and not a gate.
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  diff-coverage:
+    name: Diff coverage
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Use PNPM 10
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+        with:
+          version: 10
+      - name: Use Node 24
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .nvmrc
+          cache: 'pnpm'
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Sync SvelteKit
+        run: pnpm svelte-kit sync
+      # Assumes @vitest/coverage-v8 (or -istanbul) is installed. The flags override whatever
+      # reporter vitest.config sets, so lcov is always written to coverage/lcov.info.
+      - name: Run unit tests with coverage
+        run: pnpm run test:vitest --coverage.enabled=true --coverage.reporter=lcov --coverage.reportsDirectory=coverage
+      - name: Coverage of changed lines
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          if [ ! -f coverage/lcov.info ]; then
+            echo "::error::coverage/lcov.info was not produced. Install a vitest coverage provider and check the test:vitest script accepts --coverage flags."
+            exit 1
+          fi
+          node .github/scripts/risk/diff-coverage.mjs lcov coverage/lcov.info
+
+  duplication:
+    name: Duplication delta
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+      - name: Use Node 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: .github/scripts/risk/package-lock.json
+      - name: Install jscpd
+        run: npm ci --prefix .github/scripts/risk --ignore-scripts --no-audit --no-fund
+      # Fails only on clones origin/${BASE_REF} doesn't have (--baseline-from-ref needs fetch-depth: 0).
+      # --fail-on-empty catches filters that match no files.
+      - name: Check for new duplicated code
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: >-
+          .github/scripts/risk/node_modules/.bin/jscpd
+          --pattern 'src/**/*.{ts,js,svelte}'
+          --ignore '**/*.{test,spec}.{ts,js},**/*.d.ts,**/.svelte-kit/**,**/node_modules/**'
+          --min-lines 6 --min-tokens 60
+          --baseline-from-ref "origin/${BASE_REF}"
+          --fail-on-new-clones 0
+          --fail-on-empty
+          --reporters console
+          .

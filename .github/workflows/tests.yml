@@ -4,6 +4,12 @@ on:
     branches: [main]
   pull_request:
 
+# Jobs here run PR code, so none may hold checks: write, or test code could post a fake
+# "Review policy" check as the GitHub Actions app. A PR that adds its own workflow is not
+# stopped here; code-owner review of .github/ is (see .github/RISK_REVIEW.md).
+permissions:
+  contents: read
+
 jobs:
   setup:
     runs-on: ubuntu-22.04

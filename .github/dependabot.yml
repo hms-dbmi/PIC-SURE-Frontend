@@ -23,3 +23,13 @@ updates:
       # See the @types/node note above - runtime majors are upgraded manually.
       - dependency-name: 'node'
         update-types: ['version-update:semver-major']
+
+  # Tools the risk workflows run (jscpd). Also under .github/, so always human-reviewed.
+  - package-ecosystem: 'npm'
+    directory: '/.github/scripts/risk'
+    schedule:
+      interval: 'weekly'
+    commit-message:
+      prefix: '[actions] '
+    labels:
+      - 'ignore-for-release'
