@@ -3,12 +3,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 
+const log = vi.hoisted(() => vi.fn());
+
+vi.mock('$lib/logger', () => ({
+  log,
+  createLog: (eventType: string, action?: string) => ({ event_type: eventType, action }),
+}));
+
 import CodeBlock from '$lib/components/CodeBlock.svelte';
 
 const code = 'print("hello world")';
 
 describe('CodeBlock', () => {
   beforeEach(() => {
+    log.mockReset();
     Object.defineProperty(navigator, 'clipboard', {
       value: { writeText: vi.fn() },
       configurable: true,
@@ -37,6 +45,14 @@ describe('CodeBlock', () => {
     expect(button.querySelector('i')).toHaveClass('fa-copy');
   });
 
+  it('names the icon-only copy button', () => {
+    render(CodeBlock, { code, lang: 'python' });
+
+    expect(screen.getByRole('button', { name: 'Copy code' })).toBe(
+      screen.getByTestId('code-block-copy-btn'),
+    );
+  });
+
   it('copies the raw code to the clipboard and shows confirmation', async () => {
     render(CodeBlock, { code, lang: 'python' });
 
@@ -45,6 +61,32 @@ describe('CodeBlock', () => {
 
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(code);
     expect(button.querySelector('i')).toHaveClass('fa-square-check');
+  });
+
+  it('copies copyCode instead of the displayed code when it is given', async () => {
+    render(CodeBlock, { code: 'shown ••••', copyCode: 'shown secret', lang: 'bash' });
+
+    await fireEvent.click(screen.getByTestId('code-block-copy-btn'));
+
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith('shown secret');
+  });
+
+  it('hides every occurrence of hiddenText from screen readers', () => {
+    const { container } = render(CodeBlock, {
+      code: 'export A="••••" B="••••"',
+      hiddenText: '••••',
+      lang: 'bash',
+    });
+
+    const hidden = Array.from(container.querySelectorAll('pre.shiki [aria-hidden="true"]'));
+    expect(hidden.map((span) => span.textContent)).toEqual(['••••', '••••']);
+    expect(container.querySelector('pre.shiki')).toHaveTextContent('export A="••••" B="••••"');
+  });
+
+  it('hides nothing when hiddenText is not given', () => {
+    const { container } = render(CodeBlock, { code: 'shown ••••', lang: 'bash' });
+
+    expect(container.querySelector('pre.shiki [aria-hidden="true"]')).not.toBeInTheDocument();
   });
 
   it('keeps the idle icon when the clipboard write is rejected', async () => {
@@ -57,5 +99,15 @@ describe('CodeBlock', () => {
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(code);
     expect(button.querySelector('i')).toHaveClass('fa-copy');
     expect(button.querySelector('i')).not.toHaveClass('fa-square-check');
+  });
+
+  it('does not log when the clipboard write is rejected', async () => {
+    vi.mocked(navigator.clipboard.writeText).mockRejectedValue(new Error('copy denied'));
+    render(CodeBlock, { code, lang: 'python', logAction: 'token.copy' });
+
+    await fireEvent.click(screen.getByTestId('code-block-copy-btn'));
+
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(code);
+    expect(log).not.toHaveBeenCalled();
   });
 });

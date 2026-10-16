@@ -206,6 +206,21 @@ export async function getUser(force?: boolean, hasToken = false) {
   }
 }
 
+let longTermTokenRequest: Promise<void> | undefined;
+
+/**
+ * Fetches the user with their long-term token from /me?hasToken once for all concurrent
+ * callers. A call made after that request settles fetches again.
+ *
+ * @returns a promise that settles with the request and rejects when it fails
+ */
+export function loadLongTermToken(): Promise<void> {
+  longTermTokenRequest ??= getUser(true, true).finally(() => {
+    longTermTokenRequest = undefined;
+  });
+  return longTermTokenRequest;
+}
+
 export function refreshLongTermToken() {
   return api.get(Psama.User.Refresh).then((response: { userLongTermToken: string }) => {
     if (!response.userLongTermToken) {

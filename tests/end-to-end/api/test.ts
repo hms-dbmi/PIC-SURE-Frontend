@@ -582,6 +582,34 @@ test.describe('API page', () => {
       0,
     );
   });
+
+  test('Shows the AI Assistant option when MCP_CONNECT and MCP_URL are set', async ({ page }) => {
+    await mockApiConfig(page, {
+      features: [
+        { name: 'REQUIRE_CONSENTS', value: 'true' },
+        { name: 'ENABLE_GENE_QUERY', value: 'true' },
+        { name: 'ENABLE_SNP_QUERY', value: 'true' },
+        { name: 'MCP_CONNECT', value: 'true' },
+      ],
+      settings: [{ name: 'MCP_URL', value: 'https://picsure.example.org/mcp' }],
+    });
+    await page.goto('/api');
+    await userIsLoggedIn(page);
+
+    const assistantHeader = page
+      .getByTestId('workflow-assistant')
+      .getByRole('heading', { level: 3 })
+      .getByRole('button');
+    await expect(assistantHeader).toContainText('AI Assistant');
+    await assistantHeader.click();
+
+    const panel = page.getByTestId('mcp-connect');
+    await expect(panel).toBeVisible();
+    await expect(panel).toContainText(
+      'claude mcp add --scope user --transport http picsure "https://picsure.example.org/mcp"',
+    );
+    await expect(panel).not.toContainText('For open access without login');
+  });
 });
 
 test.describe('Legacy analyze routes redirect to /api', () => {
@@ -686,6 +714,32 @@ test.describe('API page logged out', () => {
     await expect(rCode).toContainText('include_consents=FALSE');
     await expect(rCode).toContainText('requires_auth=FALSE');
     await expect(rCode).toContainText('supports_genomic=FALSE');
+  });
+
+  test('Deep link #workflow-assistant opens the AI Assistant option when it is shown', async ({
+    page,
+  }) => {
+    await mockApiConfig(page, {
+      features: [
+        { name: 'OPEN', value: 'true' },
+        { name: 'MCP_CONNECT', value: 'true' },
+      ],
+      settings: [{ name: 'MCP_URL', value: 'https://picsure.example.org/mcp' }],
+    });
+
+    await page.goto('/api#workflow-assistant');
+
+    await expect(page.getByTestId('mcp-connect')).toBeVisible();
+  });
+
+  test('Deep link #workflow-assistant leaves every option collapsed when it is hidden', async ({
+    page,
+  }) => {
+    await page.goto('/api#workflow-assistant');
+
+    await expect(page.getByTestId('workflow-python')).toBeVisible();
+    await expect(page.getByTestId('workflow-assistant')).toHaveCount(0);
+    await expect(page.getByTestId('mcp-connect')).toHaveCount(0);
   });
 
   test('Table of contents lists all page sections', async ({ page }) => {

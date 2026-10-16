@@ -15,6 +15,8 @@
   import UserToken from '$lib/components/UserToken.svelte';
   import PublicAccessKey from '$lib/components/PublicAccessKey.svelte';
   import CodeBlock from '$lib/components/CodeBlock.svelte';
+  import McpConnect from '$lib/components/McpConnect.svelte';
+  import { mcpConnectUrl } from '$lib/utilities/Mcp';
   import TocLayout from '$lib/components/toc/TocLayout.svelte';
   import TocSection from '$lib/components/toc/TocSection.svelte';
 
@@ -126,6 +128,10 @@
 
   let openWorkflows: string[] = $state([]);
 
+  const showMcpConnect = $derived(
+    mcpConnectUrl(config.features.mcpConnect, config.settings.mcpUrl) !== '',
+  );
+
   const tocEntries = [
     { id: 'authentication', label: 'Authentication' },
     { id: 'choose-your-workflow', label: 'Choose Your Workflow' },
@@ -135,7 +141,7 @@
   onMount(() => {
     mounted = true;
 
-    const deepLink = window.location.hash.match(/^#workflow-(python|r|http)$/);
+    const deepLink = window.location.hash.match(/^#workflow-(python|r|http|assistant)$/);
     // The item's panel slides open and the token card in Authentication loads after
     // the first scroll, so the item moves and the page grows; re-align until the
     // visitor takes over.
@@ -331,6 +337,34 @@
             </Accordion.Item>
           </div>
         {/each}
+        {#if showMcpConnect}
+          <div id="workflow-assistant" data-testid="workflow-assistant">
+            <Accordion.Item
+              value="assistant"
+              base="rounded-container border border-surface-200 bg-white dark:bg-surface-950 data-[state=open]:border-primary-500"
+              controlHover="hover:bg-surface-100-900"
+              controlPadding="p-6"
+              controlRounded="rounded-container"
+              panelPadding="px-6 pb-6"
+            >
+              {#snippet control()}
+                <span class="flex flex-wrap items-center gap-3">
+                  <span class="text-xl font-bold">AI Assistant</span>
+                  <span class="badge shrink-0 preset-tonal-primary">Open access</span>
+                </span>
+                <span class="block mt-1 text-base">
+                  Best if you want an assistant such as Claude or Cursor to search PIC-SURE for you.
+                </span>
+                <span class="block mt-1 text-sm font-mono text-surface-600-400">
+                  Any assistant that supports MCP
+                </span>
+              {/snippet}
+              {#snippet panel()}
+                <McpConnect />
+              {/snippet}
+            </Accordion.Item>
+          </div>
+        {/if}
       </Accordion>
     </TocSection>
 
