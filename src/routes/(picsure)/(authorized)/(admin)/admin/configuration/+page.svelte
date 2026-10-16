@@ -1,6 +1,8 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import { resolve } from '$app/paths';
-  import { goto } from '$app/navigation';
+  import { afterNavigate, beforeNavigate, goto, replaceState } from '$app/navigation';
+  import { page } from '$app/state';
   import { Tabs } from '@skeletonlabs/skeleton-svelte';
 
   import type { Indexable } from '$lib/types';
@@ -18,6 +20,7 @@
   import RequiredFields from '$lib/components/admin/configuration/cell/RequiredFields.svelte';
   import ConfigKindTab from '$lib/components/admin/configuration/ConfigKindTab.svelte';
   import BannerManagementView from '$lib/components/admin/configuration/BannerManagementView.svelte';
+  import ApiKeysPanel from '$lib/components/admin/api-key/ApiKeysPanel.svelte';
 
   import { privileges, loadPrivileges } from '$lib/stores/Privileges';
   import { roles, loadRoles } from '$lib/stores/Roles';
@@ -27,10 +30,54 @@
 
   import Loading from '$lib/components/Loading.svelte';
 
-  let tabSet: string = $state('Access Control');
-  let requestedTab: string = $state('Access Control');
+  // Tab label -> its ?tab= value, so links (e.g. the old /admin/api-keys route) can open a tab.
+  const TAB_PARAMS: Record<string, string> = {
+    'Access Control': 'access-control',
+    'Site banners': 'banners',
+    'Settings & Features': 'settings',
+    Branding: 'branding',
+    'API Keys': 'api-keys',
+    'Terms of Service': 'terms',
+  };
+  let visibleTabs: string[] = $derived(
+    Object.keys(TAB_PARAMS).filter(
+      (tab) =>
+        // PSAMA only accepts role, privilege, and connection writes from top admins.
+        (tab !== 'Access Control' || $isTopAdmin) &&
+        (tab !== 'Terms of Service' || config.features.termsOfService),
+    ),
+  );
+
+  function tabFromUrl(url: URL): string | undefined {
+    const requested = url.searchParams.get('tab');
+    return visibleTabs.find((tab) => TAB_PARAMS[tab] === requested);
+  }
+
+  const startTab = untrack(() => tabFromUrl(page.url) ?? visibleTabs[0]);
+  let tabSet: string = $state(startTab);
+  let requestedTab: string = $state(startTab);
   let bannerEditorDirty = $state(false);
   let pendingTab: string | null = $state(null);
+
+  function showTab(tab: string) {
+    tabSet = tab;
+    requestedTab = tab;
+    replaceState(resolve(`/admin/configuration?tab=${TAB_PARAMS[tab]}`), page.state);
+  }
+
+  // A link that only changes the query (e.g. the nav's Configuration link, or the old
+  // /admin/api-keys route) keeps this page mounted, so follow later navigations too. showTab's
+  // replaceState doesn't update page.url, so this doesn't fire for tab clicks. The banner editor's
+  // navigation guard has already confirmed any unsaved changes by the time the URL changes.
+  $effect(() => {
+    const linked = tabFromUrl(page.url) ?? visibleTabs[0];
+    untrack(() => {
+      if (linked !== tabSet) {
+        bannerEditorDirty = false;
+        showTab(linked);
+      }
+    });
+  });
 
   $effect(() => {
     if (requestedTab !== tabSet) {
@@ -38,9 +85,20 @@
         pendingTab = requestedTab;
         requestedTab = tabSet;
       } else {
-        tabSet = requestedTab;
+        untrack(() => showTab(requestedTab));
       }
     }
+  });
+
+  // A link to the Site banners tab while it's open (e.g. the nav's Configuration link for admins)
+  // doesn't change tabs, so remount the view to drop the changes the editor's guard discarded.
+  let bannerViewKey = $state(0);
+  let leftBannersOpen = false;
+  beforeNavigate(() => {
+    leftBannersOpen = tabSet === 'Site banners';
+  });
+  afterNavigate(({ type }) => {
+    if (type !== 'enter' && leftBannersOpen && tabSet === 'Site banners') bannerViewKey += 1;
   });
 
   function resolveBannerTabChange(destination: string | null) {
@@ -48,8 +106,7 @@
     requestedTab = tabSet;
     if (destination) {
       bannerEditorDirty = false;
-      tabSet = destination;
-      requestedTab = destination;
+      showTab(destination);
     }
   }
 
@@ -107,125 +164,134 @@
   <title>{config.branding.applicationName} | Configuration</title>
 </svelte:head>
 
-<Content title="Configuration">
-  {#if !$isTopAdmin && tabSet !== 'Site banners'}
+<!-- The operations service only accepts config writes from top admins. Tabs keep hidden panels
+     mounted, so only the open tab renders its notice. -->
+{#snippet readOnlyNotice(tab: string)}
+  {#if !$isTopAdmin && tabSet === tab}
     <ErrorAlert data-testid="top-admin-only-error" title="Top Administrator Only" color="warning">
       <p>
-        Configurations are READ ONLY for admin users. Please contact your administrator to make
+        These settings are READ ONLY for admin users. Please contact your administrator to make
         changes.
       </p>
     </ErrorAlert>
   {/if}
+{/snippet}
+
+<Content title="Configuration">
   <Tabs value={tabSet} onValueChange={(e: { value: string }) => (requestedTab = e.value)}>
     {#snippet list()}
-      <TabItem bind:group={requestedTab} value="Access Control">Access Control</TabItem>
-      <TabItem bind:group={requestedTab} value="Settings & Features">Settings & Features</TabItem>
-      <TabItem bind:group={requestedTab} value="Branding">Branding</TabItem>
-      <TabItem bind:group={requestedTab} value="Site banners">Site banners</TabItem>
-      {#if config.features.termsOfService}
-        <TabItem bind:group={requestedTab} value="Terms of Service">Terms of Service</TabItem>
-      {/if}
+      {#each visibleTabs as tab (tab)}
+        <TabItem bind:group={requestedTab} value={tab}>{tab}</TabItem>
+      {/each}
     {/snippet}
     {#snippet content()}
-      <Tabs.Panel value="Access Control">
-        <div id="role-table" class="mb-10">
-          <h2>Roles Management</h2>
-          {#await loadRoles()}
-            <Loading />
-          {:then}
-            <div class="flex gap-4 my-6">
-              <div class="flex-auto">
-                <a
-                  data-testid="add-role"
-                  class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500 {!$isTopAdmin
-                    ? 'opacity-50 pointer-events-none'
-                    : ''}"
-                  href={resolve('/admin/configuration/role/new')}
-                >
-                  + Add Role
-                </a>
+      {#if $isTopAdmin}
+        <Tabs.Panel value="Access Control">
+          <div id="role-table" class="mb-10">
+            <h2>Roles Management</h2>
+            {#await loadRoles()}
+              <Loading />
+            {:then}
+              <div class="flex gap-4 my-6">
+                <div class="flex-auto">
+                  <a
+                    data-testid="add-role"
+                    class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
+                    href={resolve('/admin/configuration/role/new')}
+                  >
+                    + Add Role
+                  </a>
+                </div>
               </div>
-            </div>
-            <Datatable
-              tableName="Roles"
-              data={$roles}
-              columns={roleTable.columns}
-              cellOverides={roleTable.overrides}
-              rowClickHandler={roleRowCLick}
-              isClickable
-            />
-          {:catch}
-            <ErrorAlert title="API Error">
-              Something went wrong when sending your request for roles.
-            </ErrorAlert>
-          {/await}
-        </div>
-        <div id="privilege-table" class="mb-10">
-          <h2>Privileges Management</h2>
-          {#await loadAppsAndPriv()}
-            <Loading />
-          {:then}
-            <div class="flex gap-4 my-6">
-              <div class="flex-auto">
-                <a
-                  data-testid="add-privilege"
-                  class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500 {!$isTopAdmin
-                    ? 'opacity-50 pointer-events-none'
-                    : ''}"
-                  href={resolve('/admin/configuration/privilege/new')}
-                >
-                  + Add Privilege
-                </a>
+              <Datatable
+                tableName="Roles"
+                data={$roles}
+                columns={roleTable.columns}
+                cellOverides={roleTable.overrides}
+                rowClickHandler={roleRowCLick}
+                isClickable
+              />
+            {:catch}
+              <ErrorAlert title="API Error">
+                Something went wrong when sending your request for roles.
+              </ErrorAlert>
+            {/await}
+          </div>
+          <div id="privilege-table" class="mb-10">
+            <h2>Privileges Management</h2>
+            {#await loadAppsAndPriv()}
+              <Loading />
+            {:then}
+              <div class="flex gap-4 my-6">
+                <div class="flex-auto">
+                  <a
+                    data-testid="add-privilege"
+                    class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
+                    href={resolve('/admin/configuration/privilege/new')}
+                  >
+                    + Add Privilege
+                  </a>
+                </div>
               </div>
-            </div>
-            <Datatable
-              tableName="Privileges"
-              data={$privileges}
-              columns={privilegesTable.columns}
-              cellOverides={privilegesTable.overrides}
-              rowClickHandler={privilegeRowClick}
-              isClickable
-            />
-          {:catch}
-            <ErrorAlert title="API Error">
-              Something went wrong when sending your request for priviledges and applications.
-            </ErrorAlert>
-          {/await}
-        </div>
-        <div id="connection-table" class="mb-10">
-          <h2>Connections Management</h2>
-          {#await loadConnections()}
-            <Loading />
-          {:then}
-            <div class="flex gap-4 my-6">
-              <div class="flex-auto">
-                <a
-                  data-testid="add-connection"
-                  class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500 {!$isTopAdmin
-                    ? 'opacity-50 pointer-events-none'
-                    : ''}"
-                  href={resolve('/admin/configuration/connection/new')}
-                >
-                  + Add Connection
-                </a>
+              <Datatable
+                tableName="Privileges"
+                data={$privileges}
+                columns={privilegesTable.columns}
+                cellOverides={privilegesTable.overrides}
+                rowClickHandler={privilegeRowClick}
+                isClickable
+              />
+            {:catch}
+              <ErrorAlert title="API Error">
+                Something went wrong when sending your request for priviledges and applications.
+              </ErrorAlert>
+            {/await}
+          </div>
+          <div id="connection-table" class="mb-10">
+            <h2>Connections Management</h2>
+            {#await loadConnections()}
+              <Loading />
+            {:then}
+              <div class="flex gap-4 my-6">
+                <div class="flex-auto">
+                  <a
+                    data-testid="add-connection"
+                    class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
+                    href={resolve('/admin/configuration/connection/new')}
+                  >
+                    + Add Connection
+                  </a>
+                </div>
               </div>
-            </div>
-            <Datatable
-              tableName="Connections"
-              data={$connections}
-              columns={connectionTable.columns}
-              cellOverides={connectionTable.overrides}
-              rowClickHandler={connectionRowClick}
-              isClickable
+              <Datatable
+                tableName="Connections"
+                data={$connections}
+                columns={connectionTable.columns}
+                cellOverides={connectionTable.overrides}
+                rowClickHandler={connectionRowClick}
+                isClickable
+              />
+            {:catch}
+              <ErrorAlert title="API Error">
+                Something went wrong when sending your request for connections.
+              </ErrorAlert>
+            {/await}
+          </div>
+        </Tabs.Panel>
+      {/if}
+      <Tabs.Panel value="Site banners">
+        {#if tabSet === 'Site banners'}
+          {#key bannerViewKey}
+            <BannerManagementView
+              ondirtychange={(dirty) => (bannerEditorDirty = dirty)}
+              tabchangerequest={pendingTab}
+              ontabchangerequestresolve={resolveBannerTabChange}
             />
-          {:catch}
-            <ErrorAlert title="API Error">
-              Something went wrong when sending your request for connections.
-            </ErrorAlert>
-          {/await}
-        </div>
+          {/key}
+        {/if}
       </Tabs.Panel>
       <Tabs.Panel value="Settings & Features">
+        {@render readOnlyNotice('Settings & Features')}
         <ConfigKindTab
           kinds={['features', 'settings']}
           title="Settings & Features"
@@ -233,15 +299,12 @@
         />
       </Tabs.Panel>
       <Tabs.Panel value="Branding">
+        {@render readOnlyNotice('Branding')}
         <ConfigKindTab kinds={['branding']} title="Branding" readOnly={!$isTopAdmin} />
       </Tabs.Panel>
-      <Tabs.Panel value="Site banners">
-        {#if tabSet === 'Site banners'}
-          <BannerManagementView
-            ondirtychange={(dirty) => (bannerEditorDirty = dirty)}
-            tabchangerequest={pendingTab}
-            ontabchangerequestresolve={resolveBannerTabChange}
-          />
+      <Tabs.Panel value="API Keys">
+        {#if tabSet === 'API Keys'}
+          <ApiKeysPanel />
         {/if}
       </Tabs.Panel>
       {#if config.features.termsOfService}

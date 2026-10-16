@@ -142,6 +142,10 @@ export const test = base.extend({
     // that care about specific rows override per-kind via a page-level mockApiSuccess,
     // which takes precedence over this context-level default.
     await context.route(`${configurationPath}?kind=*`, (route) => route.fulfill({ json: [] }));
+    // Site banners is the first tab plain admins see there, so it loads on their every visit.
+    await context.route('**/picsure/operations/banners', (route) =>
+      route.request().method() === 'GET' ? route.fulfill({ json: [] }) : route.fallback(),
+    );
 
     use(context);
   },

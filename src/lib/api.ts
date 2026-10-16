@@ -4,7 +4,14 @@ import { browser } from '$app/environment';
 import { log, createLog, getSessionId } from '$lib/logger';
 import { config } from '$lib/configuration.svelte';
 import { isWafCaptchaResponse, handleWafCaptcha } from '$lib/wafCaptcha';
-import { Internal, joinUrl } from '$lib/paths';
+import { joinUrl } from '$lib/paths';
+import {
+  acceptSessionRefresh,
+  forgetOpenSession,
+  isSessionKeyError,
+  openSessionToken,
+  recoverOpenSession,
+} from '$lib/openSession';
 
 const BEARER = 'Bearer ';
 const CONSENT_DENIED = 'consent_denied';
@@ -43,6 +50,7 @@ async function send({
     headers: { [key: string]: string };
     body?: string;
     signal?: AbortSignal;
+    redirect?: RequestRedirect;
   } = {
     method,
     headers: {},
@@ -57,7 +65,11 @@ async function send({
     opts.headers = { ...opts.headers, ...headers };
   }
 
-  let requestPath = path;
+  // a token-less data request: no stored token, or authenticate:false (a logged-in user querying
+  // the open variant). Its bearer is this browser's open-access session instead of a login token.
+  // Non-picsure paths (e.g. psama key generation) get no session
+  let openRequest = false;
+  let sessionToken: string | null = null;
   if (browser) {
     const token = authenticate ? localStorage.getItem('token') : null;
     if (token) {
@@ -65,12 +77,14 @@ async function send({
       opts.headers['request-source'] = 'Authorized';
     } else {
       opts.headers['request-source'] = 'Open';
-      // Any token-less data request goes through the SvelteKit server proxy, which attaches the
-      // deployment's platform API key server-side so it never reaches the browser. This covers
-      // both "no token exists" and authenticate:false (a logged-in user querying the open
-      // variant). Non-picsure paths (e.g. psama key generation) are never proxied.
       if (path.startsWith('picsure/')) {
-        requestPath = `${Internal.OpenProxy}/${path}`;
+        openRequest = true;
+        sessionToken = await unlessAborted(openSessionToken(), options?.signal);
+        if (sessionToken) {
+          opts.headers['Authorization'] = `${BEARER}${sessionToken}`;
+          // fetch would re-send the key to wherever a redirect points; data paths never redirect
+          opts.redirect = 'error';
+        }
       }
     }
     opts.headers['X-Session-Id'] = getSessionId();
@@ -80,9 +94,52 @@ async function send({
     opts.signal = options.signal;
   }
 
-  const res = await fetch(joinUrl(window.location.origin, requestPath), opts);
+  const url = joinUrl(window.location.origin, path);
+  let res = await fetch(url, opts);
+  if (openRequest) {
+    acceptSessionRefresh(res);
+    // a rejected session (expired, or the signing secret rotated) is replaced and retried once;
+    // a second failure falls through to the error below
+    if (sessionToken && res.status === 401 && isSessionKeyError(await errorType(res))) {
+      log(createLog('AUTH', 'open_session.rejected', undefined, { status: 401 }));
+      const retryToken = await unlessAborted(recoverOpenSession(sessionToken), options?.signal);
+      if (retryToken) {
+        res = await fetch(url, {
+          ...opts,
+          headers: { ...opts.headers, Authorization: `${BEARER}${retryToken}` },
+          redirect: 'error',
+        });
+        acceptSessionRefresh(res);
+        if (res.status === 401 && isSessionKeyError(await errorType(res))) {
+          forgetOpenSession(retryToken);
+        }
+      }
+    }
+  }
 
-  return await handleResponse(res);
+  return await handleResponse(res, openRequest);
+}
+
+// the shared acquisition carries on for other callers; an aborted caller just stops waiting for it
+function unlessAborted<T>(promise: Promise<T>, signal?: AbortSignal): Promise<T> {
+  if (!signal) return promise;
+  const aborted = () =>
+    signal.reason ?? new DOMException('The operation was aborted.', 'AbortError');
+  if (signal.aborted) return Promise.reject(aborted());
+  return new Promise((resolve, reject) => {
+    const onAbort = () => reject(aborted());
+    signal.addEventListener('abort', onAbort, { once: true });
+    promise.then(resolve, reject).finally(() => signal.removeEventListener('abort', onAbort));
+  });
+}
+
+// reads a clone, so handleResponse can still read the body
+async function errorType(res: Response): Promise<unknown> {
+  try {
+    return ((await res.clone().json()) as { errorType?: unknown })?.errorType;
+  } catch {
+    return undefined;
+  }
 }
 
 export function get(path: string, headers?: any, authenticate?: boolean, options?: RequestOptions) {
@@ -117,7 +174,7 @@ export function patch(path: string, data: any, headers?: any, authenticate?: boo
   return send({ method: 'PATCH', path, data, headers, authenticate });
 }
 
-async function handleResponse(res: Response) {
+async function handleResponse(res: Response, openRequest = false) {
   if (res.ok || res.status === 422) {
     refreshToken(res);
     const contentType = res.headers.get('Content-Type') || '';
@@ -138,6 +195,10 @@ async function handleResponse(res: Response) {
       return new Promise(() => {});
     }
     // Loop guard tripped: deliberately fall through to the normal error path.
+  } else if (res.status === 401 && openRequest) {
+    // an anonymous data request has no login to end: logging out would only bounce the visitor to
+    // the login page, or sign out a logged-in user querying the open variant
+    fail(res.status, await res.text());
   } else if (res.status === 401) {
     log(createLog('AUTH', 'session.unauthorized', undefined, { status: 401 }));
     browser &&
