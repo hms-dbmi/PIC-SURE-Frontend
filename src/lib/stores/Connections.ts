@@ -44,7 +44,7 @@ export async function addConnection(connection: Connection) {
 }
 
 export async function updateConnection(connection: Connection) {
-  const res: Connection[] = await api.put(Psama.Connection, [connection]);
+  const res: Connection[] = await api.patch(Psama.Connection, [connection]);
   const newConnection = res[0];
 
   const store: Connection[] = get(connections);

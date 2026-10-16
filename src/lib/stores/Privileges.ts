@@ -42,12 +42,7 @@ export async function addPrivilege(privilege: Privilege) {
 }
 
 export async function updatePrivilege(privilege: Privilege) {
-  await api.put(Psama.Priviege, [
-    {
-      ...privilege,
-      application: { uuid: privilege.application },
-    },
-  ]);
+  await api.patch(Psama.Priviege, [privilege]);
 
   const store: Privilege[] = get(privileges);
   const privIndex: number = store.findIndex((p) => p.uuid === privilege.uuid);
