@@ -194,17 +194,17 @@ importers:
         specifier: ^20.10.6
         version: 20.10.6
       prettier:
-        specifier: ^3.8.3
-        version: 3.8.3
+        specifier: ^3.9.9
+        version: 3.9.9
       prettier-plugin-svelte:
         specifier: ^4.1.1
-        version: 4.1.1(prettier@3.8.3)(svelte@5.56.4(@typescript-eslint/types@8.70.1))
+        version: 4.1.1(prettier@3.9.9)(svelte@5.56.4(@typescript-eslint/types@8.70.1))
       svelte:
         specifier: 5.56.4
         version: 5.56.4(@typescript-eslint/types@8.70.1)
       svelte-check:
         specifier: ^4.7.3
-        version: 4.7.3(picomatch@4.0.5)(svelte@5.56.4(@typescript-eslint/types@8.70.1))(typescript@6.0.3)
+        version: 4.7.3(picomatch@4.0.7)(svelte@5.56.4(@typescript-eslint/types@8.70.1))(typescript@6.0.3)
       svelte-eslint-parser:
         specifier: ^1.6.1
         version: 1.6.1(svelte@5.56.4(@typescript-eslint/types@8.70.1))
@@ -1670,7 +1670,7 @@ packages:
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
       eslint: ^8.57.1 || ^9.0.0 || ^10.0.0
-      svelte: '>=5.53.5'
+      svelte: '>=5.51.5'
     peerDependenciesMeta:
       svelte:
         optional: true
@@ -2341,10 +2341,10 @@ packages:
     engines: {node: '>=20'}
     peerDependencies:
       prettier: ^3.0.0
-      svelte: '>=5.53.5'
+      svelte: '>=5.51.5'
 
-  prettier@3.8.3:
-    resolution: {integrity: sha512-7igPTM53cGHMW8xWuVTydi2KO233VFiTNyF5hLJqpilHfmn8C8gPf+PS7dUT64YcXFbiMGZxS9pCSxL/Dxm/Jw==}
+  prettier@3.9.9:
+    resolution: {integrity: sha512-Z/CJHIkdujO/OtN7nXUii0Rf3VT5SRuhjBA82Xvu2XhBUgX3nhP67T0LHceBdQLex7OOFGTox+Q5Yg8Jk2Qivg==}
     engines: {node: '>=14'}
     hasBin: true
 
@@ -4815,12 +4815,12 @@ snapshots:
 
   prelude-ls@1.2.1: {}
 
-  prettier-plugin-svelte@4.1.1(prettier@3.8.3)(svelte@5.56.4(@typescript-eslint/types@8.70.1)):
+  prettier-plugin-svelte@4.1.1(prettier@3.9.9)(svelte@5.56.4(@typescript-eslint/types@8.70.1)):
     dependencies:
-      prettier: 3.8.3
+      prettier: 3.9.9
       svelte: 5.56.4(@typescript-eslint/types@8.70.1)
 
-  prettier@3.8.3: {}
+  prettier@3.9.9: {}
 
   pretty-format@27.5.1:
     dependencies:
@@ -5045,12 +5045,12 @@ snapshots:
 
   supports-preserve-symlinks-flag@1.0.0: {}
 
-  svelte-check@4.7.3(picomatch@4.0.5)(svelte@5.56.4(@typescript-eslint/types@8.70.1))(typescript@6.0.3):
+  svelte-check@4.7.3(picomatch@4.0.7)(svelte@5.56.4(@typescript-eslint/types@8.70.1))(typescript@6.0.3):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       '@sveltejs/load-config': 0.2.0
       chokidar: 4.0.3
-      fdir: 6.5.0(picomatch@4.0.5)
+      fdir: 6.5.0(picomatch@4.0.7)
       picocolors: 1.1.1
       sade: 1.8.1
       svelte: 5.56.4(@typescript-eslint/types@8.70.1)
