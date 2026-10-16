@@ -212,6 +212,6 @@
     "min": 80,
     "include": ["src/**/*.{ts,js,svelte}"],
     "exclude": ["**/*.{test,spec}.{ts,js}", "**/*.d.ts", "tests/**", "e2e/**", "src/hooks.*"],
-    "failOnMissingFile": false
+    "failOnMissingFile": true
   }
 }

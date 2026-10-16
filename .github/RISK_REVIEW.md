@@ -82,7 +82,7 @@ A renamed file is judged by both its old and new paths, so moving a file into a 
 | `risk:needs-review`, approved by a human other than the author **on the latest commit** (default) | success                             |
 | anyone has an outstanding "changes requested" (either risk level)                                 | failure                             |
 
-Approvals from bots and from the author never count. Raise `review.minApprovals` in the policy for two reviewers.
+Approvals and change requests count only from humans who currently have write access (checked through the collaborators permission API), so a read-only account on this public repo can neither approve nor block. Approvals from bots and from the author never count. Raise `review.minApprovals` in the policy for two reviewers.
 
 #### Approval on the latest commit: `review.requireApprovalOnLatestCommit`
 
@@ -142,7 +142,7 @@ The scripts are unit-tested and were run end to end against a mocked GitHub API,
 1. **Code-owner review with 0 approvals.** Confirm in a test PR that, with required approvals set to 0 and "Require review from Code Owners" on, a PR touching a CODEOWNERS path is still blocked until the owner approves. If the ruleset does not enforce that combination, keep approvals at 1 or drop the waiver for those paths.
 2. **Review latency.** After a review is submitted, `Review Trigger` then `Risk Classifier` must run before `Review policy` turns green (typically under a minute). Check on a test PR.
 3. **Vitest coverage flags.** `Diff coverage` runs `pnpm run test:vitest --coverage.enabled=true --coverage.reporter=lcov ...`, using `@vitest/coverage-v8` (pinned to the same version as `vitest`; bump them together). Run locally, this produces `coverage/lcov.info`.
-4. **Svelte coverage.** `.svelte` files appear in the lcov output when run locally. If one is ever missing in CI, the job warns "No coverage data for ..." instead of failing, which would let untested component changes through as `risk:low`. Consider setting `coverage.failOnMissingFile` to `true` once a few PRs have confirmed this.
+4. **Missing coverage data.** `vite.config.ts` sets `test.coverage.include` so untested files appear in lcov at 0% instead of being absent, and `coverage.failOnMissingFile` is `true`, so a changed source file with no lcov entry fails the job. If a legitimately uncoverable file trips it (for example a type-only module), add it to `coverage.exclude` in `risk/policy.json` and in `vite.config.ts`.
 5. **Duplicate work.** `Diff coverage` installs dependencies and runs vitest again beside `tests.yml`. If CI minutes matter, add the coverage flags to the existing `vitest` job and upload `lcov.info` instead.
 6. **Check names.** Open a PR and confirm the check names match what the ruleset requires exactly (especially `playwright (1/3)`). Confirm `Review policy` appears on the PR's head commit, and that the ruleset lists GitHub Actions as its source.
 7. **Duplication baseline.** `Duplication delta` fails only on clones that `origin/<base>` does not have (`--baseline-from-ref`). Confirm the first runs pass on PRs that add no source, and that jscpd reads `.svelte` files; if the numbers look empty, restrict the pattern to `ts,js`. Tune `--min-lines`/`--min-tokens` or allow a few new clones (`--fail-on-new-clones N`) in `quality-gates.yml` if it is too strict.
