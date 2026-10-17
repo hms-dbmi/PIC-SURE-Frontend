@@ -4,7 +4,7 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig, type PluginOption } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
 import { csp } from './csp.config.js';
-import type { ViteUserConfig } from 'vitest/config';
+import { configDefaults, type ViteUserConfig } from 'vitest/config';
 
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -35,10 +35,35 @@ export default defineConfig(async ({ mode }) => {
     // own dotenv.config() call, which always wins over file-based env anyway.
     envDir: mode === 'test' ? './tests/end-to-end/env-isolated' : import.meta.dirname,
     test: {
-      setupFiles: ['./tests/component/setup.ts'],
+      setupFiles: ['./tests/support/setup.ts'],
       // Undo vi.stubGlobal/vi.stubEnv after each test so stubs can't leak into later tests
       unstubGlobals: true,
       unstubEnvs: true,
+      // Every Vitest file belongs to exactly one project; Playwright specs under
+      // tests/end-to-end match neither, so a bare `vitest` never collects them.
+      projects: [
+        {
+          extends: true,
+          test: {
+            name: 'node',
+            environment: 'node',
+            include: ['src/**/*.test.ts', 'tests/unit/**/*.test.ts'],
+            exclude: [...configDefaults.exclude, '**/*.svelte.test.ts'],
+          },
+        },
+        {
+          extends: true,
+          test: {
+            name: 'client',
+            environment: 'happy-dom',
+            include: [
+              'src/**/*.svelte.test.ts',
+              'tests/unit/**/*.svelte.test.ts',
+              'tests/component/**/*.test.ts',
+            ],
+          },
+        },
+      ],
     } satisfies ViteUserConfig['test'],
     server: {
       // Forwards to `npm run mock-api` (tests/end-to-end/mock-server), which serves fixture
