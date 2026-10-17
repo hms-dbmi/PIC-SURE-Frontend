@@ -12,14 +12,12 @@
   import { user, userRoutes, isUserLoggedIn, logout } from '#lib/stores/User.ts';
   import { loginRedirectPath } from '#lib/utilities/LoginRedirect.ts';
   import type { Route } from '#lib/models/Route.ts';
-  import type AuthData from '#lib/models/AuthProvider.ts';
-  import type AuthProvider from '#lib/models/AuthProvider.ts';
+  import AuthProvider, { findLoginProvider } from '#lib/models/AuthProvider.ts';
   import { log, createLog } from '#lib/logger.ts';
 
   import Logo from '#lib/components/Logo.svelte';
   import Popover from '#lib/components/Popover.svelte';
 
-  let providerData: AuthData;
   let providerInstance: AuthProvider | undefined = $state(undefined);
 
   function getId({ path, id }: { path: string; id?: string; text: string }) {
@@ -49,9 +47,8 @@
 
   onMount(async () => {
     if (browser && page) {
-      const providerType = sessionStorage.getItem('type');
-      if (providerType) {
-        providerData = page.data?.providers.find((p: AuthProvider) => p.type === providerType);
+      const providerData = findLoginProvider(page.data?.providers);
+      if (providerData) {
         providerInstance = await createInstance(providerData);
       }
     }

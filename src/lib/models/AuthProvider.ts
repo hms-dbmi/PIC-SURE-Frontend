@@ -15,6 +15,19 @@ export interface AuthData extends Indexable {
   logouturl?: string;
 }
 
+/**
+ * The provider the current login started with, saved by `saveState` before leaving for the IdP.
+ * Matched by name, since several providers can share a type (two Okta IdPs). Logins started
+ * before the name was saved have only the type.
+ */
+export function findLoginProvider<T extends AuthData>(providers: T[] = []): T | undefined {
+  if (!browser) return undefined;
+  const name = sessionStorage.getItem('providerName');
+  if (name) return providers.find((provider) => provider.name === name);
+  const type = sessionStorage.getItem('type');
+  return type ? providers.find((provider) => provider.type === type) : undefined;
+}
+
 export default class AuthProvider implements AuthData {
   name: string;
   description: string;
@@ -51,6 +64,7 @@ export default class AuthProvider implements AuthData {
   protected saveState(redirectTo = '/', type: string, idp?: string): void {
     if (!browser) return;
     sessionStorage.setItem('redirect', redirectTo);
+    sessionStorage.setItem('providerName', this.name);
     type && sessionStorage.setItem('type', type);
     idp && sessionStorage.setItem('idp', idp);
   }
