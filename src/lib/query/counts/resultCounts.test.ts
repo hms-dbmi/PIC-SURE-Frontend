@@ -43,6 +43,7 @@ vi.mock('#lib/explorer/Resources.ts', () => ({
 
 vi.mock('#lib/telemetry/logger.ts', () => ({
   log: mockState.logSpy,
+  registerSignedInUser: vi.fn(),
   createLog: vi.fn((category: string, event: string, data?: unknown) => ({
     category,
     event,

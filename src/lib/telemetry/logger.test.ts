@@ -2,14 +2,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('$app/env', () => ({ browser: true }));
 
-vi.mock('#lib/auth/User.ts', () => ({
-  user: { subscribe: (run: (value: unknown) => void) => (run(undefined), () => {}) },
-  isUserLoggedIn: () => false,
-}));
-
 vi.mock('#lib/auth/nav.ts', () => ({ routes: [] }));
 
-import { sanitizeLocation, createLog } from '#lib/telemetry/logger.ts';
+import { sanitizeLocation, createLog, registerSignedInUser } from '#lib/telemetry/logger.ts';
 
 function stubLocation(href: string) {
   vi.stubGlobal('window', { location: new URL(href) });
@@ -75,5 +70,30 @@ describe('logger URL sanitization', () => {
     expect(event.url).toBe('https://picsure.test/login/loading?token=redacted');
     expect(event.query_string).toBe('?token=redacted');
     expect(JSON.stringify(event)).not.toContain('SECRET');
+  });
+
+  it('createLog describes nobody until a signed-in user is registered', () => {
+    stubLocation('https://picsure.test/');
+
+    expect(createLog('AUTH', 'login.start')).toMatchObject({ logged_in: false });
+  });
+
+  it('createLog describes the registered signed-in user', () => {
+    stubLocation('https://picsure.test/');
+    registerSignedInUser(() => ({
+      userId: 'user-1',
+      email: 'researcher@example.org',
+      privileges: ['SUPER_ADMIN', 'DATA_ADMIN'],
+    }));
+
+    const event = createLog('AUTH', 'login.start');
+
+    expect(event).toMatchObject({
+      logged_in: true,
+      user_id: 'user-1',
+      user_email: 'researcher@example.org',
+      roles: ['SUPER_ADMIN'],
+    });
+    registerSignedInUser(() => undefined);
   });
 });

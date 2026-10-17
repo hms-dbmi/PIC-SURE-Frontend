@@ -24,6 +24,18 @@ const BEARER = 'Bearer ';
  */
 export type Auth = 'user' | 'open' | 'none';
 
+// whether a request may carry the user's token, and whether it falls back to the open-access session
+interface Credentials {
+  token: boolean;
+  session: boolean;
+}
+
+const CREDENTIALS: Record<Auth, Credentials> = {
+  user: { token: true, session: false },
+  open: { token: true, session: true },
+  none: { token: false, session: false },
+};
+
 export interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   /** Appended to the path as search params; undefined values are left out. */
@@ -34,12 +46,15 @@ export interface RequestOptions {
   auth?: Auth;
   signal?: AbortSignal;
   /**
-   * For a request whose failure must not reach the session or the page (the public banner feed):
-   * it is never cached, a failure logs nobody out and reloads nothing, and any failure except an
-   * abort resolves undefined.
+   * For a request that must not reach the session or the page (the public banner feed): it is
+   * never cached, never refreshes the token, logs nobody out, reloads nothing, and any failure
+   * except an abort resolves undefined. It still carries the credentials `auth` asks for.
    */
   softFail?: boolean;
-  /** SvelteKit's fetch, when called from a load. */
+  /**
+   * SvelteKit's fetch, when called from a load. Off the browser the URL is root-relative, which
+   * only SvelteKit's fetch can resolve.
+   */
   fetch?: typeof fetch;
 }
 
@@ -54,7 +69,7 @@ export function isAbortError(e: unknown): boolean {
 export function request<T>(path: string, opts?: RequestOptions & { softFail?: false }): Promise<T>;
 export function request<T>(path: string, opts: RequestOptions): Promise<T | undefined>;
 export function request<T>(path: string, opts: RequestOptions = {}): Promise<T | undefined> {
-  const sent = send(path, opts, false) as Promise<T>;
+  const sent = send(path, opts, CREDENTIALS[opts.auth ?? 'user'], false) as Promise<T>;
   if (!opts.softFail) return sent;
   return sent.catch((e: unknown) => {
     if (isAbortError(e)) throw e;
@@ -66,7 +81,7 @@ type LegacyOptions = Pick<RequestOptions, 'signal'>;
 
 // The helpers callers used before request(), kept until they move to the resource modules. Their
 // contract differs: a 422 resolves with its body, a 401 that ends the session resolves undefined,
-// and the credentials follow the `authenticate` flag and the path.
+// `authenticate` decides the token, and any picsure/ path falls back to the open-access session.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function legacyRequest(
   method: NonNullable<RequestOptions['method']>,
@@ -76,10 +91,10 @@ function legacyRequest(
   authenticate = true,
   options?: LegacyOptions,
 ): Promise<any> {
-  const auth: Auth = !authenticate ? 'none' : path.startsWith('picsure/') ? 'open' : 'user';
   return send(
     path,
-    { method, body: data || undefined, headers, auth, signal: options?.signal },
+    { method, body: data || undefined, headers, signal: options?.signal },
+    { token: authenticate, session: path.startsWith('picsure/') },
     true,
   );
 }
@@ -117,31 +132,33 @@ export function patch(path: string, data: any, headers?: any, authenticate?: boo
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
-async function send(path: string, opts: RequestOptions, legacy: boolean): Promise<unknown> {
-  const { method = 'GET', body, auth = 'user', signal, softFail = false } = opts;
+async function send(
+  path: string,
+  opts: RequestOptions,
+  credentials: Credentials,
+  legacy: boolean,
+): Promise<unknown> {
+  const { method = 'GET', body, signal, softFail = false } = opts;
   const doFetch = opts.fetch ?? fetch;
-  let headers: Record<string, string> = {};
   const init: RequestInit = { method };
-
-  if (body !== undefined) {
-    headers['Content-Type'] = 'application/json';
-    init.body = typeof body === 'string' ? body : JSON.stringify(body);
-  }
-  headers = { ...headers, ...opts.headers };
+  const headers: Record<string, string> =
+    body === undefined
+      ? { ...opts.headers }
+      : { 'Content-Type': 'application/json', ...opts.headers };
+  if (body !== undefined) init.body = typeof body === 'string' ? body : JSON.stringify(body);
   if (softFail) init.cache = 'no-store';
 
-  // An anonymous `open` request: its bearer is this browser's open-access session instead of a
-  // login token.
+  // an anonymous request with the open-access session as its bearer, if it got one
   let openRequest = false;
   let sessionToken: string | null = null;
   if (browser) {
-    const token = auth === 'none' ? null : sessionHooks().getToken();
+    const token = credentials.token ? sessionHooks().getToken() : null;
     if (token) {
       headers['Authorization'] = `${BEARER}${token}`;
       headers['request-source'] = 'Authorized';
     } else {
       headers['request-source'] = 'Open';
-      if (auth === 'open') {
+      if (credentials.session) {
         openRequest = true;
         sessionToken = await unlessAborted(openSessionToken(), signal);
         if (sessionToken) {
@@ -156,7 +173,7 @@ async function send(path: string, opts: RequestOptions, legacy: boolean): Promis
   init.headers = headers;
   if (signal) init.signal = signal;
 
-  const url = joinUrl(window.location.origin, withQuery(path, opts.query));
+  const url = joinUrl(browser ? window.location.origin : '', withQuery(path, opts.query));
   let res = await doFetch(url, init);
   if (openRequest) {
     acceptSessionRefresh(res);
@@ -219,7 +236,7 @@ async function handleResponse(
   { openRequest, legacy, softFail }: { openRequest: boolean; legacy: boolean; softFail: boolean },
 ): Promise<unknown> {
   if (res.ok || (legacy && res.status === 422)) {
-    refreshToken(res);
+    if (!softFail) refreshToken(res);
     const contentType = res.headers.get('Content-Type') || '';
     if (contentType.includes('application/octet-stream')) {
       return await res.arrayBuffer();
@@ -235,16 +252,17 @@ async function handleResponse(
     return new Promise(() => {});
   }
 
-  const text = await res.text();
-  // a WAF response whose loop guard tripped skips the session handling below
+  // a WAF challenge comes from the WAF, not the backend, so it says nothing about the session
   if (!wafCaptcha && res.status === 401 && !openRequest) {
     // not for an anonymous open request: it has no login to end, and logging out would only
     // bounce the visitor to the login page
     log(createLog('AUTH', 'session.unauthorized', undefined, { status: 401 }));
     sessionHooks().onUnauthorized();
     if (legacy) return undefined;
+    const text = await res.text();
     throw new ApiError(401, 'unauthorized', parseBody(text), text);
   }
+  const text = await res.text();
   if (!wafCaptcha && res.status === 403) {
     const body = parseBody(text);
     const consentMessage = consentDenial(body);

@@ -14,7 +14,7 @@ import type AuthProvider from '#lib/auth/providers/AuthProvider.ts';
 import { page } from '$app/state';
 import { loginRedirectPath } from '#lib/auth/loginRedirect.ts';
 import { decodeJwtPayload } from '#lib/auth/token.ts';
-import { log, createLog } from '#lib/telemetry/logger.ts';
+import { log, createLog, registerSignedInUser } from '#lib/telemetry/logger.ts';
 import { isToastShowing, toaster } from '#lib/ui/toaster.ts';
 
 const tokenRevision = writable(0);
@@ -302,6 +302,8 @@ export async function login(token: string) {
     await hydrateUserFromToken();
   }
 }
+
+registerSignedInUser(() => (isUserLoggedIn() ? get(user) : undefined));
 
 registerSessionHooks({
   getToken,

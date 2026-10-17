@@ -17,6 +17,7 @@ import {
 vi.mock('#lib/telemetry/logger.ts', () => ({
   createLog: vi.fn(),
   log: vi.fn(),
+  registerSignedInUser: vi.fn(),
 }));
 
 function makeToken(exp: number): string {

@@ -14,9 +14,11 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
   createLog: vi.fn(),
   log: vi.fn(),
   getSessionId: () => 'session-id',
+  registerSignedInUser: vi.fn(),
 }));
 
 import { clearSession, logout } from '#lib/auth/User.ts';
+import { request } from '#lib/api/client.ts';
 import type AuthProvider from '#lib/auth/providers/AuthProvider.ts';
 
 // The PSAMA logout call goes through the real API client, whose 401 and 403 handling starts a
@@ -123,4 +125,54 @@ describe('logout', () => {
       });
     },
   );
+
+  describe('when an API request reaches the session hooks', () => {
+    function respondFirstWith(response: Response) {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValueOnce(response).mockResolvedValue(new Response('{}')),
+      );
+    }
+
+    it('sends the stored token', async () => {
+      respondFirstWith(new Response('{}'));
+
+      await request('picsure/query/sync');
+
+      expect(vi.mocked(fetch).mock.calls[0][1]?.headers).toMatchObject({
+        Authorization: 'Bearer token',
+      });
+    });
+
+    it('logs out to login with the timeout reason and the way back on a 401', async () => {
+      respondFirstWith(new Response('expired', { status: 401 }));
+
+      await expect(request('picsure/query/sync')).rejects.toMatchObject({ code: 'unauthorized' });
+
+      await vi.waitFor(() => expect(goto).toHaveBeenCalledOnce());
+      expect(goto).toHaveBeenCalledWith('/login?redirectTo=%2Fexplorer');
+      expect(sessionStorage.getItem('logout-reason')).toBe(
+        'Your session has timed out. Please log in.',
+      );
+    });
+
+    it('logs out to login and drops any earlier reason on a 403', async () => {
+      sessionStorage.setItem('logout-reason', 'Your session has timed out. Please log in.');
+      respondFirstWith(new Response('forbidden', { status: 403 }));
+
+      await expect(request('picsure/query/sync')).rejects.toMatchObject({ code: 'forbidden' });
+
+      await vi.waitFor(() => expect(goto).toHaveBeenCalledOnce());
+      expect(goto).toHaveBeenCalledWith('/login');
+      expect(sessionStorage.getItem('logout-reason')).toBeNull();
+    });
+
+    it('stores a refreshed token', async () => {
+      respondFirstWith(new Response('{}', { headers: { Authorization: 'Bearer fresh' } }));
+
+      await request('picsure/query/sync');
+
+      expect(localStorage.getItem('token')).toBe('fresh');
+    });
+  });
 });

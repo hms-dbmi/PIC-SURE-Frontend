@@ -87,7 +87,7 @@ function mockFetchResponse(overrides: {
   return response;
 }
 
-// the second argument of every fetch call so far
+// the init of the nth fetch call
 function sent(call = 0): RequestInit & { headers: Record<string, string> } {
   return fetchMock.mock.calls[call][1];
 }
@@ -276,6 +276,16 @@ describe('request', () => {
       expect(sent().headers['X-Session-Id']).toBeUndefined();
       expect(mockGetSessionId).not.toHaveBeenCalled();
     });
+
+    it('requests a root-relative URL outside the browser, where window is missing', async () => {
+      mockBrowser = false;
+      vi.stubGlobal('window', undefined);
+      const kitFetch = vi.fn().mockResolvedValue(mockFetchResponse({}));
+
+      await request('picsure/test', { query: { a: 1 }, fetch: kitFetch });
+
+      expect(kitFetch).toHaveBeenCalledWith('/picsure/test?a=1', expect.any(Object));
+    });
   });
 
   describe('a successful response', () => {
@@ -349,6 +359,17 @@ describe('request', () => {
       expect(mockCreateLog).toHaveBeenCalledWith('AUTH', 'session.unauthorized', undefined, {
         status: 401,
       });
+    });
+
+    it('ends the session on a 401 even when its body cannot be read', async () => {
+      token = 'my-token';
+      const response = mockFetchResponse({ ok: false, status: 401 });
+      response.text.mockRejectedValue(new Error('stream broke'));
+      fetchMock.mockResolvedValue(response);
+
+      await expect(request('picsure/test')).rejects.toThrow('stream broke');
+
+      expect(onUnauthorized).toHaveBeenCalledTimes(1);
     });
 
     it('ends the session on a 401 for a keyless request', async () => {
@@ -662,9 +683,14 @@ describe('request', () => {
       await expect(request('picsure/test', { softFail: true })).rejects.toSatisfy(isAbortError);
     });
 
-    it('resolves the body on success', async () => {
-      fetchMock.mockResolvedValue(mockFetchResponse({ body: '[1]' }));
+    it('resolves the body on success, without refreshing the token', async () => {
+      fetchMock.mockResolvedValue(
+        mockFetchResponse({ body: '[1]', headers: { Authorization: 'Bearer new-token' } }),
+      );
+
       await expect(request('picsure/test', { softFail: true })).resolves.toEqual([1]);
+
+      expect(onTokenRefreshed).not.toHaveBeenCalled();
     });
   });
 });
@@ -715,13 +741,21 @@ describe('the legacy helpers', () => {
     expect(sent().headers['Authorization']).toBeUndefined();
   });
 
-  it('sends no credentials with authenticate=false', async () => {
+  it('sends a picsure request as anonymous with authenticate=false', async () => {
     token = 'my-token';
     mockOpenSessionToken.mockResolvedValue(SESSION);
     await post('picsure/query/sync', {}, undefined, false);
 
-    expect(sent().headers['Authorization']).toBeUndefined();
+    expect(sent().headers['Authorization']).toBe(`Bearer ${SESSION}`);
     expect(sent().headers['request-source']).toBe('Open');
+  });
+
+  it('sends no credentials elsewhere with authenticate=false', async () => {
+    token = 'my-token';
+    mockOpenSessionToken.mockResolvedValue(SESSION);
+    await post('psama/open/apiKey', {}, undefined, false);
+
+    expect(sent().headers['Authorization']).toBeUndefined();
     expect(mockOpenSessionToken).not.toHaveBeenCalled();
   });
 

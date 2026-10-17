@@ -12,7 +12,11 @@ vi.mock('$app/paths', () => ({
 }));
 vi.mock('#lib/api/client.ts', () => mockApi);
 vi.mock('#lib/ui/toaster.ts', () => ({ toaster: { error: vi.fn() }, isToastShowing: () => false }));
-vi.mock('#lib/telemetry/logger.ts', () => ({ log: vi.fn(), createLog: vi.fn(() => ({})) }));
+vi.mock('#lib/telemetry/logger.ts', () => ({
+  log: vi.fn(),
+  createLog: vi.fn(() => ({})),
+  registerSignedInUser: vi.fn(),
+}));
 vi.mock('#lib/config/config.svelte.ts', () => ({
   config: {
     features: {

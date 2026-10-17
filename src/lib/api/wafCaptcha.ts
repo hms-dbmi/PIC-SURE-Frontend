@@ -1,8 +1,9 @@
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
+import { page } from '$app/state';
 import { appPath } from '#lib/api/paths.ts';
+import { sessionHooks } from '#lib/api/sessionHooks.ts';
 import { log, createLog } from '#lib/telemetry/logger.ts';
-import { isOpenAccess } from '#lib/explorer/mode.ts';
 
 const PENDING_KEY = 'waf-captcha-pending';
 const GUARD_KEY = 'waf-captcha-guard';
@@ -21,7 +22,9 @@ export function isWafCaptchaResponse(res: Response): boolean {
 export function handleWafCaptcha(path: string): boolean {
   if (reloadInitiated) return true;
 
-  const mode = isOpenAccess() ? 'open' : 'authorized';
+  // explorer/mode.ts's isOpenAccess(), which would bring the session module into api/
+  const openAccess = page.url.pathname.includes('/discover') || !sessionHooks().getToken();
+  const mode = openAccess ? 'open' : 'authorized';
 
   const lastReload = Number(sessionStorage.getItem(GUARD_KEY));
   if (lastReload && Date.now() - lastReload < LOOP_WINDOW_MS) {

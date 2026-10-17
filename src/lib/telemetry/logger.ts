@@ -1,7 +1,6 @@
 import { browser } from '$app/env';
 import { Internal } from '#lib/api/paths.ts';
 import type { LogEvent } from '#lib/telemetry/types.ts';
-import { user, isUserLoggedIn } from '#lib/auth/User.ts';
 import { get } from 'svelte/store';
 import { v4 as uuidv4 } from 'uuid';
 import { BDCPrivileges, PicsurePrivileges } from '../auth/model/privilege';
@@ -12,6 +11,12 @@ import { routes } from '#lib/auth/nav.ts';
 let _associatedStudies: import('svelte/store').Readable<string[]> | undefined;
 export function registerAssociatedStudies(store: import('svelte/store').Readable<string[]>) {
   _associatedStudies = store;
+}
+
+// Registered by auth/User.ts, which imports the API client, which logs through here
+let signedInUser: () => User | undefined = () => undefined;
+export function registerSignedInUser(provider: () => User | undefined) {
+  signedInUser = provider;
 }
 
 const SESSION_ID_KEY = 'log_session_id';
@@ -81,10 +86,9 @@ export function createLog(
     app: 'PIC-SURE',
   };
   if (action) event.action = action;
-  const loggedIn = isUserLoggedIn();
-  event.logged_in = loggedIn;
-  if (loggedIn) {
-    const userData = get(user) as User;
+  const userData = signedInUser();
+  event.logged_in = !!userData;
+  if (userData) {
     const type = sessionStorage.getItem('type') ?? undefined;
     event.user_id = userData.userId ? userData.userId : userData.email;
     event.user_email = userData.email?.includes('@') ? userData.email : undefined;

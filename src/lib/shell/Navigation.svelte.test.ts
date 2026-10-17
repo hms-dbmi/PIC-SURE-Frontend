@@ -11,7 +11,11 @@ vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$app/paths', () => ({
   resolve: (path: string) => (path.startsWith('/') ? path : `/${path}`),
 }));
-vi.mock('#lib/telemetry/logger.ts', () => ({ log: vi.fn(), createLog: vi.fn(() => ({})) }));
+vi.mock('#lib/telemetry/logger.ts', () => ({
+  log: vi.fn(),
+  createLog: vi.fn(() => ({})),
+  registerSignedInUser: vi.fn(),
+}));
 vi.mock('#lib/config/config.svelte.ts', () => ({
   config: {
     features: {
