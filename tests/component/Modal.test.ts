@@ -19,11 +19,13 @@ describe('Modal', () => {
     const onclose = renderOpen();
     await screen.findByText('Body');
 
-    // Zag attaches its Escape listener asynchronously after the dialog opens
-    await waitFor(async () => {
-      await fireEvent.keyDown(document, { key: 'Escape' });
-      expect(onclose).toHaveBeenCalledOnce();
-    });
+    // Zag attaches its Escape listener a frame after the dialog opens, and moves focus
+    // inside only after that
+    const dialog = screen.getByRole('dialog');
+    await waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true));
+    await fireEvent.keyDown(document, { key: 'Escape' });
+
+    await waitFor(() => expect(onclose).toHaveBeenCalledOnce());
   });
 
   it('calls onclose once when the close button closes it', async () => {

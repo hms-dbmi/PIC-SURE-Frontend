@@ -36,7 +36,6 @@ Edit `.env` before starting the dev server. At minimum you need:
 
 - **Auth provider settings** (`VITE_AUTH_PROVIDER_MODULE_*`) — configures how users log in (e.g. Auth0 + Google OAuth2)
 - **Auth0 tenant** (`VITE_AUTH0_TENANT`)
-- **HPDS resource UUID** (`VITE_RESOURCE_HPDS`) — points the UI at the query engine
 
 ```bash
 pnpm run dev

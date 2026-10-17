@@ -24,7 +24,7 @@
     try {
       await toggleArchived(data.cell);
     } catch {
-      toaster.error({ title: 'An error occured when updating dataset.' });
+      toaster.error({ title: 'An error occurred when updating dataset.' });
     } finally {
       pending = false;
     }
