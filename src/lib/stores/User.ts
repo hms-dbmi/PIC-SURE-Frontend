@@ -11,6 +11,7 @@ import { goto } from '$app/navigation';
 import type AuthProvider from '#lib/models/AuthProvider.ts';
 import { page } from '$app/state';
 import { loginRedirectPath } from '#lib/utilities/LoginRedirect.ts';
+import { decodeJwtPayload } from '#lib/utilities/Jwt.ts';
 import { log, createLog } from '#lib/logger.ts';
 import { isToastShowing, toaster } from '#lib/toaster.ts';
 
@@ -376,7 +377,7 @@ export function getTokenExpiration(token: string) {
   }
   let payload: unknown;
   try {
-    payload = JSON.parse(atob(token.split('.')[1]));
+    payload = decodeJwtPayload(token);
   } catch (error) {
     throw new Error('Error parsing token: ' + error, { cause: error });
   }

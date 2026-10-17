@@ -58,6 +58,17 @@ describe('token expiration helpers', () => {
     expect(isTokenExpired(makeToken(Math.floor(Date.now() / 1000) - 1))).toBe(true);
   });
 
+  it('reads a current token whose claims encode to base64url-only characters', () => {
+    // '???' encodes to '_' in base64url, which plain base64 decoding rejects
+    const payload = btoa(JSON.stringify({ sub: 'test', exp: 4102444800, name: '???' }))
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+    const token = `${btoa('{}')}.${payload}.fake-signature`;
+    expect(payload).toContain('_');
+
+    expect(isTokenExpired(token)).toBe(false);
+  });
+
   it('fails closed for a malformed token', () => {
     expect(() => getTokenExpiration('not-a-jwt')).toThrow('Error parsing token:');
     expect(isTokenExpired('not-a-jwt')).toBe(true);

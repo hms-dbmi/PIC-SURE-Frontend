@@ -1,5 +1,6 @@
 import { joinUrl, Psama } from '#lib/paths.ts';
 import { log, createLog, getSessionId } from '#lib/logger.ts';
+import { decodeJwtPayload } from '#lib/utilities/Jwt.ts';
 
 /**
  * Open-access sessions: a short-lived PSAMA-signed token each anonymous browser gets for itself and
@@ -30,11 +31,8 @@ let clockSkewMs = 0;
 // decoded without verification, only to decide whether to renew or keep a refresh; PSAMA verifies
 export function decodeSession(token: string | null | undefined): SessionClaims | undefined {
   if (!token?.startsWith(TOKEN_PREFIX)) return undefined;
-  const payload = token.slice(TOKEN_PREFIX.length).split('.')[1];
-  if (!payload) return undefined;
   try {
-    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
-    const claims = JSON.parse(json) as Partial<SessionClaims>;
+    const claims = decodeJwtPayload(token.slice(TOKEN_PREFIX.length)) as Partial<SessionClaims>;
     if (typeof claims.sub !== 'string' || typeof claims.exp !== 'number') return undefined;
     return {
       sub: claims.sub,
