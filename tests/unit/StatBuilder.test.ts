@@ -267,9 +267,9 @@ describe('StatBuilder request map', () => {
       name: 'query:patientCount (open) sums the studies-consents cross count',
       key: 'query:patientCount',
       open: true,
-      response: { '\\_studies_consents\\': '5,000±3', other: 1 },
+      response: { '\\_studies_consents\\': '500±3', other: 1 },
       call: [OPEN, query({ expectedResultType: 'CROSS_COUNT' })],
-      value: '5,000±3',
+      value: '500±3',
     },
     {
       name: 'query results with an errorType reject',
@@ -314,26 +314,32 @@ describe('StatBuilder request map', () => {
   });
 
   it.each([
-    { name: 'auth', open: false, explore: false, resource: 'hpds', path: AUTH },
-    { name: 'open', open: true, explore: false, resource: 'hpdsOpen', path: OPEN },
-    // With explore-without-login, open requests go to the auth resource.
+    { key: 'query:blank', open: false, explore: false, resource: 'hpds', path: AUTH },
+    { key: 'query:blank', open: true, explore: false, resource: 'hpdsOpen', path: OPEN },
+    // With explore-without-login, open requests go to the auth resource...
+    { key: 'query:blank', open: true, explore: true, resource: 'hpds', path: AUTH },
+    // ...except open patient counts and dictionary stats, which keep their open path.
+    { key: 'query:patientCount', open: true, explore: true, resource: 'hpds', path: OPEN },
     {
-      name: 'open, explore without login',
+      key: 'dict:concepts',
       open: true,
       explore: true,
       resource: 'hpds',
-      path: AUTH,
+      path: 'picsure/dictionary/concepts?page_number=1&page_size=1',
     },
-  ])('keys results by count resource: $name', async ({ open, explore, resource, path }) => {
-    mocks.config.features.login.open = explore;
-    mocks.config.features.explorer.open = explore;
-    post.mockResolvedValue(1);
+  ])(
+    'keys results by count resource: $key, open $open, explore $explore',
+    async ({ key, open, explore, resource, path }) => {
+      mocks.config.features.login.open = explore;
+      mocks.config.features.explorer.open = explore;
+      post.mockResolvedValue(1);
 
-    const result = await runStat({ key: 'query:blank', label: 'b' }, { open });
+      const result = await runStat({ key, label: key }, { open });
 
-    expect(result.resource).toBe(resource);
-    expect(result.calls[0][0]).toBe(path);
-  });
+      expect(result.resource).toBe(resource);
+      expect(result.calls[0][0]).toBe(path);
+    },
+  );
 });
 
 describe('StatBuilder stat lists', () => {

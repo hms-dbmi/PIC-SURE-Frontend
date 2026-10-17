@@ -4,6 +4,8 @@ import { get as read } from 'svelte/store';
 vi.mock('#lib/api.ts', () => ({ get: vi.fn(), post: vi.fn(), patch: vi.fn(), del: vi.fn() }));
 
 import * as api from '#lib/api.ts';
+import type { Connection } from '#lib/models/Connection.ts';
+import type { UserRequest } from '#lib/models/User.ts';
 
 const client = {
   get: vi.mocked(api.get),
@@ -36,8 +38,20 @@ beforeEach(() => {
 });
 
 describe('Connections store', () => {
-  const a = { uuid: 'c-1', id: 'okta', label: 'Okta', subprefix: 'okta|', requiredFields: '' };
-  const b = { uuid: 'c-2', id: 'fence', label: 'Fence', subprefix: 'fence|', requiredFields: '' };
+  const a: Connection = {
+    uuid: 'c-1',
+    id: 'okta',
+    label: 'Okta',
+    subPrefix: 'okta|',
+    requiredFields: '',
+  };
+  const b: Connection = {
+    uuid: 'c-2',
+    id: 'fence',
+    label: 'Fence',
+    subPrefix: 'fence|',
+    requiredFields: '',
+  };
 
   it('loads once and reuses the list', async () => {
     const { connections: s } = await stores();
@@ -65,7 +79,8 @@ describe('Connections store', () => {
     await s.loadConnections();
 
     client.post.mockResolvedValue({ message: 'ok', content: [b] });
-    await s.addConnection({ ...b, uuid: undefined } as never);
+    await s.addConnection({ ...b, uuid: undefined });
+    expect(read(s.connections)).toEqual([a, b]);
 
     const renamed = { ...a, label: 'Okta 2' };
     const unknown = { ...a, uuid: 'c-3' };
@@ -130,6 +145,7 @@ describe('Privileges store', () => {
     const added = { uuid: 'p-2', name: 'NEW', description: '', application: { uuid: 'app-2' } };
     client.post.mockResolvedValue([added]);
     await s.addPrivilege({ name: 'NEW', description: '', application: 'app-2' });
+    expect(read(s.privileges)).toEqual([mapped, { ...added, application: 'app-2' }]);
 
     const edited = { ...mapped, description: 'edited' };
     client.patch.mockResolvedValue('ignored');
@@ -195,6 +211,7 @@ describe('Roles store', () => {
     const added = { uuid: 'r-2', name: 'New', description: '', privileges: [{ uuid: 'p-2' }] };
     client.post.mockResolvedValue({ content: [added] });
     await s.addRole({ name: 'New', description: '', privileges: ['p-2'] });
+    expect(read(s.roles)).toEqual([mapped, { ...added, privileges: ['p-2'] }]);
 
     const updated = { ...raw, description: 'edited' };
     client.patch.mockResolvedValue({ content: [updated] });
@@ -244,7 +261,6 @@ describe('Users store', () => {
     client.get.mockResolvedValueOnce({ ...raw, uuid: 'u-9' });
     expect(await s.getUser('u-9')).toEqual({ ...mapped, uuid: 'u-9' });
 
-    // An empty list is loaded first.
     client.get.mockResolvedValueOnce([raw]);
     expect(await s.getUserByEmailAndConnection('a@example.com', 'c-1')).toEqual(mapped);
     expect(await s.getUserByEmailAndConnection('a@example.com', 'c-2')).toBeUndefined();
@@ -260,23 +276,28 @@ describe('Users store', () => {
 
     const added = { ...raw, uuid: 'u-2', email: 'new@example.com' };
     client.post.mockResolvedValue([added]);
-    const request = {
+    const request: UserRequest = {
       email: 'new@example.com',
       active: true,
       generalMetadata: '{}',
-      connection: { uuid: 'c-1' },
-      roles: [{ uuid: 'r-1' }],
+      connection: {
+        uuid: 'c-1',
+        id: 'okta',
+        label: 'Okta',
+        subPrefix: 'okta|',
+        requiredFields: '',
+      },
+      roles: [{ uuid: 'r-1', name: 'Admin', description: '', privileges: [] }],
     };
-    await s.addUser(request as never);
+    await s.addUser(request);
 
     const updated = { ...raw, active: false };
     client.patch.mockResolvedValue([updated]);
-    await s.updateUser({ ...request, uuid: 'u-1', active: false, subject: 'dropped' } as never);
+    await s.updateUser({ ...request, uuid: 'u-1', active: false, privileges: ['dropped'] });
 
     expect(calls()).toEqual({
       get: [['psama/user']],
       post: [['psama/user', [request]]],
-      // Update sends only these fields.
       patch: [['psama/user', [{ ...request, uuid: 'u-1', active: false }]]],
       del: [],
     });

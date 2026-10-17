@@ -299,7 +299,7 @@ describe('QueryBuilder request JSON', () => {
       createGroup([anyRecord, createNumericFilter(searchResult('\\b\\'), '1')], Operator.OR),
     ]);
 
-    // The export step selects the filter concepts this way.
+    // getFilterConcepts needs the unserialised query, so it runs in the mutator, as in the export step.
     const request = getQueryRequestV3('DATAFRAME', (query) => {
       query.select = getFilterConcepts(query);
       return query;
