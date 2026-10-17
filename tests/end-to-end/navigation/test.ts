@@ -197,6 +197,8 @@ test.describe('Access control', () => {
         { name: 'DISCOVER', value: 'false' },
       ],
     });
+    // /explorer loads its facets as soon as it hydrates.
+    await mockApiSuccess(page, '*/**/picsure/dictionary/facets', []);
 
     // When
     await page.goto('/discover');

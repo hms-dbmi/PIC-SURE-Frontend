@@ -46,6 +46,9 @@ test.describe('Landing page', () => {
   });
 
   test.describe('Search', () => {
+    // The search lands on /explorer, which loads its facets as soon as it opens.
+    test.beforeEach(({ page }) => mockApiSuccess(page, '*/**/picsure/dictionary/facets', []));
+
     test('Has expected search to go to explorer', async ({ page }) => {
       // Given
       await mockApiSuccess(page, searchResultPath, mockSearchResults);
@@ -203,6 +206,8 @@ test.describe('Landing page', () => {
       test(`Action button "${description}"'s click leads to ${url}`, async ({ page }) => {
         // Given
         await mockApiSuccess(page, '*/**/picsure/operations/dataset/named', mockDatasets);
+        // The Explore action opens /explorer, which loads its facets.
+        await mockApiSuccess(page, '*/**/picsure/dictionary/facets', []);
         await page.goto('/');
         await userIsLoggedIn(page);
 

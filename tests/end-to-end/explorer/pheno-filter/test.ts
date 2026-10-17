@@ -728,6 +728,10 @@ test.describe('User with no query scopes can add filters without error', () => {
   test('User can view variable distirubtions', async ({ page }) => {
     // Given
     await mockApiSuccess(page, countResultPath, '9999');
+    await mockApiSuccess(page, '*/**/picsure/visualization/auth/distributions', {
+      categoricalData: [],
+      continuousData: [],
+    });
 
     await page.goto('/explorer?search=somedata');
     await userIsLoggedIn(page);

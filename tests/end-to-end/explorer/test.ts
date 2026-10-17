@@ -855,6 +855,7 @@ test.describe('Explorer for unauthenticated users', () => {
         { name: 'OPEN_EXPLORER', value: 'true' },
       ],
     });
+    await page.route(facetResultPath, (route: Route) => route.fulfill({ json: facetsResponse }));
     await page.goto('/explorer');
 
     // Then
