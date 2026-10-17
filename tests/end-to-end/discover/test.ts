@@ -120,7 +120,8 @@ test.describe('Discover for unauthenticated users', () => {
     await mockApiConfig(page, {
       features: [...discoverFeatures, { name: 'VARIANT_EXPLORER', value: 'true' }],
     });
-    // A genomic filter carried over from Explore; Discover can't add one itself.
+    // Discover can't add a genomic filter and blocks in-app navigation that carries one,
+    // but a full load still restores one from sessionStorage.
     await page.addInitScript(() => {
       sessionStorage.setItem(
         'genomicFilters',
@@ -139,24 +140,18 @@ test.describe('Discover for unauthenticated users', () => {
         ]),
       );
     });
-    await mockApiSuccess(
-      page,
-      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
-      detailResponseCat,
-    );
-    await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
-    const bigNumberSync = { '\\_studies_consents\\': '1477888±3' };
-    await mockApiSuccess(page, '*/**/picsure/hpds/open/query/sync', bigNumberSync);
-    await page.goto('/discover?search=somedata');
+    await mockApiSuccess(page, '*/**/picsure/hpds/open/query/sync', {
+      '\\_studies_consents\\': '1477888±3',
+    });
+
+    await page.goto('/discover');
+    await expect(page.locator('body.started')).toBeAttached();
 
     // When
-    await clickNthFilterIcon(page);
-    const firstItem = await getOption(page);
-    await firstItem.click();
-    await page.getByTestId('filter-add').click();
+    await page.locator('#results-panel-toggle').click();
 
     // Then
-    await expect(page.locator('#results-panel')).toBeVisible();
+    await expect(page.locator('#results-panel')).toContainText('Genomic Filter');
     await expect(page.getByTestId('results-variant-explorer-open')).toHaveCount(0);
   });
 });
