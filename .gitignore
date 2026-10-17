@@ -23,3 +23,5 @@ supervisord.log
 supervisord.pid
 # Written by the e2e setup project on every run, with the origin of that run's E2E_PORT
 /tests/end-to-end/.auth
+# Screenshot baselines for tests/visual: machine-specific, generated locally from the base branch
+/tests/visual/__screenshots__
