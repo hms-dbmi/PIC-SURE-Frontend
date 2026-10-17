@@ -48,7 +48,7 @@ vi.mock('#lib/api/openSession.ts', () => ({
   recoverOpenSession: (sent: string) => mockRecoverOpenSession(sent),
 }));
 
-import { request, get, post, put, patch, del } from '#lib/api/client.ts';
+import { request } from '#lib/api/client.ts';
 import { isAbortError } from '#lib/api/errors.ts';
 import { ApiError } from '#lib/api/errors.ts';
 import { registerSessionHooks } from '#lib/api/sessionHooks.ts';
@@ -703,113 +703,6 @@ describe('request', () => {
 
       expect(onTokenRefreshed).not.toHaveBeenCalled();
     });
-  });
-});
-
-describe('the legacy helpers', () => {
-  it.each([
-    ['get', () => get('picsure/query'), 'GET'],
-    ['del', () => del('picsure/query'), 'DELETE'],
-    ['post', () => post('picsure/query', { foo: 'bar' }), 'POST'],
-    ['put', () => put('picsure/query', { foo: 'bar' }), 'PUT'],
-    ['patch', () => patch('picsure/query', { foo: 'bar' }), 'PATCH'],
-  ])('%s() sends a %s request', async (_name, call, method) => {
-    await call();
-    expect(sent().method).toBe(method);
-  });
-
-  it('sends data as the body, and no body for empty data', async () => {
-    await post('psama/role', { foo: 'bar' });
-    await post('psama/role', '');
-
-    expect(sent(0).body).toBe('{"foo":"bar"}');
-    expect(sent(1).body).toBeUndefined();
-    expect(sent(1).headers['Content-Type']).toBeUndefined();
-  });
-
-  it('merges custom headers', async () => {
-    token = 'my-token';
-    await get('picsure/test', { 'X-Custom': 'hello' });
-
-    expect(sent().headers).toMatchObject({
-      'X-Custom': 'hello',
-      Authorization: 'Bearer my-token',
-      'X-Session-Id': 'test-session-id',
-    });
-  });
-
-  it('gives an anonymous picsure request the open-access session', async () => {
-    mockOpenSessionToken.mockResolvedValue(SESSION);
-    await get('picsure/query/sync');
-    expect(sent().headers['Authorization']).toBe(`Bearer ${SESSION}`);
-  });
-
-  it('gives an anonymous request elsewhere no session', async () => {
-    mockOpenSessionToken.mockResolvedValue(SESSION);
-    await get('psama/open/validate');
-
-    expect(mockOpenSessionToken).not.toHaveBeenCalled();
-    expect(sent().headers['Authorization']).toBeUndefined();
-  });
-
-  it('sends a picsure request as anonymous with authenticate=false', async () => {
-    token = 'my-token';
-    mockOpenSessionToken.mockResolvedValue(SESSION);
-    await post('picsure/query/sync', {}, undefined, false);
-
-    expect(sent().headers['Authorization']).toBe(`Bearer ${SESSION}`);
-    expect(sent().headers['request-source']).toBe('Open');
-  });
-
-  it('leaves a signed-in user signed in on a 401 for an authenticate=false picsure request', async () => {
-    token = 'my-token';
-    mockOpenSessionToken.mockResolvedValue(SESSION);
-    fetchMock.mockResolvedValue(mockFetchResponse({ ok: false, status: 401, body: 'nope' }));
-
-    await expect(
-      rejection(post('picsure/query/sync', {}, undefined, false)),
-    ).resolves.toMatchObject({ status: 401, code: 'http' });
-
-    expect(onUnauthorized).not.toHaveBeenCalled();
-  });
-
-  it('sends no credentials elsewhere with authenticate=false', async () => {
-    token = 'my-token';
-    mockOpenSessionToken.mockResolvedValue(SESSION);
-    await post('psama/open/apiKey', {}, undefined, false);
-
-    expect(sent().headers['Authorization']).toBeUndefined();
-    expect(mockOpenSessionToken).not.toHaveBeenCalled();
-  });
-
-  it('forwards a signal, and omits it when none is given', async () => {
-    const controller = new AbortController();
-    await post('picsure/query', {}, undefined, undefined, { signal: controller.signal });
-    await post('picsure/query', {}, undefined, undefined, {});
-
-    expect(sent(0).signal).toBe(controller.signal);
-    expect('signal' in sent(1)).toBe(false);
-  });
-
-  it('resolves a 422 with its body', async () => {
-    fetchMock.mockResolvedValue(
-      mockFetchResponse({ ok: false, status: 422, body: '{"errors": ["invalid"]}' }),
-    );
-    await expect(get('picsure/test')).resolves.toEqual({ errors: ['invalid'] });
-  });
-
-  it('resolves undefined on a 401 that ends the session', async () => {
-    token = 'my-token';
-    fetchMock.mockResolvedValue(mockFetchResponse({ ok: false, status: 401, body: 'expired' }));
-
-    await expect(get('picsure/test')).resolves.toBeUndefined();
-
-    expect(onUnauthorized).toHaveBeenCalledTimes(1);
-  });
-
-  it('rejects other failures with an ApiError', async () => {
-    fetchMock.mockResolvedValue(mockFetchResponse({ ok: false, status: 409, body: 'in use' }));
-    await expect(rejection(del('psama/role/1'))).resolves.toMatchObject({ status: 409 });
   });
 });
 

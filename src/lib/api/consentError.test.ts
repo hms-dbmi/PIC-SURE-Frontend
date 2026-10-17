@@ -22,7 +22,7 @@ vi.mock('#lib/api/wafCaptcha.ts', () => ({
   handleWafCaptcha: () => true,
 }));
 
-import { get } from '#lib/api/client.ts';
+import { request } from '#lib/api/client.ts';
 import { consentDeniedMessage, CONSENT_DENIED_MESSAGE } from '#lib/api/errors.ts';
 import { registerSessionHooks } from '#lib/api/sessionHooks.ts';
 
@@ -48,7 +48,7 @@ describe('consentDeniedMessage', () => {
   async function rejectionFrom(body: string, status = 403): Promise<unknown> {
     fetchMock.mockResolvedValue(new Response(body, { status }));
     try {
-      await get('picsure/test');
+      await request('picsure/test', { auth: 'open' });
     } catch (e) {
       return e;
     }

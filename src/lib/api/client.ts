@@ -62,7 +62,7 @@ export interface RequestOptions {
 export function request<T>(path: string, opts?: RequestOptions & { softFail?: false }): Promise<T>;
 export function request<T>(path: string, opts: RequestOptions): Promise<T | undefined>;
 export function request<T>(path: string, opts: RequestOptions = {}): Promise<T | undefined> {
-  const sent = send(path, opts, false) as Promise<T>;
+  const sent = send(path, opts) as Promise<T>;
   if (!opts.softFail) return sent;
   return sent.catch((e: unknown) => {
     if (isAbortError(e)) throw e;
@@ -70,63 +70,7 @@ export function request<T>(path: string, opts: RequestOptions = {}): Promise<T |
   });
 }
 
-type LegacyOptions = Pick<RequestOptions, 'signal'>;
-
-// The helpers callers used before request(), kept until they move to the resource modules. Their
-// contract differs: a 422 resolves with its body, a 401 that ends the session resolves undefined,
-// `authenticate` decides the token, and a picsure/ path without it carries the open-access session.
-/* eslint-disable @typescript-eslint/no-explicit-any */
-function legacyRequest(
-  method: NonNullable<RequestOptions['method']>,
-  path: string,
-  data: unknown,
-  headers: Record<string, string> | undefined,
-  authenticate = true,
-  options?: LegacyOptions,
-): Promise<any> {
-  const picsure = path.startsWith('picsure/');
-  const auth: Auth = authenticate ? (picsure ? 'open' : 'user') : picsure ? 'anonymous' : 'none';
-  return send(
-    path,
-    { method, body: data || undefined, headers, auth, signal: options?.signal },
-    true,
-  );
-}
-
-export function get(path: string, headers?: any, authenticate?: boolean, options?: LegacyOptions) {
-  return legacyRequest('GET', path, undefined, headers, authenticate, options);
-}
-
-export function del(path: string, headers?: any, authenticate?: boolean, options?: LegacyOptions) {
-  return legacyRequest('DELETE', path, undefined, headers, authenticate, options);
-}
-
-export function post(
-  path: string,
-  data: any,
-  headers?: any,
-  authenticate?: boolean,
-  options?: LegacyOptions,
-) {
-  return legacyRequest('POST', path, data, headers, authenticate, options);
-}
-
-export function put(
-  path: string,
-  data: any,
-  headers?: any,
-  authenticate?: boolean,
-  options?: LegacyOptions,
-) {
-  return legacyRequest('PUT', path, data, headers, authenticate, options);
-}
-
-export function patch(path: string, data: any, headers?: any, authenticate?: boolean) {
-  return legacyRequest('PATCH', path, data, headers, authenticate);
-}
-/* eslint-enable @typescript-eslint/no-explicit-any */
-
-async function send(path: string, opts: RequestOptions, legacy: boolean): Promise<unknown> {
+async function send(path: string, opts: RequestOptions): Promise<unknown> {
   const { method = 'GET', body, auth = 'user', signal, softFail = false } = opts;
   const doFetch = opts.fetch ?? fetch;
   const init: RequestInit = { method };
@@ -185,7 +129,7 @@ async function send(path: string, opts: RequestOptions, legacy: boolean): Promis
     }
   }
 
-  return await handleResponse(res, { openRequest, legacy, softFail });
+  return await handleResponse(res, { openRequest, softFail });
 }
 
 function withQuery(path: string, query: RequestOptions['query']): string {
@@ -222,9 +166,9 @@ async function errorType(res: Response): Promise<unknown> {
 
 async function handleResponse(
   res: Response,
-  { openRequest, legacy, softFail }: { openRequest: boolean; legacy: boolean; softFail: boolean },
+  { openRequest, softFail }: { openRequest: boolean; softFail: boolean },
 ): Promise<unknown> {
-  if (res.ok || (legacy && res.status === 422)) {
+  if (res.ok) {
     if (!softFail) refreshToken(res);
     const contentType = res.headers.get('Content-Type') || '';
     if (contentType.includes('application/octet-stream')) {
@@ -247,7 +191,6 @@ async function handleResponse(
     // bounce the visitor to the login page
     log(createLog('AUTH', 'session.unauthorized', undefined, { status: 401 }));
     sessionHooks().onUnauthorized();
-    if (legacy) return undefined;
     const text = await res.text();
     throw new ApiError(401, 'unauthorized', parseBody(text), text);
   }
