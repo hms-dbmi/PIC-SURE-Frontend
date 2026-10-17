@@ -82,6 +82,8 @@ roleLandings.forEach(({ userType, path, hidden }) => {
     test(`Marks ${path} as the current page after login`, async ({ page }) => {
       await mockApiConfig(page);
       await mockApiSuccess(page, '*/**/psama/user', []);
+      // /explorer loads its facets as soon as it hydrates.
+      await mockApiSuccess(page, '*/**/picsure/dictionary/facets', []);
 
       await page.goto(path);
       await userIsLoggedIn(page);
