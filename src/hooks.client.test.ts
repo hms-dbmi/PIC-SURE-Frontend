@@ -22,11 +22,14 @@ describe('client handleError', () => {
   it('sends unexpected errors to telemetry', async () => {
     await handleError({ kind: 'unknown', error: new Error('boom'), event });
 
-    expect(logger.log).toHaveBeenCalledWith({
-      event_type: 'ERROR',
-      action: 'client.error',
-      metadata: { kind: 'unknown', message: 'boom', route: '/explorer' },
-    });
+    expect(logger.log).toHaveBeenCalledWith(
+      {
+        event_type: 'ERROR',
+        action: 'client.error',
+        metadata: { kind: 'unknown', message: 'boom', route: '/explorer' },
+      },
+      { keepalive: true },
+    );
   });
 
   it('sends framework errors with their status', async () => {
@@ -38,6 +41,7 @@ describe('client handleError', () => {
       message: 'Not Found',
       route: '/explorer',
     });
+    expect(logger.log).toHaveBeenCalledWith(expect.anything(), { keepalive: true });
   });
 
   it('never throws, even when logging fails', () => {
