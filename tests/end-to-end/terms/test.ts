@@ -66,7 +66,7 @@ test.describe('Not logged in', () => {
   test('Terms do not open when user is not logged in', async ({ page }) => {
     // When: '/' sends signed-out visitors to /login once the app hydrates
     await page.goto('/');
-    await expect(page).toHaveURL('/login');
+    await expect(page).toHaveURL('/login?redirectTo=%2F');
 
     // Then
     await expect(page.locator('#terms-of-service')).not.toBeVisible();

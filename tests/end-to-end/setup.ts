@@ -58,7 +58,7 @@ test('unauthenticated user', async ({ page }) => {
   await acceptConsentButton.click();
 
   // Unauthenticated users are redirected to /login; accepting consent doesn't navigate away.
-  await page.waitForURL('/login');
+  await page.waitForURL((url) => url.pathname === '/login');
 
   await page.evaluate(() => {
     const user = sessionStorage.getItem('user');

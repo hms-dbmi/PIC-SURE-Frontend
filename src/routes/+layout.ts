@@ -3,6 +3,7 @@ import { redirect } from '@sveltejs/kit';
 import { browser } from '$app/env';
 import { config, applyConfig } from '#lib/configuration.svelte.ts';
 import { user } from '#lib/stores/User.ts';
+import { loginRedirectPath } from '#lib/utilities/LoginRedirect.ts';
 
 export const load: LayoutLoad = ({ url, data }) => {
   // Runs on both SSR and the client's hydration-time re-run of this load, off the
@@ -16,7 +17,7 @@ export const load: LayoutLoad = ({ url, data }) => {
     !localStorage.getItem('token') &&
     !url.pathname.includes('/login')
   ) {
-    user && user.set({});
-    redirect(302, '/login');
+    user.set({});
+    redirect(302, loginRedirectPath(url));
   }
 };

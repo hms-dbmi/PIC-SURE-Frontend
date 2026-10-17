@@ -23,9 +23,9 @@ function isRedirect(e: unknown): e is Redirect {
   return typeof e === 'object' && e !== null && 'status' in e && 'location' in e;
 }
 
-async function captureRedirect(path: string): Promise<Redirect | null> {
+async function captureRedirect(parent = async () => ({})): Promise<Redirect | null> {
   try {
-    await load({ url: new URL(`http://localhost${path}`) } as Parameters<typeof load>[0]);
+    await load({ parent } as unknown as Parameters<typeof load>[0]);
     return null;
   } catch (e) {
     if (isRedirect(e)) return e;
@@ -43,19 +43,29 @@ describe('dataset layout guard', () => {
   it('admits a user holding only the open-source NAMED_DATASET', async () => {
     store.value = { privileges: [PicsurePrivileges.NAMED_DATASET] };
 
-    expect(await captureRedirect('/dataset')).toBeNull();
+    expect(await captureRedirect()).toBeNull();
   });
 
   it('admits a user holding only the BDC MANUAL_PRIV_NAMED_DATASET', async () => {
     store.value = { privileges: [BDCPrivileges.NAMED_DATASET] };
 
-    expect(await captureRedirect('/dataset')).toBeNull();
+    expect(await captureRedirect()).toBeNull();
+  });
+
+  it('checks privileges only after the parent layout has loaded the user', async () => {
+    // A fresh tab has a token but no user until the authorized layout hydrates it.
+    const parent = async () => {
+      store.value = { privileges: [PicsurePrivileges.NAMED_DATASET] };
+      return {};
+    };
+
+    expect(await captureRedirect(parent)).toBeNull();
   });
 
   it('redirects to / when the user holds neither', async () => {
     store.value = { privileges: [PicsurePrivileges.QUERY] };
 
-    const result = await captureRedirect('/dataset');
+    const result = await captureRedirect();
 
     expect(result).not.toBeNull();
     expect(result!.location).toBe('/');

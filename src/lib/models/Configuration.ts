@@ -465,7 +465,7 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
       type: 'boolean',
       default: false,
       description:
-        'Shows or hides the Data Dashboard navigation item (the /dashboard page itself is not currently guarded by this flag).',
+        'Shows or hides the Data Dashboard page and its navigation item. With it off, /dashboard redirects to the home page.',
     },
     DASHBOARD_DRAWER: {
       group: 'Dashboard',

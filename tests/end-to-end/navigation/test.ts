@@ -171,7 +171,18 @@ test.describe('Access control', () => {
     await page.goto('/');
 
     // Then
-    await expect(page).toHaveURL('/login');
+    await expect(page).toHaveURL('/login?redirectTo=%2F');
+  });
+
+  test('A deep link keeps its destination through the forced login', async ({ page }) => {
+    // Given: /help has no guard of its own, so only the root layout's login guard redirects
+    await mockApiConfig(page, { features: [{ name: 'OPEN', value: 'false' }] });
+
+    // When
+    await page.goto('/help?section=faq');
+
+    // Then
+    await expect(page).toHaveURL(`/login?redirectTo=${encodeURIComponent('/help?section=faq')}`);
   });
 
   test('/discover redirects to /explorer when DISCOVER is off', async ({ page }) => {

@@ -69,7 +69,7 @@ test.describe('Signed-out visitors can read banners and reach login', () => {
 
     await page.goto('/');
 
-    await expect(page).toHaveURL('/login');
+    await expect(page).toHaveURL('/login?redirectTo=%2F');
     await expect(page.getByRole('region', { name: 'Maintenance' })).toBeVisible();
     await expect(page.getByRole('region', { name: 'Signed-out notice' })).toBeVisible();
     await expect(page.getByRole('region', { name: 'Signed-in notice' })).toHaveCount(0);
@@ -114,7 +114,7 @@ test.describe('Signed-out visitors can read banners and reach login', () => {
 
     await page.goto('/');
 
-    await expect(page).toHaveURL('/login');
+    await expect(page).toHaveURL('/login?redirectTo=%2F');
     await expect(page.getByTestId('banner-item')).toHaveCount(4);
     const loginControl = page.getByRole('button', { name: 'Login with Auth0' });
     await expect(loginControl).not.toBeInViewport();
