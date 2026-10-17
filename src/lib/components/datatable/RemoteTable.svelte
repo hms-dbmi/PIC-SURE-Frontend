@@ -26,6 +26,7 @@
 
   let {
     tableName,
+    'data-testid': testid,
     handler,
     isLoading = $bindable(false),
     searchable = false,
@@ -311,7 +312,7 @@
   {/if}
   <table
     id="{tableName}-table"
-    data-testid="{tableName}-table"
+    data-testid={testid}
     class="table table-{tableAuto ? 'auto' : 'fixed'} {className}"
     class:w-max={fullWidth}
     class:clickable={isClickable}

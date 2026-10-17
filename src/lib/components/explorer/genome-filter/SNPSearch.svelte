@@ -31,7 +31,7 @@
 </script>
 
 <div id="snp-search" class="grid grid-cols-1 gap-3 {className || ''}">
-  <Panel title="Search for Genomic Variants">
+  <Panel data-testid="genomic-snp-panel" title="Search for Genomic Variants">
     <Search disabled={!!snp.search} search={snp.search} {onvalid} />
     {#if snp.search}
       <hr />
@@ -40,7 +40,7 @@
       </div>
     {/if}
   </Panel>
-  <Panel title="Summary of Selected Filters">
+  <Panel data-testid="genomic-summary-panel" title="Summary of Selected Filters">
     {#snippet action()}
       <button
         class="btn btn-xs preset-outlined-surface-500 hover:preset-tonal-primary border border-primary-500"

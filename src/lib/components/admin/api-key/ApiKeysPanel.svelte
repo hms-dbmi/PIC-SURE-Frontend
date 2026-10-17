@@ -6,7 +6,7 @@
 </script>
 
 {#if !$isTopAdmin}
-  <ErrorAlert data-testid="top-admin-only-error" title="Top Administrator Only" color="warning">
+  <ErrorAlert data-testid="admin-top-admin-required" title="Top Administrator Only" color="warning">
     <p>
       API keys are READ ONLY for admin users. Please contact your administrator to make changes.
     </p>
@@ -17,10 +17,14 @@
     <h2 class="h3">Platform Keys</h2>
     <MintPlatformKeyModal />
   </div>
-  <ApiKeyTable keyType="PLATFORM" tableName="PlatformApiKeys" />
+  <ApiKeyTable
+    keyType="PLATFORM"
+    tableName="PlatformApiKeys"
+    data-testid="admin-api-key-platform-table"
+  />
 </section>
 
 <section>
   <h2 class="h3 mb-3">User Keys</h2>
-  <ApiKeyTable keyType="USER" tableName="UserApiKeys" />
+  <ApiKeyTable keyType="USER" tableName="UserApiKeys" data-testid="admin-api-key-user-table" />
 </section>

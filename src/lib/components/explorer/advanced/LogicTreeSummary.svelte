@@ -18,7 +18,7 @@
   let accordionValue: string[] = $state(['logic-tree']);
 </script>
 
-<div class="mb-4 mx-auto {widthClass}" data-testid="logic-tree-summary">
+<div class="mb-4 mx-auto {widthClass}" data-testid="filter-logic-summary">
   <Accordion value={accordionValue} onValueChange={(e) => (accordionValue = e.value)} collapsible>
     {#snippet iconOpen()}<i class="fa-solid fa-angle-up"></i>{/snippet}
     {#snippet iconClosed()}<i class="fa-solid fa-angle-down"></i>{/snippet}
@@ -35,7 +35,7 @@
         {#if parts.length === 0}
           <p class="italic text-surface-500">Add filters to see the query summary.</p>
         {:else}
-          <p data-testid="logic-tree-text">
+          <p data-testid="filter-logic-text">
             {#each parts as part}
               {#if part.type === 'operator'}
                 <strong>{` ${part.text} `}</strong>

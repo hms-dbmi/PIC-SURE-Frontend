@@ -83,7 +83,7 @@
   cancelText={cfg.cancelText || 'Cancel'}
   confirmText={cfg.okText || 'OK'}
   onconfirm={proceed}
-  data-testid="external-link-warning"
+  data-testid="app-external-link-warning"
 >
   <p>
     {message}{#if openInNewTab}&nbsp;{newTabMessage}{/if}

@@ -508,7 +508,7 @@
             >
               <input type="radio" name="appearance" value={option.value} bind:group={appearance} />
               <span
-                data-testid="appearance-swatch"
+                data-testid="banner-appearance-swatch"
                 class="h-3 w-3 rounded-full {option.swatchClass}"
                 aria-hidden="true"
               ></span>

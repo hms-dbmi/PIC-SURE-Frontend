@@ -129,7 +129,7 @@
   class="card border bg-white border-surface-200-800 rounded-xl p-5 shadow-sm {editDisabled
     ? 'opacity-55'
     : ''}"
-  data-testid={`config-field-row-${schema.name}`}
+  data-testid={`admin-config-field-row-${schema.name}`}
 >
   <div class="grid grid-cols-1 md:grid-cols-[1.15fr_1fr] gap-6 items-start">
     <div class="min-w-0">
@@ -142,7 +142,7 @@
       {#if schema.description}
         <p
           class="text-xs opacity-70 mt-1 leading-relaxed"
-          data-testid={`config-field-description-${schema.name}`}
+          data-testid={`admin-config-field-description-${schema.name}`}
         >
           {displayDescription}
         </p>
@@ -150,7 +150,7 @@
           <button
             type="button"
             class="text-xs font-semibold text-primary-500 hover:underline mt-1"
-            data-testid={`config-field-expand-${schema.name}`}
+            data-testid={`admin-config-field-expand-${schema.name}`}
             onclick={() => (expanded = !expanded)}
           >
             {expanded ? 'Show less' : 'Show more'}
@@ -165,7 +165,7 @@
           class="badge {originClass[
             fieldOrigin.origin
           ]} rounded-full inline-flex items-center gap-1.5"
-          data-testid={`config-field-origin-${schema.name}`}
+          data-testid={`admin-config-field-origin-${schema.name}`}
           title={`Resolved value: ${resolvedValue}`}
         >
           <span class="inline-block w-1.5 h-1.5 rounded-full {originDotClass[fieldOrigin.origin]}"
@@ -183,7 +183,7 @@
           class="inline-flex items-center gap-2.5 relative {editDisabled
             ? 'cursor-default'
             : 'cursor-pointer'}"
-          data-testid={`config-field-toggle-${schema.name}`}
+          data-testid={`admin-config-field-toggle-${schema.name}`}
         >
           <span
             class="w-9 h-[21px] rounded-full flex-none relative transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary-500 has-[:focus-visible]:ring-offset-2 {checked
@@ -198,7 +198,7 @@
             <input
               type="checkbox"
               class="sr-only"
-              data-testid={`config-field-input-${schema.name}`}
+              data-testid={`admin-config-field-input-${schema.name}`}
               {checked}
               disabled={editDisabled}
               onchange={(e) => (value = e.currentTarget.checked ? 'true' : 'false')}
@@ -212,7 +212,7 @@
         <div class="border border-surface-200-800 rounded-lg overflow-hidden bg-surface-50-950">
           <textarea
             class="textarea font-mono text-sm border-0 rounded-none focus:outline-none"
-            data-testid={`config-field-input-${schema.name}`}
+            data-testid={`admin-config-field-input-${schema.name}`}
             rows="4"
             disabled={editDisabled}
             bind:value></textarea>
@@ -222,7 +222,7 @@
             <button
               type="button"
               class="text-[11.5px] font-semibold text-primary-500 hover:underline px-1"
-              data-testid={`config-field-prettify-${schema.name}`}
+              data-testid={`admin-config-field-prettify-${schema.name}`}
               disabled={editDisabled}
               onclick={prettify}
             >
@@ -233,7 +233,7 @@
         {#if jsonError}
           <p
             class="text-xs text-error-500 mt-1.5"
-            data-testid={`config-field-error-${schema.name}`}
+            data-testid={`admin-config-field-error-${schema.name}`}
           >
             {jsonError}
           </p>
@@ -243,14 +243,14 @@
           type="text"
           inputmode="numeric"
           class="input {!intValid ? 'border-error-500' : ''}"
-          data-testid={`config-field-input-${schema.name}`}
+          data-testid={`admin-config-field-input-${schema.name}`}
           disabled={editDisabled}
           bind:value
         />
         {#if !intValid}
           <p
             class="text-xs text-error-500 mt-1.5"
-            data-testid={`config-field-error-${schema.name}`}
+            data-testid={`admin-config-field-error-${schema.name}`}
           >
             Must be an integer.
           </p>
@@ -259,7 +259,7 @@
         <input
           type="text"
           class="input"
-          data-testid={`config-field-input-${schema.name}`}
+          data-testid={`admin-config-field-input-${schema.name}`}
           disabled={editDisabled}
           bind:value
         />
@@ -270,7 +270,7 @@
           <button
             type="button"
             class="btn btn-sm preset-filled-primary-500"
-            data-testid={`config-field-save-${schema.name}`}
+            data-testid={`admin-config-field-save-${schema.name}`}
             disabled={editDisabled || !valid || saving}
             onclick={saveField}
           >
@@ -281,7 +281,7 @@
           <button
             type="button"
             class="text-xs font-semibold opacity-70 hover:opacity-100 hover:underline"
-            data-testid={`config-field-reset-${schema.name}`}
+            data-testid={`admin-config-field-reset-${schema.name}`}
             disabled={editDisabled}
             onclick={resetField}
           >

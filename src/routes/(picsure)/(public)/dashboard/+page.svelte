@@ -60,6 +60,7 @@
     {:then}
       <Datatable
         {tableName}
+        data-testid="dashboard-table"
         ariaLabel="Data dashboard"
         data={currentRows}
         columns={currentColumns}

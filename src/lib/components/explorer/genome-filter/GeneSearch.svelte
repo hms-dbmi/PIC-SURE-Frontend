@@ -22,10 +22,15 @@
 </script>
 
 <div id="gene-search" class="grid grid-cols-3 gap-3 {className || ''}">
-  <Panel title="Search for Gene with Variant" subtitle="Use the official gene symbol." required>
+  <Panel
+    data-testid="genomic-gene-panel"
+    title="Search for Gene with Variant"
+    subtitle="Use the official gene symbol."
+    required
+  >
     {#snippet action()}
       <button
-        data-testid="clear-selected-genes-btn"
+        data-testid="genomic-gene-clear-selected"
         class="btn btn-xs preset-outlined-surface-500 hover:preset-tonal-primary border border-primary-500"
         onclick={clearSelectedGenes}>Clear</button
       >
@@ -33,6 +38,7 @@
     <Genes />
   </Panel>
   <Panel
+    data-testid="genomic-consequence-panel"
     title="Select Calculated Consequence"
     subtitle="The calculated consequence is based on VEP annotation."
   >
@@ -45,12 +51,12 @@
           e.key === 'Enter' &&
           log(createLog('ACTION', 'genomic.help_click', { section: 'consequence' }))}
       >
-        <HelpInfoPopup id="cons-help-popup" text={helpText.consequence} />
+        <HelpInfoPopup data-testid="genomic-consequence-help" text={helpText.consequence} />
       </span>
     {/snippet}
     <Consequence />
   </Panel>
-  <Panel title="Select Variant Frequency">
+  <Panel data-testid="genomic-frequency-panel" title="Select Variant Frequency">
     {#snippet help()}
       <span
         role="button"
@@ -60,15 +66,15 @@
           e.key === 'Enter' &&
           log(createLog('ACTION', 'genomic.help_click', { section: 'frequency' }))}
       >
-        <HelpInfoPopup id="freq-help-popup" text={helpText.frequency} />
+        <HelpInfoPopup data-testid="genomic-frequency-help" text={helpText.frequency} />
       </span>
     {/snippet}
     <Frequency />
   </Panel>
-  <Panel title="Summary of Selected Filters" class="col-span-3">
+  <Panel data-testid="genomic-summary-panel" title="Summary of Selected Filters" class="col-span-3">
     {#snippet action()}
       <button
-        data-testid="clear-gene-filters-btn"
+        data-testid="genomic-gene-clear-filters"
         class="btn btn-xs preset-outlined-surface-500 hover:preset-tonal-primary border border-primary-500"
         onclick={clearGeneFilters}>Clear</button
       >

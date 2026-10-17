@@ -19,7 +19,7 @@
     'data-testId': legacyDataTestId = '',
   }: Props = $props();
 
-  const testId = $derived(dataTestId || legacyDataTestId || 'show-more');
+  const testId = $derived(dataTestId || legacyDataTestId || 'ui-show-more');
 </script>
 
 <button

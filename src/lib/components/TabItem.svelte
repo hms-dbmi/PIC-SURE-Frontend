@@ -31,10 +31,10 @@
   class="border-b-[1px] border-transparent pb-2 translate-y-[1px] {active
     ? 'border-b-surface-950-50 opacity-100'
     : '[&amp;:not(:hover)]:opacity-50'}"
-  data-testid="tabs-control"
+  data-testid="ui-tabs-control"
   onclick={() => (group = value)}
 >
-  <div class="btn hover:preset-tonal-primary" data-testid="tabs-control-label">
+  <div class="btn hover:preset-tonal-primary" data-testid="ui-tabs-control-label">
     <span>{@render children?.()}</span>
   </div>
 </button>

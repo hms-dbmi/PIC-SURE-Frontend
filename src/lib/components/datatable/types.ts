@@ -10,6 +10,7 @@ export interface Column {
 
 export interface TableProps {
   tableName: string;
+  'data-testid'?: string;
   isLoading?: boolean;
   searchable?: boolean;
   title?: string;

@@ -90,7 +90,7 @@ describe('SiteBannerRegion', () => {
       cache: 'no-store',
       headers: { Accept: 'application/json' },
     });
-    expect(screen.getByTestId('site-banner-region')).toHaveClass('w-full');
+    expect(screen.getByTestId('banner-region')).toHaveClass('w-full');
     const notice = screen.getByRole('region', { name: 'Maintenance' });
     expect(notice.tagName).toBe('SECTION');
     expect(notice).toHaveTextContent('Scheduled maintenance details');
@@ -99,7 +99,7 @@ describe('SiteBannerRegion', () => {
 
     await navigation.callback?.();
 
-    await waitFor(() => expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByTestId('banner-region')).not.toBeInTheDocument());
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(createLog).not.toHaveBeenCalled();
     expect(log).not.toHaveBeenCalled();
@@ -201,11 +201,11 @@ describe('SiteBannerRegion', () => {
       render(SiteBannerRegion);
 
       await navigation.callback?.();
-      expect(screen.getByTestId('site-banner-region')).toBeInTheDocument();
+      expect(screen.getByTestId('banner-region')).toBeInTheDocument();
 
       await navigation.callback?.();
 
-      expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('banner-region')).not.toBeInTheDocument();
       expect(createLog).toHaveBeenCalledWith('ERROR', 'banner.feed_malformed_records', {
         malformedRecords: 1,
       });
@@ -223,7 +223,7 @@ describe('SiteBannerRegion', () => {
 
     await navigation.callback?.();
 
-    expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('banner-region')).not.toBeInTheDocument();
     expect(createLog).toHaveBeenCalledWith('ERROR', 'banner.feed_malformed_records', {
       malformedRecords: 2,
     });
@@ -236,11 +236,11 @@ describe('SiteBannerRegion', () => {
     render(SiteBannerRegion);
 
     await navigation.callback?.();
-    expect(screen.getByTestId('site-banner-region')).toBeInTheDocument();
+    expect(screen.getByTestId('banner-region')).toBeInTheDocument();
 
     await navigation.callback?.();
 
-    expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('banner-region')).not.toBeInTheDocument();
     expect(createLog).toHaveBeenCalledWith(
       'ERROR',
       'banner.feed_failed',
@@ -258,7 +258,7 @@ describe('SiteBannerRegion', () => {
 
     await navigation.callback?.();
 
-    expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('banner-region')).not.toBeInTheDocument();
     expect(createLog).not.toHaveBeenCalled();
     expect(log).not.toHaveBeenCalled();
   });
@@ -270,7 +270,7 @@ describe('SiteBannerRegion', () => {
 
     await navigation.callback?.();
 
-    expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('banner-region')).not.toBeInTheDocument();
     expect(createLog).toHaveBeenCalledWith(
       'ERROR',
       'banner.feed_failed',
@@ -290,7 +290,7 @@ describe('SiteBannerRegion', () => {
 
     await navigation.callback?.();
 
-    expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('banner-region')).not.toBeInTheDocument();
     expect(createLog).toHaveBeenCalledWith(
       'ERROR',
       'banner.feed_failed',
@@ -384,7 +384,7 @@ describe('SiteBannerRegion', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Dismiss Maintenance' }));
 
     await navigation.callback?.({ to: { url: new URL('https://picsure.example/help') } });
-    expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('banner-region')).not.toBeInTheDocument();
 
     await navigation.callback?.({ to: { url: new URL('https://picsure.example/status') } });
     expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
@@ -419,13 +419,13 @@ describe('SiteBannerRegion', () => {
     const matchingPage = { to: { url: new URL('https://picsure.example/admin/users') } };
 
     await navigation.callback?.(matchingPage);
-    expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('banner-region')).not.toBeInTheDocument();
 
     await navigation.callback?.(matchingPage);
-    expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('banner-region')).not.toBeInTheDocument();
 
     await navigation.callback?.(matchingPage);
-    expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('banner-region')).not.toBeInTheDocument();
 
     await navigation.callback?.(matchingPage);
     expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
@@ -442,7 +442,7 @@ describe('SiteBannerRegion', () => {
     render(SiteBannerRegion);
     await navigation.callback?.();
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('banner-region')).not.toBeInTheDocument();
   });
 
   it('renders again when a new tab session has no dismissal map', async () => {
@@ -508,7 +508,7 @@ describe('SiteBannerRegion', () => {
     });
     try {
       await fireEvent.click(screen.getByRole('button', { name: 'Dismiss Maintenance' }));
-      expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('banner-region')).not.toBeInTheDocument();
     } finally {
       setItem.mockRestore();
     }
@@ -540,7 +540,7 @@ describe('SiteBannerRegion audience targeting', () => {
       if (rendered) {
         expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
       } else {
-        expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('banner-region')).not.toBeInTheDocument();
       }
       expect(log).not.toHaveBeenCalled();
     },
@@ -661,7 +661,7 @@ describe('SiteBannerRegion audience targeting', () => {
     expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
 
     await navigation.callback?.({ to: { url: new URL('https://picsure.example/status#notice') } });
-    expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('banner-region')).not.toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
@@ -674,11 +674,11 @@ describe('SiteBannerRegion audience targeting', () => {
     render(SiteBannerRegion);
 
     await navigation.callback?.();
-    expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('banner-region')).not.toBeInTheDocument();
 
     await navigation.callback?.();
 
-    expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('banner-region')).not.toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 

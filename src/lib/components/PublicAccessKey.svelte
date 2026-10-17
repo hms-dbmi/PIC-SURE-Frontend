@@ -107,7 +107,7 @@
 </script>
 
 <div
-  data-testid="public-access-key"
+  data-testid="api-public-key"
   class="card border border-surface-200 bg-surface-50-950 p-6 min-h-80 flex flex-col"
 >
   <header class="flex items-center gap-4 mb-4">
@@ -128,7 +128,7 @@
         Request Public Key
       </button>
     {:else}
-      <p data-testid="public-key-unavailable" class="mx-0 my-auto text-center">
+      <p data-testid="api-public-key-unavailable" class="mx-0 my-auto text-center">
         Public access keys are not available on this deployment. Please log in for authorized
         access.
       </p>
@@ -177,7 +177,11 @@
           />
         </div>
         {#if captchaFailed}
-          <p data-testid="public-key-captcha-failed" role="alert" class="mx-0 text-center text-sm">
+          <p
+            data-testid="api-public-key-captcha-failed"
+            role="alert"
+            class="mx-0 text-center text-sm"
+          >
             The security check could not be loaded. Check your connection and reload the page to try
             again.
           </p>
@@ -214,7 +218,7 @@
     </form>
   {:else if view === 'revealed' && publicKey}
     <aside
-      data-testid="public-key-warning"
+      data-testid="api-public-key-warning"
       role="alert"
       tabindex="-1"
       bind:this={warning}
@@ -227,7 +231,7 @@
       </p>
     </aside>
     <div class="flex items-center gap-2">
-      <code data-testid="public-key-value" class="font-mono text-sm break-all grow"
+      <code data-testid="api-public-key-value" class="font-mono text-sm break-all grow"
         >{publicKey.apiKey}</code
       >
       <CopyButton
@@ -237,7 +241,7 @@
     </div>
     <div class="mt-4">
       <span class="font-bold">Expires:</span>
-      <span data-testid="public-key-expires">{expires}</span>
+      <span data-testid="api-public-key-expires">{expires}</span>
     </div>
   {:else if view === 'error'}
     <!-- ErrorAlert has no live region of its own; announce the async failure -->

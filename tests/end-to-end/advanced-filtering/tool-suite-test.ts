@@ -38,7 +38,7 @@ test.describe('Advanced Query Builder - Build Advanced Query Button', () => {
     await clickNthFilterIcon(page, 0);
     const firstItem = await getOption(page);
     await firstItem.click();
-    await page.getByTestId('add-filter').click();
+    await page.getByTestId('filter-add').click();
 
     // Add second filter
     await mockApiSuccess(
@@ -49,12 +49,12 @@ test.describe('Advanced Query Builder - Build Advanced Query Button', () => {
     await clickNthFilterIcon(page, 1);
     const secondItem = await getOption(page);
     await secondItem.click();
-    await page.getByTestId('add-filter').click();
+    await page.getByTestId('filter-add').click();
 
     await expect(page.locator('#results-panel')).toBeVisible();
 
     // Verify the Build Advanced Query button exists next to Filters
-    const advancedFilteringBtn = page.getByTestId('advanced-filtering-btn');
+    const advancedFilteringBtn = page.getByTestId('results-advanced-filtering-open');
     await expect(advancedFilteringBtn).toBeVisible();
     await expect(advancedFilteringBtn).toContainText('Build Advanced Query');
   });
@@ -74,12 +74,12 @@ test.describe('Advanced Query Builder - Build Advanced Query Button', () => {
     await clickNthFilterIcon(page, 0);
     const firstItem = await getOption(page);
     await firstItem.click();
-    await page.getByTestId('add-filter').click();
+    await page.getByTestId('filter-add').click();
 
     await expect(page.locator('#results-panel')).toBeVisible();
 
     // Verify the button is visible but disabled
-    const advancedFilteringBtn = page.getByTestId('advanced-filtering-btn');
+    const advancedFilteringBtn = page.getByTestId('results-advanced-filtering-open');
     await expect(advancedFilteringBtn).toBeVisible();
     await expect(advancedFilteringBtn).toBeDisabled();
   });
@@ -99,9 +99,9 @@ test.describe('Advanced Query Builder - Build Advanced Query Button', () => {
     await clickNthFilterIcon(page, 0);
     const firstItem = await getOption(page);
     await firstItem.click();
-    await page.getByTestId('add-filter').click();
+    await page.getByTestId('filter-add').click();
 
-    const advancedFilteringBtn = page.getByTestId('advanced-filtering-btn');
+    const advancedFilteringBtn = page.getByTestId('results-advanced-filtering-open');
     await expect(advancedFilteringBtn).toBeDisabled();
 
     // Add second filter
@@ -113,7 +113,7 @@ test.describe('Advanced Query Builder - Build Advanced Query Button', () => {
     await clickNthFilterIcon(page, 1);
     const secondItem = await getOption(page);
     await secondItem.click();
-    await page.getByTestId('add-filter').click();
+    await page.getByTestId('filter-add').click();
 
     // Verify the button is now enabled
     await expect(advancedFilteringBtn).toBeEnabled();
@@ -134,7 +134,7 @@ test.describe('Advanced Query Builder - Build Advanced Query Button', () => {
     await clickNthFilterIcon(page, 0);
     const firstItem = await getOption(page);
     await firstItem.click();
-    await page.getByTestId('add-filter').click();
+    await page.getByTestId('filter-add').click();
 
     await mockApiSuccess(
       page,
@@ -144,10 +144,10 @@ test.describe('Advanced Query Builder - Build Advanced Query Button', () => {
     await clickNthFilterIcon(page, 1);
     const secondItem = await getOption(page);
     await secondItem.click();
-    await page.getByTestId('add-filter').click();
+    await page.getByTestId('filter-add').click();
 
     // Click the Build Advanced Query button
-    const advancedFilteringBtn = page.getByTestId('advanced-filtering-btn');
+    const advancedFilteringBtn = page.getByTestId('results-advanced-filtering-open');
     await expect(advancedFilteringBtn).toBeEnabled();
     await advancedFilteringBtn.click();
 
@@ -171,7 +171,7 @@ test.describe('Advanced Query Builder - Build Advanced Query Button', () => {
     await clickNthFilterIcon(page, 0);
     const firstItem = await getOption(page);
     await firstItem.click();
-    await page.getByTestId('add-filter').click();
+    await page.getByTestId('filter-add').click();
 
     // Add second filter (need 2 for AND/OR controls to appear)
     await mockApiSuccess(
@@ -182,13 +182,13 @@ test.describe('Advanced Query Builder - Build Advanced Query Button', () => {
     await clickNthFilterIcon(page, 1);
     const secondItem = await getOption(page);
     await secondItem.click();
-    await page.getByTestId('add-filter').click();
+    await page.getByTestId('filter-add').click();
 
     // Wait for results panel to appear
     await expect(page.locator('#results-panel')).toBeVisible();
 
     // Navigate to the Advanced Query Builder page
-    const advancedFilteringBtn = page.getByTestId('advanced-filtering-btn');
+    const advancedFilteringBtn = page.getByTestId('results-advanced-filtering-open');
     await expect(advancedFilteringBtn).toBeEnabled();
     await advancedFilteringBtn.click();
 

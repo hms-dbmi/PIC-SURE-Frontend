@@ -48,7 +48,7 @@ test.describe('Filter warning navigation', () => {
     await page.locator('#nav-link-explorer').click();
 
     await expect(page).toHaveURL(/\/discover$/);
-    const warning = page.getByTestId('sendfilter-warning');
+    const warning = page.getByTestId('explorer-filter-warning');
     await expect(warning).toBeVisible();
     await expect(warning).toContainText(
       'You are not authorized to access the data in Explore based on your selected filters.',
@@ -87,7 +87,7 @@ test.describe('Filter warning navigation', () => {
     await page.locator('#nav-link-explorer').click();
 
     await expect(page).toHaveURL(/\/api$/);
-    await expect(page.getByTestId('sendfilter-warning')).toBeVisible();
+    await expect(page.getByTestId('explorer-filter-warning')).toBeVisible();
   });
 
   test('warns for a standalone genomic filter without consent', async ({ page }) => {
@@ -114,6 +114,6 @@ test.describe('Filter warning navigation', () => {
     await page.locator('#nav-link-explorer').click();
 
     await expect(page).toHaveURL(/\/discover$/);
-    await expect(page.getByTestId('sendfilter-warning')).toBeVisible();
+    await expect(page.getByTestId('explorer-filter-warning')).toBeVisible();
   });
 });

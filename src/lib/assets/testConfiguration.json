@@ -24,7 +24,7 @@
     }
   },
   {
-    "element": "[data-testid=genomic-filter-btn]",
+    "element": "[data-testid=explorer-genomic-filter-open]",
     "popover": {
       "title": "Add a genomic Filter",
       "description": "Use the genomic filtering button to apply a filter using genomic information. Note* you can also search for genomic variables using the search bar.",
@@ -41,7 +41,7 @@
     }
   },
   {
-    "element": "#active-row-0 [data-testid=numerical-filter]",
+    "element": "#active-row-0 [data-testid=filter-numerical]",
     "popover": {
       "title": "Add numeric filter",
       "description": "To add a numeric filter, enter the min and max values you want in the filter.",
@@ -50,7 +50,7 @@
     }
   },
   {
-    "element": "#active-row-0 [data-testid=add-filter]",
+    "element": "#active-row-0 [data-testid=filter-add]",
     "popover": {
       "title": "Add numeric filter",
       "description": "Click the plus icon to add the filter",
@@ -84,7 +84,7 @@
     }
   },
   {
-    "element": "#active-row-1 [data-testid=add-filter]",
+    "element": "#active-row-1 [data-testid=filter-add]",
     "popover": {
       "title": "Add categorical filter",
       "description": "Click the plus icon to add the filter",

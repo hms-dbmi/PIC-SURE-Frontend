@@ -19,7 +19,7 @@ test.describe('Visitors receive banners across navigation', () => {
 
     await page.goto('/');
 
-    const bannerRegion = page.getByTestId('site-banner-region');
+    const bannerRegion = page.getByTestId('banner-region');
     await expect(bannerRegion).toBeVisible();
     await expect(page.getByRole('region', { name: 'Maintenance' })).toContainText(
       'Scheduled maintenance',
@@ -27,7 +27,7 @@ test.describe('Visitors receive banners across navigation', () => {
     await expect
       .poll(() =>
         page.evaluate(() => {
-          const bannerElement = document.querySelector('[data-testid="site-banner-region"]');
+          const bannerElement = document.querySelector('[data-testid="banner-region"]');
           const navigationElement = document.querySelector('#page-navigation');
           return Boolean(
             bannerElement &&
@@ -73,11 +73,11 @@ test.describe('Signed-out visitors can read banners and reach login', () => {
     await expect(page.getByRole('region', { name: 'Maintenance' })).toBeVisible();
     await expect(page.getByRole('region', { name: 'Signed-out notice' })).toBeVisible();
     await expect(page.getByRole('region', { name: 'Signed-in notice' })).toHaveCount(0);
-    await expect(page.getByTestId('site-banner-region')).toHaveCount(1);
+    await expect(page.getByTestId('banner-region')).toHaveCount(1);
     await expect
       .poll(() =>
         page.evaluate(() => {
-          const bannerRegion = document.querySelector('[data-testid="site-banner-region"]');
+          const bannerRegion = document.querySelector('[data-testid="banner-region"]');
           const loginTitle = document.querySelector('[data-testid="login-title"]');
           return Boolean(
             bannerRegion &&
@@ -93,7 +93,7 @@ test.describe('Signed-out visitors can read banners and reach login', () => {
     await expect(page.getByRole('region', { name: 'Maintenance' })).toBeVisible();
     await expect(page.getByRole('region', { name: 'Signed-out notice' })).toBeVisible();
     await expect(page.getByRole('region', { name: 'Signed-in notice' })).toHaveCount(0);
-    await expect(page.getByTestId('site-banner-region')).toHaveCount(1);
+    await expect(page.getByTestId('banner-region')).toHaveCount(1);
   });
 
   test('keeps login controls reachable below multiple signed-out banners', async ({ page }) => {
@@ -115,7 +115,7 @@ test.describe('Signed-out visitors can read banners and reach login', () => {
     await page.goto('/');
 
     await expect(page).toHaveURL('/login');
-    await expect(page.getByTestId('site-banner')).toHaveCount(4);
+    await expect(page.getByTestId('banner-item')).toHaveCount(4);
     const loginControl = page.getByRole('button', { name: 'Login with Auth0' });
     await expect(loginControl).not.toBeInViewport();
     await loginControl.scrollIntoViewIfNeeded();
@@ -443,7 +443,7 @@ test.describe('Admins create, edit, and publish banners', () => {
     });
 
     await page.goto('/admin/configuration?tab=branding');
-    await expect(page.getByTestId('config-tab-branding')).toBeVisible();
+    await expect(page.getByTestId('admin-config-tab-branding')).toBeVisible();
     expect(managementLoads).toBe(0);
     await page.getByRole('tab', { name: 'Site banners' }).click();
     await expect.poll(() => managementLoads).toBe(1);
@@ -481,9 +481,11 @@ test.describe('Admins create, edit, and publish banners', () => {
     await page.getByRole('tab', { name: 'Branding' }).click();
     await page.getByRole('button', { name: 'Discard changes' }).click();
     await expect(page.getByTestId('banner-editor-form')).not.toBeVisible();
-    await expect(page.getByTestId('config-tab-branding')).toBeVisible();
-    await expect(page.getByTestId('config-branding-scope-note')).toContainText('Limited scope');
-    await expect(page.getByTestId('config-tab-branding').getByText('LOGO_ALT')).toBeVisible();
+    await expect(page.getByTestId('admin-config-tab-branding')).toBeVisible();
+    await expect(page.getByTestId('admin-config-branding-scope-note')).toContainText(
+      'Limited scope',
+    );
+    await expect(page.getByTestId('admin-config-tab-branding').getByText('LOGO_ALT')).toBeVisible();
   });
 
   test('loads management once when a link opens the Site banners tab', async ({ page }) => {
@@ -495,7 +497,7 @@ test.describe('Admins create, edit, and publish banners', () => {
       return route.fulfill({ json: [] });
     });
     await page.goto('/admin/configuration?tab=branding');
-    await expect(page.getByTestId('config-tab-branding')).toBeVisible();
+    await expect(page.getByTestId('admin-config-tab-branding')).toBeVisible();
 
     // When
     await page.evaluate(() => {
@@ -552,7 +554,7 @@ test.describe('Admins create, edit, and publish banners', () => {
     await page.getByRole('button', { name: 'Discard changes' }).click();
 
     // Then
-    await expect(page.getByTestId('config-tab-branding')).toBeVisible();
+    await expect(page.getByTestId('admin-config-tab-branding')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Unsaved Changes' })).toHaveCount(0);
     await expect(page).toHaveURL(/\/admin\/configuration\?tab=branding$/);
   });
@@ -860,7 +862,7 @@ test.describe('Admins create, edit, and publish banners', () => {
 
     await page.goto('/');
     await userIsLoggedIn(page);
-    await expect(page.getByTestId('site-banner-region')).toHaveCount(0);
+    await expect(page.getByTestId('banner-region')).toHaveCount(0);
     await expect(page.getByRole('region', { name: 'Corrected maintenance notice' })).toHaveCount(0);
 
     await page.goto('/admin/configuration?tab=banners');
@@ -886,7 +888,7 @@ test.describe('Admins create, edit, and publish banners', () => {
 
     await page.goto('/');
     await userIsLoggedIn(page);
-    await expect(page.getByTestId('site-banner-region')).toHaveCount(0);
+    await expect(page.getByTestId('banner-region')).toHaveCount(0);
     await expect(page.getByRole('region', { name: 'Corrected maintenance notice' })).toHaveCount(0);
   });
 
@@ -1059,7 +1061,7 @@ test.describe('Admins schedule banners through their lifecycle', () => {
     serverNow = startAt;
     await page.clock.setFixedTime(new Date(serverNow));
     await page.goto('/help');
-    await expect(page.getByTestId('site-banner')).toContainText('Minute-boundary maintenance');
+    await expect(page.getByTestId('banner-item')).toContainText('Minute-boundary maintenance');
     await page.goto('/admin/configuration?tab=banners');
     await expect(row).toContainText('Active');
 
@@ -1076,8 +1078,8 @@ test.describe('Admins schedule banners through their lifecycle', () => {
     // finished before the internal navigation below can abort it. The visible feed marker then
     // proves SiteBannerRegion consumed a response before the test asks it to consume an empty one.
     await userIsLoggedIn(page);
-    await expect(page.getByTestId('site-banner')).toContainText('Feed synchronization marker');
-    await expect(page.getByTestId('site-banner')).not.toContainText('Minute-boundary maintenance');
+    await expect(page.getByTestId('banner-item')).toContainText('Feed synchronization marker');
+    await expect(page.getByTestId('banner-item')).not.toContainText('Minute-boundary maintenance');
 
     showFeedSynchronizationBanner = false;
     const emptyFeed = page.waitForResponse(
@@ -1085,7 +1087,7 @@ test.describe('Admins schedule banners through their lifecycle', () => {
     );
     await page.locator('a[href="/"]').first().click();
     await emptyFeed;
-    await expect(page.getByTestId('site-banner')).toHaveCount(0);
+    await expect(page.getByTestId('banner-item')).toHaveCount(0);
 
     await page.goto('/admin/configuration?tab=banners');
     await page.getByRole('tab', { name: 'Expired' }).click();
@@ -1110,7 +1112,7 @@ test.describe('Admins schedule banners through their lifecycle', () => {
     await expect(row).toHaveCount(0);
     expect(sourceLookupRequests).toBe(0);
     await page.goto('/help');
-    await expect(page.getByTestId('site-banner')).toContainText('Restored maintenance');
+    await expect(page.getByTestId('banner-item')).toContainText('Restored maintenance');
   });
 });
 
@@ -1241,7 +1243,7 @@ test.describe('Admins reorder banners to control display priority', () => {
     await expect(rows.nth(0)).toContainText('Second notice');
     await page.getByRole('tab', { name: 'Branding' }).click();
     await page.getByRole('button', { name: 'Discard order changes' }).click();
-    await expect(page.getByTestId('config-tab-branding')).toBeVisible();
+    await expect(page.getByTestId('admin-config-tab-branding')).toBeVisible();
 
     await page.getByRole('tab', { name: 'Site banners' }).click();
     await expect(rows.nth(0)).toContainText('First notice');
@@ -1283,9 +1285,9 @@ test.describe('Admins reorder banners to control display priority', () => {
     expect(reorderPayloads[1]).toHaveLength(4);
 
     await page.goto('/help');
-    await expect(page.getByTestId('site-banner')).toHaveCount(4);
+    await expect(page.getByTestId('banner-item')).toHaveCount(4);
     await expect
-      .poll(() => page.getByTestId('site-banner').getByRole('heading').allTextContents())
+      .poll(() => page.getByTestId('banner-item').getByRole('heading').allTextContents())
       .toEqual(['Third notice', 'Second notice', 'First notice', 'Concurrent arrival']);
   });
 });
@@ -1318,6 +1320,6 @@ test.describe('Visitors dismiss announcements with the keyboard', () => {
     await expect(remaining).toBeFocused();
     await remaining.press('Enter');
     await expect(page.getByText('End of site announcements.', { exact: true })).toBeFocused();
-    await expect(page.getByTestId('site-banner')).toHaveCount(0);
+    await expect(page.getByTestId('banner-item')).toHaveCount(0);
   });
 });

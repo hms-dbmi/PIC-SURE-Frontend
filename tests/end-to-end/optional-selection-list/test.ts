@@ -43,7 +43,7 @@ test.describe('OptionalSelectionList', () => {
 
     // Then
     await optionsHaveLoaded(page);
-    const component = page.getByTestId('optional-selection-list');
+    const component = page.getByTestId('ui-options-selection-list');
     const optionContainer = component.locator('#options-container');
     const options = await optionContainer.getByRole('listitem').all();
 
@@ -72,7 +72,7 @@ test.describe('OptionalSelectionList', () => {
     // Select first option
     const firstItem = await getOption(page);
     await firstItem.click();
-    const component = page.getByTestId('optional-selection-list');
+    const component = page.getByTestId('ui-options-selection-list');
 
     const selectedOptionContainer = component.locator('#selected-options-container');
     const selectedOptions = await selectedOptionContainer.getByRole('listitem').all();
@@ -98,7 +98,7 @@ test.describe('OptionalSelectionList', () => {
     await clickNthFilterIcon(page, 2);
 
     // Select All
-    const component = page.getByTestId('optional-selection-list');
+    const component = page.getByTestId('ui-options-selection-list');
     const selectAllButton = component.locator('#select-all');
     await selectAllButton.click();
 
@@ -122,7 +122,7 @@ test.describe('OptionalSelectionList', () => {
     await page.route(queryResultPath, async (route: Route) => route.fulfill({ body: '9999' }));
     await page.goto('/discover?search=somedata');
     await clickNthFilterIcon(page);
-    const component = page.getByTestId('optional-selection-list');
+    const component = page.getByTestId('ui-options-selection-list');
     const optionContainer = component.locator('#options-container');
     const selectedOptionContainer = component.locator('#selected-options-container');
     const option = '#option-' + getId(mockData.content[0].values?.[0] || 'yes');
@@ -152,7 +152,7 @@ test.describe('OptionalSelectionList', () => {
 
     // When
     await clickNthFilterIcon(page);
-    const component = page.getByTestId('optional-selection-list');
+    const component = page.getByTestId('ui-options-selection-list');
     const optionContainer = component.locator('#options-container');
 
     // Then
@@ -203,10 +203,10 @@ test.describe('OptionalSelectionList', () => {
     await userIsLoggedIn(page);
 
     // When
-    await page.getByTestId('genomic-filter-btn').click();
-    await expect(page.getByTestId('gene-variant-option')).toBeVisible({ timeout: 10000 });
-    await page.getByTestId('gene-variant-option').click();
-    const component = page.getByTestId('optional-selection-list');
+    await page.getByTestId('explorer-genomic-filter-open').click();
+    await expect(page.getByTestId('genomic-type-gene')).toBeVisible({ timeout: 10000 });
+    await page.getByTestId('genomic-type-gene').click();
+    const component = page.getByTestId('ui-options-selection-list');
     const optionContainer = component.locator('#options-container');
 
     // Then
@@ -251,7 +251,7 @@ test.describe('OptionalSelectionList', () => {
 
     // When
     await clickNthFilterIcon(page);
-    const component = page.getByTestId('optional-selection-list');
+    const component = page.getByTestId('ui-options-selection-list');
     await optionsHaveLoaded(page);
 
     // Select all options

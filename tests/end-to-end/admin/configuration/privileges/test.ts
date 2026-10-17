@@ -29,7 +29,7 @@ test('Add privilege button takes user to new privilege page', async ({ page }) =
   await userIsLoggedIn(page);
 
   // When
-  await page.getByTestId('add-privilege').click();
+  await page.getByTestId('admin-privilege-add').click();
 
   // Then
   await page.waitForURL('**/admin/configuration/privilege/new');
@@ -127,7 +127,7 @@ test('Edit row icon takes user to edit privilege form', async ({ page }) => {
   await userIsLoggedIn(page);
 
   // When
-  await page.getByTestId(`privilege-${mockPrivileges[0].uuid}-edit-btn`).click();
+  await page.getByTestId(`admin-privilege-edit-${mockPrivileges[0].uuid}`).click();
 
   // Then
   await page.waitForURL(`**/admin/configuration/privilege/${mockPrivileges[0].uuid}/edit`);
@@ -145,20 +145,20 @@ test('Edit privilege form has pre-populated values', async ({ page }) => {
   await expect(page.getByLabel('Application')).toHaveValue(mockApps[0].uuid);
 });
 test('Delete row icon asks users to confirm or cancel', async ({ page }) => {
-  const modalId = `privilege-${mockPrivileges[0].uuid}-delete`;
+  const modalId = `admin-privilege-delete-${mockPrivileges[0].uuid}`;
 
   // Given
   await page.goto('/admin/configuration');
   await userIsLoggedIn(page);
 
   // When
-  await page.getByTestId(modalId + '-btn').click();
+  await page.getByTestId(modalId + '-trigger').click();
 
   // Then
   await expect(page.getByTestId(modalId)).toBeVisible();
 });
 test('Delete gives success message', async ({ page }) => {
-  const modalId = `privilege-${mockPrivileges[0].uuid}-delete`;
+  const modalId = `admin-privilege-delete-${mockPrivileges[0].uuid}`;
 
   // Given
   await page.goto('/admin/configuration');
@@ -166,7 +166,7 @@ test('Delete gives success message', async ({ page }) => {
   await mockApiSuccess(page, `*/**/psama/privilege/${mockPrivileges[0].uuid}`, {});
 
   // When
-  await page.getByTestId(modalId + '-btn').click();
+  await page.getByTestId(modalId + '-trigger').click();
   await expect(page.getByTestId(modalId)).toBeVisible();
   await page.getByTestId(modalId).getByRole('button', { name: 'Yes' }).click();
 
@@ -176,7 +176,7 @@ test('Delete gives success message', async ({ page }) => {
   await expect(toast).toHaveAttribute('data-type', 'success');
 });
 test('Delete gives error message on api failure', async ({ page }) => {
-  const modalId = `privilege-${mockPrivileges[0].uuid}-delete`;
+  const modalId = `admin-privilege-delete-${mockPrivileges[0].uuid}`;
 
   // Given
   await page.goto('/admin/configuration');
@@ -184,7 +184,7 @@ test('Delete gives error message on api failure', async ({ page }) => {
   await mockApiFail(page, `*/**/psama/privilege/${mockPrivileges[0].uuid}`, 'failed');
 
   // When
-  await page.getByTestId(modalId + '-btn').click();
+  await page.getByTestId(modalId + '-trigger').click();
   await page.getByTestId(modalId).getByRole('button', { name: 'Yes' }).click();
 
   // Then
@@ -204,7 +204,7 @@ test.describe('Admin on Configuration page', () => {
 
       // Then
       await expect(page).toHaveURL(/\/admin\/configuration$/);
-      await expect(page.getByTestId('privilege-form')).toHaveCount(0);
+      await expect(page.getByTestId('admin-privilege-form')).toHaveCount(0);
     });
   }
 });

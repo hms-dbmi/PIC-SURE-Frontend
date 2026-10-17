@@ -90,7 +90,7 @@
     type="search"
     class="input"
     placeholder="chromosome (chr#), position, reference allele, variant allele"
-    data-testid="snp-search-box"
+    data-testid="genomic-snp-search-input"
     {disabled}
     bind:this={searchElement}
     bind:value={searchStringElement}
@@ -98,7 +98,7 @@
   />
   <button
     type="button"
-    data-testid="snp-search-btn"
+    data-testid="genomic-snp-search"
     class="btn btn-sm preset-filled-primary-500 text-lg disabled:opacity-75"
     onclick={searchSnp}
     disabled={disabled || !validSNPString || searching}

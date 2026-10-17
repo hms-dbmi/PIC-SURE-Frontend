@@ -63,7 +63,7 @@ test.describe('Dashboard page', () => {
 
       // Then
       await expect(page.locator('#drawer')).toBeVisible();
-      await expect(page.locator('#drawer').getByTestId('drawer-title')).toHaveText(
+      await expect(page.locator('#drawer').getByTestId('dashboard-drawer-title')).toHaveText(
         mockDashboard.rows[0].name as string,
       );
     });
@@ -81,7 +81,10 @@ test.describe('Dashboard page', () => {
       // Then
       await expect(page.locator('#drawer')).toBeVisible();
       const entries = Object.entries(mockDashboard.rows[0]);
-      const drawerText = await page.locator('#drawer').getByTestId('drawer-details').innerText();
+      const drawerText = await page
+        .locator('#drawer')
+        .getByTestId('dashboard-drawer-details')
+        .innerText();
       const lines = drawerText.split('\n');
 
       for (let i = 0; i < entries.length; i++) {

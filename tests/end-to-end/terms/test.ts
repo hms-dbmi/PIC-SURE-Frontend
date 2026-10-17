@@ -24,7 +24,7 @@ const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
 // The terms editor moved from its own /admin/configuration/terms/edit route into a
 // tab on the shared /admin/configuration page (see TermsEditor.svelte).
 const clickTab = (page: import('@playwright/test').Page, name: string) =>
-  page.getByTestId('tabs-control').filter({ hasText: name }).click();
+  page.getByTestId('ui-tabs-control').filter({ hasText: name }).click();
 const gotoTermsEditor = async (page: import('@playwright/test').Page) => {
   await page.goto('/admin/configuration');
   await userIsLoggedIn(page);
@@ -77,17 +77,17 @@ test.describe('Not logged in', () => {
     await page.goto('/login');
 
     // When
-    await page.getByTestId('terms-of-service-btn').click();
+    await page.getByTestId('app-footer-terms-trigger').click();
 
     // Then
     await expect(page.locator('#terms-of-service')).toBeVisible();
-    await expect(page.getByTestId('modal-close-button')).toBeVisible();
+    await expect(page.getByTestId('ui-modal-close')).toBeVisible();
   });
   test('Terms link opens dismissable modal', async ({ page }) => {
     // Given
     await mockHTMLBodySuccess(page, Psama.Latest, mockTerms);
     await page.goto('/login');
-    await page.getByTestId('terms-of-service-btn').click();
+    await page.getByTestId('app-footer-terms-trigger').click();
     await expect(page.locator('#terms-of-service')).toBeVisible();
 
     // When
@@ -151,7 +151,7 @@ test.describe('Logged in', () => {
 
       // Then
       await expect(page.locator('#terms-of-service')).toBeVisible();
-      await expect(page.getByTestId('modal-close-button')).not.toBeVisible();
+      await expect(page.getByTestId('ui-modal-close')).not.toBeVisible();
     });
     test('Clicking the accept sends request', async ({ page }) => {
       // Given
@@ -161,7 +161,7 @@ test.describe('Logged in', () => {
       await page.goto('/');
 
       // When
-      await page.getByTestId('terms-accept-btn').click();
+      await page.getByTestId('terms-accept').click();
 
       // Then
       await expect(page.locator('#terms-of-service')).not.toBeVisible({ timeout: 10000 });
@@ -179,7 +179,7 @@ test.describe('Logged in', () => {
       await page.goto('/');
 
       // When
-      await page.getByTestId('terms-reject-btn').click();
+      await page.getByTestId('terms-reject').click();
 
       // Then
       const rejectionUrl = RegExp('^' + branding.termsOfService.rejectionUrl);
@@ -192,15 +192,15 @@ test.describe('Logged in', () => {
       await mockApiSuccess(page, Psama.Consents, { consents: picsureUser.consents });
       await mockApiSuccess(page, Psama.Accept, '');
       await page.goto('/');
-      await page.getByTestId('terms-accept-btn').click();
+      await page.getByTestId('terms-accept').click();
 
       // When
       await userIsLoggedIn(page);
-      await page.getByTestId('terms-of-service-btn').click();
+      await page.getByTestId('app-footer-terms-trigger').click();
 
       // Then
       await expect(page.locator('#terms-of-service')).toBeVisible();
-      await expect(page.getByTestId('modal-close-button')).toBeVisible();
+      await expect(page.getByTestId('ui-modal-close')).toBeVisible();
     });
     test('TOS modal is dismissable after acceptance', async ({ page }) => {
       // Given
@@ -208,15 +208,15 @@ test.describe('Logged in', () => {
       await mockApiSuccess(page, Psama.Consents, { consents: picsureUser.consents });
       await mockApiSuccess(page, Psama.Accept, '');
       await page.goto('/');
-      await page.getByTestId('terms-accept-btn').click();
+      await page.getByTestId('terms-accept').click();
       await expect(page.locator('#terms-of-service')).not.toBeVisible({ timeout: 10000 });
       await userIsLoggedIn(page);
-      await page.getByTestId('terms-of-service-btn').click();
+      await page.getByTestId('app-footer-terms-trigger').click();
       await expect(page.locator('#terms-of-service')).toBeVisible();
-      await expect(page.getByTestId('modal-close-button')).toBeVisible();
+      await expect(page.getByTestId('ui-modal-close')).toBeVisible();
 
       // When
-      await page.getByTestId('modal-close-button').click();
+      await page.getByTestId('ui-modal-close').click();
 
       // Then
       await expect(page.locator('#terms-of-service')).not.toBeVisible();
@@ -230,7 +230,7 @@ test.describe('Logged in', () => {
 
       // Then
       await expect(page.getByTestId('terms-api-error')).toBeVisible();
-      await expect(page.getByTestId('terms-close-btn')).toBeVisible();
+      await expect(page.getByTestId('terms-close')).toBeVisible();
     });
   });
 
@@ -252,14 +252,14 @@ test.describe('Logged in', () => {
       await clickTab(page, 'Terms of Service');
 
       // Then
-      await expect(page.getByTestId('publish-terms-btn')).toBeVisible();
+      await expect(page.getByTestId('admin-terms-publish-trigger')).toBeVisible();
     });
     test('Commit button is disabled when no changes are made', async ({ page }) => {
       // When
       await gotoTermsEditor(page);
 
       // Then
-      await expect(page.getByTestId('publish-terms-btn')).toBeDisabled();
+      await expect(page.getByTestId('admin-terms-publish-trigger')).toBeDisabled();
     });
     test('Commit button is enabeld on content change', async ({ page }) => {
       // Given
@@ -269,7 +269,7 @@ test.describe('Logged in', () => {
       await page.locator('#editor div.ql-editor').fill('Some new text');
 
       // Then
-      await expect(page.getByTestId('publish-terms-btn')).toBeEnabled();
+      await expect(page.getByTestId('admin-terms-publish-trigger')).toBeEnabled();
     });
     test('Confirmation modal appears on commit', async ({ page }) => {
       // Given
@@ -277,22 +277,22 @@ test.describe('Logged in', () => {
       await page.locator('#editor div.ql-editor').fill('Some new text');
 
       // When
-      await page.getByTestId('publish-terms-btn').click();
+      await page.getByTestId('admin-terms-publish-trigger').click();
 
       // Then
-      await expect(page.getByTestId('publish-terms')).toBeVisible();
+      await expect(page.getByTestId('admin-terms-publish')).toBeVisible();
     });
     test('Cancel button does not submit update', async ({ page }) => {
       // Given
       await gotoTermsEditor(page);
       await page.locator('#editor div.ql-editor').fill('Some new text');
-      await page.getByTestId('publish-terms-btn').click();
+      await page.getByTestId('admin-terms-publish-trigger').click();
 
       // When
       await page.getByText('Cancel', { exact: true }).click();
 
       // Then
-      await expect(page.getByTestId('publish-terms')).not.toBeVisible();
+      await expect(page.getByTestId('admin-terms-publish')).not.toBeVisible();
       expect(tosUpdateRequest).toBeFalsy();
     });
     test('Confirm button submits updated terms, redirects, and success', async ({ page }) => {
@@ -300,7 +300,7 @@ test.describe('Logged in', () => {
       await mockHTMLBodySuccess(page, Psama.Update, '');
       await gotoTermsEditor(page);
       await page.locator('#editor div.ql-editor').fill('Some new text');
-      await page.getByTestId('publish-terms-btn').click();
+      await page.getByTestId('admin-terms-publish-trigger').click();
 
       // When
       await page.getByText('Confirm', { exact: true }).click();
@@ -310,7 +310,7 @@ test.describe('Logged in', () => {
       await expect(toast).toBeVisible();
       await expect(toast).toHaveAttribute('data-type', 'success');
       expect(tosUpdateRequest).toBeTruthy();
-      await expect(page.getByTestId('publish-terms')).not.toBeVisible();
+      await expect(page.getByTestId('admin-terms-publish')).not.toBeVisible();
       await expect(page).toHaveURL(RegExp('/admin/configuration\\?tab=terms$'));
     });
     test('Confirm button with api failure gives error and stays on page', async ({ page }) => {
@@ -318,7 +318,7 @@ test.describe('Logged in', () => {
       await mockApiFail(page, Psama.Update, 'failed');
       await gotoTermsEditor(page);
       await page.locator('#editor div.ql-editor').fill('Some new text');
-      await page.getByTestId('publish-terms-btn').click();
+      await page.getByTestId('admin-terms-publish-trigger').click();
 
       // When
       await page.getByText('Confirm', { exact: true }).click();
@@ -328,7 +328,7 @@ test.describe('Logged in', () => {
       await expect(toast).toBeVisible();
       await expect(toast).toHaveAttribute('data-type', 'error');
       expect(tosUpdateRequest).toBeTruthy();
-      await expect(page.getByTestId('publish-terms')).not.toBeVisible();
+      await expect(page.getByTestId('admin-terms-publish')).not.toBeVisible();
       await expect(page).toHaveURL(RegExp('/admin/configuration\\?tab=terms$'));
     });
   });
@@ -349,11 +349,11 @@ test.describe('Logged in', () => {
       // Given
       await mockHTMLBodySuccess(page, Psama.Update, '');
       await gotoTermsEditor(page);
-      await expect(page.getByTestId('top-admin-only-error')).toHaveCount(0);
+      await expect(page.getByTestId('admin-top-admin-required')).toHaveCount(0);
 
       // When
       await page.locator('#editor div.ql-editor').fill('Some new text');
-      await page.getByTestId('publish-terms-btn').click();
+      await page.getByTestId('admin-terms-publish-trigger').click();
       await page.getByText('Confirm', { exact: true }).click();
 
       // Then

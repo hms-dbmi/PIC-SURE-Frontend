@@ -44,7 +44,7 @@
 <section
   aria-labelledby={banner.title ? titleId : undefined}
   aria-label={banner.title ? undefined : untitledName}
-  data-testid="site-banner"
+  data-testid="banner-item"
   class="w-full border-b-4 px-4 py-1.5 {toneClasses[banner.appearance]}"
 >
   <div

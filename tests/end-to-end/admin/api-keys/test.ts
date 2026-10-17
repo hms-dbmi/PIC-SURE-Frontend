@@ -85,12 +85,12 @@ test.describe('api keys list', () => {
     await userIsLoggedIn(page);
 
     // Then
-    const platformTable = page.getByTestId('PlatformApiKeys-table');
+    const platformTable = page.getByTestId('admin-api-key-platform-table');
     await expect(platformTable).toContainText('picsure_p_def67890…');
     await expect(platformTable).toContainText('Revoked');
     await expect(platformTable).not.toContainText('picsure_u_abc12345…');
 
-    const userTable = page.getByTestId('UserApiKeys-table');
+    const userTable = page.getByTestId('admin-api-key-user-table');
     await expect(userTable).toContainText('picsure_u_abc12345…');
     await expect(userTable).toContainText('picsure_u_ghi13579…');
     await expect(userTable).toContainText('Active');
@@ -109,7 +109,7 @@ test.describe('api keys list', () => {
 
     // Then
     await expect(
-      page.getByTestId('UserApiKeys-table').locator('..').locator('footer'),
+      page.getByTestId('admin-api-key-user-table').locator('..').locator('footer'),
     ).toContainText('42');
   });
 });
@@ -134,8 +134,8 @@ test.describe('revoke flow', () => {
     await userIsLoggedIn(page);
 
     // When
-    await page.getByTestId('api-key-uuid-active-revoke-btn').click();
-    const dialog = page.getByTestId('api-key-uuid-active-revoke');
+    await page.getByTestId('admin-api-key-revoke-uuid-active-trigger').click();
+    const dialog = page.getByTestId('admin-api-key-revoke-uuid-active');
     await expect(dialog).toContainText('permanent and cannot be undone');
     const putRequest = page.waitForRequest(
       (request) =>
@@ -145,8 +145,8 @@ test.describe('revoke flow', () => {
 
     // Then
     await putRequest;
-    await expect(page.getByTestId('UserApiKeys-table')).toContainText('Revoked');
-    await expect(page.getByTestId('api-key-uuid-active-revoke-btn')).toHaveCount(0);
+    await expect(page.getByTestId('admin-api-key-user-table')).toContainText('Revoked');
+    await expect(page.getByTestId('admin-api-key-revoke-uuid-active-trigger')).toHaveCount(0);
   });
 
   test('Cancelling the confirmation does not revoke', async ({ page }) => {
@@ -160,8 +160,8 @@ test.describe('revoke flow', () => {
     await userIsLoggedIn(page);
 
     // When
-    await page.getByTestId('api-key-uuid-active-revoke-btn').click();
-    const dialog = page.getByTestId('api-key-uuid-active-revoke');
+    await page.getByTestId('admin-api-key-revoke-uuid-active-trigger').click();
+    const dialog = page.getByTestId('admin-api-key-revoke-uuid-active');
     await dialog.getByRole('button', { name: 'Cancel' }).click();
 
     // Then
@@ -178,23 +178,25 @@ test.describe('mint platform key flow', () => {
     await userIsLoggedIn(page);
 
     // When
-    await page.getByTestId('mint-platform-key-btn').click();
+    await page.getByTestId('admin-api-key-mint-trigger').click();
     await page.getByLabel(/name/i).fill('CI Pipeline');
     await page.getByLabel(/email/i).fill('ops@example.org');
     await page.getByRole('button', { name: 'Mint Key' }).click();
 
     // Then
-    const reveal = page.getByTestId('mint-key-reveal');
+    const reveal = page.getByTestId('admin-api-key-minted');
     await expect(reveal).toBeVisible();
-    await expect(reveal.getByTestId('minted-api-key')).toHaveText(FAKE_KEY);
+    await expect(reveal.getByTestId('admin-api-key-minted-value')).toHaveText(FAKE_KEY);
     // the modal portals its content, so locate the warning by test id rather than a scoped role
-    await expect(page.getByTestId('minted-key-warning')).toContainText(/shown only once/i);
+    await expect(page.getByTestId('admin-api-key-minted-warning')).toContainText(
+      /shown only once/i,
+    );
 
     // When
-    await reveal.getByTestId('done-minted-key').click();
+    await reveal.getByTestId('admin-api-key-minted-done').click();
 
     // Then
-    await expect(page.getByTestId('minted-api-key')).toHaveCount(0);
+    await expect(page.getByTestId('admin-api-key-minted-value')).toHaveCount(0);
   });
 
   test('The revealed key cannot be dismissed accidentally, only via Done', async ({ page }) => {
@@ -204,20 +206,20 @@ test.describe('mint platform key flow', () => {
     await userIsLoggedIn(page);
 
     // When
-    await page.getByTestId('mint-platform-key-btn').click();
+    await page.getByTestId('admin-api-key-mint-trigger').click();
     await page.getByLabel(/name/i).fill('CI Pipeline');
     await page.getByLabel(/email/i).fill('ops@example.org');
     await page.getByRole('button', { name: 'Mint Key' }).click();
-    await expect(page.getByTestId('minted-api-key')).toBeVisible();
+    await expect(page.getByTestId('admin-api-key-minted-value')).toBeVisible();
 
     // Then: no × close button, and Escape does not discard the only copy of the key
-    await expect(page.getByTestId('modal-close-button')).toHaveCount(0);
+    await expect(page.getByTestId('ui-modal-close')).toHaveCount(0);
     await page.keyboard.press('Escape');
-    await expect(page.getByTestId('minted-api-key')).toBeVisible();
+    await expect(page.getByTestId('admin-api-key-minted-value')).toBeVisible();
 
     // Only Done closes it
-    await page.getByTestId('done-minted-key').click();
-    await expect(page.getByTestId('minted-api-key')).toHaveCount(0);
+    await page.getByTestId('admin-api-key-minted-done').click();
+    await expect(page.getByTestId('admin-api-key-minted-value')).toHaveCount(0);
   });
 
   test('Cannot close the modal while the mint request is in flight', async ({ page }) => {
@@ -230,7 +232,7 @@ test.describe('mint platform key flow', () => {
     await userIsLoggedIn(page);
 
     // When minting is in progress
-    await page.getByTestId('mint-platform-key-btn').click();
+    await page.getByTestId('admin-api-key-mint-trigger').click();
     await page.getByLabel(/name/i).fill('CI Pipeline');
     await page.getByLabel(/email/i).fill('ops@example.org');
     await page.getByRole('button', { name: 'Mint Key' }).click();
@@ -239,10 +241,10 @@ test.describe('mint platform key flow', () => {
     await expect(page.getByRole('button', { name: 'Minting…' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeDisabled();
     await page.keyboard.press('Escape');
-    await expect(page.getByTestId('mint-platform-key')).toBeVisible();
+    await expect(page.getByTestId('admin-api-key-mint')).toBeVisible();
 
     // And once it resolves the key is revealed, not lost
-    await expect(page.getByTestId('minted-api-key')).toHaveText(FAKE_KEY);
+    await expect(page.getByTestId('admin-api-key-minted-value')).toHaveText(FAKE_KEY);
   });
 
   test('Shows the backend message inline when minting fails', async ({ page }) => {
@@ -258,14 +260,16 @@ test.describe('mint platform key flow', () => {
     await userIsLoggedIn(page);
 
     // When
-    await page.getByTestId('mint-platform-key-btn').click();
+    await page.getByTestId('admin-api-key-mint-trigger').click();
     await page.getByLabel(/name/i).fill('CI Pipeline');
     await page.getByLabel(/email/i).fill('ops@example.org');
     await page.getByRole('button', { name: 'Mint Key' }).click();
 
     // Then
-    await expect(page.getByTestId('mint-key-error')).toContainText('Expiry must be in the future');
-    await expect(page.getByTestId('mint-key-reveal')).toHaveCount(0);
+    await expect(page.getByTestId('admin-api-key-mint-error')).toContainText(
+      'Expiry must be in the future',
+    );
+    await expect(page.getByTestId('admin-api-key-minted')).toHaveCount(0);
   });
 
   test('Enforces required name and email', async ({ page }) => {
@@ -274,7 +278,7 @@ test.describe('mint platform key flow', () => {
     await userIsLoggedIn(page);
 
     // When
-    await page.getByTestId('mint-platform-key-btn').click();
+    await page.getByTestId('admin-api-key-mint-trigger').click();
     await page.getByRole('button', { name: 'Mint Key' }).click();
 
     // Then
@@ -293,14 +297,14 @@ test.describe('API Keys tab location', () => {
 
     // Then
     await expect(page).toHaveURL(/\/admin\/configuration\?tab=api-keys$/);
-    await expect(page.getByTestId('PlatformApiKeys-table')).toBeVisible();
+    await expect(page.getByTestId('admin-api-key-platform-table')).toBeVisible();
   });
 
   test('Following the old link from the configuration page switches tabs', async ({ page }) => {
     // Given
     await page.goto('/admin/configuration?tab=branding');
     await userIsLoggedIn(page);
-    await expect(page.getByTestId('config-tab-branding')).toBeVisible();
+    await expect(page.getByTestId('admin-config-tab-branding')).toBeVisible();
 
     // When: the redirect only changes ?tab=, so the page stays mounted
     await page.evaluate(() => {
@@ -312,7 +316,7 @@ test.describe('API Keys tab location', () => {
 
     // Then
     await expect(page).toHaveURL(/\/admin\/configuration\?tab=api-keys$/);
-    await expect(page.getByTestId('PlatformApiKeys-table')).toBeVisible();
+    await expect(page.getByTestId('admin-api-key-platform-table')).toBeVisible();
   });
 });
 
@@ -329,7 +333,7 @@ test.describe('Admin on API Keys tab', () => {
     await page.goto(API_KEYS_TAB);
 
     // Then
-    await expect(page.getByTestId('UserApiKeys-table')).toContainText('picsure_u_abc12345…');
+    await expect(page.getByTestId('admin-api-key-user-table')).toContainText('picsure_u_abc12345…');
     await expect(page).toHaveURL(/\/admin\/configuration\?tab=api-keys$/);
   });
 
@@ -339,8 +343,8 @@ test.describe('Admin on API Keys tab', () => {
     await userIsLoggedIn(page);
 
     // Then
-    await expect(page.getByTestId('top-admin-only-error')).toBeVisible();
-    await expect(page.getByTestId('mint-platform-key-btn')).toBeDisabled();
-    await expect(page.getByTestId('api-key-uuid-active-revoke-btn')).toBeDisabled();
+    await expect(page.getByTestId('admin-top-admin-required')).toBeVisible();
+    await expect(page.getByTestId('admin-api-key-mint-trigger')).toBeDisabled();
+    await expect(page.getByTestId('admin-api-key-revoke-uuid-active-trigger')).toBeDisabled();
   });
 });

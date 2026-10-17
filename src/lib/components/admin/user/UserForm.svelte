@@ -94,7 +94,7 @@
 </script>
 
 <form onsubmit={saveUser}>
-  <fieldset data-testid="user-form" class="grid gap-4 my-3">
+  <fieldset data-testid="admin-user-form" class="grid gap-4 my-3">
     <Switch
       name="Active"
       controlActive="bg-success-500"
@@ -141,7 +141,7 @@
       </select>
     </label>
 
-    <fieldset data-testid="privilege-checkboxes">
+    <fieldset data-testid="admin-user-role-checkboxes">
       <legend class="required">Roles:</legend>
       {#each roleList as [name], index}
         <label class="flex items-center space-x-2">
@@ -152,7 +152,7 @@
     </fieldset>
 
     {#if validationError}
-      <ErrorAlert data-testid="validation-error" onclose={() => (validationError = '')}>
+      <ErrorAlert data-testid="admin-form-validation-error" onclose={() => (validationError = '')}>
         {validationError}
       </ErrorAlert>
     {/if}

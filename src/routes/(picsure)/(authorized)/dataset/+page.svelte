@@ -49,6 +49,7 @@
       isClickable
       searchable
       tableName="ActiveDatasets"
+      data-testid="dataset-active-table"
       title="Active Datasets"
       data={$active}
       {rowClickHandler}
@@ -61,6 +62,7 @@
         isClickable
         searchable
         tableName="ArchivedDatasets"
+        data-testid="dataset-archived-table"
         title="Deleted Datasets"
         data={$archived}
         {rowClickHandler}

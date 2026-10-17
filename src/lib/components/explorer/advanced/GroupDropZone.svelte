@@ -44,7 +44,7 @@
 </script>
 
 <div
-  data-testid="group-drop-zone"
+  data-testid="filter-group-drop-zone"
   data-group-id={groupId}
   class="rounded-md mt-1 mb-1 border border-dashed text-primary-600 text-xs font-semibold uppercase tracking-wide flex items-center justify-center transition-all"
   class:h-0={!showZone}

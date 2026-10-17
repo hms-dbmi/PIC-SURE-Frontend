@@ -203,7 +203,7 @@
 <div class="w-full flex-none" bind:this={container}>
   <p class="sr-only" role="status" aria-live="polite" aria-atomic="true">{announcement}</p>
   {#if visibleBanners.length > 0}
-    <div class="w-full flex-none" data-testid="site-banner-region">
+    <div class="w-full flex-none" data-testid="banner-region">
       {#each visibleBanners as banner (banner.uuid)}
         <SiteBanner
           {banner}

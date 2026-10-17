@@ -79,7 +79,7 @@
         >
           <Modal
             bind:open={modalOpen}
-            data-testid="terms-of-service"
+            data-testid="app-footer-terms"
             width="w-3/4"
             height="h-full"
             triggerBase="hover:underline text-[0.74rem]"

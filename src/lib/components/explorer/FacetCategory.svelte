@@ -174,7 +174,7 @@
       {/each}
       {#if overShowLimit && !textFilterValue}
         <ShowMoreButton
-          data-testid="show-more-facets"
+          data-testid="explorer-facets-show-more"
           expanded={showMore}
           onclick={() => (showMore = !showMore)}
         />

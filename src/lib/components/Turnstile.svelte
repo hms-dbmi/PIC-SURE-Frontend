@@ -72,4 +72,4 @@
   });
 </script>
 
-<div data-testid="turnstile-widget" bind:this={container}></div>
+<div data-testid="app-turnstile-widget" bind:this={container}></div>

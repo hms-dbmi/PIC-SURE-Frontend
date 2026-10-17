@@ -58,7 +58,7 @@ function makeDetail(overrides: Partial<SearchResult> = {}): SearchResult {
 async function renderResultInfo(detail: SearchResult) {
   mockGetConceptDetails.mockResolvedValue(detail);
   render(ResultInfoComponent, { data });
-  await screen.findByTestId('variable-info');
+  await screen.findByTestId('explorer-variable-info');
 }
 
 describe('ResultInfoComponent', () => {
@@ -88,10 +88,14 @@ describe('ResultInfoComponent', () => {
   it('renders all populated variable, dataset, and study fields', async () => {
     await renderResultInfo(makeDetail());
 
-    expect(screen.getByTestId('variable-info')).toHaveTextContent('Name: Variable Display');
-    expect(screen.getByTestId('variable-info')).toHaveTextContent('Accession: variable-accession');
-    expect(screen.getByTestId('variable-info')).toHaveTextContent('Type: Categorical');
-    expect(screen.getByTestId('variable-info')).toHaveTextContent(
+    expect(screen.getByTestId('explorer-variable-info')).toHaveTextContent(
+      'Name: Variable Display',
+    );
+    expect(screen.getByTestId('explorer-variable-info')).toHaveTextContent(
+      'Accession: variable-accession',
+    );
+    expect(screen.getByTestId('explorer-variable-info')).toHaveTextContent('Type: Categorical');
+    expect(screen.getByTestId('explorer-variable-info')).toHaveTextContent(
       'Description: Variable description',
     );
     expect(screen.getByTestId('dataset-info')).toHaveTextContent('Name: Dataset Display');
@@ -99,17 +103,21 @@ describe('ResultInfoComponent', () => {
     expect(screen.getByTestId('dataset-info')).toHaveTextContent(
       'Description: Dataset description',
     );
-    expect(screen.getByTestId('study-info')).toHaveTextContent('Study Name: Study Full Name');
-    expect(screen.getByTestId('study-info')).toHaveTextContent('Study Accession: study-accession');
+    expect(screen.getByTestId('explorer-study-info')).toHaveTextContent(
+      'Study Name: Study Full Name',
+    );
+    expect(screen.getByTestId('explorer-study-info')).toHaveTextContent(
+      'Study Accession: study-accession',
+    );
   });
 
   it('does not render dataset or study sections when those objects are missing', async () => {
     await renderResultInfo(makeDetail({ table: null, study: null }));
 
-    expect(screen.getByTestId('variable-info')).toBeInTheDocument();
+    expect(screen.getByTestId('explorer-variable-info')).toBeInTheDocument();
     expect(screen.queryByTestId('dataset-info')).not.toBeInTheDocument();
     expect(screen.queryByText('Dataset Information')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('study-info')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('explorer-study-info')).not.toBeInTheDocument();
     expect(screen.queryByText('Study Information')).not.toBeInTheDocument();
   });
 
@@ -159,7 +167,9 @@ describe('ResultInfoComponent', () => {
       }),
     );
 
-    expect(screen.getByTestId('study-info')).toHaveTextContent(`Study Name: ${expectedStudyName}`);
+    expect(screen.getByTestId('explorer-study-info')).toHaveTextContent(
+      `Study Name: ${expectedStudyName}`,
+    );
   });
 
   it('falls back to the root study acronym when study name fields are missing', async () => {
@@ -175,7 +185,7 @@ describe('ResultInfoComponent', () => {
       }),
     );
 
-    expect(screen.getByTestId('study-info')).toHaveTextContent('Study Name: Root Acronym');
+    expect(screen.getByTestId('explorer-study-info')).toHaveTextContent('Study Name: Root Acronym');
   });
 
   it('renders meta key-value pairs in their corresponding sections', async () => {
@@ -200,10 +210,14 @@ describe('ResultInfoComponent', () => {
       }),
     );
 
-    expect(screen.getByTestId('variable-info')).toHaveTextContent('values: ["0.0","100.0"]');
-    expect(screen.getByTestId('variable-info')).toHaveTextContent('source: Variable Source');
+    expect(screen.getByTestId('explorer-variable-info')).toHaveTextContent(
+      'values: ["0.0","100.0"]',
+    );
+    expect(screen.getByTestId('explorer-variable-info')).toHaveTextContent(
+      'source: Variable Source',
+    );
     expect(screen.getByTestId('dataset-info')).toHaveTextContent('dataType: Dataset Type');
-    expect(screen.getByTestId('study-info')).toHaveTextContent('owner: Study Owner');
+    expect(screen.getByTestId('explorer-study-info')).toHaveTextContent('owner: Study Owner');
   });
 
   it('formats array and object meta values safely', async () => {
@@ -216,8 +230,8 @@ describe('ResultInfoComponent', () => {
       }),
     );
 
-    expect(screen.getByTestId('variable-info')).toHaveTextContent('arrayValue: one, two');
-    expect(screen.getByTestId('variable-info')).toHaveTextContent(
+    expect(screen.getByTestId('explorer-variable-info')).toHaveTextContent('arrayValue: one, two');
+    expect(screen.getByTestId('explorer-variable-info')).toHaveTextContent(
       'objectValue: {"nested":"value"}',
     );
   });
@@ -231,12 +245,12 @@ describe('ResultInfoComponent', () => {
       }),
     );
 
-    const variableInfo = screen.getByTestId('variable-info');
+    const variableInfo = screen.getByTestId('explorer-variable-info');
     expect(variableInfo).toHaveTextContent('Name: Variable Display');
     expect(variableInfo).toHaveTextContent('meta 6: value 6');
     expect(variableInfo).not.toHaveTextContent('meta 7: value 7');
 
-    const showMoreButton = screen.getByTestId('show-more-variable-info');
+    const showMoreButton = screen.getByTestId('explorer-variable-info-show-more');
     expect(showMoreButton).toHaveTextContent('Show More');
 
     await fireEvent.click(showMoreButton);

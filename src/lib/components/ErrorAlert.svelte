@@ -18,7 +18,7 @@
     icon = true,
     iconSize = '4xl',
     closeText = 'Close',
-    'data-testid': testid = 'error-alert',
+    'data-testid': testid = 'ui-error-alert',
     onclose,
     children,
   }: Props = $props();

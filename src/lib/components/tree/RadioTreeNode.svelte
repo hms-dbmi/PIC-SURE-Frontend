@@ -13,7 +13,7 @@
 
 <details
   class="tree-item"
-  data-testid="tree-item:{node.name}-{node.value}"
+  data-testid="ui-tree-item-{node.name}-{node.value}"
   aria-disabled={node.disabled || disabled}
   open
 >
@@ -31,7 +31,7 @@
     {/if}
     <input
       id="radio:{node.name}"
-      data-testid="radio:{node.name}"
+      data-testid="ui-tree-radio-{node.name}"
       class="radio tree-item-radio self-center {isRoot ? 'ml-[28px]' : ''}"
       type="radio"
       name="tree-radio"
@@ -44,7 +44,7 @@
       >{node.name}</label
     >
   </summary>
-  <div class="tree-item-children ml-4" data-testid="tree-item-children:{node.name}" role="group">
+  <div class="tree-item-children ml-4" data-testid="ui-tree-children-{node.name}" role="group">
     {#if !node.isLeaf}
       {#each node.children as child}
         <RadioTreeNode node={child} index={index + 1} {disabled} />

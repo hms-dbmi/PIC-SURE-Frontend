@@ -38,7 +38,7 @@
 
 <div class="w-20 min-w-20">
   <button
-    data-testid={`role-${data.cell}-edit-btn`}
+    data-testid={`admin-role-edit-${data.cell}`}
     type="button"
     title="Edit (e)"
     data-key="e"
@@ -50,7 +50,7 @@
     <span class="sr-only">Edit (e)</span>
   </button>
   <Modal
-    data-testid="role-{data.cell}-delete"
+    data-testid="admin-role-delete-{data.cell}"
     title="Delete Role?"
     triggerTitle="Delete (d)"
     data-key="d"

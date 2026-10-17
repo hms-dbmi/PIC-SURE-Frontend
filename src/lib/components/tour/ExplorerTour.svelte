@@ -56,7 +56,7 @@
 
   const applyNumericFilter = (activeRowSelector?: string) => {
     const filter = document.querySelector(
-      `#${activeRowSelector} [data-testid="add-filter"]`,
+      `#${activeRowSelector} [data-testid="filter-add"]`,
     ) as HTMLInputElement;
 
     filter.click();
@@ -71,7 +71,7 @@
 
     setTimeout(() => {
       const addFilter = document.querySelector(
-        `#${activeRowSelector} [data-testid="add-filter"]`,
+        `#${activeRowSelector} [data-testid="filter-add"]`,
       ) as HTMLInputElement;
       addFilter?.click();
       tourDriver.moveNext();
@@ -85,7 +85,7 @@
 
   const applyFilterThenNext: DriverHook = (element?: Element) => {
     const activeRowId = element?.id;
-    const filterType = document.querySelector(`#${activeRowId} [data-testid="numerical-filter"]`)
+    const filterType = document.querySelector(`#${activeRowId} [data-testid="filter-numerical"]`)
       ? 'numerical'
       : 'categorical';
     if (filterType === 'numerical') {
@@ -294,7 +294,7 @@
 </Modal>
 <button
   type="button"
-  data-testid="explorer-tour-btn"
+  data-testid="explorer-tour-start"
   id="tourBtn"
   class="btn preset-filled-secondary-500"
   onclick={() => {

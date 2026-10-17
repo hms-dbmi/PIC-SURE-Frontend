@@ -40,7 +40,7 @@
             {#snippet trigger()}
               <button
                 id="advanced-query-btn"
-                data-testid="advanced-filtering-btn"
+                data-testid="results-advanced-filtering-open"
                 class={aqbBtnClass}
                 disabled
               >
@@ -52,7 +52,7 @@
           <a
             id="advanced-query-btn"
             href={resolve(`${isDiscoverPage ? 'discover' : 'explorer'}/advanced-filtering`)}
-            data-testid="advanced-filtering-btn"
+            data-testid="results-advanced-filtering-open"
             class="{aqbBtnClass} !mr-0 hover:preset-filled-primary-500"
           >
             Build Advanced Query

@@ -7,7 +7,7 @@
 <div class="flex items-center">
   <span class="monospace">{data.cell}</span>
   <CopyButton
-    data-testid="{data.cell}-copy"
+    data-testid="dataset-query-copy-{data.cell}"
     useIcon
     triggerTitle="Copy dataset ID (c)"
     data-key="c"

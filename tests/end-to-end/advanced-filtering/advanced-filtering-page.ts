@@ -62,7 +62,7 @@ export class AdvancedFilteringPage {
     this.filteringArea = page.locator('.main-content');
 
     // Buttons
-    this.advancedFilteringBtn = page.getByTestId('advanced-filtering-btn');
+    this.advancedFilteringBtn = page.getByTestId('results-advanced-filtering-open');
     this.addGroupButton = page.getByRole('button', { name: 'Add Subquery' });
     this.applyChangesButton = page.getByRole('button', { name: 'Apply Changes' });
 
@@ -71,8 +71,8 @@ export class AdvancedFilteringPage {
     this.listedFilterNames = this.modal.getByTestId('filter-root').getByTestId('filter-name');
 
     // Equation Summary
-    this.logicTreeSection = page.getByTestId('logic-tree-summary');
-    this.logicTreeText = page.getByTestId('logic-tree-text');
+    this.logicTreeSection = page.getByTestId('filter-logic-summary');
+    this.logicTreeText = page.getByTestId('filter-logic-text');
   }
 
   // ==================== Setup ====================
@@ -109,7 +109,7 @@ export class AdvancedFilteringPage {
       const firstItem = await getOption(this.page);
       await firstItem.click();
     }
-    await this.page.getByTestId('add-filter').click();
+    await this.page.getByTestId('filter-add').click();
   }
 
   /**
@@ -118,7 +118,7 @@ export class AdvancedFilteringPage {
    */
   async addNumericFilter(rowIndex: number) {
     await clickNthFilterIcon(this.page, rowIndex);
-    await this.page.getByTestId('add-filter').click();
+    await this.page.getByTestId('filter-add').click();
   }
 
   /**
@@ -408,7 +408,7 @@ export class AdvancedFilteringPage {
   }
 
   async clickUnsavedCancel() {
-    await this.getUnsavedModal().getByTestId('modal-close-button').click();
+    await this.getUnsavedModal().getByTestId('ui-modal-close').click();
   }
 
   async clickUnsavedDiscard() {
@@ -453,11 +453,11 @@ export class AdvancedFilteringPage {
   }
 
   getDropPreviews(): Locator {
-    return this.page.getByTestId('drop-preview');
+    return this.page.getByTestId('filter-drop-preview');
   }
 
   getMoveHereZones(): Locator {
-    return this.page.getByTestId('group-drop-zone').filter({ hasText: 'Move here' });
+    return this.page.getByTestId('filter-group-drop-zone').filter({ hasText: 'Move here' });
   }
 
   /**
@@ -573,14 +573,14 @@ export class AdvancedFilteringPage {
   // ==================== Genomic Filter Locators ====================
 
   getGenomicFiltersSection(): Locator {
-    return this.page.getByTestId('genomic-filters-section');
+    return this.page.getByTestId('filter-genomic-section');
   }
 
   getGenomicFilterItems(): Locator {
-    return this.page.getByTestId('genomic-filter-item');
+    return this.page.getByTestId('filter-genomic-item');
   }
 
   getGenomicAndSeparator(): Locator {
-    return this.page.getByTestId('genomic-and-separator');
+    return this.page.getByTestId('filter-genomic-separator');
   }
 }

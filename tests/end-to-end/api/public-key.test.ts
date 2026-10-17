@@ -51,7 +51,7 @@ test.describe('Public access key generation', () => {
     await page.goto('/api');
 
     // When
-    const card = page.getByTestId('public-access-key');
+    const card = page.getByTestId('api-public-key');
 
     // Then
     await expect(card.getByRole('button', { name: 'Request Public Key' })).toBeEnabled();
@@ -74,12 +74,12 @@ test.describe('Public access key generation', () => {
     await page.getByRole('button', { name: 'Generate Key' }).click();
 
     // Then
-    await expect(page.getByTestId('public-key-value')).toHaveText(mockKeyResponse.apiKey);
-    await expect(page.getByTestId('copy-btn')).toBeVisible();
-    await expect(page.getByTestId('public-key-warning')).toContainText(
+    await expect(page.getByTestId('api-public-key-value')).toHaveText(mockKeyResponse.apiKey);
+    await expect(page.getByTestId('ui-copy-trigger')).toBeVisible();
+    await expect(page.getByTestId('api-public-key-warning')).toContainText(
       'This key is shown only once and cannot be recovered.',
     );
-    await expect(page.getByTestId('public-key-expires')).not.toBeEmpty();
+    await expect(page.getByTestId('api-public-key-expires')).not.toBeEmpty();
   });
 
   test('Sends no Authorization header and the Turnstile token', async ({ page, context }) => {
@@ -102,7 +102,7 @@ test.describe('Public access key generation', () => {
     await page.evaluate(() => localStorage.setItem('token', 'stale.jwt.value'));
     await page.getByLabel('Email (optional)').fill('researcher@example.org');
     await page.getByRole('button', { name: 'Generate Key' }).click();
-    await expect(page.getByTestId('public-key-value')).toBeVisible();
+    await expect(page.getByTestId('api-public-key-value')).toBeVisible();
 
     // Then
     expect(headers?.['authorization']).toBeUndefined();
@@ -130,10 +130,10 @@ test.describe('Public access key generation', () => {
     await page.getByRole('button', { name: 'Generate Key' }).click();
 
     // Then
-    const errorAlert = page.getByTestId('public-access-key').getByTestId('error-alert');
+    const errorAlert = page.getByTestId('api-public-key').getByTestId('ui-error-alert');
     await expect(errorAlert).toBeVisible();
     await expect(errorAlert).toContainText('Public key generation is not enabled.');
-    await expect(page.getByTestId('public-key-value')).not.toBeVisible();
+    await expect(page.getByTestId('api-public-key-value')).not.toBeVisible();
 
     // When
     await page.getByRole('button', { name: 'Try Again' }).click();
@@ -161,7 +161,7 @@ test.describe('Public access key generation', () => {
 
       // Then: native constraint validation blocks submission
       await expect(emailField).toHaveJSProperty('validity.valid', false);
-      await expect(page.getByTestId('public-key-value')).not.toBeVisible();
+      await expect(page.getByTestId('api-public-key-value')).not.toBeVisible();
     }
     expect(requestCount).toBe(0);
 
@@ -170,7 +170,7 @@ test.describe('Public access key generation', () => {
     await page.getByRole('button', { name: 'Generate Key' }).click();
 
     // Then
-    await expect(page.getByTestId('public-key-value')).toBeVisible();
+    await expect(page.getByTestId('api-public-key-value')).toBeVisible();
     expect(requestCount).toBe(1);
   });
 
@@ -189,7 +189,7 @@ test.describe('Public access key generation', () => {
 
     // Then
     await expect(page.getByRole('button', { name: 'Request Public Key' })).toBeEnabled();
-    await expect(page.getByTestId('public-key-value')).not.toBeVisible();
+    await expect(page.getByTestId('api-public-key-value')).not.toBeVisible();
     expect(requestCount).toBe(0);
   });
 });

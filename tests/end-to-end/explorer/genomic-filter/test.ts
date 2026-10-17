@@ -28,7 +28,7 @@ test('Clicking the Genomic filter button navigates to genomic filter page', asyn
   await userIsLoggedIn(page);
 
   // When
-  await page.getByTestId('genomic-filter-btn').click();
+  await page.getByTestId('explorer-genomic-filter-open').click();
 
   // Then
   await expect(page).toHaveURL('/explorer/genome-filter');
@@ -53,12 +53,12 @@ test.describe('Single-flag branches', () => {
     await userIsLoggedIn(page);
 
     // When
-    await page.getByTestId('genomic-filter-btn').click();
+    await page.getByTestId('explorer-genomic-filter-open').click();
 
     // Then
     await expect(page).toHaveURL('/explorer/genome-filter');
-    await expect(page.getByTestId('gene-variant-option')).not.toBeVisible();
-    await expect(page.getByTestId('snp-option')).not.toBeVisible();
+    await expect(page.getByTestId('genomic-type-gene')).not.toBeVisible();
+    await expect(page.getByTestId('genomic-type-snp')).not.toBeVisible();
     await expect(page.locator('#gene-search')).toBeVisible();
   });
 
@@ -76,12 +76,12 @@ test.describe('Single-flag branches', () => {
     await userIsLoggedIn(page);
 
     // When
-    await page.getByTestId('genomic-filter-btn').click();
+    await page.getByTestId('explorer-genomic-filter-open').click();
 
     // Then
     await expect(page).toHaveURL('/explorer/genome-filter');
-    await expect(page.getByTestId('gene-variant-option')).not.toBeVisible();
-    await expect(page.getByTestId('snp-option')).not.toBeVisible();
+    await expect(page.getByTestId('genomic-type-gene')).not.toBeVisible();
+    await expect(page.getByTestId('genomic-type-snp')).not.toBeVisible();
     await expect(page.locator('#snp-search')).toBeVisible();
   });
 
@@ -101,6 +101,6 @@ test.describe('Single-flag branches', () => {
     await userIsLoggedIn(page);
 
     // Then
-    await expect(page.getByTestId('genomic-filter-btn')).not.toBeVisible();
+    await expect(page.getByTestId('explorer-genomic-filter-open')).not.toBeVisible();
   });
 });

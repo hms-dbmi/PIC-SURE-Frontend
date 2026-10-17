@@ -54,7 +54,7 @@
 </script>
 
 <Popover
-  data-testid={testid || 'copy'}
+  data-testid={testid || 'ui-copy'}
   data-key={dataKey}
   {triggerTitle}
   triggerStyle="ml-4 {useIcon ? 'text-black-600 hover:text-primary-600' : 'btn'} {className}"

@@ -43,41 +43,41 @@ test.describe('variant explorer', () => {
       await mockApiSuccess(page, `*/**/picsure/hpds/auth/search/values*`, geneValues);
       // open the sidebar to reduce locator time on result panel items during testing
       await page.locator('#results-panel-toggle').click();
-      await page.getByTestId('genomic-filter-btn').click();
-      await expect(page.getByTestId('gene-variant-option')).toBeVisible();
-      await page.getByTestId('gene-variant-option').click();
+      await page.getByTestId('explorer-genomic-filter-open').click();
+      await expect(page.getByTestId('genomic-type-gene')).toBeVisible();
+      await page.getByTestId('genomic-type-gene').click();
       await page.locator('#options-container').getByLabel(geneValues.results[0]).click();
-      await page.getByTestId('add-filter-btn').click();
+      await page.getByTestId('genomic-filter-add').click();
       await expect(page).toHaveURL('/explorer');
     });
     test('Adds variant explorer button to gene results', async ({ page }) => {
       // Then
-      await expect(page.getByTestId('variant-explorer-btn')).toBeEnabled();
+      await expect(page.getByTestId('results-variant-explorer-open')).toBeEnabled();
     });
     test('Displays variant count', async ({ page }) => {
       // When
-      await page.getByTestId('variant-explorer-btn').click();
+      await page.getByTestId('results-variant-explorer-open').click();
 
       // Then
       await expect(page).toHaveURL('/explorer/variant');
-      await expect(page.getByTestId('variant-count')).toContainText('5');
+      await expect(page.getByTestId('explorer-variant-count')).toContainText('5');
     });
     test('Loads variant data table', async ({ page }) => {
       // When
-      await page.getByTestId('variant-explorer-btn').click();
+      await page.getByTestId('results-variant-explorer-open').click();
 
       // Then
       await expect(page).toHaveURL('/explorer/variant');
-      await expect(page.getByTestId('variant-explorer-table')).toBeVisible();
+      await expect(page.getByTestId('explorer-variant-table')).toBeVisible();
     });
     test('Can download variant data', async ({ page }) => {
       // Given
-      await page.getByTestId('variant-explorer-btn').click();
+      await page.getByTestId('results-variant-explorer-open').click();
 
       // When
       const [download] = await Promise.all([
         page.waitForEvent('download'),
-        page.getByTestId('variant-download-btn').click(),
+        page.getByTestId('explorer-variant-download').click(),
       ]);
 
       // Then
@@ -89,11 +89,11 @@ test.describe('variant explorer', () => {
         ...successResults,
         VARIANT_COUNT_FOR_QUERY: { count: 0, message: 'Query ran successfully' },
       });
-      await page.getByTestId('variant-explorer-btn').click();
+      await page.getByTestId('results-variant-explorer-open').click();
 
       // Then
       await expect(page).toHaveURL('/explorer/variant');
-      await expect(page.getByTestId('variant-count')).toContainText('0');
+      await expect(page.getByTestId('explorer-variant-count')).toContainText('0');
     });
     test('Error occurs during variant count retrieval', async ({ page }) => {
       // Given
@@ -103,11 +103,11 @@ test.describe('variant explorer', () => {
       });
 
       // When
-      await page.getByTestId('variant-explorer-btn').click();
+      await page.getByTestId('results-variant-explorer-open').click();
 
       // Then
-      await expect(page.getByTestId('error-alert')).toBeVisible();
-      await expect(page.getByTestId('error-alert')).toContainText('Error');
+      await expect(page.getByTestId('ui-error-alert')).toBeVisible();
+      await expect(page.getByTestId('ui-error-alert')).toContainText('Error');
     });
     test('Error occurs during variant retrieval', async ({ page }) => {
       // Given
@@ -117,12 +117,12 @@ test.describe('variant explorer', () => {
       });
 
       // When
-      await page.getByTestId('variant-explorer-btn').click();
+      await page.getByTestId('results-variant-explorer-open').click();
 
       // Then
       await expect(page).toHaveURL('/explorer/variant');
-      await expect(page.getByTestId('error-alert')).toBeVisible();
-      await expect(page.getByTestId('error-alert')).toContainText('Error');
+      await expect(page.getByTestId('ui-error-alert')).toBeVisible();
+      await expect(page.getByTestId('ui-error-alert')).toContainText('Error');
     });
   });
   test.describe('Variant Explorer settings', () => {
@@ -145,13 +145,13 @@ test.describe('variant explorer', () => {
       await mockQuerySync(page, successResults);
       await mockApiSuccess(page, `*/**/picsure/hpds/auth/search/values*`, geneValues);
       await page.locator('#results-panel-toggle').click();
-      await page.getByTestId('genomic-filter-btn').click();
-      await expect(page.getByTestId('gene-variant-option')).toBeVisible();
-      await page.getByTestId('gene-variant-option').click();
+      await page.getByTestId('explorer-genomic-filter-open').click();
+      await expect(page.getByTestId('genomic-type-gene')).toBeVisible();
+      await page.getByTestId('genomic-type-gene').click();
       await page.locator('#options-container').getByLabel(geneValues.results[0]).click();
-      await page.getByTestId('add-filter-btn').click();
+      await page.getByTestId('genomic-filter-add').click();
       await expect(page).toHaveURL('/explorer');
-      await page.getByTestId('variant-explorer-btn').click();
+      await page.getByTestId('results-variant-explorer-open').click();
       await expect(page).toHaveURL('/explorer/variant');
     }
 
@@ -162,9 +162,9 @@ test.describe('variant explorer', () => {
       await setupVariantExplorer(page, [{ name: 'VARIANT_EXPLORER_MAX_COUNT', value: '3' }]);
 
       // Then
-      await expect(page.getByTestId('error-alert')).toContainText('Too many variants!');
-      await expect(page.getByTestId('error-alert')).toContainText('cannot display more than');
-      await expect(page.getByTestId('variant-explorer-table')).not.toBeVisible();
+      await expect(page.getByTestId('ui-error-alert')).toContainText('Too many variants!');
+      await expect(page.getByTestId('ui-error-alert')).toContainText('cannot display more than');
+      await expect(page.getByTestId('explorer-variant-table')).not.toBeVisible();
     });
 
     test('VARIANT_EXPLORER_TYPE=full requests full variant data and shows the aggregate-toggle checkbox', async ({
@@ -174,7 +174,7 @@ test.describe('variant explorer', () => {
       await setupVariantExplorer(page, [{ name: 'VARIANT_EXPLORER_TYPE', value: 'full' }]);
 
       // Then
-      await expect(page.getByTestId('variant-explorer-table')).toBeVisible();
+      await expect(page.getByTestId('explorer-variant-table')).toBeVisible();
       await expect(page.getByText('Aggregate data')).toBeVisible();
     });
 
@@ -185,7 +185,7 @@ test.describe('variant explorer', () => {
       await setupVariantExplorer(page);
 
       // Then
-      await expect(page.getByTestId('variant-explorer-table')).toBeVisible();
+      await expect(page.getByTestId('explorer-variant-table')).toBeVisible();
       await expect(page.getByText('Aggregate data')).not.toBeVisible();
     });
 
@@ -198,7 +198,7 @@ test.describe('variant explorer', () => {
       ]);
 
       // Then
-      const table = page.getByTestId('variant-explorer-table');
+      const table = page.getByTestId('explorer-variant-table');
       await expect(table).toBeVisible();
       await expect(table.locator('thead').getByText('CHROM', { exact: true })).toBeVisible();
       await expect(table.locator('thead').getByText('REF', { exact: true })).not.toBeVisible();
@@ -226,7 +226,7 @@ test.describe('variant explorer', () => {
     await clickNthFilterIcon(page);
     const firstItem = await getOption(page);
     await firstItem.click();
-    const addFilterButton = page.getByTestId('add-filter');
+    const addFilterButton = page.getByTestId('filter-add');
     await addFilterButton.click();
     await expect(page.locator('#results-panel')).toBeVisible();
 

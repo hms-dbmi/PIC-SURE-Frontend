@@ -55,7 +55,7 @@ test.describe('dataset', () => {
     await userIsLoggedIn(page);
 
     // Then
-    await expect(page.getByTestId('ActiveDatasets-table')).toBeVisible();
+    await expect(page.getByTestId('dataset-active-table')).toBeVisible();
     await expect(page.getByText(mockData[0].query.uuid, { exact: true })).toBeVisible();
   });
   test('Should not show archived datasets table on page load', async ({ page }) => {
@@ -65,7 +65,7 @@ test.describe('dataset', () => {
     await userIsLoggedIn(page);
 
     // Then
-    await expect(page.getByTestId('ArchivedDatasets-table')).not.toBeVisible();
+    await expect(page.getByTestId('dataset-archived-table')).not.toBeVisible();
     await expect(page.getByText(mockData[1].query.uuid, { exact: true })).not.toBeVisible();
   });
   test('Shows archived datasets on archive toggle button press', async ({ page }) => {
@@ -89,11 +89,11 @@ test.describe('dataset', () => {
     await userIsLoggedIn(page);
 
     // When
-    const copyBtn = page.getByTestId(`${mockData[0].query.uuid}-copy-btn`);
+    const copyBtn = page.getByTestId(`dataset-query-copy-${mockData[0].query.uuid}-trigger`);
     await copyBtn.click();
 
     // Then
-    await expect(page.getByTestId(`${mockData[0].query.uuid}-copy`)).toBeVisible();
+    await expect(page.getByTestId(`dataset-query-copy-${mockData[0].query.uuid}`)).toBeVisible();
   });
   test('Archive button press moves item to archived', async ({ page }) => {
     // Given
@@ -142,7 +142,7 @@ test.describe('dataset', () => {
     await userIsLoggedIn(page);
 
     // When
-    const table = page.getByTestId('ActiveDatasets-table');
+    const table = page.getByTestId('dataset-active-table');
     const firstRow = table.locator('tr[id^="ActiveDatasets-row-"]').first();
     await expect(firstRow).toBeVisible();
     await firstRow.focus();
@@ -187,7 +187,7 @@ test.describe('dataset', () => {
     await userIsLoggedIn(page);
 
     // Then
-    await expect(page.getByTestId('error-alert')).toBeVisible();
+    await expect(page.getByTestId('ui-error-alert')).toBeVisible();
   });
   test('Active table shows dataset name', async ({ page }) => {
     // Given
@@ -268,7 +268,7 @@ test.describe('dataset/[uuid]', () => {
     await userIsLoggedIn(page);
 
     // Then
-    await expect(page.getByTestId('error-alert')).toBeVisible();
+    await expect(page.getByTestId('ui-error-alert')).toBeVisible();
   });
   test('Back button is visible and navigates to /dataset', async ({ page }) => {
     // Given
@@ -279,7 +279,7 @@ test.describe('dataset/[uuid]', () => {
     await page.waitForSelector('[data-testid="dataset-summary-container"]');
 
     // When
-    await page.getByTestId('back-btn').click();
+    await page.getByTestId('ui-page-back').click();
 
     // Then
     await expect(page).toHaveURL(new RegExp('/dataset$'));
@@ -346,7 +346,7 @@ test.describe('dataset/[uuid]', () => {
     // Then
     await expect(page.getByTestId('dataset-summary-container')).toBeVisible();
     await expect(page.getByTestId('dataset-summary-uuid')).toContainText(mockData[0].query.uuid);
-    await expect(page.getByTestId('error-alert')).toBeVisible();
+    await expect(page.getByTestId('ui-error-alert')).toBeVisible();
   });
   test('Saved V2 filters are visible but cannot be restored when compatibility is disabled', async ({
     page,
@@ -380,8 +380,8 @@ test.describe('dataset/[uuid]', () => {
 
     // Then
     await expect(page.getByTestId('dataset-filters-container')).toBeVisible();
-    await expect(page.getByTestId('restore-filters-btn')).not.toBeVisible();
-    await expect(page.getByTestId('restore-popover-btn')).toBeDisabled();
+    await expect(page.getByTestId('dataset-restore-filters-trigger')).not.toBeVisible();
+    await expect(page.getByTestId('dataset-restore-popover-trigger')).toBeDisabled();
   });
 
   test('Saved V2 filters can be restored when compatibility is enabled', async ({ page }) => {
@@ -414,16 +414,20 @@ test.describe('dataset/[uuid]', () => {
     await userIsLoggedIn(page);
 
     // When
-    await page.getByTestId('restore-filters-btn').click();
+    await page.getByTestId('dataset-restore-filters-trigger').click();
     await page
-      .getByTestId('restore-filters')
+      .getByTestId('dataset-restore-filters')
       .getByRole('button', { name: 'Restore Filters' })
       .click();
     await page.waitForURL('**/explorer');
 
     // Then
-    await expect(page.getByTestId(`added-filter-${datasetDetails.paths.GENDER}`)).toBeVisible();
-    await expect(page.getByTestId(`added-export-${datasetDetails.paths.HEIGHT}`)).toBeVisible();
+    await expect(
+      page.getByTestId(`results-filter-item-${datasetDetails.paths.GENDER}`),
+    ).toBeVisible();
+    await expect(
+      page.getByTestId(`results-export-item-${datasetDetails.paths.HEIGHT}`),
+    ).toBeVisible();
   });
 
   test('Restore Filters confirms, shows success toast, and navigates to explorer', async ({
@@ -436,9 +440,9 @@ test.describe('dataset/[uuid]', () => {
     await page.waitForSelector('[data-testid="dataset-summary-container"]');
 
     // When - open modal and confirm
-    await page.getByTestId('restore-filters-btn').click();
+    await page.getByTestId('dataset-restore-filters-trigger').click();
     await page
-      .getByTestId('restore-filters')
+      .getByTestId('dataset-restore-filters')
       .getByRole('button', { name: 'Restore Filters' })
       .click();
 
@@ -454,19 +458,27 @@ test.describe('dataset/[uuid]', () => {
     await userIsLoggedIn(page);
 
     // When - open modal and confirm
-    await page.getByTestId('restore-filters-btn').click();
+    await page.getByTestId('dataset-restore-filters-trigger').click();
     await page
-      .getByTestId('restore-filters')
+      .getByTestId('dataset-restore-filters')
       .getByRole('button', { name: 'Restore Filters' })
       .click();
     await page.waitForURL('**/explorer');
     await expect(page.locator('#results-panel')).toBeVisible();
 
     // Then
-    await expect(page.getByTestId(`added-filter-${datasetDetails.paths.GENDER}`)).toBeVisible();
-    await expect(page.getByTestId(`added-export-${datasetDetails.paths.GENDER}`)).toBeVisible();
-    await expect(page.getByTestId(`added-export-${datasetDetails.paths.HEIGHT}`)).toBeVisible();
-    await expect(page.getByTestId(`added-export-${datasetDetails.paths.WEIGHT}`)).toBeVisible();
+    await expect(
+      page.getByTestId(`results-filter-item-${datasetDetails.paths.GENDER}`),
+    ).toBeVisible();
+    await expect(
+      page.getByTestId(`results-export-item-${datasetDetails.paths.GENDER}`),
+    ).toBeVisible();
+    await expect(
+      page.getByTestId(`results-export-item-${datasetDetails.paths.HEIGHT}`),
+    ).toBeVisible();
+    await expect(
+      page.getByTestId(`results-export-item-${datasetDetails.paths.WEIGHT}`),
+    ).toBeVisible();
   });
   test('Restore Filters modal shows warning when existing filters are present', async ({
     page,
@@ -476,9 +488,9 @@ test.describe('dataset/[uuid]', () => {
     await page.goto(`/dataset/${mockData[0].uuid}`);
     await userIsLoggedIn(page);
     await page.waitForSelector('[data-testid="dataset-summary-container"]');
-    await page.getByTestId('restore-filters-btn').click();
+    await page.getByTestId('dataset-restore-filters-trigger').click();
     await page
-      .getByTestId('restore-filters')
+      .getByTestId('dataset-restore-filters')
       .getByRole('button', { name: 'Restore Filters' })
       .click();
     await expect(page).toHaveURL(new RegExp('/explorer'));
@@ -487,12 +499,14 @@ test.describe('dataset/[uuid]', () => {
     // When - navigate back to dataset and open the restore modal again
     await page.goto(`/dataset/${mockData[0].uuid}`);
     await page.waitForSelector('[data-testid="dataset-summary-container"]');
-    await page.getByTestId('restore-filters-btn').click();
+    await page.getByTestId('dataset-restore-filters-trigger').click();
 
     // Then - warning is shown in the modal
-    await expect(page.getByTestId('restore-filters')).toBeVisible();
-    await expect(page.getByTestId('error-alert')).toBeVisible();
-    await expect(page.getByTestId('error-alert')).toContainText('You already have active filters.');
+    await expect(page.getByTestId('dataset-restore-filters')).toBeVisible();
+    await expect(page.getByTestId('ui-error-alert')).toBeVisible();
+    await expect(page.getByTestId('ui-error-alert')).toContainText(
+      'You already have active filters.',
+    );
   });
   test('Restore Filters with existing filters still redirects to explorer with success toast', async ({
     page,
@@ -502,9 +516,9 @@ test.describe('dataset/[uuid]', () => {
     await page.goto(`/dataset/${mockData[0].uuid}`);
     await userIsLoggedIn(page);
     await page.waitForSelector('[data-testid="dataset-summary-container"]');
-    await page.getByTestId('restore-filters-btn').click();
+    await page.getByTestId('dataset-restore-filters-trigger').click();
     await page
-      .getByTestId('restore-filters')
+      .getByTestId('dataset-restore-filters')
       .getByRole('button', { name: 'Restore Filters' })
       .click();
     await expect(page).toHaveURL(new RegExp('/explorer'));
@@ -512,9 +526,9 @@ test.describe('dataset/[uuid]', () => {
     // When - navigate back, open modal, and confirm despite warning
     await page.goto(`/dataset/${mockData[0].uuid}`);
     await page.waitForSelector('[data-testid="dataset-summary-container"]');
-    await page.getByTestId('restore-filters-btn').click();
+    await page.getByTestId('dataset-restore-filters-trigger').click();
     await page
-      .getByTestId('restore-filters')
+      .getByTestId('dataset-restore-filters')
       .getByRole('button', { name: 'Restore Filters' })
       .click();
     await expect(page).toHaveURL(new RegExp('/explorer'));
@@ -564,16 +578,16 @@ test.describe('dataset/[uuid]', () => {
     await page.goto(`/dataset/${anyRecordOfDataset.uuid}`);
     await userIsLoggedIn(page);
     await page.waitForSelector('[data-testid="dataset-summary-container"]');
-    await page.getByTestId('restore-filters-btn').click();
+    await page.getByTestId('dataset-restore-filters-trigger').click();
     await page
-      .getByTestId('restore-filters')
+      .getByTestId('dataset-restore-filters')
       .getByRole('button', { name: 'Restore Filters' })
       .click();
     await page.waitForURL('**/explorer');
     await expect(page.locator('#results-panel')).toBeVisible();
 
     // Then — the AnyRecordOf filter appears in the result panel
-    await expect(page.getByTestId(`added-filter-${anyRecordOfConceptPath}`)).toBeVisible();
+    await expect(page.getByTestId(`results-filter-item-${anyRecordOfConceptPath}`)).toBeVisible();
   });
 
   test('Copy button on queryId shows popup', async ({ page }) => {
@@ -584,10 +598,10 @@ test.describe('dataset/[uuid]', () => {
     await page.waitForSelector('[data-testid="dataset-summary-container"]');
 
     // When
-    const copyBtn = page.getByTestId(`${mockData[0].query.uuid}-copy-btn`);
+    const copyBtn = page.getByTestId(`dataset-query-copy-${mockData[0].query.uuid}-trigger`);
     await copyBtn.click();
 
     // Then
-    await expect(page.getByTestId(`${mockData[0].query.uuid}-copy`)).toBeVisible();
+    await expect(page.getByTestId(`dataset-query-copy-${mockData[0].query.uuid}`)).toBeVisible();
   });
 });

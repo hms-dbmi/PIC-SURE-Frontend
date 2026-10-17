@@ -253,7 +253,7 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
 
   test('AF-DND-006: Dragging a filter shows a dotted drop preview', async ({ page }) => {
     const modal = afPage.modal;
-    const dropPreview = page.getByTestId('drop-preview');
+    const dropPreview = page.getByTestId('filter-drop-preview');
     await expect(dropPreview).toHaveCount(0);
 
     const filterA = afPage.filterNames[0];
@@ -319,7 +319,7 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
     await expect(page.locator('#results-panel')).toBeVisible();
     await afPage.openModal();
 
-    const dropPreview = page.getByTestId('drop-preview');
+    const dropPreview = page.getByTestId('filter-drop-preview');
     await expect(dropPreview).toHaveCount(0);
 
     // Find the group's drag handle via the "Between filters:" label's sibling grip icon
@@ -579,7 +579,7 @@ test.describe('Advanced Query Builder - Genomic Filters', () => {
     await expect(genomicItems.first()).toContainText('Genomic Filter');
 
     const filteringArea = afPage.filteringArea;
-    const genomicSectionInArea = filteringArea.getByTestId('genomic-filters-section');
+    const genomicSectionInArea = filteringArea.getByTestId('filter-genomic-section');
     await expect(genomicSectionInArea).toBeVisible();
   });
 

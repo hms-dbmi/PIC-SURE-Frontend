@@ -80,10 +80,10 @@ test('Explorer tour button opens instruction modal', async ({ page }) => {
   // Given
   await page.goto('/explorer');
   await userIsLoggedIn(page);
-  await expect(page.getByTestId('explorer-tour-btn')).toBeVisible();
+  await expect(page.getByTestId('explorer-tour-start')).toBeVisible();
 
   // When
-  await page.getByTestId('explorer-tour-btn').click();
+  await page.getByTestId('explorer-tour-start').click();
 
   // Then
   await expect(page.locator('#modal-component')).toBeVisible();
@@ -101,7 +101,7 @@ test('Tour Finishes', async ({ page }) => {
   await mockApiSuccess(page, '*/**/picsure/dictionary/concepts/hierarchy/*', hierarchyResponse);
   await page.goto('/explorer');
   await userIsLoggedIn(page);
-  await page.getByTestId('explorer-tour-btn').click();
+  await page.getByTestId('explorer-tour-start').click();
   await expect(page.locator('#modal-component')).toBeVisible();
   await page.locator('#modal-component').getByRole('button', { name: 'Start Tour' }).click();
 
@@ -126,7 +126,7 @@ test('Tour Finishes for BDC-Auth, with every step highlighting a real element', 
   await mockApiSuccess(page, '*/**/picsure/dictionary/concepts/hierarchy/*', hierarchyResponse);
   await page.goto('/explorer');
   await userIsLoggedIn(page);
-  await page.getByTestId('explorer-tour-btn').click();
+  await page.getByTestId('explorer-tour-start').click();
   await expect(page.locator('#modal-component')).toBeVisible();
   await page.locator('#modal-component').getByRole('button', { name: 'Start Tour' }).click();
 
@@ -137,8 +137,8 @@ test('Explorer tour starts from modal', async ({ page }) => {
   // Given
   await page.goto('/explorer');
   await userIsLoggedIn(page);
-  await expect(page.getByTestId('explorer-tour-btn')).toBeVisible();
-  await page.getByTestId('explorer-tour-btn').click();
+  await expect(page.getByTestId('explorer-tour-start')).toBeVisible();
+  await page.getByTestId('explorer-tour-start').click();
   await expect(page.locator('#modal-component')).toBeVisible();
 
   // When
@@ -151,8 +151,8 @@ test('Escape key closes tour', async ({ page }) => {
   // Given
   await page.goto('/explorer');
   await userIsLoggedIn(page);
-  await expect(page.getByTestId('explorer-tour-btn')).toBeVisible();
-  await page.getByTestId('explorer-tour-btn').click();
+  await expect(page.getByTestId('explorer-tour-start')).toBeVisible();
+  await page.getByTestId('explorer-tour-start').click();
   await expect(page.locator('#modal-component')).toBeVisible();
   await page.locator('#modal-component').getByRole('button', { name: 'Start Tour' }).click();
   await expect(page.locator('#driver-popover-content')).toBeVisible({ timeout: 10000 });
@@ -174,7 +174,7 @@ test('EXPLORE_TOUR=false hides the tour button entirely', async ({ page }) => {
   await userIsLoggedIn(page);
 
   // Then
-  await expect(page.getByTestId('explorer-tour-btn')).not.toBeVisible();
+  await expect(page.getByTestId('explorer-tour-start')).not.toBeVisible();
 });
 
 test.describe('AUTH_TOUR_NAME', () => {
@@ -184,11 +184,11 @@ test.describe('AUTH_TOUR_NAME', () => {
     await page.goto('/explorer');
     await userIsLoggedIn(page);
 
-    await page.getByTestId('explorer-tour-btn').click();
+    await page.getByTestId('explorer-tour-start').click();
     await expect(page.locator('#modal-component')).toBeVisible();
 
     // Then
-    await expect(page.getByTestId('modal-wrapper-header')).toContainText(
+    await expect(page.getByTestId('ui-modal-header')).toContainText(
       'Welcome to BioData Catalyst Powered by PIC-SURE',
     );
   });

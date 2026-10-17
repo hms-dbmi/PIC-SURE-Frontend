@@ -670,16 +670,16 @@
     </DragOverlay>
   </DragDropProvider>
   {#if $genomicFilters.length > 0}
-    <div data-testid="genomic-filters-section">
+    <div data-testid="filter-genomic-section">
       {#if (localTree.root as FilterGroupInterface).children.length > 0}
-        <div class="flex justify-center pb-3" data-testid="genomic-and-separator">
+        <div class="flex justify-center pb-3" data-testid="filter-genomic-separator">
           <span class="badge preset-filled-surface-200-800 font-bold text-xs uppercase">AND</span>
         </div>
       {/if}
       {#each $genomicFilters as gFilter (gFilter.uuid)}
         <div
           class="card flex flex-row gap-2 items-center p-4 bg-white border-surface-400 border opacity-75"
-          data-testid="genomic-filter-item"
+          data-testid="filter-genomic-item"
         >
           <div class="flex items-center">
             <i class="fa-solid fa-dna text-surface-400"></i>

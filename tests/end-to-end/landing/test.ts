@@ -15,6 +15,15 @@ import type { Branding } from '../../../src/lib/models/Configuration';
 import brandingJson from '../../../src/lib/assets/configuration.json' with { type: 'json' };
 const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
 
+// A stat's testid names its position among the stats shown to logged-in (auth) or anonymous
+// (open) users.
+function statTestId(auth: 'auth' | 'open', key: string) {
+  const shown = (branding?.landing?.stats ?? []).filter((stat) =>
+    auth === 'auth' ? stat.auth !== false : stat.auth !== true,
+  );
+  return `landing-stat-${auth}-${shown.findIndex((stat) => stat.key === key)}`;
+}
+
 const loggedInActions = branding?.landing?.actions?.filter((action) => action.showIfLoggedIn);
 const loggedOutActions = branding?.landing?.actions?.filter(
   (action) => !action.showIfLoggedIn || action.isOpen,
@@ -113,7 +122,7 @@ test.describe('Landing page', () => {
       ?.filter((stat) => stat.key !== 'hardcoded')
       .forEach((stat) => {
         const mockStat: MockLandingStat = stats.find((s) => s.key === stat.key) || notFound;
-        const testID = `value-auth-${stat.key}-${stat.label}`;
+        const testID = statTestId('auth', stat.key);
 
         test(`Has expected stat label and value for ${stat.label}`, async ({ page }) => {
           // Given
@@ -123,7 +132,7 @@ test.describe('Landing page', () => {
 
           // Then
           await expect(
-            page.getByTestId('data-summary-auth').getByText(stat.label, { exact: true }),
+            page.getByTestId('landing-summary-auth').getByText(stat.label, { exact: true }),
           ).toBeVisible();
           await expect(page.getByTestId(testID)).toHaveText(mockStat.value);
         });
@@ -170,11 +179,11 @@ test.describe('Landing page', () => {
         await mockApiSuccess(page, '*/**/picsure/dictionary/facets', facetsResponse);
         await page.goto('/');
 
-        await expect(page.getByTestId('value-auth-dict:concepts-Variables')).toHaveText(
+        await expect(page.getByTestId(statTestId('auth', 'dict:concepts'))).toHaveText(
           searchResults.totalElements.toLocaleString(),
         );
         const datasets = facetsResponse.find((category) => category.name === 'dataset_id')!;
-        await expect(page.getByTestId('value-auth-dict:facets:dataset_id-Data Sources')).toHaveText(
+        await expect(page.getByTestId(statTestId('auth', 'dict:facets:dataset_id'))).toHaveText(
           datasets.facets.filter((facet) => facet.count > 0).length.toLocaleString(),
         );
         await expect(page.getByTestId('toast-root')).not.toBeVisible();
@@ -182,7 +191,7 @@ test.describe('Landing page', () => {
     });
   });
   test.describe('Actions', () => {
-    loggedInActions.forEach(({ description, icon, url, title }) => {
+    loggedInActions.forEach(({ description, icon, url }, i) => {
       test(`Logged In user Has expected action: ${description}`, async ({ page }) => {
         // Given
         await page.goto('/');
@@ -198,7 +207,7 @@ test.describe('Landing page', () => {
         await userIsLoggedIn(page);
 
         // When
-        const action = page.getByTestId(`landing-action-${title}-btn`);
+        const action = page.getByTestId(`landing-action-${i}`);
         await expect(action).toBeVisible();
 
         // Then
@@ -281,7 +290,7 @@ test.describe('Logged Out Landing', () => {
       ?.filter((stat) => stat.key !== 'hardcoded')
       .forEach((stat) => {
         const mockStat: MockLandingStat = stats.find((s) => s.key === stat.key) || notFound;
-        const testID = `value-open-${stat.key}-${stat.label}`;
+        const testID = statTestId('open', stat.key);
 
         test(`Has expected stat label and value for ${stat.label}`, async ({ page }) => {
           // Given
@@ -290,7 +299,7 @@ test.describe('Logged Out Landing', () => {
 
           // Then
           await expect(
-            page.getByTestId('data-summary-open').getByText(stat.label, { exact: true }),
+            page.getByTestId('landing-summary-open').getByText(stat.label, { exact: true }),
           ).toBeVisible();
           await expect(page.getByTestId(testID)).toHaveText(mockStat.value);
         });
@@ -307,7 +316,7 @@ test.describe('Logged Out Landing', () => {
       });
   });
 
-  loggedOutActions.forEach(({ description, icon, url, title }) => {
+  loggedOutActions.forEach(({ description, icon, url }, i) => {
     test(`Has expected action: ${description}`, async ({ page }) => {
       // Given
       await page.goto('/');
@@ -321,7 +330,7 @@ test.describe('Logged Out Landing', () => {
       await page.goto('/');
 
       // When
-      const action = page.getByTestId(`landing-action-${title}-btn`);
+      const action = page.getByTestId(`landing-action-${i}`);
       await expect(action).toBeVisible();
 
       // Then

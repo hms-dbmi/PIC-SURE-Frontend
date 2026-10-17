@@ -101,7 +101,7 @@ describe('BannerEditor', () => {
       screen.getByText('Save this announcement for later or publish it across PIC-SURE.'),
     ).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: 'Primary' })).toBeChecked();
-    expect(screen.getAllByTestId('appearance-swatch')).toHaveLength(7);
+    expect(screen.getAllByTestId('banner-appearance-swatch')).toHaveLength(7);
     for (const appearance of [
       'Primary',
       'Secondary',
@@ -113,9 +113,9 @@ describe('BannerEditor', () => {
     ]) {
       const choice = screen.getByRole('radio', { name: appearance });
       expect(choice).toBeInTheDocument();
-      expect(choice.parentElement?.querySelector('[data-testid="appearance-swatch"]')).toHaveClass(
-        `bg-${appearance.toLowerCase()}-500`,
-      );
+      expect(
+        choice.parentElement?.querySelector('[data-testid="banner-appearance-swatch"]'),
+      ).toHaveClass(`bg-${appearance.toLowerCase()}-500`);
     }
     expect(screen.getByRole('radio', { name: 'Dismissible' })).toBeChecked();
     expect(screen.getByRole('radio', { name: 'Permanent' })).not.toBeChecked();
@@ -881,7 +881,7 @@ describe('BannerEditor', () => {
 
     expect(screen.getAllByRole('heading', { name: 'Unsaved Changes' })).toHaveLength(1);
     expect(screen.getByRole('dialog')).toHaveTextContent('Discard them to open Branding');
-    expect(screen.queryByTestId('modal-close-button')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('ui-modal-close')).not.toBeInTheDocument();
     await fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.getByRole('dialog')).toHaveTextContent('Discard them to open Branding');
     await fireEvent.click(screen.getByRole('button', { name: 'Keep editing' }));

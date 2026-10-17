@@ -40,7 +40,8 @@
   class={`main-content ${full ? 'w-full' : ''} pb-6 ${className}`}
   in:fly={{ duration: 300, x: transition ? '100%' : '0' }}
 >
-  {#if backUrl}<AngleButton name="back" onclick={onBack}>{backTitle}</AngleButton>{/if}
+  {#if backUrl}<AngleButton data-testid="ui-page-back" onclick={onBack}>{backTitle}</AngleButton
+    >{/if}
   {#if title}<h1 class="{backUrl ? 'mb-4' : 'my-4'} text-center">{title}</h1>{/if}
   {#if subtitle}<p class="subtitle mb-4 text-center">{subtitle}</p>{/if}
   {@render children?.()}

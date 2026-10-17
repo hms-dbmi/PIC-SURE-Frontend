@@ -101,7 +101,7 @@
       <div class="flex-none">
         {#if allowGenomicFiltering}
           <a
-            data-testid="genomic-filter-btn"
+            data-testid="explorer-genomic-filter-open"
             class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
             href={resolve('explorer/genome-filter')}
             onclick={() => log(createLog('NAVIGATION', 'explorer.genomic_filter_click'))}
@@ -128,6 +128,7 @@
         isClickable
         ariaLabel="Search results"
         {tableName}
+        data-testid="explorer-results-table"
         {handler}
         {columns}
         {cellOverides}

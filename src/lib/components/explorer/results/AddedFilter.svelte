@@ -65,7 +65,7 @@
   class="flex flex-col card bg-surface-100 p-1 m-1"
   in:scale={{ easing: elasticInOut }}
   out:fade={{ duration: 300 }}
-  data-testid="added-filter-{filter.id}"
+  data-testid="results-filter-item-{filter.id}"
 >
   <header class="card-header p-1 flex">
     {#if !anyRecordOfFilter}
@@ -82,7 +82,7 @@
       <Modal
         bind:open={anyRecordOfModal}
         title="View Variables in Filter"
-        data-testid={`any-record-of-filter-modal-${filter.id}`}
+        data-testid={`results-filter-any-record-of-${filter.id}`}
         withDefault={false}
       >
         {#snippet trigger()}

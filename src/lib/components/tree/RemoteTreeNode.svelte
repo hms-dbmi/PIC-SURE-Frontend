@@ -15,7 +15,7 @@
 
 <details
   class="tree-item"
-  data-testid="tree-item:{node.name}-{node.value}"
+  data-testid="ui-tree-item-{node.name}-{node.value}"
   aria-disabled={node.allDisabled}
   open={node.open}
 >
@@ -27,7 +27,7 @@
   >
     <button
       id="tree-item-btn:{node.name}-{node.value}"
-      data-testid="tree-item-btn:{node.name}-{node.value}"
+      data-testid="ui-tree-toggle-{node.name}-{node.value}"
       title={!node.isLeaf ? `${node.open ? 'Close' : 'Open'} node` : undefined}
       name={node.name}
       type="button"
@@ -48,7 +48,7 @@
     </button>
     <input
       id="checkbox:{node.name}-{node.value}"
-      data-testid="checkbox:{node.name}-{node.value}"
+      data-testid="ui-tree-checkbox-{node.name}-{node.value}"
       class="checkbox tree-item-checkbox mr-1"
       type="checkbox"
       name={node.name}
@@ -68,7 +68,7 @@
       </span>
     {/if}
   </summary>
-  <div class="tree-item-children ml-4" data-testid="tree-item-children:{node.name}" role="group">
+  <div class="tree-item-children ml-4" data-testid="ui-tree-children-{node.name}" role="group">
     {#if !node.isLeaf && node.open}
       {#if node.error}
         <div class="text-error-500 text-sm p-2">

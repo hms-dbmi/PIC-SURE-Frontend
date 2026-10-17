@@ -56,7 +56,7 @@ test.describe('Discover for unauthenticated users', () => {
     await clickNthFilterIcon(page);
     const firstItem = await getOption(page);
     await firstItem.click();
-    const addFilterButton = page.getByTestId('add-filter');
+    const addFilterButton = page.getByTestId('filter-add');
     await addFilterButton.click();
     const raw = crossCountSyncResponsePlus3['\\_studies_consents\\'];
     const match = raw.match(/^(\d[\d,]*)\s*±(\d+)$/);
@@ -107,7 +107,7 @@ test.describe('Discover for unauthenticated users', () => {
     const hierarchyButton = row.locator('td').last().locator('button').nth(2);
     await hierarchyButton.click();
     // Then
-    const radios = page.getByTestId('hierarchy-component').getByRole('radio');
+    const radios = page.getByTestId('explorer-hierarchy').getByRole('radio');
     await expect(radios).toHaveCount(hierarchyResponse.length);
     for (let i = 0; i < hierarchyResponse.length; i++) {
       await expect(radios.nth(i)).toBeDisabled();
@@ -129,7 +129,7 @@ test.describe('Discover for unauthenticated users', () => {
     await clickNthFilterIcon(page);
     const firstItem = await getOption(page);
     await firstItem.click();
-    const addFilterButton = page.getByTestId('add-filter');
+    const addFilterButton = page.getByTestId('filter-add');
     await addFilterButton.click();
     const cohortDetailsButton = page.getByTestId('cohort-details-btn');
 
@@ -160,10 +160,10 @@ test.describe('OPEN_TOUR_NAME', () => {
     });
     await page.goto('/discover');
 
-    await page.getByTestId('explorer-tour-btn').click();
+    await page.getByTestId('explorer-tour-start').click();
     await expect(page.locator('#modal-component')).toBeVisible();
 
     // Then
-    await expect(page.getByTestId('modal-wrapper-header')).toContainText('Welcome to PIC-SURE');
+    await expect(page.getByTestId('ui-modal-header')).toContainText('Welcome to PIC-SURE');
   });
 });

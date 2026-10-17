@@ -27,42 +27,42 @@ test.describe('Google consent', () => {
     // Given
     await page.goto('/login');
     // When
-    const googleConsentModal = page.getByTestId('consentModal');
+    const googleConsentModal = page.getByTestId('app-consent-modal');
     // Then
     await expect(googleConsentModal).toBeVisible();
   });
   test('Accept Google Consent hides modal', async ({ page }) => {
     // Given Google Consent Modal is open
     await page.goto('/login');
-    await page.waitForSelector('[data-testid="consentModal"]');
+    await page.waitForSelector('[data-testid="app-consent-modal"]');
 
     // When
-    const acceptConsentButton = page.getByTestId('acceptGoogleConsent');
+    const acceptConsentButton = page.getByTestId('app-consent-accept');
     await acceptConsentButton.click();
 
     // Then expect the consentModal to be hidden
-    await expect(page.getByTestId('consentModal')).not.toBeVisible();
+    await expect(page.getByTestId('app-consent-modal')).not.toBeVisible();
   });
 
   test('Reject Google Consent hides modal', async ({ page }) => {
     // Given Google Consent Modal is open
     await page.goto('/login');
-    await page.waitForSelector('[data-testid="consentModal"]');
+    await page.waitForSelector('[data-testid="app-consent-modal"]');
 
     // When
-    const denyConsentButton = page.getByTestId('rejectGoogleConsent');
+    const denyConsentButton = page.getByTestId('app-consent-reject');
     await denyConsentButton.click();
 
     // Then expect the consentModal to be hidden
-    await expect(page.getByTestId('consentModal')).not.toBeVisible();
+    await expect(page.getByTestId('app-consent-modal')).not.toBeVisible();
   });
   test("Google Consents saved in local storage on reject as 'denied'", async ({ page }) => {
     // Given Google Consent Modal is open
     await page.goto('/login');
-    await page.waitForSelector('[data-testid="consentModal"]');
+    await page.waitForSelector('[data-testid="app-consent-modal"]');
 
     // When
-    const denyConsentButton = page.getByTestId('rejectGoogleConsent');
+    const denyConsentButton = page.getByTestId('app-consent-reject');
     await denyConsentButton.click();
 
     // Then google consents are saved in local storage and are 'denied'
@@ -108,7 +108,7 @@ test.describe('Login page', () => {
     await page.goto('/login');
     // Then
     await expect(page.locator('nav')).not.toBeVisible();
-    await expect(page.getByTestId('nav-logo')).toBeVisible();
+    await expect(page.getByTestId('app-nav-logo')).toBeVisible();
     await expect(page.getByTestId('login-title')).toBeVisible();
     await expect(page.getByTestId('login-description')).toHaveText(
       branding?.login?.description ?? '',
@@ -125,7 +125,7 @@ test.describe('Login page', () => {
     await mockApiSuccess(page, '**/picsure/operations/banners/active', [mockBanner]);
     await page.goto('/login');
     // When
-    const bannerRegion = page.getByTestId('site-banner-region');
+    const bannerRegion = page.getByTestId('banner-region');
     await expect(bannerRegion).toBeVisible();
     const bannerBox = await bannerRegion.boundingBox();
     const topDotsBox = await page.locator('.top-dots').boundingBox();
@@ -144,7 +144,7 @@ test.describe('Login page', () => {
     await page.goto('/login');
     // When
     for (const providerName of enabledProviders) {
-      const testId = `login-button-${providerName.toLowerCase()}`;
+      const testId = `login-provider-${providerName.toLowerCase()}`;
       const loginButton = page.getByTestId(testId);
       await expect(loginButton).toBeVisible();
     }
@@ -160,7 +160,7 @@ test.describe('Login page', () => {
     if (altProviders.length > 0) {
       await expect(loginContainer).toBeVisible();
       for (const providerName of altProviders) {
-        const testId = `login-button-${providerName.toLowerCase()}`;
+        const testId = `login-provider-${providerName.toLowerCase()}`;
         const loginButton = loginContainer.getByTestId(testId);
         await expect(loginButton).toBeVisible();
       }
@@ -185,7 +185,7 @@ test.describe('Login page', () => {
       await page.goto('/login');
 
       // When
-      const testId = `login-button-${providerName.toLowerCase()}`;
+      const testId = `login-provider-${providerName.toLowerCase()}`;
       const loginButton = page.getByTestId(testId);
       await loginButton.click();
 
@@ -248,7 +248,7 @@ test.describe('Login redirect preserves search state', () => {
 
     // Then: the user lands back on the same search, and it re-runs automatically
     await page.waitForURL('/explorer?search=somedata');
-    await expect(page.getByTestId('search-box')).toHaveValue('somedata');
+    await expect(page.getByTestId('ui-search-input')).toHaveValue('somedata');
     await expect(page.locator('table')).toBeVisible();
   });
 

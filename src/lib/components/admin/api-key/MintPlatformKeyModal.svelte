@@ -71,7 +71,7 @@
 
 <Modal
   bind:open
-  data-testid="mint-platform-key"
+  data-testid="admin-api-key-mint"
   title={minted ? 'Platform API Key Created' : 'Mint Platform API Key'}
   width="w-full max-w-xl"
   disabled={!$isTopAdmin}
@@ -80,21 +80,21 @@
 >
   {#snippet trigger()}+ Mint Platform Key{/snippet}
   {#if minted}
-    <div data-testid="mint-key-reveal">
+    <div data-testid="admin-api-key-minted">
       <div
         role="alert"
-        data-testid="minted-key-warning"
+        data-testid="admin-api-key-minted-warning"
         class="card preset-tonal-warning border border-warning-500 p-3 my-4 font-bold"
       >
         This key is shown only once and cannot be recovered. Copy it now and store it securely.
       </div>
       <div class="flex items-center gap-2 my-4">
-        <code data-testid="minted-api-key" class="code font-mono break-all p-2 grow"
+        <code data-testid="admin-api-key-minted-value" class="code font-mono break-all p-2 grow"
           >{minted.apiKey}</code
         >
         <CopyButton
           itemToCopy={minted.apiKey}
-          data-testid="copy-minted-api-key"
+          data-testid="admin-api-key-minted-copy"
           class="preset-filled-primary-500"
         />
       </div>
@@ -105,7 +105,7 @@
       <footer class="flex justify-end mt-6">
         <button
           type="button"
-          data-testid="done-minted-key"
+          data-testid="admin-api-key-minted-done"
           class="btn preset-filled-primary-500"
           onclick={close}
         >
@@ -116,7 +116,7 @@
   {:else}
     <form onsubmit={submit} class="mt-4">
       {#if mintError}
-        <ErrorAlert title="Unable to mint key" data-testid="mint-key-error">
+        <ErrorAlert title="Unable to mint key" data-testid="admin-api-key-mint-error">
           <p>{mintError}</p>
         </ErrorAlert>
       {/if}
@@ -157,7 +157,7 @@
               class="radio"
               bind:group={expiryMode}
               value="never"
-              data-testid="expiry-never"
+              data-testid="admin-api-key-expiry-never"
             />
             <span>
               Never expires

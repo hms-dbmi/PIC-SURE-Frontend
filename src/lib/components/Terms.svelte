@@ -79,20 +79,20 @@
     {#if enforceTerms}
       <button
         type="button"
-        data-testid="terms-reject-btn"
+        data-testid="terms-reject"
         class="btn border preset-tonal-primary hover:preset-filled-primary-500"
         onclick={reject}>Reject</button
       >
       <button
         type="button"
-        data-testid="terms-accept-btn"
+        data-testid="terms-accept"
         class="btn preset-filled-primary-500"
         onclick={accept}>Accept</button
       >
     {:else}
       <button
         type="button"
-        data-testid="terms-close-btn"
+        data-testid="terms-close"
         class="btn border preset-tonal-primary hover:preset-filled-primary-500"
         onclick={close}>Close</button
       >
@@ -105,7 +105,7 @@
   {#if modalOpen !== undefined}
     <button
       type="button"
-      data-testid="terms-close-btn"
+      data-testid="terms-close"
       class="btn border preset-tonal-primary hover:preset-filled-primary-500"
       onclick={close}>Close</button
     >

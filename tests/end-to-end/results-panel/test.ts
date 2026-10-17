@@ -69,12 +69,12 @@ test.describe('Results Panel', () => {
     await mockApiFail(page, countResultPath, 'failed');
     await page.locator('#ExplorerTable-row-0 button[title^=Filter]').click();
     await page.locator('#options-container label:nth-child(1)').click();
-    await page.getByTestId('add-filter').click();
+    await page.getByTestId('filter-add').click();
 
     // Then
     await expect(page.locator('#result-count')).toBeVisible();
     await expect(page.locator('#result-count')).toHaveText('N/A');
-    const errorAlert = page.getByTestId('error-alert');
+    const errorAlert = page.getByTestId('ui-error-alert');
     await expect(errorAlert).toBeVisible();
     await expect(errorAlert).toContainText(
       'There was an error with your query. If this persists, please contact your PIC-SURE admin.',
@@ -93,7 +93,7 @@ test.describe('Results Panel', () => {
 
     // Then
     await expect(page.locator('#result-count')).toBeVisible();
-    const errorAlert = page.getByTestId('error-alert');
+    const errorAlert = page.getByTestId('ui-error-alert');
     await expect(errorAlert).toBeVisible();
     await expect(errorAlert).toContainText(
       'There was an error with your query. If this persists, please contact your PIC-SURE admin.',
@@ -174,7 +174,7 @@ test.describe('Results Panel', () => {
     await mockApiFail(page, countResultPath, 'failed');
     await page.locator('#ExplorerTable-row-0 button[title^=Filter]').click();
     await page.locator('#options-container label:nth-child(1)').click();
-    await page.getByTestId('add-filter').click();
+    await page.getByTestId('filter-add').click();
 
     // Then
     await expect(page.locator('#results-panel')).toBeVisible();
@@ -230,7 +230,7 @@ test.describe('Results Panel', () => {
     );
     await page.locator('#ExplorerTable-row-0 button[title^=Filter]').click();
     await page.locator('#options-container label:nth-child(1)').click();
-    await page.getByTestId('add-filter').click();
+    await page.getByTestId('filter-add').click();
     const exportButton = page.locator('#export-data-button');
     await expect(exportButton).toBeVisible();
     await expect(exportButton).toBeEnabled();
@@ -243,7 +243,7 @@ test.describe('Results Panel', () => {
     );
     await page.locator('#ExplorerTable-row-2 button[title^=Filter]').click();
     await page.locator('#select-all').click();
-    await page.getByTestId('add-filter').click();
+    await page.getByTestId('filter-add').click();
 
     await expect(exportButton).toBeVisible();
     await expect(exportButton).toBeDisabled();
@@ -278,17 +278,17 @@ test.describe('Results Panel', () => {
     await filterIcon.click();
     const firstFilter = await getOption(page);
     await firstFilter.click();
-    const addFilterButton = page.getByTestId('add-filter');
+    const addFilterButton = page.getByTestId('filter-add');
     await addFilterButton.click();
-    await expect(page.getByTestId(`added-filter-${expectedRowIds[0]}`)).toBeVisible();
+    await expect(page.getByTestId(`results-filter-item-${expectedRowIds[0]}`)).toBeVisible();
 
     const secondRow = tableBody.locator('tr').nth(1);
     const exportButton = secondRow.locator('td').last().locator('button').last();
     await exportButton.click();
-    await expect(page.getByTestId(`added-export-${expectedRowIds[1]}`)).toBeVisible();
+    await expect(page.getByTestId(`results-export-item-${expectedRowIds[1]}`)).toBeVisible();
 
     // When
-    await page.getByTestId('clear-all-results-btn').click();
+    await page.getByTestId('results-reset').click();
     await page.locator('#modal-component').getByRole('button', { name: 'Yes' }).click();
 
     // Then
@@ -329,7 +329,7 @@ test.describe('Results Panel', () => {
       await page.locator('#options-container label:nth-child(1)').click();
       const firstItem = await getOption(page);
       await firstItem.click();
-      const addFilterButton = page.getByTestId('add-filter');
+      const addFilterButton = page.getByTestId('filter-add');
       await addFilterButton.click();
       await mockApiSuccess(
         page,
@@ -340,11 +340,11 @@ test.describe('Results Panel', () => {
       await page.locator('#options-container label:nth-child(1)').click();
       const secondItem = await getOption(page);
       await secondItem.click();
-      const addFilterButton2 = page.getByTestId('add-filter');
+      const addFilterButton2 = page.getByTestId('filter-add');
       await addFilterButton2.click();
 
       // Then
-      await expect(page.getByTestId('distributions-btn')).not.toBeDisabled();
+      await expect(page.getByTestId('results-distributions-open')).not.toBeDisabled();
     });
 
     test('disables distributions button on Explore when total cohort count is zero', async ({
@@ -366,10 +366,10 @@ test.describe('Results Panel', () => {
       await page.locator('#ExplorerTable-row-0 button[title^=Filter]').click();
       const firstItem = await getOption(page);
       await firstItem.click();
-      await page.getByTestId('add-filter').click();
+      await page.getByTestId('filter-add').click();
 
       // Then
-      await expect(page.getByTestId('distributions-btn')).toBeDisabled();
+      await expect(page.getByTestId('results-distributions-open')).toBeDisabled();
     });
 
     test('re-enables distributions button when removing a zero-count filter restores cached counts', async ({
@@ -395,9 +395,9 @@ test.describe('Results Panel', () => {
       await page.locator('#ExplorerTable-row-0 button[title^=Filter]').click();
       const firstItem = await getOption(page);
       await firstItem.click();
-      await page.getByTestId('add-filter').click();
+      await page.getByTestId('filter-add').click();
       await expect(page.locator('#result-count-number')).toHaveText('9,999');
-      await expect(page.getByTestId('distributions-btn')).toBeEnabled();
+      await expect(page.getByTestId('results-distributions-open')).toBeEnabled();
 
       await mockApiSuccess(
         page,
@@ -407,19 +407,19 @@ test.describe('Results Panel', () => {
       await page.locator('#ExplorerTable-row-2 button[title^=Filter]').click();
       const secondItem = await getOption(page);
       await secondItem.click();
-      await page.getByTestId('add-filter').click();
+      await page.getByTestId('filter-add').click();
       await expect(page.locator('#result-count-number')).toHaveText('0');
-      await expect(page.getByTestId('distributions-btn')).toBeDisabled();
+      await expect(page.getByTestId('results-distributions-open')).toBeDisabled();
 
       // When
       await page
-        .getByTestId(`added-filter-${detailResponseCat2.conceptPath}`)
+        .getByTestId(`results-filter-item-${detailResponseCat2.conceptPath}`)
         .getByRole('button', { name: 'Remove Filter' })
         .click();
 
       // Then: the previous one-filter query is served from cache; button state should follow it.
       await expect(page.locator('#result-count-number')).toHaveText('9,999');
-      await expect(page.getByTestId('distributions-btn')).toBeEnabled();
+      await expect(page.getByTestId('results-distributions-open')).toBeEnabled();
     });
 
     test('disables distributions button on Discover when total cohort count is less than ten', async ({
@@ -452,10 +452,10 @@ test.describe('Results Panel', () => {
       await page.locator('#options-container label:nth-child(1)').click();
       const firstItem = await getOption(page);
       await firstItem.click();
-      await page.getByTestId('add-filter').click();
+      await page.getByTestId('filter-add').click();
 
       // Then
-      await expect(page.getByTestId('distributions-btn')).toBeDisabled();
+      await expect(page.getByTestId('results-distributions-open')).toBeDisabled();
     });
   });
 });

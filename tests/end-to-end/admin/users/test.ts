@@ -38,7 +38,7 @@ test.describe('users', () => {
     await userIsLoggedIn(page);
 
     // Then
-    await expect(page.getByTestId('add-user-btn')).toBeVisible();
+    await expect(page.getByTestId('admin-user-add')).toBeVisible();
   });
   test('Displays multiple IDP tables', async ({ page }) => {
     // Given
@@ -72,7 +72,7 @@ test.describe('users', () => {
     await userIsLoggedIn(page);
 
     // When
-    await page.getByTestId('add-user-btn').click();
+    await page.getByTestId('admin-user-add').click();
 
     // Then
     await page.waitForURL('**/admin/users/new');
@@ -83,7 +83,7 @@ test.describe('users', () => {
     await page.goto('/admin/users/new');
     await userIsLoggedIn(page);
     const checkboxes = page
-      .getByTestId('privilege-checkboxes')
+      .getByTestId('admin-user-role-checkboxes')
       .getByText(mockRoles[0].name, { exact: true });
 
     // Then
@@ -212,7 +212,7 @@ test.describe('users', () => {
     await userIsLoggedIn(page);
 
     // When
-    await page.getByTestId(`user-${mockUsers[0].uuid}-edit-btn`).click();
+    await page.getByTestId(`admin-user-edit-${mockUsers[0].uuid}`).click();
 
     // Then
     await page.waitForURL(`**/admin/users/${mockUsers[0].uuid}/edit`);

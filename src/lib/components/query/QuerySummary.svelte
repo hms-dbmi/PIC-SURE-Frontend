@@ -89,7 +89,7 @@
       <Modal
         bind:open={modal}
         title="Restore Filters"
-        data-testid="restore-filters"
+        data-testid="dataset-restore-filters"
         triggerBase="btn preset-filled-surface-500 float-right btn-sm"
         withDefault
         confirmText="Restore Filters"
@@ -106,7 +106,7 @@
     <div class="float-right">
       <Popover
         triggerDisabled={true}
-        data-testid="restore-popover"
+        data-testid="dataset-restore-popover"
         triggerTypes={['hover']}
         triggerStyle="btn preset-filled-surface-500 btn-sm"
       >

@@ -63,7 +63,7 @@
     <a
       href={resolve('')}
       aria-current="page"
-      data-testid="logo-home-link"
+      data-testid="app-nav-home"
       class="content-center"
       onclick={() => log(createLog('NAVIGATION', 'logo.click'))}
     >
@@ -89,7 +89,7 @@
     <div id="user-session-avatar" class="content-center">
       {#if $user && $user.privileges && $user.email && isUserLoggedIn()}
         <!-- Logout -->
-        <Popover data-testid="user-info">
+        <Popover data-testid="app-nav-user-menu">
           {#snippet trigger()}
             <Avatar
               name={($user.email || 'unknown').toUpperCase()}

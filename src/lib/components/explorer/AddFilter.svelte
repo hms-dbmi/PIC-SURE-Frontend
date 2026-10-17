@@ -174,7 +174,7 @@
       <Loading ring size="medium" />
     {:else}
       {#if data?.type === 'Categorical'}
-        <div data-testid="categoical-filter" class="w-full">
+        <div data-testid="filter-categorical" class="w-full">
           <OptionsSelectionList
             bind:unselectedOptions
             bind:selectedOptions
@@ -185,12 +185,12 @@
         </div>
       {:else if data?.type === 'Continuous'}
         <div class="card bg-surface-100 p-3 m-1 w-full">
-          <section class="card-body flex grow gap-4" data-testid="numerical-filter">
+          <section class="card-body flex grow gap-4" data-testid="filter-numerical">
             <label class="flex-auto flex-col">
               <span>Min: {min}</span>
               <input
                 id="min"
-                data-testid="min-input"
+                data-testid="filter-numerical-min"
                 type="text"
                 placeholder="Enter value or leave blank for variable min"
                 class="input"
@@ -201,7 +201,7 @@
               <span>Max: {max}</span>
               <input
                 id="max"
-                data-testid="max-input"
+                data-testid="filter-numerical-max"
                 type="text"
                 placeholder="Enter value or leave blank for variable max"
                 class="input"
@@ -213,7 +213,7 @@
       {/if}
       <button
         class="btn btn-icon preset-filled-primary-500 m-1"
-        data-testid="add-filter"
+        data-testid="filter-add"
         aria-label="Add Filter"
         onclick={addNewFilter}
         disabled={data.type === 'Categorical' && valuesSelected.length === 0}

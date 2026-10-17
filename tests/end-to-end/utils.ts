@@ -4,7 +4,9 @@ import { expect, type Page, type Locator } from '@playwright/test';
 // Sometimes, the tests are flaky because there is a race condition in the tests that
 // causes the user to not be fully logged in before some test steps.
 export const userIsLoggedIn = async (page: Page) => {
-  await expect(page.locator('#user-session-avatar').getByTestId('user-info-btn')).toBeVisible();
+  await expect(
+    page.locator('#user-session-avatar').getByTestId('app-nav-user-menu-trigger'),
+  ).toBeVisible();
 };
 
 export const userIsLoggedOut = async (page: Page) => {
@@ -13,7 +15,7 @@ export const userIsLoggedOut = async (page: Page) => {
 
 export const optionsHaveLoaded = async (page: Page | Locator, container = 'options-container') => {
   await page
-    .getByTestId('optional-selection-list')
+    .getByTestId('ui-options-selection-list')
     .first()
     .locator(`#${container} label`)
     .first()
@@ -22,7 +24,7 @@ export const optionsHaveLoaded = async (page: Page | Locator, container = 'optio
 
 export const getOption = async (page: Page | Locator, optionIndex = 0) => {
   // Use .first() to avoid strict-mode violations when multiple filter panels are briefly open
-  const component = page.getByTestId('optional-selection-list').first();
+  const component = page.getByTestId('ui-options-selection-list').first();
   const optionContainer = component.locator('#options-container');
   await expect(optionContainer).toBeVisible({ timeout: 15000 });
   await optionsHaveLoaded(page);

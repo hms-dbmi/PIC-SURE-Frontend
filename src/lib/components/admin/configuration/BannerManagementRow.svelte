@@ -205,7 +205,7 @@
             {/if}
             {#if disableable}
               <Modal
-                data-testid="banner-{banner.uuid}-disable"
+                data-testid="banner-disable-{banner.uuid}"
                 title="Disable banner?"
                 confirmText="Yes"
                 cancelText="No"
@@ -233,7 +233,7 @@
             {/if}
             {#if archiveable}
               <Modal
-                data-testid="banner-{banner.uuid}-archive"
+                data-testid="banner-archive-{banner.uuid}"
                 title="Archive banner?"
                 confirmText="Yes"
                 cancelText="No"

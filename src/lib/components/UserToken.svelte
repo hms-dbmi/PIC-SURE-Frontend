@@ -106,7 +106,7 @@
               ?.substring(0, 24)}</span
           >
           {#if badge}
-            <span id="expires-badge" class="badge {badge}" data-testid="expires-badge"
+            <span id="expires-badge" class="badge {badge}" data-testid="user-token-expires"
               >{badge.toUpperCase()}</span
             >
           {/if}
@@ -119,7 +119,7 @@
           class="preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
         />
         <Modal
-          data-testid="refresh"
+          data-testid="user-token-refresh"
           title="Please Confirm"
           onconfirm={refreshToken}
           disabled={refreshButtonDisabled}
@@ -137,7 +137,7 @@
           Are you sure you wish to invalidate your old token and create a new one?
         </Modal>
         <button
-          data-testid="reveal-btn"
+          data-testid="user-token-reveal"
           class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
           onclick={revealToken}>{revealed ? 'Hide' : 'Reveal'}</button
         >

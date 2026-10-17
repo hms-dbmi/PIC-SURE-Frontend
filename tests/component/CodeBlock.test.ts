@@ -32,7 +32,7 @@ describe('CodeBlock', () => {
   it('shows a copy button', () => {
     render(CodeBlock, { code, lang: 'python' });
 
-    const button = screen.getByTestId('code-block-copy-btn');
+    const button = screen.getByTestId('ui-code-block-copy-trigger');
     expect(button).toBeVisible();
     expect(button.querySelector('i')).toHaveClass('fa-copy');
   });
@@ -40,7 +40,7 @@ describe('CodeBlock', () => {
   it('copies the raw code to the clipboard and shows confirmation', async () => {
     render(CodeBlock, { code, lang: 'python' });
 
-    const button = screen.getByTestId('code-block-copy-btn');
+    const button = screen.getByTestId('ui-code-block-copy-trigger');
     await fireEvent.click(button);
 
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(code);
@@ -51,7 +51,7 @@ describe('CodeBlock', () => {
     vi.mocked(navigator.clipboard.writeText).mockRejectedValue(new Error('copy denied'));
     render(CodeBlock, { code, lang: 'python' });
 
-    const button = screen.getByTestId('code-block-copy-btn');
+    const button = screen.getByTestId('ui-code-block-copy-trigger');
     await fireEvent.click(button);
 
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(code);

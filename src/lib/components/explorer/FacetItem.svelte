@@ -90,7 +90,7 @@
 </script>
 
 <label
-  data-testId={`facet-${facet.name}-label`}
+  data-testId={`explorer-facet-label-${facet.name}`}
   for={facet.name}
   class="flex gap-1 m-1 leading-[normal]"
 >
@@ -100,7 +100,7 @@
       class="arrow-button"
       aria-label="{open ? 'Collapse' : 'Expand'} {facet.display} children"
       aria-expanded={open}
-      data-testId={`facet-${facet.name}-arrow`}
+      data-testId={`explorer-facet-toggle-${facet.name}`}
       onclick={() => toggleNestedFacet(expansionKey)}
     >
       <i class="fa-solid {open ? 'fa-angle-down' : 'fa-angle-right'}"></i>
@@ -122,7 +122,7 @@
   >
 </label>
 {#if open && facetsToDisplay !== undefined && facetsToDisplay?.length > 0}
-  <div class="flex flex-col ml-8" data-testId={`facet-${facet.name}-children`}>
+  <div class="flex flex-col ml-8" data-testId={`explorer-facet-children-${facet.name}`}>
     {#each facetsToDisplay as child (child.name)}
       <FacetItem facet={child} {facetCategory} {textFilterValue} />
     {/each}

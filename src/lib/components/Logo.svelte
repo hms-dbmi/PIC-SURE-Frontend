@@ -41,13 +41,13 @@
     {alt}
     title={alt}
     id="nav-logo"
-    data-testid="nav-logo"
+    data-testid="app-nav-logo"
     class={className}
     style={sizeStyle}
   />
 {:else}
   <svg
-    data-testid="nav-logo"
+    data-testid="app-nav-logo"
     class={className}
     id="nav-logo"
     style={sizeStyle}

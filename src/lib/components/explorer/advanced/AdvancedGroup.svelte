@@ -237,7 +237,7 @@
 
   {#if showDropPreview}
     <div
-      data-testid="drop-preview"
+      data-testid="filter-drop-preview"
       id={`drop-preview-${id}`}
       class="max-md:hidden absolute inset-0 bg-primary-500/10 border border-dashed border-primary-500 rounded-lg flex items-center justify-center mt-1"
     >

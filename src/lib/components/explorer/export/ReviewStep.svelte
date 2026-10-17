@@ -172,7 +172,7 @@
   <section class="w-full">
     {#if dataLimitExceeded}
       <ErrorAlert
-        data-testid="landing-error"
+        data-testid="export-review-error"
         title="Warning"
         color="warning"
         closeText="Back"
@@ -182,17 +182,27 @@
         export. Please reduce the data selection or the number of selected participants.
       </ErrorAlert>
     {:else if !loadingSampleIds}
-      <Datatable tableName="ExportSummary" ariaLabel="Export summary" data={activeRows} {columns} />
+      <Datatable
+        tableName="ExportSummary"
+        data-testid="export-summary-table"
+        ariaLabel="Export summary"
+        data={activeRows}
+        {columns}
+      />
       {#if config.features.explorer.enableSampleIdCheckbox}
         <div>
-          <label for="sample-ids-checkbox" class="flex items-center" data-testid="sample-ids-label">
+          <label
+            for="sample-ids-checkbox"
+            class="flex items-center"
+            data-testid="export-sample-ids-label"
+          >
             {#if checkingSampleIds}
               <Loading size="micro" ring />
             {:else}
               <input
                 type="checkbox"
                 class="mr-1 &[aria-disabled=“true”]:opacity-75"
-                data-testid="sample-ids-checkbox"
+                data-testid="export-sample-ids-checkbox"
                 id="sample-ids-checkbox"
                 bind:checked={sampleIds}
                 onchange={toggleSampleIds}

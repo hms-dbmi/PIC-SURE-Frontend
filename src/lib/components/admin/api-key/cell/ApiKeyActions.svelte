@@ -26,7 +26,7 @@
 
 {#if data.row.status === 'Active'}
   <Modal
-    data-testid="api-key-{data.cell}-revoke"
+    data-testid="admin-api-key-revoke-{data.cell}"
     title="Revoke API Key?"
     confirmText="Revoke"
     cancelText="Cancel"

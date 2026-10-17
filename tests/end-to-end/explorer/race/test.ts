@@ -77,7 +77,7 @@ async function holdFirstSearchFor(page: Page, term: string) {
 }
 
 async function searchFor(page: Page, term: string) {
-  await page.getByTestId('search-box').fill(term);
+  await page.getByTestId('ui-search-input').fill(term);
   await page.locator('#search-button').click();
 }
 

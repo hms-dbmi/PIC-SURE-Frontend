@@ -66,7 +66,7 @@
 </p>
 
 <form onsubmit={saveConnection}>
-  <fieldset data-testid="connection-form" class="grid gap-4 my-3" disabled={!$isTopAdmin}>
+  <fieldset data-testid="admin-connection-form" class="grid gap-4 my-3" disabled={!$isTopAdmin}>
     {#if connection?.uuid}
       <label class="label">
         <span>UUID:</span>
@@ -101,14 +101,14 @@
     <div class="mt-2">
       <button
         type="submit"
-        data-testid="connection-save-btn"
+        data-testid="admin-connection-save"
         class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
       >
         Save
       </button>
       <a
         href={resolve('admin/configuration')}
-        data-testid="connection-cancel-btn"
+        data-testid="admin-connection-cancel"
         class="btn preset-tonal-secondary border border-secondary-500 hover:preset-filled-secondary-500"
       >
         Cancel

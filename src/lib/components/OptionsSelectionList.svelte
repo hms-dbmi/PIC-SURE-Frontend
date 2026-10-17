@@ -133,7 +133,7 @@
   );
 </script>
 
-<div data-testid="optional-selection-list" class="flex w-full">
+<div data-testid="ui-options-selection-list" class="flex w-full">
   <div class="flex flex-1 flex-col h-full p-3 m-1 card bg-surface-100 rounded-xl">
     <header class="flex pb-1">
       <input

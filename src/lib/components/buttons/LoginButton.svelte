@@ -23,7 +23,7 @@
     class: className = '',
   }: Props = $props();
 
-  const testId = $derived(`login-button-${provider?.name?.toLowerCase()}`);
+  const testId = $derived(`login-provider-${provider?.name?.toLowerCase()}`);
   let imageSrc: string | undefined = $derived(
     provider?.imagesrc ? './' + provider.imagesrc : undefined,
   );

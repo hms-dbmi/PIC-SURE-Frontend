@@ -39,9 +39,9 @@ test.describe('Facet checkbox reordering', () => {
       await page.goto('/explorer?search=age');
       await userIsLoggedIn(page);
 
-      if (nested) await page.getByTestId('facet-nested_facet-arrow').click();
+      if (nested) await page.getByTestId('explorer-facet-toggle-nested_facet').click();
       const list = nested
-        ? page.getByTestId('facet-nested_facet-children')
+        ? page.getByTestId('explorer-facet-children-nested_facet')
         : page.getByTestId('accordion-item').first();
       const selectedName = nested ? 'nested_facet_child_3' : 'phs000284';
       const checkbox = list.locator(`input[id="${selectedName}"]`);
@@ -82,10 +82,10 @@ test.describe('Facet checkbox reordering', () => {
     await mockApiSuccess(page, facetResultPath, nestedFacetsResponse);
     await page.goto('/explorer?search=age');
     await userIsLoggedIn(page);
-    await page.getByTestId('facet-nested_facet-arrow').click();
+    await page.getByTestId('explorer-facet-toggle-nested_facet').click();
 
-    const child = page.getByTestId('facet-nested_facet_child-label').locator('input');
-    const parent = page.getByTestId('facet-nested_facet-label').locator('input');
+    const child = page.getByTestId('explorer-facet-label-nested_facet_child').locator('input');
+    const parent = page.getByTestId('explorer-facet-label-nested_facet').locator('input');
     const childReloaded = page.waitForResponse(facetResultPath);
     await child.click();
     await childReloaded;
@@ -132,7 +132,7 @@ test.describe('Facet Side Bar', () => {
     await page.goto('/explorer?search=age');
     await userIsLoggedIn(page);
     const facetSideBar = page.locator('#facet-side-bar');
-    const errorAlert = page.getByTestId('error-alert');
+    const errorAlert = page.getByTestId('ui-error-alert');
     //When
 
     await expect(facetSideBar).toBeVisible();
@@ -287,7 +287,7 @@ test.describe('Facet Categories', () => {
       const numFacets = facetsResponse[i].facets.length;
       // Then
       if (numFacets > MAX_FACETS_TO_SHOW) {
-        const moreButton = facetList.getByTestId('show-more-facets');
+        const moreButton = facetList.getByTestId('explorer-facets-show-more');
         const moreButtonIcon = moreButton.locator('i');
         await expect(moreButton).toBeVisible();
         await expect(moreButton).toHaveText('Show More');
@@ -314,7 +314,7 @@ test.describe('Facet Categories', () => {
       //When
       const facetList = page.getByTestId('accordion-item').nth(i);
       // Then
-      const moreButton = facetList.getByTestId('show-more-facets');
+      const moreButton = facetList.getByTestId('explorer-facets-show-more');
       await expect(moreButton).not.toBeVisible();
     }
   });
@@ -337,7 +337,7 @@ test.describe('Facet Categories', () => {
       const numFacets = facetsResponse[i].facets.length;
       // Then
       if (numFacets > MAX_FACETS_TO_SHOW) {
-        const moreButton = facetList.getByTestId('show-more-facets');
+        const moreButton = facetList.getByTestId('explorer-facets-show-more');
         await expect(moreButton).toBeVisible();
         await moreButton.click();
         const facetsToExpect = facetsResponse[i].facets.filter((facet) => facet.count > 0);
@@ -366,7 +366,7 @@ test.describe('Facet Categories', () => {
       const numFacets = facetsResponse[i].facets.length;
       // Then
       if (numFacets > MAX_FACETS_TO_SHOW) {
-        const moreButton = facetList.getByTestId('show-more-facets');
+        const moreButton = facetList.getByTestId('explorer-facets-show-more');
         await expect(moreButton).toBeVisible();
         await moreButton.click();
         await expect(moreButton).toHaveText('Show Less');
@@ -394,7 +394,7 @@ test.describe('Facet Categories', () => {
       const numFacets = facetsResponse[i].facets.length;
       // Then
       if (numFacets > MAX_FACETS_TO_SHOW) {
-        const moreButton = facetList.getByTestId('show-more-facets');
+        const moreButton = facetList.getByTestId('explorer-facets-show-more');
         await expect(moreButton).toBeVisible();
         await moreButton.click();
         await expect(moreButton).toHaveText('Show Less');
@@ -701,7 +701,7 @@ test.describe('Facet & search', () => {
 
     //When
     const firstCheckName = facetsResponse[0].facets[0].name;
-    const facetCheckBox = page.getByTestId(`facet-${firstCheckName}-label`);
+    const facetCheckBox = page.getByTestId(`explorer-facet-label-${firstCheckName}`);
     const spanInInput = facetCheckBox.locator('span');
     await expect(spanInInput).toBeVisible();
 
@@ -757,7 +757,7 @@ test.describe('Facet & search', () => {
 
     await page.goto('/explorer');
     await userIsLoggedIn(page);
-    const facetLabel = page.getByTestId(`facet-${firstCheckName}-label`);
+    const facetLabel = page.getByTestId(`explorer-facet-label-${firstCheckName}`);
     const facetCheckBox = page.locator(`input#${firstCheckName}`);
     await expect(facetLabel).toBeVisible();
 
@@ -786,7 +786,7 @@ test.describe('Nested Facets', () => {
 
     // When
     const nestedCategory = page.getByText('Nested Category');
-    const nestedFacetArrow = page.getByTestId('facet-nested_facet-arrow');
+    const nestedFacetArrow = page.getByTestId('explorer-facet-toggle-nested_facet');
 
     // Then
     await expect(nestedCategory).toBeVisible();
@@ -804,11 +804,11 @@ test.describe('Nested Facets', () => {
     await userIsLoggedIn(page);
 
     // When
-    const nestedFacetArrow = page.getByTestId('facet-nested_facet-arrow');
+    const nestedFacetArrow = page.getByTestId('explorer-facet-toggle-nested_facet');
     await nestedFacetArrow.click();
 
     // Then
-    const nestedFacetChildren = page.getByTestId('facet-nested_facet-children');
+    const nestedFacetChildren = page.getByTestId('explorer-facet-children-nested_facet');
     await expect(nestedFacetChildren).toBeVisible();
     await nestedFacetArrow.click();
     await expect(nestedFacetChildren).not.toBeVisible();
@@ -823,16 +823,16 @@ test.describe('Nested Facets', () => {
     );
     await page.goto('/explorer?search=age');
     await userIsLoggedIn(page);
-    await page.getByTestId('facet-nested_facet-arrow').click();
+    await page.getByTestId('explorer-facet-toggle-nested_facet').click();
 
     // When
     const facetsReloaded = page.waitForResponse(facetResultPath);
-    await page.getByTestId('facet-nested_facet_child-label').locator('input').click();
+    await page.getByTestId('explorer-facet-label-nested_facet_child').locator('input').click();
     await facetsReloaded;
 
     // Then
-    await expect(page.getByTestId('facet-nested_facet-children')).toBeVisible();
-    await expect(page.getByTestId('facet-nested_facet_child_2-label')).toBeVisible();
+    await expect(page.getByTestId('explorer-facet-children-nested_facet')).toBeVisible();
+    await expect(page.getByTestId('explorer-facet-label-nested_facet_child_2')).toBeVisible();
   });
 });
 
@@ -880,7 +880,7 @@ test.describe('Hidden Facets', () => {
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponseToTestZeroCount }),
     );
-    await page.getByTestId('search-box').fill('new search term');
+    await page.getByTestId('ui-search-input').fill('new search term');
     await page.locator('#search-button').click();
 
     // Then - Zero count facets from the second response should be hidden

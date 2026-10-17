@@ -56,7 +56,7 @@
               <td class="text-surface-700" data-testid="dataset-summary-uuid">
                 <span class="monospace">{dataset.queryId}</span>
                 <CopyButton
-                  data-testid="{dataset.queryId}-copy"
+                  data-testid="dataset-query-copy-{dataset.queryId}"
                   useIcon
                   itemToCopy={dataset.queryId}
                 />

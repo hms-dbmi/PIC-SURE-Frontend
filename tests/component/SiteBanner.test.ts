@@ -89,7 +89,7 @@ describe('SiteBanner', () => {
     const externalEvent = new MouseEvent('click', { bubbles: true, cancelable: true });
     await fireEvent(screen.getByRole('link', { name: 'External' }), externalEvent);
     expect(externalEvent.defaultPrevented).toBe(true);
-    expect(screen.getByTestId('external-link-warning')).toBeInTheDocument();
+    expect(screen.getByTestId('app-external-link-warning')).toBeInTheDocument();
 
     await fireEvent.click(screen.getByRole('button', { name: 'OK' }));
     expect(window.open).toHaveBeenCalledWith(
@@ -102,7 +102,7 @@ describe('SiteBanner', () => {
       expect(screen.getByRole('link', { name })).toHaveAttribute('rel', 'noopener noreferrer');
       window.addEventListener('click', (event) => event.preventDefault(), { once: true });
       await fireEvent.click(screen.getByRole('link', { name }));
-      expect(screen.queryByTestId('external-link-warning')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('app-external-link-warning')).not.toBeInTheDocument();
     }
   });
 

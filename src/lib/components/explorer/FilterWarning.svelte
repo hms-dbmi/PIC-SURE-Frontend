@@ -82,7 +82,7 @@
   ids={{ content: 'modal-component' }}
 >
   {#snippet content()}
-    <ErrorAlert data-testid="sendfilter-warning" color="warning">
+    <ErrorAlert data-testid="explorer-filter-warning" color="warning">
       <p>{warning.message}</p>
       <p>Would you like to remove the invalid filters or go back to {warning.backTo}?</p>
       <div>

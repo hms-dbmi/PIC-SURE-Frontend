@@ -33,7 +33,7 @@
 {#if data}
   {#await data}
     {#if count > 0}
-      <div data-testid="variant-count" class="flex-none w-full">
+      <div data-testid="explorer-variant-count" class="flex-none w-full">
         {count.toLocaleString()} variants found
       </div>
     {/if}
@@ -47,6 +47,7 @@
     {:else if count > 0 && !!varData && varData.rows.length > 0}
       <Datatable
         tableName="variant-explorer"
+        data-testid="explorer-variant-table"
         ariaLabel="Variant data"
         data={varData.rows}
         columns={varData.columns}
@@ -57,7 +58,7 @@
         {#snippet tableActions()}
           {#if varData.downloadUrl}
             <a
-              data-testid="variant-download-btn"
+              data-testid="explorer-variant-download"
               class="btn btn-sm preset-tonal-primary border border-primary-500"
               href={varData.downloadUrl}
               rel="external"
@@ -70,7 +71,7 @@
             </a>
           {/if}
           {#if count > 0}
-            <div data-testid="variant-count" class="text-left w-full">
+            <div data-testid="explorer-variant-count" class="text-left w-full">
               {count.toLocaleString()} variants found
             </div>
           {/if}
@@ -90,7 +91,7 @@
         {/snippet}
       </Datatable>
     {:else}
-      <div data-testid="variant-count" class="flex-none w-full">
+      <div data-testid="explorer-variant-count" class="flex-none w-full">
         {count.toLocaleString()} variants found
       </div>
     {/if}

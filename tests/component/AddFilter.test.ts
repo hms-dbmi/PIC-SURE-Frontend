@@ -89,7 +89,7 @@ describe('AddFilter', () => {
   it('adds a numeric filter immediately and enriches dataset/study in the background', async () => {
     render(AddFilter, { data: numericSearchResult });
 
-    await fireEvent.click(await screen.findByTestId('add-filter'));
+    await fireEvent.click(await screen.findByTestId('filter-add'));
 
     expect(mockAddFilter).toHaveBeenCalledTimes(1);
     const addedFilter = mockAddFilter.mock.calls[0][0];
