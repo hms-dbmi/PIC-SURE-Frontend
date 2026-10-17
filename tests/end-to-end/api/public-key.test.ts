@@ -1,5 +1,6 @@
 import { expect, type BrowserContext, type Page, type Route } from '@playwright/test';
 import { test, mockApiSuccess, mockApiConfig } from '../custom-context';
+import { scrollIntoViewAtRest } from '../utils';
 
 const apiKeyPath = '*/**/psama/open/apiKey';
 const mockKeyResponse = {
@@ -35,9 +36,15 @@ test.beforeEach(async ({ context }) => {
   await stubTurnstile(context);
 });
 
+// The open form ends below the fold, so it is brought into view here and the clicks in
+// it don't have to scroll.
 async function openForm(page: Page) {
-  await page.getByRole('button', { name: 'Request Public Key' }).click();
-  await expect(page.getByRole('button', { name: 'Generate Key' })).toBeVisible();
+  const request = page.getByRole('button', { name: 'Request Public Key' });
+  await scrollIntoViewAtRest(page, request);
+  await request.click();
+  const generate = page.getByRole('button', { name: 'Generate Key' });
+  await expect(generate).toBeVisible();
+  await scrollIntoViewAtRest(page, generate);
 }
 
 test.describe('Public access key generation', () => {

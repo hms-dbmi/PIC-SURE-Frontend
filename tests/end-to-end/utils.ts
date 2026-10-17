@@ -61,31 +61,45 @@ export const clickNthFilterIcon = async (page: Page, rowIndex = 0) => {
   await filterIcon.click();
 };
 
+// How far #app-page is from showing the section at its top (0 without a section), or
+// Infinity while it is still moving (by 1px or more over 5 animation frames).
+const scrollDistance = (page: Page, sectionId?: string) =>
+  page.evaluate(async (sectionId) => {
+    const scroller = document.getElementById('app-page')!;
+    const start = scroller.scrollTop;
+    for (let frame = 0; frame < 5; frame++) {
+      await new Promise(requestAnimationFrame);
+    }
+    if (Math.abs(scroller.scrollTop - start) >= 1) return Infinity;
+    if (!sectionId) return 0;
+    const section = document.getElementById(sectionId)!;
+    const sectionTop =
+      section.getBoundingClientRect().top -
+      scroller.getBoundingClientRect().top +
+      scroller.scrollTop;
+    const destination = Math.min(sectionTop, scroller.scrollHeight - scroller.clientHeight);
+    return Math.abs(scroller.scrollTop - destination);
+  }, sectionId);
+
 // Waits for the scroll to land on the section and stop. A smooth scroll's last few
 // pixels still move the page, and a click Playwright retries then scrolls (smoothly)
 // again and can miss.
 export const expectSectionAligned = async (page: Page, id: string) => {
   await expect
-    .poll(
-      () =>
-        page.evaluate(async (sectionId) => {
-          const scroller = document.getElementById('app-page')!;
-          const section = document.getElementById(sectionId)!;
-          const start = scroller.scrollTop;
-          for (let frame = 0; frame < 5; frame++) {
-            await new Promise(requestAnimationFrame);
-          }
-          if (Math.abs(scroller.scrollTop - start) >= 1) return Infinity;
-          const sectionTop =
-            section.getBoundingClientRect().top -
-            scroller.getBoundingClientRect().top +
-            scroller.scrollTop;
-          const destination = Math.min(sectionTop, scroller.scrollHeight - scroller.clientHeight);
-          return Math.abs(scroller.scrollTop - destination);
-        }, id),
-      { message: `#${id} aligned and at rest (Infinity: still scrolling)` },
-    )
+    .poll(() => scrollDistance(page, id), {
+      message: `#${id} aligned and at rest (Infinity: still scrolling)`,
+    })
     .toBeLessThan(4);
+};
+
+// #app-page scrolls smoothly, so a click that starts while it is still moving (from
+// Playwright's own scroll into view, or one already under way) can land mousedown and
+// mouseup on different elements, and the click fires on their common ancestor instead.
+export const scrollIntoViewAtRest = async (page: Page, target: Locator) => {
+  await target.scrollIntoViewIfNeeded();
+  await expect
+    .poll(() => scrollDistance(page), { message: 'page at rest (Infinity: still scrolling)' })
+    .toBe(0);
 };
 
 // Accordion panels slide open and shut as Web Animations, moving everything below
