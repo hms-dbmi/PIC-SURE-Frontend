@@ -1,4 +1,5 @@
 <script lang="ts">
+  import IconButton from '#lib/ui/IconButton.svelte';
   import type { ExportInterface } from '#lib/explorer/export/types.ts';
   import { fade } from 'svelte/transition';
   import { removeExportByUuid } from '#lib/explorer/export/Export.ts';
@@ -22,14 +23,6 @@
     <div class="flex-auto">
       {variable.display || variable.searchResult?.display || variable.searchResult?.name}
     </div>
-    <button
-      type="button"
-      title="Remove Export"
-      class="btn-icon-color"
-      aria-label="Remove Export"
-      onclick={remove}
-    >
-      <i class="fa-solid fa-times-circle"></i>
-    </button>
+    <IconButton icon="fa-solid fa-times-circle" label="Remove Export" onclick={remove} />
   </header>
 </div>

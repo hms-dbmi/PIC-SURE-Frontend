@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { ApiError } from '#lib/api/errors.ts';
   import * as apiKeys from '#lib/api/psama/apiKeys.ts';
   import { turnstileSiteKey } from '#lib/config/deployment.ts';
@@ -116,9 +117,7 @@
       assessments.
     </p>
     {#if enabled}
-      <button class="btn preset-filled-primary-500 my-auto mx-auto" onclick={openForm}>
-        Request Public Key
-      </button>
+      <Button class="my-auto mx-auto" onclick={openForm}>Request Public Key</Button>
     {:else}
       <p data-testid="api-public-key-unavailable" class="mx-0 my-auto text-center">
         Public access keys are not available on this deployment. Please log in for authorized
@@ -184,9 +183,8 @@
         {/if}
       {/if}
       <div class="flex gap-4 justify-center mt-auto">
-        <button
+        <Button
           type="submit"
-          class="btn preset-filled-primary-500"
           disabled={submitting || (!!siteKey && !captchaToken)}
           aria-describedby={siteKey && !captchaToken && !captchaFailed
             ? 'api-public-key-captcha-hint'
@@ -197,15 +195,10 @@
           {:else}
             Generate Key
           {/if}
-        </button>
-        <button
-          type="button"
-          class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-          onclick={() => (view = 'idle')}
-          disabled={submitting}
-        >
+        </Button>
+        <Button variant="tonal" onclick={() => (view = 'idle')} disabled={submitting}>
           Cancel
-        </button>
+        </Button>
       </div>
     </form>
   {:else if view === 'revealed' && publicKey}
@@ -240,8 +233,6 @@
     <div role="alert">
       <ErrorAlert color="warning">{errorMessage}</ErrorAlert>
     </div>
-    <button class="btn preset-filled-primary-500 my-auto mx-auto" onclick={openForm}>
-      Try Again
-    </button>
+    <Button class="my-auto mx-auto" onclick={openForm}>Try Again</Button>
   {/if}
 </div>

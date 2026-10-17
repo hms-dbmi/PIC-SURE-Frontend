@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { resolve } from '$app/paths';
   import { onMount } from 'svelte';
 
@@ -98,22 +99,22 @@
     {/if}
     {#if edit}
       <div class="flex justify-end my-4">
-        <button
+        <Button
+          size="sm"
+          class="disabled:opacity-75"
           data-testid="genomic-filter-save"
-          type="button"
-          class="btn btn-sm preset-filled-primary-500 disabled:opacity-75"
           onclick={onComplete}
           disabled={!canComplete}
         >
           Save Filter <i class="fa-solid fa-plus ml-3"></i>
-        </button>
+        </Button>
       </div>
     {:else}
       <div class="flex justify-end my-4" data-testid="genomic-filter-options">
-        <button
+        <Button
+          size="sm"
+          class="disabled:opacity-75"
           data-testid="genomic-filter-add"
-          type="button"
-          class="btn btn-sm preset-filled-primary-500 disabled:opacity-75"
           title={canComplete
             ? 'Add Filter'
             : selectedOption === Option.Genomic
@@ -123,7 +124,7 @@
           disabled={!canComplete}
         >
           Add Filter <i class="fa-solid fa-plus ml-3"></i>
-        </button>
+        </Button>
       </div>
     {/if}
   {/if}

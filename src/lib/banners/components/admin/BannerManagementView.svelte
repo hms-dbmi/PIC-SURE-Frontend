@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { onDestroy, onMount, tick } from 'svelte';
   import BannerEditor from '#lib/banners/components/admin/BannerEditor.svelte';
   import BannerManagementRow from '#lib/banners/components/admin/BannerRow.svelte';
@@ -406,14 +407,7 @@
         <h2 id="banner-management-title" class="m-0">Site banners</h2>
         <p class="m-0">Create and manage announcements across PIC-SURE.</p>
       </div>
-      <button
-        type="button"
-        class="btn preset-filled-primary-500"
-        disabled={savingOrder}
-        onclick={createBanner}
-      >
-        + Create banner
-      </button>
+      <Button disabled={savingOrder} onclick={createBanner}>+ Create banner</Button>
     </header>
 
     {#if broadOverlapCount >= 4}
@@ -453,14 +447,12 @@
             >
               Cancel order changes
             </button>
-            <button
-              type="button"
-              class="btn preset-filled-primary-500"
+            <Button
               disabled={savingOrder || disablingUuid !== null || archivingUuid !== null}
               onclick={saveOrder}
             >
               {savingOrder ? 'Saving order...' : 'Save order'}
-            </button>
+            </Button>
           </div>
         {/if}
         <Tabs

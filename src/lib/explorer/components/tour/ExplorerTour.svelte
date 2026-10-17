@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { driver, type DriverHook, type DriveStep } from 'driver.js';
   import 'driver.js/dist/driver.css';
   import '../../../../styles/tour.css';
@@ -265,13 +266,8 @@
 </script>
 
 {#snippet tourActions()}
-  <button
-    type="button"
-    class="btn border preset-tonal-primary hover:preset-filled-primary-500"
-    onclick={() => (openModal = false)}>Cancel</button
-  >
-  <button type="button" class="btn preset-filled-primary-500" onclick={startTour}>Start Tour</button
-  >
+  <Button variant="soft" onclick={() => (openModal = false)}>Cancel</Button>
+  <Button onclick={startTour}>Start Tour</Button>
 {/snippet}
 
 <Dialog

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { onDestroy, untrack } from 'svelte';
   import BannerPageTargetFields from '#lib/banners/components/admin/fields/PageTargetFields.svelte';
   import BannerScheduleFields from '#lib/banners/components/admin/fields/ScheduleFields.svelte';
@@ -609,9 +610,8 @@
           {working === 'save' ? 'Saving...' : banner ? 'Save changes' : 'Save for later'}
         </button>
       {/if}
-      <button
+      <Button
         type="submit"
-        class="btn preset-filled-primary-500"
         disabled={working !== null ||
           (editorMode === 'edit' && banner?.status === 'PUBLISHED' && !dirty) ||
           !hasContent ||
@@ -620,7 +620,7 @@
           pageTargetsInvalid}
       >
         {working === 'publish' ? publishCopy.busyLabel : publishCopy.submitLabel}
-      </button>
+      </Button>
     </div>
   </form>
 </section>

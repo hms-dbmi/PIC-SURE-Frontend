@@ -1,4 +1,5 @@
 <script lang="ts">
+  import IconButton from '#lib/ui/IconButton.svelte';
   import type { RequiredField } from '#lib/auth/model/connection.ts';
 
   interface Props {
@@ -65,61 +66,41 @@
   </label>
   <div class="flex-none content-end py-2">
     {#if edit}
-      <button
-        type="button"
-        title="Save"
+      <IconButton
+        icon="fa-solid fa-floppy-disk fa-xl"
+        label="Save"
         data-testid="admin-required-field-save"
-        class="btn-icon-color"
         disabled={!label || !id || !dirtyForm}
         onclick={saveField}
-      >
-        <i class="fa-solid fa-floppy-disk fa-xl"></i>
-        <span class="sr-only">Save</span>
-      </button>
+      />
       {#if dirtyForm}
-        <button
-          type="button"
-          title="Reset and cancel"
-          class="btn-icon-color"
+        <IconButton
+          icon="fa-solid fa-arrow-rotate-right fa-xl"
+          label="Reset and cancel"
           data-testid="admin-required-field-reset"
           onclick={resetField}
-        >
-          <i class="fa-solid fa-arrow-rotate-right fa-xl"></i>
-          <span class="sr-only">Reset and cancel</span>
-        </button>
+        />
       {:else if !newField && !dirtyForm}
-        <button
-          type="button"
-          title="Cancel"
-          class="btn-icon-color"
+        <IconButton
+          icon="fa-solid fa-ban fa-xl"
+          label="Cancel"
           data-testid="admin-required-field-cancel"
           onclick={toggleEdit}
-        >
-          <i class="fa-solid fa-ban fa-xl"></i>
-          <span class="sr-only">Cancel</span>
-        </button>
+        />
       {/if}
     {:else}
-      <button
-        type="button"
-        title="Edit"
-        class="btn-icon-color"
+      <IconButton
+        icon="fa-solid fa-pen fa-xl"
+        label="Edit"
         data-testid="admin-required-field-edit"
         onclick={toggleEdit}
-      >
-        <i class="fa-solid fa-pen fa-xl"></i>
-        <span class="sr-only">Edit</span>
-      </button>
+      />
     {/if}
-    <button
-      type="button"
-      title="Delete"
-      class="btn-icon-color"
+    <IconButton
+      icon="fa-solid fa-trash fa-xl"
+      label="Delete"
       data-testid="admin-required-field-delete"
       onclick={deleteField}
-    >
-      <i class="fa-solid fa-trash fa-xl"></i>
-      <span class="sr-only">Delete</span>
-    </button>
+    />
   </div>
 </div>

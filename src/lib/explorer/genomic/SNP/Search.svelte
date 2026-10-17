@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import type { SNP } from '#lib/query/genomic.ts';
   import { getSNPCounts } from '#lib/query/SNPFilter.ts';
   import { config } from '#lib/config/config.svelte.ts';
@@ -96,10 +97,10 @@
     bind:value={searchStringElement}
     onkeydown={removeInvalid}
   />
-  <button
-    type="button"
+  <Button
+    size="sm"
+    class="disabled:opacity-75"
     data-testid="genomic-snp-search"
-    class="btn btn-sm preset-filled-primary-500 disabled:opacity-75"
     onclick={searchSnp}
     disabled={disabled || !validSNPString || searching}
   >
@@ -107,6 +108,6 @@
     {#if searching}
       <Loading ring size="micro" color="white" />
     {/if}
-  </button>
+  </Button>
 </div>
 {#if warn}<ErrorAlert color={warn.color}>{warn.message}</ErrorAlert>{/if}

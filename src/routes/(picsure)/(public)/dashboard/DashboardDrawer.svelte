@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { getDatasetDetails } from '#lib/api/picsure/dictionary.ts';
   import { activeRow } from './dashboard.ts';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
@@ -56,15 +57,15 @@
   </ul>
   {#if link}
     <div class="flex justify-center items-center mb-4">
-      <a
+      <Button
+        variant="tonal"
         href={link || '#'}
         rel="external"
-        class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
         target="_blank"
         onclick={(e) => {
           e.stopPropagation();
           log(createLog('ACTION', 'dashboard.more_info_panel', { dataset: datasetId, url: link }));
-        }}>More Info</a
+        }}>More Info</Button
       >
     </div>
   {/if}

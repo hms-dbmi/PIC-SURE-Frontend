@@ -1,5 +1,5 @@
 <script lang="ts">
-  import ConfirmDialog from '#lib/ui/dialog/ConfirmDialog.svelte';
+  import ConfirmButton from '#lib/ui/ConfirmButton.svelte';
   import { isTopAdmin } from '#lib/auth/User.ts';
   import { toaster } from '#lib/ui/toaster.ts';
   import { revokeApiKey } from '#lib/admin/apiKeys/ApiKeys.ts';
@@ -25,19 +25,19 @@
 </script>
 
 {#if data.row.status === 'Active'}
-  <ConfirmDialog
+  <ConfirmButton
+    label="Revoke"
+    variant="tonal-error"
     data-testid="admin-api-key-revoke-{data.cell}"
     title="Revoke API Key?"
     confirmLabel="Revoke"
     tone="danger"
     disabled={!$isTopAdmin}
     onconfirm={revoke}
-    triggerClass="btn preset-tonal-error border border-error-500 hover:preset-filled-error-500"
   >
-    {#snippet trigger()}Revoke{/snippet}
     <p>
       Are you sure you want to revoke API key '{data.row.prefix}'? Revocation is permanent and
       cannot be undone.
     </p>
-  </ConfirmDialog>
+  </ConfirmButton>
 {/if}

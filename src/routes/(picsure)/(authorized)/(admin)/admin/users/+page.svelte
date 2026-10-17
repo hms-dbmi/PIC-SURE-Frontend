@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { resolve } from '$app/paths';
   import { derived, readable, type Readable } from 'svelte/store';
 
@@ -88,13 +89,9 @@
   {#await load()}<Loading />{:then}
     <div class="flex gap-4 mb-6">
       <div class="flex-auto">
-        <a
-          data-testid="admin-user-add"
-          class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-          href={resolve('admin/users/new')}
-        >
+        <Button variant="tonal" data-testid="admin-user-add" href={resolve('admin/users/new')}>
           + Add User
-        </a>
+        </Button>
       </div>
     </div>
     {#each $usersByConnection as connection, i}

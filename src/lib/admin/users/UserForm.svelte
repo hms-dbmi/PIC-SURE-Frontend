@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
   import { Switch } from '@skeletonlabs/skeleton-svelte';
@@ -158,18 +159,8 @@
     {/if}
 
     <div class="mt-2">
-      <button
-        type="submit"
-        class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-      >
-        Save
-      </button>
-      <a
-        href={resolve('admin/users')}
-        class="btn preset-tonal-secondary border border-secondary-500 hover:preset-filled-secondary-500"
-      >
-        Cancel
-      </a>
+      <Button variant="tonal" type="submit">Save</Button>
+      <Button variant="tonal-secondary" href={resolve('admin/users')}>Cancel</Button>
     </div>
   </fieldset>
 </form>

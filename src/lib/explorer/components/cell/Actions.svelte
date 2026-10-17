@@ -1,4 +1,5 @@
 <script lang="ts">
+  import IconButton from '#lib/ui/IconButton.svelte';
   import type { SearchResult } from '#lib/explorer/types.ts';
   import { setActiveRow } from '#lib/explorer/ExpandableRow.ts';
   import {
@@ -71,56 +72,36 @@
   let shouldDisableFilter = $derived(isOpenAccess() && !data.row.allowFiltering);
 </script>
 
-<button
-  type="button"
-  title="Information (i)"
-  data-key="i"
-  class="row-action-info btn-icon-color"
+<IconButton
+  icon="fa-solid fa-circle-info fa-xl"
+  label="Information (i)"
+  shortcut="i"
+  class="row-action-info"
   onclick={insertInfoContent}
->
-  <i class="fa-solid fa-circle-info fa-xl"></i>
-  <span class="sr-only">View Information (i)</span>
-</button>
-<button
-  type="button"
-  title={shouldDisableFilter ? 'Filtering is not available for this variable' : 'Filter (f)'}
-  data-key="f"
-  class="row-action-filter btn-icon-color"
+/>
+<IconButton
+  icon="fa-solid fa-filter fa-xl"
+  label={shouldDisableFilter ? 'Filtering is not available for this variable' : 'Filter (f)'}
+  shortcut="f"
+  class="row-action-filter"
   disabled={shouldDisableFilter}
   onclick={insertFilterContent}
->
-  <i class="fa-solid fa-filter fa-xl"></i>
-  <span class="sr-only"
-    >{shouldDisableFilter
-      ? 'Filtering is not available for this variable'
-      : 'View Filter (f)'}</span
-  >
-</button>
+/>
 {#if config.features.explorer.enableHierarchy}
-  <button
-    type="button"
-    title="Data Hierarchy (h)"
-    data-key="h"
-    class="row-action-hierarchy btn-icon-color"
+  <IconButton
+    icon="fa-solid fa-sitemap fa-xl"
+    label="Data Hierarchy (h)"
+    shortcut="h"
+    class="row-action-hierarchy"
     onclick={insertHierarchyContent}
-  >
-    <i class="fa-solid fa-sitemap fa-xl"></i>
-    <span class="sr-only">View Data Hierarchy (h)</span>
-  </button>
+  />
 {/if}
 {#if config.features.explorer.exportsEnableExport && !isOpenAccess()}
-  <button
-    type="button"
-    title={isExported ? 'Remove from Analysis (e)' : 'Add for Analysis (e)'}
-    data-key="e"
-    class="row-action-export btn-icon-color"
+  <IconButton
+    icon={isExported ? 'fa-regular fa-square-check fa-xl' : 'fa-solid fa-right-from-bracket fa-xl'}
+    label={isExported ? 'Remove from Analysis (e)' : 'Add for Analysis (e)'}
+    shortcut="e"
+    class="row-action-export"
     onclick={insertExportContent}
-  >
-    {#if isExported}
-      <i class="fa-regular fa-square-check fa-xl"></i>
-    {:else}
-      <i class="fa-solid fa-right-from-bracket fa-xl"></i>
-    {/if}
-    <span class="sr-only">{isExported ? 'Remove from Analysis (e)' : 'Add for Analysis (e)'}</span>
-  </button>
+  />
 {/if}

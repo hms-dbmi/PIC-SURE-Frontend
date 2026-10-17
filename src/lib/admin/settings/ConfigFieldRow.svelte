@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { describeConfigField, type ConfigFieldSchema } from '#lib/config/admin.ts';
   import type { ConfigMap, ConfigObject } from '#lib/config/resolve.ts';
   import {
@@ -267,15 +268,14 @@
 
       <div class="flex items-center gap-3.5 mt-3 min-h-[28px]">
         {#if dirty}
-          <button
-            type="button"
-            class="btn btn-sm preset-filled-primary-500"
+          <Button
+            size="sm"
             data-testid={`admin-config-field-save-${schema.name}`}
             disabled={editDisabled || !valid || saving}
             onclick={saveField}
           >
             Save
-          </button>
+          </Button>
         {/if}
         {#if apiRow?.uuid}
           <button

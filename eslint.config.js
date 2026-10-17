@@ -8,9 +8,6 @@ import globals from 'globals';
 // Files that already imported app code when the ui/utils boundary rules were added. The PR that
 // cleans one removes it from this list; nothing new gets added.
 const boundaryExceptions = [
-  'src/lib/ui/AngleButton.svelte',
-  'src/lib/ui/CardButton.svelte',
-  'src/lib/ui/CopyButton.svelte',
   'src/lib/ui/OptionsSelectionList.svelte',
   'src/lib/ui/PlotlyPlot.svelte',
   'src/lib/ui/datatable/RemoteTable.svelte',

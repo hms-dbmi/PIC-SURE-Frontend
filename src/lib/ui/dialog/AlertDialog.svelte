@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import Button from '#lib/ui/Button.svelte';
   import Dialog, { type DialogName, type DialogSize } from '#lib/ui/dialog/Dialog.svelte';
 
   type Props = DialogName & {
@@ -35,9 +36,7 @@
     {#if actions}
       {@render actions()}
     {:else}
-      <button type="button" class="btn preset-filled-primary-500" onclick={acknowledge}
-        >{acknowledgeLabel}</button
-      >
+      <Button onclick={acknowledge}>{acknowledgeLabel}</Button>
     {/if}
   {/snippet}
 </Dialog>

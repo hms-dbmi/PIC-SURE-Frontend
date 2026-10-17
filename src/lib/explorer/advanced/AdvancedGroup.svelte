@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import OperatorBadge from '#lib/ui/OperatorBadge.svelte';
   import { css } from '#lib/ui/style.ts';
   import { useSortable } from '@dnd-kit-svelte/svelte/sortable';
@@ -152,13 +153,14 @@
           </div>
         {/key}
         {#if id === 'root'}
-          <button
-            class="btn border preset-tonal-primary hover:preset-filled-primary-500 leading-(--text-lg--line-height) disabled:opacity-75 ml-auto mb-1"
+          <Button
+            variant="soft"
+            class="leading-(--text-lg--line-height) disabled:opacity-75 ml-auto mb-1"
             title="Add subquery to create a group of filters"
             onclick={onAddGroup}
           >
             Add Subquery
-          </button>
+          </Button>
         {/if}
       </div>
       <!-- TODO: NOT operator support — hidden until backend supports negation -->

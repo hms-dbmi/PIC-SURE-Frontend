@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { buttonClass } from '#lib/ui/button.ts';
+  import Button from '#lib/ui/Button.svelte';
   import { slide } from 'svelte/transition';
   import ConfirmDialog from '#lib/ui/dialog/ConfirmDialog.svelte';
   import {
@@ -194,14 +196,9 @@
         {#if editable || disableable || archiveable || restorable}
           <div class="flex flex-wrap gap-2 sm:col-span-2">
             {#if editable}
-              <button
-                type="button"
-                class="btn preset-outlined-primary-500 text-primary-500 hover:preset-filled-primary-500 hover:text-white"
-                disabled={busy}
-                onclick={onedit}
-              >
+              <Button variant="outlined" disabled={busy} onclick={onedit}>
                 Edit banner {@render bannerContext()}
-              </button>
+              </Button>
             {/if}
             {#if disableable}
               <ConfirmDialog
@@ -210,7 +207,7 @@
                 confirmLabel="Yes"
                 cancelLabel="No"
                 onconfirm={ondisable}
-                triggerClass="btn preset-outlined-error-500 text-error-700 hover:preset-filled-error-500 hover:text-white"
+                triggerClass={buttonClass('outlined-error')}
                 disabled={busy || disableDisabled}
               >
                 {#snippet trigger()}
@@ -221,14 +218,9 @@
               </ConfirmDialog>
             {/if}
             {#if restorable}
-              <button
-                type="button"
-                class="btn preset-outlined-primary-500 text-primary-500 hover:preset-filled-primary-500 hover:text-white"
-                disabled={busy || restoreDisabled}
-                onclick={onrestore}
-              >
+              <Button variant="outlined" disabled={busy || restoreDisabled} onclick={onrestore}>
                 Restore banner {@render bannerContext()}
-              </button>
+              </Button>
             {/if}
             {#if archiveable}
               <ConfirmDialog
@@ -237,7 +229,7 @@
                 confirmLabel="Yes"
                 cancelLabel="No"
                 onconfirm={onarchive}
-                triggerClass="btn preset-outlined-error-500 text-error-700 hover:preset-filled-error-500 hover:text-white"
+                triggerClass={buttonClass('outlined-error')}
                 disabled={busy || archiveDisabled}
               >
                 {#snippet trigger()}

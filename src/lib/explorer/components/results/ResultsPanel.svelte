@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { buttonClass } from '#lib/ui/button.ts';
   import { resolve } from '$app/paths';
   import { onDestroy, onMount } from 'svelte';
   import { elasticInOut } from 'svelte/easing';
@@ -114,7 +115,7 @@
       <button
         id="results-export-open"
         type="button"
-        class="btn preset-filled-primary-500"
+        class={buttonClass()}
         disabled={resultCountsState.loading}
         onclick={() => {
           log(createLog('ACTION', 'explorer.prepare_for_analysis'));

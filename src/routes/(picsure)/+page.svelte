@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { resolve } from '$app/paths';
   import { appPath } from '#lib/api/paths.ts';
   import { config } from '#lib/config/config.svelte.ts';
@@ -49,24 +50,12 @@
         <div class="text-3xl my-1">{title}</div>
         <i class="text-[5rem] my-3 text-secondary-600-400 {icon}"></i>
         <div class="subtitle my-3">{description}</div>
-        {#if url.startsWith('/')}
-          <a
-            data-testid="landing-action-{i}"
-            href={resolve(appPath(url))}
-            class="btn preset-filled-primary-500"
-            onclick={() => log(createLog('NAVIGATION', 'landing.action_click', { title, url }))}
-            >{btnText}</a
-          >
-        {:else}
-          <a
-            data-testid="landing-action-{i}"
-            href={url}
-            rel="external"
-            class="btn preset-filled-primary-500"
-            onclick={() => log(createLog('NAVIGATION', 'landing.action_click', { title, url }))}
-            >{btnText}</a
-          >
-        {/if}
+        <Button
+          data-testid="landing-action-{i}"
+          href={url.startsWith('/') ? resolve(appPath(url)) : url}
+          onclick={() => log(createLog('NAVIGATION', 'landing.action_click', { title, url }))}
+          >{btnText}</Button
+        >
       </div>
     {/each}
   </section>

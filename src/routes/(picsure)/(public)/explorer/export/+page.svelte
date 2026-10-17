@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { resolve } from '$app/paths';
   import ExportStepper from '#lib/explorer/export/ExportStepper.svelte';
   import { allFilters } from '#lib/query/filters.ts';
@@ -50,11 +51,11 @@
     <div class="flex flex-col items-center justify-center m-8">
       <p>You are not logged in. To export the data for your selected cohort, please log in.</p>
       <div class="flex gap-4">
-        <button
-          class="btn preset-filled-primary-500 m-4"
+        <Button
+          class="m-4"
           onclick={() => {
             goto(resolve('login'));
-          }}>Go to Login</button
+          }}>Go to Login</Button
         >
       </div>
     </div>
@@ -66,11 +67,11 @@
     <div class="flex flex-col items-center justify-center m-8">
       <p>No filters or exports have been created.</p>
       <div class="flex gap-4">
-        <button
-          class="btn preset-filled-primary-500 m-4"
+        <Button
+          class="m-4"
           onclick={() => {
             goto(resolve('explorer?startTour=true'));
-          }}>Learn How</button
+          }}>Learn How</Button
         >
       </div>
     </div>

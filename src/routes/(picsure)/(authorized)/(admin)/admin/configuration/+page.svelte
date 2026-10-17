@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { untrack } from 'svelte';
   import { resolve } from '$app/paths';
   import { afterNavigate, beforeNavigate, goto, replaceState } from '$app/navigation';
@@ -197,13 +198,13 @@
           {:then}
             <div class="flex gap-4 my-6">
               <div class="flex-auto">
-                <a
+                <Button
+                  variant="tonal"
                   data-testid="admin-role-add"
-                  class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
                   href={resolve('admin/configuration/role/new')}
                 >
                   + Add Role
-                </a>
+                </Button>
               </div>
             </div>
             <Datatable
@@ -229,13 +230,13 @@
           {:then}
             <div class="flex gap-4 my-6">
               <div class="flex-auto">
-                <a
+                <Button
+                  variant="tonal"
                   data-testid="admin-privilege-add"
-                  class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
                   href={resolve('admin/configuration/privilege/new')}
                 >
                   + Add Privilege
-                </a>
+                </Button>
               </div>
             </div>
             <Datatable
@@ -261,13 +262,13 @@
           {:then}
             <div class="flex gap-4 my-6">
               <div class="flex-auto">
-                <a
+                <Button
+                  variant="tonal"
                   data-testid="admin-connection-add"
-                  class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
                   href={resolve('admin/configuration/connection/new')}
                 >
                   + Add Connection
-                </a>
+                </Button>
               </div>
             </div>
             <Datatable

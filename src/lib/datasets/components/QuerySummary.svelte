@@ -21,7 +21,7 @@
   import FiltersSummary from '#lib/datasets/components/FiltersSummary.svelte';
   import SelectedVariablesSummary from '#lib/datasets/components/SelectedVariablesSummary.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
-  import ConfirmDialog from '#lib/ui/dialog/ConfirmDialog.svelte';
+  import ConfirmButton from '#lib/ui/ConfirmButton.svelte';
   import Popover from '#lib/ui/popover/Popover.svelte';
   import FilterCardPlaceholder from './FilterCardPlaceholder.svelte';
   import SkeletonBar from '#lib/ui/skeleton/SkeletonBar.svelte';
@@ -87,20 +87,22 @@
   {/if}
   {#if restoreQueryButton && !hasErrors}
     <div class="float-right">
-      <ConfirmDialog
+      <ConfirmButton
+        label="Restore Filters"
+        variant="filled-surface"
+        buttonSize="sm"
+        class="float-right"
         bind:open={modal}
         title="Restore Filters"
         data-testid="dataset-restore-filters"
-        triggerClass="btn preset-filled-surface-500 float-right btn-sm"
         confirmLabel="Restore Filters"
         onconfirm={() => setFilters()}
       >
-        {#snippet trigger()}Restore Filters{/snippet}
         {#if hasExistingFilters}
           <ErrorAlert icon color="warning">You already have active filters.</ErrorAlert>
         {/if}
         <p>Do you want to set these as your active filters and redirect to Explore?</p>
-      </ConfirmDialog>
+      </ConfirmButton>
     </div>
   {:else}
     <div class="float-right">

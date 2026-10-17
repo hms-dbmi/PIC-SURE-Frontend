@@ -1,4 +1,5 @@
 <script lang="ts">
+  import IconButton from '#lib/ui/IconButton.svelte';
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
 
@@ -8,7 +9,7 @@
   import { getRole } from '#lib/admin/access/Roles.ts';
   import { getPrivilege } from '#lib/admin/access/Privileges.ts';
 
-  import ConfirmDialog from '#lib/ui/dialog/ConfirmDialog.svelte';
+  import ConfirmButton from '#lib/ui/ConfirmButton.svelte';
 
   let { data = { cell: '', row: { status: '', email: '' } } } = $props();
   const active = $derived(data.row.status === 'Active');
@@ -50,30 +51,22 @@
 </script>
 
 {#if active}
-  <button
+  <IconButton
+    icon="fa-solid fa-pen-to-square fa-xl"
+    label="Edit (e)"
     data-testid="admin-user-edit-{data.cell}"
-    type="button"
-    title="Edit (e)"
-    aria-label="Edit (e)"
-    data-key="e"
-    class="btn-icon-color"
+    shortcut="e"
     onclick={edit}
-  >
-    <i class="fa-solid fa-pen-to-square fa-xl"></i>
-  </button>
+  />
 {/if}
-<ConfirmDialog
+<ConfirmButton
+  icon="fa-solid fa-trash{active ? '' : '-arrow-up'} fa-xl"
+  label={active ? 'Deactivate user (d)' : 'Reactivate user (r)'}
+  shortcut={active ? 'd' : 'r'}
   data-testid="admin-user-{active ? 'deactivate' : 'reactivate'}-{data.cell}"
   title="{active ? 'D' : 'R'}eactivate User?"
   confirmLabel="{active ? 'D' : 'R'}eactivate"
-  triggerTitle={active ? 'Deactivate user (d)' : 'Reactivate user (r)'}
-  triggerKey={active ? 'd' : 'r'}
-  triggerClass="btn-icon-color"
   onconfirm={() => toggleActivate(!active)}
 >
-  {#snippet trigger()}
-    <i class="fa-solid fa-trash{active ? '' : '-arrow-up'} fa-xl"></i>
-    <span class="sr-only">{active ? 'Deactivate user (d)' : 'Reactivate user (r)'}</span>
-  {/snippet}
   Are you sure you want to {active ? 'd' : 'r'}eactiveate user '{data.row.email}'?
-</ConfirmDialog>
+</ConfirmButton>

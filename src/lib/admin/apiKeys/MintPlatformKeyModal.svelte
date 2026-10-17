@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import Dialog from '#lib/ui/dialog/Dialog.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import CopyButton from '#lib/ui/CopyButton.svelte';
@@ -98,14 +99,7 @@
         &middot; Expires: {formatInstant(minted.expiresAt, 'Never')}
       </p>
       <footer class="flex justify-end mt-6">
-        <button
-          type="button"
-          data-testid="admin-api-key-minted-done"
-          class="btn preset-filled-primary-500"
-          onclick={close}
-        >
-          Done
-        </button>
+        <Button data-testid="admin-api-key-minted-done" onclick={close}>Done</Button>
       </footer>
     </div>
   {:else}
@@ -162,17 +156,10 @@
         </div>
       </fieldset>
       <footer class="flex justify-end space-x-2 mt-6">
-        <button
-          type="button"
-          class="btn border preset-tonal-primary hover:preset-filled-primary-500"
-          onclick={close}
-          disabled={isSubmitting}
-        >
-          Cancel
-        </button>
-        <button type="submit" class="btn preset-filled-primary-500" disabled={isSubmitting}>
+        <Button variant="soft" onclick={close} disabled={isSubmitting}>Cancel</Button>
+        <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Minting…' : 'Mint Key'}
-        </button>
+        </Button>
       </footer>
     </form>
   {/if}

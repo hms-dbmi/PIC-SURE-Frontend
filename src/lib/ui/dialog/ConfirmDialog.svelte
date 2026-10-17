@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
   import Dialog, { type DialogSize, type DialogTriggerProps } from '#lib/ui/dialog/Dialog.svelte';
+  import Button from '#lib/ui/Button.svelte';
 
   interface Props extends DialogTriggerProps {
     open?: boolean;
@@ -28,10 +29,7 @@
     ...rest
   }: Props = $props();
 
-  const confirmClass = {
-    default: 'btn preset-filled-primary-500',
-    danger: 'btn preset-filled-error-500',
-  };
+  const confirmVariant = { default: 'filled', danger: 'filled-error' } as const;
 
   // The handler runs before the dialog closes: a caller that binds open to state its handler
   // reads (an unsaved-changes guard's pending transition) would otherwise see it cleared.
@@ -49,11 +47,7 @@
 <Dialog bind:open onclose={oncancel} {...rest}>
   {@render children()}
   {#snippet footer()}
-    <button
-      type="button"
-      class="btn border preset-tonal-primary hover:preset-filled-primary-500"
-      onclick={cancel}>{cancelLabel}</button
-    >
-    <button type="button" class={confirmClass[tone]} onclick={confirm}>{confirmLabel}</button>
+    <Button variant="soft" onclick={cancel}>{cancelLabel}</Button>
+    <Button variant={confirmVariant[tone]} onclick={confirm}>{confirmLabel}</Button>
   {/snippet}
 </Dialog>

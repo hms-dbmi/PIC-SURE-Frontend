@@ -1,11 +1,12 @@
 <script lang="ts">
+  import IconButton from '#lib/ui/IconButton.svelte';
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
 
   import { isTopAdmin } from '#lib/auth/User.ts';
   import { toaster } from '#lib/ui/toaster.ts';
   import { deletePrivilege } from '#lib/admin/access/Privileges.ts';
-  import ConfirmDialog from '#lib/ui/dialog/ConfirmDialog.svelte';
+  import ConfirmButton from '#lib/ui/ConfirmButton.svelte';
 
   const { data = { cell: '', row: { name: '' } } } = $props();
 
@@ -37,33 +38,25 @@
 </script>
 
 <div class="w-20 min-w-20">
-  <button
+  <IconButton
+    icon="fa-solid fa-pen-to-square fa-xl"
+    label="Edit (e)"
     data-testid={`admin-privilege-edit-${data.cell}`}
-    type="button"
-    title="Edit (e)"
-    data-key="e"
-    class="btn-icon-color"
+    shortcut="e"
     disabled={!$isTopAdmin}
     onclick={editPrivilege}
-  >
-    <i class="fa-solid fa-pen-to-square fa-xl"></i>
-    <span class="sr-only">Edit (e)</span>
-  </button>
-  <ConfirmDialog
+  />
+  <ConfirmButton
+    icon="fa-solid fa-trash fa-xl"
+    label="Delete (d)"
+    shortcut="d"
     data-testid="admin-privilege-delete-{data.cell}"
     title="Delete Privilege?"
-    triggerTitle="Delete (d)"
-    triggerKey="d"
     confirmLabel="Yes"
     cancelLabel="No"
     disabled={!$isTopAdmin}
     onconfirm={deleteRow}
-    triggerClass="btn-icon-color"
   >
-    {#snippet trigger()}
-      <i class="fa-solid fa-trash fa-xl"></i>
-      <span class="sr-only">Delete (d)</span>
-    {/snippet}
     Are you sure you want to delete privilege '{data.row.name}'?
-  </ConfirmDialog>
+  </ConfirmButton>
 </div>

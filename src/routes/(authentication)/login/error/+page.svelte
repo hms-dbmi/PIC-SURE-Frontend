@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { resolve } from '$app/paths';
   import { config } from '#lib/config/config.svelte.ts';
   import { quintOut } from 'svelte/easing';
@@ -14,8 +15,8 @@
   <p class="m-1">If the problem persists contact an administrator.</p>
 
   <div class="flex flex-col justify-between mt-5">
-    <a class="btn preset-filled-primary-500 m-1" href={resolve('login')}
-      >Back to Login <i class="fa-solid fa-arrow-right ml-3"></i></a
+    <Button class="m-1" href={resolve('login')}
+      >Back to Login <i class="fa-solid fa-arrow-right ml-3"></i></Button
     >
     <a
       class="btn preset-tonal-primary border border-primary-500 m-1"

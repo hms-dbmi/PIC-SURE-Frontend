@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { ApiError, consentDeniedMessage } from '#lib/api/errors.ts';
   import { config } from '#lib/config/config.svelte.ts';
   import { browser } from '$app/env';
@@ -116,14 +117,12 @@
       {config.branding.explorePage.confirmDownloadMessage ||
         'This action will download the data to your local machine. Are you sure you want to proceed?'}
     </ConfirmDialog>
-    <button
-      class="btn preset-filled-primary-500"
-      onclick={() => (config.features.confirmDownload ? (modalOpen = true) : download())}
+    <Button onclick={() => (config.features.confirmDownload ? (modalOpen = true) : download())}
       ><i class="fa-solid fa-download mr-1"></i>{downloadText}
       {#if isDownloading}
         <Loading ring size="micro" color="white" />
       {/if}
-    </button>
+    </Button>
   {:else}
     <ErrorAlert title="Download is disabled!" color="warning" solid={true}>
       <p>Downloading data is disabled. Please contact the administrator to enable this feature.</p>

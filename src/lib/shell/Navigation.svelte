@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { resolve } from '$app/paths';
   import { appPath } from '#lib/api/paths.ts';
   import { onMount } from 'svelte';
@@ -101,27 +102,22 @@
           {/snippet}
           <div class="flex flex-col items-center">
             <p class="pb-6">{$user.email}</p>
-            <button
+            <Button
+              class="w-fit"
               id="app-nav-logout"
-              class="btn preset-filled-primary-500 w-fit"
               title="Logout"
               onclick={() => {
                 log(createLog('AUTH', 'logout.click'));
                 logout(providerInstance, false);
-              }}>Logout</button
+              }}>Logout</Button
             >
           </div>
         </Popover>
       {:else}
         <!-- Login -->
-        <button
-          id="app-nav-login"
-          title="Login"
-          class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-          onclick={handleLogin}
-        >
+        <Button variant="tonal" id="app-nav-login" title="Login" onclick={handleLogin}>
           Login
-        </button>
+        </Button>
       {/if}
     </div>
   {/snippet}

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { onMount } from 'svelte';
 
   import { createInstance } from '#lib/auth/providerRegistry.ts';
@@ -68,15 +69,14 @@
     <div class="help-text">{@html help}</div>
   {/if}
 {:else}
-  <button
-    type="button"
+  <Button
+    class="m-1 w-full"
     disabled
-    class="btn preset-filled-primary-500 m-1 w-full"
     title="No provider selected"
     aria-label="No provider selected. Please select a provider from the dropdown menu above."
   >
     <span>Login</span>
-  </button>
+  </Button>
 {/if}
 
 <style>

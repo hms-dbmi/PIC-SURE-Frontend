@@ -1,4 +1,5 @@
 <script lang="ts">
+  import IconButton from '#lib/ui/IconButton.svelte';
   import {
     CONFIG_FIELD_SCHEMA,
     deprecatedApiRows,
@@ -24,7 +25,7 @@
   import ConfigFieldRow from './ConfigFieldRow.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import Loading from '#lib/ui/Loading.svelte';
-  import ConfirmDialog from '#lib/ui/dialog/ConfirmDialog.svelte';
+  import ConfirmButton from '#lib/ui/ConfirmButton.svelte';
   import SearchInput from '#lib/ui/SearchInput.svelte';
   import { toaster } from '#lib/ui/toaster.ts';
   import { humanizeKey } from '#lib/utils/strings.ts';
@@ -198,23 +199,21 @@
       </span>
     {/if}
     <div class="flex-1"></div>
-    <ConfirmDialog
+    <ConfirmButton
+      label="Invalidate Cache & Refresh"
+      variant="tonal-surface"
       size="third"
       data-testid={`admin-config-invalidate-cache-${testIdBase}`}
       title="Invalidate Cache?"
       confirmLabel="Yes"
       cancelLabel="No"
       onconfirm={invalidateCache}
-      triggerClass="btn preset-tonal-surface border border-surface-500 hover:preset-filled-surface-500"
     >
-      {#snippet trigger()}
-        Invalidate Cache & Refresh
-      {/snippet}
-      Are you sure you want to invalidate the server-side config cache? This immediately forces the app
-      to refetch all cached values from the backend, instead of waiting for the routine refresh (up to
-      4 hours). Individual users will still need to refresh their browsers in order to see the changed
-      values.
-    </ConfirmDialog>
+      Are you sure you want to invalidate the server-side config cache? This immediately forces the
+      app to refetch all cached values from the backend, instead of waiting for the routine refresh
+      (up to 4 hours). Individual users will still need to refresh their browsers in order to see
+      the changed values.
+    </ConfirmButton>
   </div>
   <div data-testid={`admin-config-tab-${testIdBase}`}>
     {#each filteredGroups as group (group.group)}
@@ -283,17 +282,13 @@
               <td class="font-mono text-xs">{entry.row.value}</td>
               <td class="text-xs opacity-70">{entry.row.description ?? ''}</td>
               <td>
-                <button
-                  type="button"
-                  title="Delete"
-                  class="btn-icon-color"
+                <IconButton
+                  icon="fa-solid fa-trash fa-lg"
+                  label="Delete"
                   data-testid={`admin-config-deprecated-delete-${entry.row.name}`}
                   disabled={readOnly}
                   onclick={() => deleteDeprecated(entry)}
-                >
-                  <i class="fa-solid fa-trash fa-lg"></i>
-                  <span class="sr-only">Delete</span>
-                </button>
+                />
               </td>
             </tr>
           {/each}

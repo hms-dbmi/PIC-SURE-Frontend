@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { onMount, onDestroy } from 'svelte';
   import { config } from '#lib/config/config.svelte.ts';
   import Content from '#lib/shell/Content.svelte';
@@ -54,14 +55,7 @@
     <button type="button" class="btn border preset-tonal-error" onclick={handleDiscard}>
       Discard Changes
     </button>
-    <button
-      type="button"
-      class="btn preset-filled-primary-500"
-      title="Save changes to query"
-      onclick={handleModalApply}
-    >
-      Apply Changes
-    </button>
+    <Button title="Save changes to query" onclick={handleModalApply}>Apply Changes</Button>
   {/snippet}
 </Dialog>
 
@@ -81,12 +75,6 @@
     <AdvancedFiltering bind:this={advancedFilteringRef} />
   </div>
   <div class="mt-4 flex justify-end w-[70%] mx-auto">
-    <button
-      class="btn preset-filled-primary-500"
-      title="Save changes to query"
-      onclick={applyChanges}
-    >
-      Apply Changes
-    </button>
+    <Button title="Save changes to query" onclick={applyChanges}>Apply Changes</Button>
   </div>
 </Content>
