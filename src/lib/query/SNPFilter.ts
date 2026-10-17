@@ -1,6 +1,6 @@
 import { get, writable, type Writable } from 'svelte/store';
 
-import { runSyncQuery } from '#lib/api/picsure/query.ts';
+import { runCount } from '#lib/api/picsure/query.ts';
 import { Genotype, type SNP } from '#lib/query/genomic.ts';
 import { createSnpsFilter, type SnpFilterInterface } from '#lib/query/filter.svelte.ts';
 import type { GenomicFilterInterfacev3 } from '#lib/query/query.ts';
@@ -22,16 +22,14 @@ export function clearSnpFilters() {
   selectedSNPs.set([]);
 }
 
-async function snpRequest(snp: SNP): Promise<number> {
+function snpRequest(snp: SNP): Promise<number> {
   const filter: GenomicFilterInterfacev3 = {
     key: snp.search,
     values: [Genotype.Heterozygous, Genotype.Homozygous],
   };
   const searchRequest: QueryRequestInterfaceV3 = getBlankQueryRequestV3();
   searchRequest.query.genomicFilters.push(filter);
-  const count = await runSyncQuery(searchRequest);
-  if (typeof count !== 'number') throw new Error('Invalid SNP count response');
-  return count;
+  return runCount(searchRequest);
 }
 
 export async function getSNPCounts(check: SNP): Promise<{ count: number; errors: number }> {

@@ -8,6 +8,8 @@ import {
   getQueryStatus,
   getSignedUrl,
   getVariantExcerpt,
+  runCount,
+  runCrossCount,
   runSyncQuery,
 } from '#lib/api/picsure/query.ts';
 import type { QueryRequestBody } from '#lib/api/picsure/query.types.ts';
@@ -26,6 +28,23 @@ describe('runSyncQuery', () => {
       'picsure/hpds/open/query/sync',
       'picsure/hpds/auth/query/sync',
     ]);
+  });
+});
+
+describe('counts', () => {
+  it('rejects a count that is not a number', async () => {
+    respond.mockResolvedValue({ errorType: 'error', message: 'bad' });
+    await expect(runCount(query)).rejects.toThrow('Invalid count response');
+  });
+
+  it('keeps numeric cross counts and leaves out the rest', async () => {
+    respond.mockResolvedValue({ '\\a\\': 5, '\\b\\': '6267', '\\c\\': '12 ±3', '\\d\\': '' });
+    await expect(runCrossCount(query)).resolves.toEqual({ '\\a\\': 5, '\\b\\': 6267 });
+  });
+
+  it('rejects a cross count that is not an object', async () => {
+    respond.mockResolvedValue('error');
+    await expect(runCrossCount(query)).rejects.toThrow('Invalid cross count response');
   });
 });
 

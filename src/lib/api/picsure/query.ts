@@ -19,18 +19,26 @@ export function runSyncQuery(
   });
 }
 
+/** A COUNT query's patient count. */
+export async function runCount(query: QueryRequestBody): Promise<number> {
+  const count = await runSyncQuery(query);
+  if (typeof count !== 'number') throw new Error('Invalid count response');
+  return count;
+}
+
 /**
- * A cross-count query's counts by concept path. Entries that aren't numbers are left out, so an
- * HPDS error answer reads as no counts.
+ * A cross-count query's counts by concept path. Entries that aren't numbers, such as an open
+ * endpoint's obfuscated `12 ±3` or the fields of an HPDS error answer, are left out.
  */
-export async function getCrossCounts(query: QueryRequestBody): Promise<Record<string, number>> {
+export async function runCrossCount(query: QueryRequestBody): Promise<Record<string, number>> {
   const response = await runSyncQuery(query);
   if (!isRecord(response)) throw new Error('Invalid cross count response');
-  return Object.fromEntries(
-    Object.entries(response).filter(
-      (entry): entry is [string, number] => typeof entry[1] === 'number',
-    ),
-  );
+  const counts: Record<string, number> = {};
+  for (const [conceptPath, value] of Object.entries(response)) {
+    const count = typeof value === 'string' && value.trim() !== '' ? Number(value) : value;
+    if (typeof count === 'number' && Number.isFinite(count)) counts[conceptPath] = count;
+  }
+  return counts;
 }
 
 export async function countVariants(query: QueryRequestBody): Promise<number> {

@@ -49,7 +49,7 @@ async function setupExportPageAndAddFilterAndExport(
   page: Page,
   includeGenomicFilter: boolean = false,
 ) {
-  await mockApiSuccess(page, `${conceptTreePath}?depth=4`, mockDataWithChildren);
+  await mockApiSuccess(page, `${conceptTreePath}?depth=4`, [mockDataWithChildren]);
   await mockApiSuccess(
     page,
     `${conceptsDetailPath}/${detailResponseCat.dataset}`,

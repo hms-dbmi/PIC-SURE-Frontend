@@ -67,7 +67,7 @@ export const PicsurePaths = {
   banner: (uuid: string, action?: 'publish' | 'disable' | 'archive' | 'restore') =>
     action ? `${Picsure.Banners.Manage}/${uuid}/${action}` : `${Picsure.Banners.Manage}/${uuid}`,
   // the open-access endpoint answers with aggregate, obfuscated counts
-  syncQuery: (openAccess: boolean) => (openAccess ? Picsure.QueryOpenSync : Picsure.QuerySync),
+  syncQuery: (openEndpoint: boolean) => (openEndpoint ? Picsure.QueryOpenSync : Picsure.QuerySync),
   queryResult: (queryId: string) => `${Picsure.Query}/${queryId}/result`,
   queryStatus: (queryId: string) => `${Picsure.Query}/${queryId}/status`,
   querySignedUrl: (queryId: string) => `${Picsure.Query}/${queryId}/signed-url`,

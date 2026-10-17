@@ -158,10 +158,6 @@ export async function getConceptDetails(
 
   const response = await dictionary.getConceptDetail(dataset, rawConceptPath);
 
-  if (!response) {
-    throw new Error('No response');
-  }
-
   cacheResult(rawConceptPath, response);
   return response;
 }
@@ -170,13 +166,7 @@ export async function getHierarchyConcepts(
   dataset: string,
   conceptPath: string,
 ): Promise<SearchResult[]> {
-  const response = await dictionary.getConceptHierarchy(dataset, conceptPath);
-
-  if (!response) {
-    throw new Error('No response');
-  }
-
-  return response;
+  return dictionary.getConceptHierarchy(dataset, conceptPath);
 }
 
 /**
