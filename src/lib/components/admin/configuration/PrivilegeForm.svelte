@@ -36,13 +36,13 @@
         await addPrivilege(newPrivilege);
       }
       toaster.success({
-        title: `Successfully saved ${newPrivilege && 'new '}privilege '${name}'`,
+        title: `Successfully saved ${privilege ? '' : 'new '}privilege '${name}'`,
       });
       goto(resolve('admin/configuration'));
     } catch (error) {
       console.error(error);
       toaster.error({
-        title: `An error occured while saving ${newPrivilege && 'new '}privilege '${name}'`,
+        title: `An error occured while saving ${privilege ? '' : 'new '}privilege '${name}'`,
       });
     }
   }

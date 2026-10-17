@@ -181,6 +181,9 @@ test.describe('Export Page', () => {
     // Then
     await expect(page).toHaveURL('/explorer/export');
     await expect(page.getByTestId('export-review-error')).toBeVisible();
+    await expect(page.getByTestId('export-review-error')).toContainText(
+      'exceeds 10 estimated data points',
+    );
     await expect(page.getByTestId('ui-stepper-next')).toBeDisabled();
   });
 

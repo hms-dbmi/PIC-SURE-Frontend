@@ -81,7 +81,7 @@
       handler.invalidate();
     }
     if (page.url.searchParams.get('startTour') === 'true') {
-      const tourBtn = document.querySelector('#explorer-tour-btn');
+      const tourBtn = document.querySelector('#explorer-tour-start');
       if (tourBtn) {
         (tourBtn as HTMLElement).click();
       }

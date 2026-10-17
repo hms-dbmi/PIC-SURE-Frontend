@@ -4,8 +4,7 @@
   interface Props {
     href?: string;
     angle?: 'right' | 'left';
-    variant?: string;
-    color?: string;
+    variant?: 'tonal' | 'filled';
     disabled?: boolean;
     'data-testid'?: string;
     class?: string;
@@ -17,7 +16,6 @@
     href = '',
     angle = 'left',
     variant = 'tonal',
-    color = 'primary',
     disabled = false,
     'data-testid': testid,
     class: className = '',
@@ -25,9 +23,11 @@
     children,
   }: Props = $props();
 
-  const btnStyle = $derived(
-    `btn btn-sm h-fit border preset-${variant}-${color} hover:preset-filled-${color}-500 text-lg`,
-  );
+  const variants = {
+    tonal: 'preset-tonal-primary hover:preset-filled-primary-500',
+    filled: 'preset-filled-primary-500',
+  };
+  const btnStyle = $derived(`btn btn-sm h-fit border ${variants[variant]} text-lg`);
 </script>
 
 {#snippet label()}

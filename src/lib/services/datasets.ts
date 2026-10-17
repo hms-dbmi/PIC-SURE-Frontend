@@ -8,7 +8,7 @@ interface DatasetRequest {
 }
 
 export async function createDatasetName(queryId: string, name: string): Promise<DataSet> {
-  if (name === '' && name.trim() === '') {
+  if (name.trim() === '') {
     throw 'Please input a Dataset ID name';
   }
   const validName = /^[\w \-\\/?+=[\].():"']+$/g;

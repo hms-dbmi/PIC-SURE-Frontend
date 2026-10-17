@@ -41,7 +41,7 @@
       checked={node.selected}
       onclick={() => node.select()}
     />
-    <label for="{uid}-{node.isLeaf ? 'radio' : 'toggle'}" class="w-full">{node.name}</label>
+    <label for="{uid}-radio" class="w-full">{node.name}</label>
   </summary>
   <div class="tree-item-children ml-4" data-testid="ui-tree-children-{node.name}" role="group">
     {#if !node.isLeaf}

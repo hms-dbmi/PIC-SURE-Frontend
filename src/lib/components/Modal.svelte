@@ -88,7 +88,12 @@
   {/if}
   <Modal
     open={modalOpen}
-    onOpenChange={(e) => (modalOpen = e.open)}
+    onOpenChange={(e) => {
+      // Escape or a backdrop click. modalClose and confirm set modalOpen first, so they never land here.
+      const dismissed = modalOpen && !e.open;
+      modalOpen = e.open;
+      if (dismissed) onclose();
+    }}
     contentBase="card bg-surface-50-950 p-4 pb-6 space-4 shadow-xl overflow-auto max-w-screen {width} max-h-screen {height} {className}"
     backdropClasses="backdrop-blur-sm"
     closeOnInteractOutside={closeable}

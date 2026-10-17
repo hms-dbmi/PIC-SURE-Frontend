@@ -1,6 +1,5 @@
 <script lang="ts">
   import type { SearchResult } from '#lib/models/Search.ts';
-  import type { ExportInterface } from '#lib/models/Export.ts';
   import { getInitialTree, getConceptTree } from '#lib/stores/Dictionary.ts';
   import { exports } from '#lib/stores/Export.ts';
   import { addExport, removeExport, mapSearchResultAsExport } from '#lib/stores/Export.ts';
@@ -9,12 +8,9 @@
   import Summary from '#lib/components/explorer/export/Summary.svelte';
   import { getQueryRequest } from '#lib/ExportStepperManager.svelte.ts';
 
-  let currentExports: ExportInterface[] = $state($exports);
-  exports.subscribe((newExports) => (currentExports = newExports));
-
   let disabledConcepts: string[] = $derived(getQueryRequest().query.select);
   let selectedConcepts: string[] = $derived([
-    ...currentExports.map(({ conceptPath }) => conceptPath),
+    ...$exports.map(({ conceptPath }) => conceptPath),
     ...disabledConcepts,
   ]);
 

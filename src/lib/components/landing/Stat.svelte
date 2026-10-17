@@ -2,7 +2,6 @@
   import type { Readable } from 'svelte/store';
   import type { StatResult } from '#lib/models/Stat.ts';
 
-  import { browser } from '$app/env';
   import { StatPromise } from '#lib/utilities/StatBuilder.ts';
   import { countResult } from '#lib/services/counts/countFormat.ts';
   import { sanitizeHTML } from '#lib/utilities/HTML.ts';
@@ -42,7 +41,7 @@
 <div data-testid="landing-summary-{authString}" class="w-full flex flex-col items-center">
   <div class="w-2/4">
     <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-    {@html browser ? sanitizeHTML(description) : description}
+    {@html sanitizeHTML(description)}
   </div>
   <div class="grid {gridClass} grid-flow-col justify-center p-2 my-2 gap-y-9 {width}">
     {#each $stats as stat, i (`${authString}-${stat.key}-${stat.label}`)}

@@ -166,6 +166,7 @@
       {rows}
       {preparePromise}
       dataLimitExceeded={dataLimitExceeded()}
+      maxDataPoints={MAX_DATA_POINTS_FOR_EXPORT}
     />
   </Step>
   {#if config.features.explorer.showTreeStep}

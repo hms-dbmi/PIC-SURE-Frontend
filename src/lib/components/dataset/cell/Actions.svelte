@@ -4,8 +4,12 @@
   import { toggleArchived } from '#lib/stores/Dataset.svelte.ts';
   import { log, createLog } from '#lib/logger.ts';
 
-  const { data = { cell: '', row: { archived: false } } } = $props();
-  let toggleButton: HTMLButtonElement = $state() as HTMLButtonElement;
+  interface Props {
+    data?: { cell: string; row: { archived: boolean } };
+  }
+
+  const { data = { cell: '', row: { archived: false } } }: Props = $props();
+  let pending = $state(false);
 
   async function toggleArchive(event: Event) {
     event.stopPropagation();
@@ -16,19 +20,20 @@
       }),
     );
 
+    pending = true;
     try {
-      toggleButton.disabled = true;
-      toggleArchived(data.cell);
-      toggleButton.disabled = false;
+      await toggleArchived(data.cell);
     } catch {
       toaster.error({ title: 'An error occured when updating dataset.' });
+    } finally {
+      pending = false;
     }
   }
 </script>
 
 {#if data.row.archived}
   <button
-    bind:this={toggleButton}
+    disabled={pending}
     data-testid={`dataset-action-restore-${data.cell}`}
     type="button"
     title="Restore (r)"
@@ -41,7 +46,7 @@
   </button>
 {:else}
   <button
-    bind:this={toggleButton}
+    disabled={pending}
     data-testid={`dataset-action-archive-${data.cell}`}
     type="button"
     title="Delete (d)"

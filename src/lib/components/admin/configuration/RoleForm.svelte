@@ -53,13 +53,13 @@
         await addRole(newRole);
       }
       toaster.success({
-        title: `Successfully saved ${newRole && 'new '}role '${name}'`,
+        title: `Successfully saved ${role ? '' : 'new '}role '${name}'`,
       });
       goto(resolve('admin/configuration'));
     } catch (error) {
       console.error(error);
       toaster.error({
-        title: `An error occured while saving ${newRole && 'new '}role '${name}'`,
+        title: `An error occured while saving ${role ? '' : 'new '}role '${name}'`,
       });
     }
   }

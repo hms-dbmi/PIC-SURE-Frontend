@@ -44,13 +44,13 @@
         await addConnection(newConnection);
       }
       toaster.success({
-        title: `Successfully saved ${newConnection && 'new '}connection '${label}'`,
+        title: `Successfully saved ${connection ? '' : 'new '}connection '${label}'`,
       });
       goto(resolve('admin/configuration'));
     } catch (error) {
       console.error(error);
       toaster.error({
-        title: `An error occured while saving ${newConnection && 'new '}connection '${label}'`,
+        title: `An error occured while saving ${connection ? '' : 'new '}connection '${label}'`,
       });
     }
   }

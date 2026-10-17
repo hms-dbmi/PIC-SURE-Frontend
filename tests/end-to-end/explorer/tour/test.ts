@@ -88,6 +88,14 @@ test('Explorer tour button opens instruction modal', async ({ page }) => {
   // Then
   await expect(page.getByRole('dialog')).toBeVisible();
 });
+test('startTour=true opens the tour instructions on load', async ({ page }) => {
+  // When
+  await page.goto('/explorer?startTour=true');
+  await userIsLoggedIn(page);
+
+  // Then
+  await expect(page.getByRole('dialog').getByRole('button', { name: 'Start Tour' })).toBeVisible();
+});
 test('Tour Finishes', async ({ page }) => {
   // Given
   await mockApiConfig(page, { features: HIERARCHY_AND_EXPORT_FEATURES });
