@@ -227,7 +227,7 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
     const target = await afPage.getFilterCard(filterB).boundingBox();
     expect(target).not.toBeNull();
     await page.mouse.move(startX, target!.y + target!.height / 2, { steps: 20 });
-    // Release only once the drop preview shows the new order, as a user would
+    // Release only once the list shows the new order
     await expect(afPage.modal.getByTestId('filter-root').getByTestId('filter-name')).toHaveText([
       filterB,
       filterA,

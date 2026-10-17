@@ -458,13 +458,16 @@ export class AdvancedFilteringPage {
   }
 
   /**
-   * Center a drag handle in its scroll container and wait for it to hold still for a frame. Near
-   * the container's edge dnd-kit scrolls during the drag, which moves the cards under a pointer
-   * (or keyboard drag position) that Playwright holds still, so where the item lands would depend
-   * on how fast the machine scrolls. Playwright's own actionability checks aren't used to wait:
-   * they scroll the container back to the top.
+   * Get a drag handle ready: wait for the previous drop to finish (a press during its animation
+   * doesn't start a new drag), center the handle in its scroll container and wait for it to hold
+   * still for a frame. dnd-kit scrolls during a drag when the card nears the container's edge (the
+   * pointer sensor auto-scrolls within 20% of it, the keyboard sensor scrolls the card into view on
+   * pickup and after each move), which moves the cards under a position Playwright holds still, so
+   * where the card lands would depend on how fast the machine scrolls. Playwright's actionability
+   * checks aren't used to wait: they scroll the container back to the top.
    */
-  private async centerHandle(handle: Locator) {
+  private async readyToDrag(handle: Locator) {
+    await expect(this.page.locator('[data-dnd-dragging]')).toHaveCount(0);
     await expect(handle).toBeVisible();
     await handle.evaluate((el) => {
       el.scrollIntoView({ block: 'center' });
@@ -482,7 +485,8 @@ export class AdvancedFilteringPage {
   }
 
   /**
-   * Move a filter with dnd-kit's keyboard sensor: pick up, arrow keys, drop.
+   * Move a filter with dnd-kit's keyboard sensor: pick up, arrow keys, drop. Assumes a flat list,
+   * where each press moves the filter one place.
    */
   async moveFilterWithKeyboard(filterName: string, key: 'ArrowDown' | 'ArrowUp', presses = 1) {
     const handle = this.getFilterCard(filterName).getByRole('button', {
@@ -490,13 +494,12 @@ export class AdvancedFilteringPage {
     });
     const names = this.modal.getByTestId('filter-root').getByTestId('filter-name');
     const from = (await names.allTextContents()).indexOf(filterName);
-    await this.centerHandle(handle);
+    await this.readyToDrag(handle);
     await handle.focus();
     await this.page.keyboard.press('Enter');
-    // Arrow keys pressed before the drag has started are dropped
     await expect(this.getDropPreviews().first()).toBeVisible();
     for (let i = 0; i < presses; i++) await this.page.keyboard.press(key);
-    // Drop only once the move shows, or Enter can land before dnd-kit has processed it
+    // Drop only once the move shows
     await expect(names.nth(from + (key === 'ArrowDown' ? presses : -presses))).toHaveText(
       filterName,
     );
@@ -509,9 +512,7 @@ export class AdvancedFilteringPage {
    * yet: other cards can be measured in the drag layout and approached from where they are.
    */
   async pickUp(handle: Locator): Promise<{ startX: number; startY: number }> {
-    // A press during the previous drop's animation doesn't start a new drag
-    await expect(this.page.locator('[data-dnd-dragging]')).toHaveCount(0);
-    await this.centerHandle(handle);
+    await this.readyToDrag(handle);
 
     const handleBox = await handle.boundingBox();
     expect(handleBox).not.toBeNull();
@@ -527,8 +528,6 @@ export class AdvancedFilteringPage {
 
   /**
    * Pick up a handle and drag it `distance` pixels up or down, clamped to the filter list's box.
-   * Firefox with Playwright's synthetic pointer events does not auto-scroll, so dragging past its
-   * edge makes dnd-kit lose track of the pointer and the drag never ends properly.
    *
    * Returns the start coordinates so callers can release at a known position.
    */
@@ -549,7 +548,7 @@ export class AdvancedFilteringPage {
         distance = Math.min(distance, maxUp);
       }
     }
-    distance = Math.max(distance, 30); // a real move, not a press and release in place
+    distance = Math.max(distance, 30);
 
     const sign = direction === 'down' ? 1 : -1;
     await this.page.mouse.move(startX, startY + sign * 20, { steps: 3 });
