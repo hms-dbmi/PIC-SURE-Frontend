@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getDatasetDetails } from '#lib/explorer/Dictionary.ts';
+  import { getDatasetDetails } from '#lib/api/picsure/dictionary.ts';
   import { activeRow } from './dashboard.ts';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import Loading from '../../../../lib/ui/Loading.svelte';

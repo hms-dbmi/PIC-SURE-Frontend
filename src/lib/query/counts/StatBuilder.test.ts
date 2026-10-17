@@ -12,7 +12,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('$app/env', () => ({ browser: false }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/') } }));
-vi.mock('#lib/api/client.ts', () => ({ post: vi.fn() }));
+vi.mock('#lib/api/client.ts', () => ({ request: vi.fn() }));
 vi.mock('#lib/config/config.svelte.ts', () => ({ config: mocks.config }));
 vi.mock('#lib/telemetry/logger.ts', () => ({
   log: vi.fn(),
@@ -45,7 +45,16 @@ import {
   populateStatRequests,
 } from '#lib/query/counts/StatBuilder.ts';
 
-const post = vi.mocked(api.post);
+const request = vi.mocked(api.request);
+
+// Each request as it goes on the wire: the URL with its query string, the body, the credentials.
+function wireCalls() {
+  return request.mock.calls.map(([path, opts = {}]) => {
+    const query = Object.entries(opts.query ?? {}).map(([k, v]) => [k, String(v)]);
+    const search = new URLSearchParams(query).toString();
+    return [search ? `${path}?${search}` : path, opts.body, opts.auth];
+  });
+}
 
 const AUTH = 'picsure/hpds/auth/query/sync';
 const OPEN = 'picsure/hpds/open/query/sync';
@@ -81,7 +90,7 @@ async function runStat(
     : populateStatRequests([{ ...stat, auth: !open, result: {} }]);
   const [[resource, promise]] = Object.entries(result.result);
   const value = await promise.catch((e: unknown) => ({ rejected: e }));
-  return { resource, value, calls: post.mock.calls };
+  return { resource, value, calls: wireCalls() };
 }
 
 beforeEach(() => {
@@ -116,7 +125,7 @@ describe('StatBuilder request map', () => {
         { name: 'other', facets: [{ count: 1 }] },
         { name: 'dataset_id', facets: [{ count: 3 }, { count: 0 }, { count: 2 }] },
       ],
-      call: ['picsure/dictionary/facets', consents, undefined, true],
+      call: ['picsure/dictionary/facets', consents, 'open'],
       value: 2,
     },
     {
@@ -124,21 +133,21 @@ describe('StatBuilder request map', () => {
       key: 'dict:facets:dataset_id',
       open: true,
       response: [{ name: 'dataset_id', facets: [{ count: 3 }, { count: 0 }] }],
-      call: ['picsure/dictionary/facets', noConsents, undefined, false],
+      call: ['picsure/dictionary/facets', noConsents, 'anonymous'],
       value: 2,
     },
     {
       name: 'dict:facets:dataset_id is 0 without the category',
       key: 'dict:facets:dataset_id',
       response: [],
-      call: ['picsure/dictionary/facets', consents, undefined, true],
+      call: ['picsure/dictionary/facets', consents, 'open'],
       value: 0,
     },
     {
       name: 'dict:concepts returns totalElements',
       key: 'dict:concepts',
       response: { totalElements: 42 },
-      call: ['picsure/dictionary/concepts?page_number=1&page_size=1', consents, undefined, true],
+      call: ['picsure/dictionary/concepts?page_number=1&page_size=1', consents, 'open'],
       value: 42,
     },
     {
@@ -147,14 +156,14 @@ describe('StatBuilder request map', () => {
       key: 'dict:concepts',
       open: true,
       response: { totalElements: 0 },
-      call: ['picsure/dictionary/concepts?page_number=1&page_size=1', noConsents, undefined, false],
+      call: ['picsure/dictionary/concepts?page_number=1&page_size=1', noConsents, 'anonymous'],
       value: { rejected: 'total not found' },
     },
     {
       name: 'query:blank (auth)',
       key: 'query:blank',
       response: 10,
-      call: [AUTH, query({})],
+      call: [AUTH, query({}), 'open'],
       value: 10,
     },
     {
@@ -163,7 +172,7 @@ describe('StatBuilder request map', () => {
       open: true,
       addFilters: true,
       response: 10,
-      call: [OPEN, query({ phenotypicClause: withFilter })],
+      call: [OPEN, query({ phenotypicClause: withFilter }), 'open'],
       value: 10,
     },
     {
@@ -176,6 +185,7 @@ describe('StatBuilder request map', () => {
           select: ['\\bio\\blood\\', '\\bio\\saliva\\'],
           expectedResultType: 'OBSERVATION_CROSS_COUNT',
         }),
+        'open',
       ],
       value: { '\\bio\\blood\\': 5 },
     },
@@ -192,6 +202,7 @@ describe('StatBuilder request map', () => {
           expectedResultType: 'CROSS_COUNT',
           phenotypicClause: withFilter,
         }),
+        'open',
       ],
       value: { '\\gen\\wgs\\': 7 },
     },
@@ -221,6 +232,7 @@ describe('StatBuilder request map', () => {
             ],
           },
         }),
+        'open',
       ],
       value: 9,
     },
@@ -252,6 +264,7 @@ describe('StatBuilder request map', () => {
             ],
           },
         }),
+        'open',
       ],
       value: 9,
     },
@@ -260,7 +273,7 @@ describe('StatBuilder request map', () => {
       key: 'query:patientCount',
       addFilters: true,
       response: '1,234',
-      call: [AUTH, query({ phenotypicClause: withFilter })],
+      call: [AUTH, query({ phenotypicClause: withFilter }), 'open'],
       value: '1,234',
     },
     {
@@ -268,18 +281,18 @@ describe('StatBuilder request map', () => {
       key: 'query:patientCount',
       open: true,
       response: { '\\_studies_consents\\': '500±3', other: 1 },
-      call: [OPEN, query({ expectedResultType: 'CROSS_COUNT' })],
+      call: [OPEN, query({ expectedResultType: 'CROSS_COUNT' }), 'open'],
       value: '500±3',
     },
     {
       name: 'query results with an errorType reject',
       key: 'query:blank',
       response: { errorType: 'error', message: 'bad' },
-      call: [AUTH, query({})],
+      call: [AUTH, query({}), 'open'],
       value: { rejected: 'api error' },
     },
   ])('$name', async ({ key, open, addFilters, response, call, value }) => {
-    post.mockResolvedValue(response);
+    request.mockResolvedValue(response);
 
     const result = await runStat({ key, label: key }, { open, addFilters });
 
@@ -332,7 +345,7 @@ describe('StatBuilder request map', () => {
     async ({ key, open, explore, resource, path }) => {
       mocks.config.features.login.open = explore;
       mocks.config.features.explorer.open = explore;
-      post.mockResolvedValue(1);
+      request.mockResolvedValue(1);
 
       const result = await runStat({ key, label: key }, { open });
 
@@ -394,7 +407,7 @@ describe('StatBuilder stat lists', () => {
   });
 
   it('getResultList keeps known stats and marks them by access', async () => {
-    post.mockResolvedValue(1);
+    request.mockResolvedValue(1);
 
     const list = getResultList(true, stats);
     await Promise.allSettled(list.flatMap((stat) => Object.values(stat.result)));

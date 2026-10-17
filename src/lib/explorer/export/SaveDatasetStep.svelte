@@ -5,8 +5,7 @@
   import Loading from '#lib/ui/Loading.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import type { DataSetResponse } from '#lib/datasets/dataset.ts';
-  import * as api from '#lib/api/client.ts';
-  import { Picsure } from '#lib/api/paths.ts';
+  import { submitQuery as startQuery } from '#lib/api/picsure/query.ts';
   import { stepperState } from '#lib/ui/stepper/stepperState.ts';
   import { exports } from '#lib/explorer/export/Export.ts';
   import {
@@ -64,7 +63,7 @@
           ...request.query.select,
           ...$exports.map(({ conceptPath }) => conceptPath),
         ];
-        return api.post(Picsure.Query, request).then((res: DataSetResponse) => {
+        return startQuery(request).then((res) => {
           setDatasetId(res.picsureResultId || 'Error');
           if (res.picsureResultId) {
             log(

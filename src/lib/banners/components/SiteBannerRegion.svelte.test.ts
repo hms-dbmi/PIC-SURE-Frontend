@@ -24,6 +24,7 @@ vi.mock('$app/navigation', () => ({
 vi.mock('#lib/telemetry/logger.ts', () => ({
   log: vi.fn(),
   createLog: vi.fn((...args: unknown[]) => args),
+  getSessionId: () => 'session-1',
 }));
 
 // Keep token presence separate from validity to cover expired sessions on public routes.
@@ -86,10 +87,14 @@ describe('SiteBannerRegion', () => {
 
     await navigation.callback?.();
 
-    expect(fetchMock).toHaveBeenCalledWith('/picsure/operations/banners/active', {
-      cache: 'no-store',
-      headers: { Accept: 'application/json' },
-    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringMatching(/\/picsure\/operations\/banners\/active$/),
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.objectContaining({ Accept: 'application/json' }),
+      }),
+    );
+    expect(fetchMock.mock.calls[0][1].headers).not.toHaveProperty('Authorization');
     expect(screen.getByTestId('banner-region')).toHaveClass('w-full');
     const notice = screen.getByRole('region', { name: 'Maintenance' });
     expect(notice.tagName).toBe('SECTION');
@@ -275,7 +280,7 @@ describe('SiteBannerRegion', () => {
       'ERROR',
       'banner.feed_failed',
       undefined,
-      expect.objectContaining({ error: { message: 'offline' } }),
+      expect.objectContaining({ error: { message: 'Banner feed request failed' } }),
     );
     expect(log).toHaveBeenCalledOnce();
 
@@ -295,7 +300,7 @@ describe('SiteBannerRegion', () => {
       'ERROR',
       'banner.feed_failed',
       undefined,
-      expect.objectContaining({ error: { message: 'Banner feed returned HTTP 404' } }),
+      expect.objectContaining({ error: { message: 'Banner feed request failed' } }),
     );
     expect(log).toHaveBeenCalledOnce();
   });

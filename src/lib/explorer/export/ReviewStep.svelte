@@ -14,8 +14,7 @@
   import type { ExportRowInterface } from '#lib/explorer/export/ExportRow.ts';
   import { searchDictionary } from '#lib/explorer/Dictionary.ts';
   import { QueryV3 } from '#lib/query/query.ts';
-  import * as api from '#lib/api/client.ts';
-  import { Picsure } from '#lib/api/paths.ts';
+  import { runSyncQuery } from '#lib/api/picsure/query.ts';
   import { toaster } from '#lib/ui/toaster.ts';
 
   import Summary from './Summary.svelte';
@@ -107,7 +106,7 @@
     const crossCountFields = concepts.content.map((concept) => concept.conceptPath);
     crossCountQuery.select = crossCountFields;
 
-    const crossCountResponse: Record<string, number> = await api.post(Picsure.QuerySync, {
+    const crossCountResponse = await runSyncQuery<Record<string, number>>({
       query: crossCountQuery,
     });
 

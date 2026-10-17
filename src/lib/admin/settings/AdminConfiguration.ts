@@ -5,8 +5,7 @@ import {
   type ConfigKind,
   type ConfigObject,
 } from '#lib/config/resolve.ts';
-import * as api from '#lib/api/client.ts';
-import { Picsure, LocalServer } from '#lib/api/paths.ts';
+import * as api from '#lib/api/picsure/configuration.ts';
 
 export type AdminConfigKind = ConfigKind;
 
@@ -35,9 +34,7 @@ export async function loadAdminConfig(kind: AdminConfigKind, force = false): Pro
     return;
   }
 
-  const res: ConfigObject[] = await api.get(
-    `${Picsure.Configuration.Get}?kind=${encodeURIComponent(CONFIG_API_KIND[kind])}`,
-  );
+  const res = await api.getConfigRows(CONFIG_API_KIND[kind]);
   adminConfigRows[kind].set(res);
   loaded[kind].set(true);
 }
@@ -48,7 +45,7 @@ export async function addConfigRow(
   value: string,
   description?: string,
 ): Promise<ConfigObject> {
-  const created: ConfigObject = await api.post(Picsure.Configuration.Admin, {
+  const created = await api.createConfigRow({
     name,
     kind: CONFIG_API_KIND[kind],
     value,
@@ -64,7 +61,9 @@ export async function updateConfigRow(
   kind: AdminConfigKind,
   row: ConfigObject,
 ): Promise<ConfigObject> {
-  const updated: ConfigObject = await api.patch(`${Picsure.Configuration.Admin}/${row.uuid}`, row);
+  const { uuid } = row;
+  if (!uuid) throw new Error(`Config row ${row.name} has not been saved yet`);
+  const updated = await api.updateConfigRow({ ...row, uuid });
 
   const rows = get(adminConfigRows[kind]).map((r) => (r.uuid === updated.uuid ? updated : r));
   adminConfigRows[kind].set(rows);
@@ -72,7 +71,7 @@ export async function updateConfigRow(
 }
 
 export async function deleteConfigRow(kind: AdminConfigKind, uuid: string): Promise<void> {
-  await api.del(`${Picsure.Configuration.Admin}/${uuid}`);
+  await api.deleteConfigRow(uuid);
 
   const rows = get(adminConfigRows[kind]).filter((r) => r.uuid !== uuid);
   adminConfigRows[kind].set(rows);
@@ -83,5 +82,5 @@ export async function deleteConfigRow(kind: AdminConfigKind, uuid: string): Prom
 // routine up-to-4-hour expiry. Distinct from loadAdminConfig's `force`, which only
 // re-reads this admin UI's own view of the rows.
 export function invalidateConfigCache(): Promise<ConfigCache> {
-  return api.get(LocalServer.ConfigRefresh);
+  return api.refreshServerConfigCache();
 }

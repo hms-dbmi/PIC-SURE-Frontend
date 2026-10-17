@@ -1,7 +1,7 @@
 import { get } from 'svelte/store';
 import type { Unsubscriber } from 'svelte/store';
 
-import * as api from '#lib/api/client.ts';
+import { runSyncQuery } from '#lib/api/picsure/query.ts';
 import { log, createLog } from '#lib/telemetry/logger.ts';
 import { isToastShowing, toaster } from '#lib/ui/toaster.ts';
 import { allFilters, filterTree, genomicFilters } from '#lib/query/filters.ts';
@@ -187,6 +187,6 @@ export class ResultCounts {
 // singleton, and the load paths read filter stores via `get()`.
 export const resultCountsState = new ResultCounts(
   createQueryCountService({
-    transport: (path, request) => api.post(path, request),
+    transport: (request, openAccess) => runSyncQuery(request, { openAccess }),
   }),
 );

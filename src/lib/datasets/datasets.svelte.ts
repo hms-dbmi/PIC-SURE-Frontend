@@ -1,8 +1,7 @@
 import { get, writable, derived, type Readable, type Writable } from 'svelte/store';
 
-import { mapDataset, type DataSet } from '#lib/datasets/dataset.ts';
-import * as api from '#lib/api/client.ts';
-import { Picsure } from '#lib/api/paths.ts';
+import type { DataSet } from '#lib/datasets/dataset.ts';
+import * as api from '#lib/api/picsure/datasets.ts';
 import { log, createLog } from '#lib/telemetry/logger.ts';
 
 export const datasets: Writable<DataSet[]> = writable([]);
@@ -23,8 +22,7 @@ export function getShowArchived() {
 }
 
 export async function loadDatasets() {
-  const res = await api.get(Picsure.NamedDataSet);
-  datasets.set(res.map(mapDataset));
+  datasets.set(await api.getDatasets());
 }
 
 export async function toggleArchived(uuid: string) {
@@ -34,14 +32,12 @@ export async function toggleArchived(uuid: string) {
     return Promise.reject('Could not find dataset in store.');
   }
   const dataset: DataSet = store[datasetIndex];
-  const request = {
-    queryId: dataset?.queryId,
-    name: dataset?.name,
-    metadata: dataset?.metadata,
-    archived: !dataset?.archived,
-  };
-  const res = await api.put(`${Picsure.NamedDataSet}/${uuid}`, request);
-  store[datasetIndex] = mapDataset(res);
+  store[datasetIndex] = await api.updateDataset(uuid, {
+    queryId: dataset.queryId,
+    name: dataset.name,
+    metadata: dataset.metadata,
+    archived: !dataset.archived,
+  });
   datasets.set(store);
 }
 
@@ -52,6 +48,5 @@ export async function getDataset(uuid: string) {
     return store[datasetIndex];
   }
 
-  const res = await api.get(`${Picsure.NamedDataSet}/${uuid}`);
-  return mapDataset(res);
+  return api.getDataset(uuid);
 }

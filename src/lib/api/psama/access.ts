@@ -40,14 +40,14 @@ export const connections = {
 };
 
 export const privileges = {
-  list: () => request<PrivilegeDto[]>(Psama.Priviege),
-  get: (uuid: string) => request<PrivilegeDto>(`${Psama.Priviege}/${uuid}`),
+  list: () => request<PrivilegeDto[]>(Psama.Privilege),
+  get: (uuid: string) => request<PrivilegeDto>(`${Psama.Privilege}/${uuid}`),
   add: async (privilege: PrivilegeDto) =>
-    (await request<PrivilegeDto[]>(Psama.Priviege, { method: 'POST', body: [privilege] }))[0],
+    (await request<PrivilegeDto[]>(Psama.Privilege, { method: 'POST', body: [privilege] }))[0],
   /** Sends the application as a bare uuid, unlike `add`. */
   update: (privilege: Privilege) =>
-    request<unknown>(Psama.Priviege, { method: 'PATCH', body: [privilege] }),
-  remove: (uuid: string) => request<unknown>(`${Psama.Priviege}/${uuid}`, { method: 'DELETE' }),
+    request<unknown>(Psama.Privilege, { method: 'PATCH', body: [privilege] }),
+  remove: (uuid: string) => request<unknown>(`${Psama.Privilege}/${uuid}`, { method: 'DELETE' }),
 };
 
 export const roles = {

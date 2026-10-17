@@ -2,9 +2,8 @@ import { get, writable, type Writable } from 'svelte/store';
 
 import { page } from '$app/state';
 
-import * as api from '#lib/api/client.ts';
-import { isAbortError, type RequestOptions } from '#lib/api/client.ts';
-import { Picsure } from '#lib/api/paths.ts';
+import * as dictionary from '#lib/api/picsure/dictionary.ts';
+import { isAbortError } from '#lib/api/errors.ts';
 import type { Facet, SearchResult } from '#lib/explorer/types.ts';
 import type {
   DictionaryConceptResult,
@@ -52,19 +51,13 @@ export async function searchDictionary(
   searchTerm = '',
   facets: Facet[],
   pageable: Pageable,
-  options?: RequestOptions,
+  options?: { signal?: AbortSignal },
 ): Promise<DictionaryConceptResult> {
   let request: DictionarySearchRequest = { facets, search: searchTerm };
   if (!page.url.pathname.includes('/discover')) {
     request = await addConsents(request);
   }
-  return api.post(
-    `${Picsure.Concepts}?page_number=${pageable.pageNumber}&page_size=${pageable.pageSize}`,
-    request,
-    undefined,
-    undefined,
-    options,
-  );
+  return dictionary.searchConcepts(request, pageable, { signal: options?.signal });
 }
 
 function initializeHiddenFacets(response: DictionaryFacetResult[]) {
@@ -89,9 +82,10 @@ function initializeHiddenFacets(response: DictionaryFacetResult[]) {
   hiddenFacets.set(facetsWithZeroConcepts);
 }
 
-export async function updateFacetsFromSearch(
-  options?: RequestOptions & { isCurrent?: () => boolean },
-): Promise<DictionaryFacetResult[]> {
+export async function updateFacetsFromSearch(options?: {
+  signal?: AbortSignal;
+  isCurrent?: () => boolean;
+}): Promise<DictionaryFacetResult[]> {
   const search = get(searchTerm);
   const facets = get(selectedFacets);
   let request: DictionarySearchRequest = { facets: facets, search: search };
@@ -101,13 +95,7 @@ export async function updateFacetsFromSearch(
 
   try {
     log(createLog('SEARCH', 'facets.load', { search, facets }));
-    const response: DictionaryFacetResult[] = await api.post(
-      Picsure.Facets,
-      request,
-      undefined,
-      undefined,
-      { signal: options?.signal },
-    );
+    const response = await dictionary.searchFacets(request, { signal: options?.signal });
     if (options?.isCurrent && !options.isCurrent()) {
       return response;
     }
@@ -162,14 +150,13 @@ export async function getConceptDetails(
   conceptPath: string,
   dataset: string,
 ): Promise<SearchResult> {
-  const url = `${Picsure.Concept.Detail}/${dataset}`;
   const rawConceptPath = String.raw`${conceptPath.replace(/\\\\/g, '\\')}`;
 
   if (dictonaryCacheMap.has(rawConceptPath)) {
     return dictonaryCacheMap.get(rawConceptPath) as SearchResult;
   }
 
-  const response: SearchResult = await api.post(url, rawConceptPath);
+  const response = await dictionary.getConceptDetail(dataset, rawConceptPath);
 
   if (!response) {
     throw new Error('No response');
@@ -183,10 +170,7 @@ export async function getHierarchyConcepts(
   dataset: string,
   conceptPath: string,
 ): Promise<SearchResult[]> {
-  const response: SearchResult[] = await api.post(
-    `${Picsure.Concept.Hierarchy}/${dataset}`,
-    conceptPath,
-  );
+  const response = await dictionary.getConceptHierarchy(dataset, conceptPath);
 
   if (!response) {
     throw new Error('No response');
@@ -214,22 +198,17 @@ export async function addConsents(request: DictionarySearchRequest) {
   return request;
 }
 
-export async function getDatasetDetails(datasetId: string) {
-  return api.get(`${Picsure.DashboardDrawer}/${datasetId}`);
-}
-
 export async function getConceptTree(
   dataset: string,
   depth: number,
   conceptPath: string,
 ): Promise<SearchResult> {
-  const url = `${Picsure.Concept.Tree}/${dataset}?depth=${depth}`;
-  return api.post(url, conceptPath);
+  return dictionary.getConceptTree(dataset, depth, conceptPath);
 }
 
 export async function getInitialTree(depth: number = 1): Promise<SearchResult[]> {
   if (depth > ENSURE_MAX_DEPTH) {
     depth = ENSURE_MAX_DEPTH;
   }
-  return api.get(`${Picsure.Concept.Tree}?depth=${depth}`);
+  return dictionary.getRootConceptTrees(depth);
 }

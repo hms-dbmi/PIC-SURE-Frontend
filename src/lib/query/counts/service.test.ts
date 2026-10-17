@@ -22,7 +22,7 @@ const resource = { name: 'hpds', uuid: 'a-uuid' };
 function makeProvider(parse: (raw: unknown) => number = (raw) => raw as number): CountProvider {
   return {
     id: 'query:patientCount',
-    path: () => '/p',
+    openAccess: () => false,
     buildRequest: () => ({
       query: { expectedResultType: 'COUNT' } as never,
     }),
@@ -184,15 +184,13 @@ describe('QueryCountService transport dispatch', () => {
     }));
     const provider: CountProvider = {
       id: 'query:patientCount',
-      path: (d) => (d.isOpenAccess ? '/open' : '/auth'),
+      openAccess: (d) => d.isOpenAccess,
       buildRequest,
       parse: (raw) => raw as number,
     };
     const service = createQueryCountService({ transport });
     await service.getCount(descriptor, provider, resource);
     expect(buildRequest).toHaveBeenCalledWith(descriptor);
-    expect(transport).toHaveBeenCalledWith('/auth', {
-      query: { expectedResultType: 'COUNT' },
-    });
+    expect(transport).toHaveBeenCalledWith({ query: { expectedResultType: 'COUNT' } }, false);
   });
 });

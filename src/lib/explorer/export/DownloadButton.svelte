@@ -1,10 +1,9 @@
 <script lang="ts">
-  import * as api from '#lib/api/client.ts';
   import { ApiError, consentDeniedMessage } from '#lib/api/errors.ts';
   import { config } from '#lib/config/config.svelte.ts';
   import { browser } from '$app/env';
   import type { QueryRequestInterfaceV3 } from '#lib/api/picsure/query.types.ts';
-  import { Picsure } from '#lib/api/paths.ts';
+  import { getQueryResult } from '#lib/api/picsure/query.ts';
   import Modal from '#lib/ui/dialog/Modal.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import { toaster } from '#lib/ui/toaster.ts';
@@ -50,7 +49,7 @@
         }),
       );
       const startTime = performance.now();
-      const res = await api.post(`${Picsure.Query}/${datasetId}/result`, {});
+      const res = await getQueryResult(datasetId);
       const duration = Math.round(performance.now() - startTime);
       const blob = new Blob([res], { type: 'octet/stream' });
 

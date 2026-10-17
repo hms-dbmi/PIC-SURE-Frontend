@@ -13,7 +13,7 @@ import {
 } from '#lib/explorer/Dictionary.ts';
 import { expandedNestedFacets } from '#lib/explorer/NestedFacets.ts';
 import { getDefaultRows } from '#lib/ui/datatable/stores.ts';
-import { isAbortError } from '#lib/api/client.ts';
+import { isAbortError } from '#lib/api/errors.ts';
 import { log, createLog, getPageContext } from '#lib/telemetry/logger.ts';
 
 export const loading: Writable<boolean> = writable(false);

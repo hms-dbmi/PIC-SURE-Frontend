@@ -29,3 +29,19 @@ export interface DictionarySearchRequest {
   search: string;
   consents?: string[];
 }
+
+export type DashboardRow = Record<string, string | number | boolean | null>;
+
+export interface DashboardResponse {
+  columns: { label: string; dataElement: string }[];
+  rows: DashboardRow[];
+}
+
+/** A dataset's dashboard-drawer fields, keyed by camel-case field name. */
+export type DatasetDetails = Record<string, unknown>;
+
+export interface GeneSearchPage {
+  results: string[];
+  total: number;
+  page: number;
+}

@@ -2,15 +2,14 @@
   import { resolve } from '$app/paths';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import * as api from '#lib/api/client.ts';
   import { config } from '#lib/config/config.svelte.ts';
-  import { Picsure } from '#lib/api/paths.ts';
   import type { ExportRowInterface } from '#lib/explorer/export/ExportRow.ts';
   import type { DataSet } from '#lib/datasets/dataset.ts';
   import { exports } from '#lib/explorer/export/Export.ts';
   import { filters } from '#lib/query/filters.ts';
   import { resultCountsState } from '#lib/query/counts/resultCounts.svelte.ts';
   import { createDatasetName } from '#lib/api/picsure/datasets.ts';
+  import { getQueryStatus } from '#lib/api/picsure/query.ts';
   import { withBackoff } from '#lib/utils/backoff.ts';
   import Stepper from '#lib/ui/stepper/Stepper.svelte';
   import Step from '#lib/ui/stepper/Step.svelte';
@@ -93,15 +92,10 @@
 
   async function checkExportStatus(lastPicsureResultId?: string): Promise<void> {
     const statusId = lastPicsureResultId || getDatasetId();
-    const queryFragment = `/${statusId}/status`;
 
     return withBackoff(
       async () => {
-        const res = (await api.post(`${Picsure.Query}${queryFragment}`, getQueryRequest())) as {
-          picsureResultId: string;
-          status: string;
-          resultMetadata: { picsureQueryId: string };
-        };
+        const res = await getQueryStatus(statusId ?? '', getQueryRequest());
 
         if (res.status === 'ERROR') {
           setLockDownload(true);
@@ -226,7 +220,7 @@
             title="An error occurred while saving your dataset. Please try again. If this problem persists, please
           contact an administrator."
           >
-            {#if e.includes('Export not ready')}
+            {#if String(e).includes('Export not ready')}
               <p>{e}</p>
             {/if}
           </ErrorAlert>

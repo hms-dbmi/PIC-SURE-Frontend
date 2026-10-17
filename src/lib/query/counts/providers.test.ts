@@ -49,13 +49,11 @@ describe('query:patientCount provider', () => {
     expect(provider.parse({ '\\_studies_consents\\': null as never })).toBe(0);
   });
 
-  it('path() returns Picsure.QuerySync for an authed descriptor (default features)', () => {
-    expect(provider.path(descriptor)).toMatch(/query\/sync$/);
+  it('openAccess() is false for an authed descriptor (default features)', () => {
+    expect(provider.openAccess(descriptor)).toBe(false);
   });
 
-  it('path() returns the open-access aggregate endpoint for an open-access descriptor', () => {
-    expect(provider.path({ ...descriptor, isOpenAccess: true })).toBe(
-      'picsure/hpds/open/query/sync',
-    );
+  it('openAccess() picks the aggregate endpoint for an open-access descriptor', () => {
+    expect(provider.openAccess({ ...descriptor, isOpenAccess: true })).toBe(true);
   });
 });

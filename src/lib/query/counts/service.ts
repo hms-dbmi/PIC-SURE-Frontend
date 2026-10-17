@@ -6,8 +6,12 @@ import { summarize } from '#lib/query/counts/snapshot.ts';
 import { LRU } from '#lib/utils/lru.ts';
 import { log, createLog } from '#lib/telemetry/logger.ts';
 import type { QueryRequestInterfaceV3 } from '#lib/api/picsure/query.types.ts';
+import { PicsurePaths } from '#lib/api/paths.ts';
 
-export type CountTransport = (path: string, request: QueryRequestInterfaceV3) => Promise<unknown>;
+export type CountTransport = (
+  request: QueryRequestInterfaceV3,
+  openAccess: boolean,
+) => Promise<unknown>;
 
 export interface QueryCountServiceOptions {
   transport: CountTransport;
@@ -54,16 +58,16 @@ export function createQueryCountService(options: QueryCountServiceOptions): Quer
   ): Promise<CellOutcome> {
     try {
       const request = provider.buildRequest(descriptor);
-      const path = provider.path(descriptor);
+      const openAccess = provider.openAccess(descriptor);
       log(
         createLog('QUERY', 'query.execute', {
           providerId: provider.id,
           resourceUuid: resource.uuid,
-          path,
+          path: PicsurePaths.syncQuery(openAccess),
           expectedResultType: request.query.expectedResultType,
         }),
       );
-      const raw = await transport(path, request);
+      const raw = await transport(request, openAccess);
       if (isApiErrorEnvelope(raw)) {
         log(
           createLog('QUERY', 'query.cell_failed', {

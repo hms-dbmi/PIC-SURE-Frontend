@@ -1,13 +1,9 @@
-import * as api from '#lib/api/client.ts';
 import { config } from '#lib/config/config.svelte.ts';
-import { Picsure } from '#lib/api/paths.ts';
+import { searchConcepts, searchFacets } from '#lib/api/picsure/dictionary.ts';
+import { runSyncQuery } from '#lib/api/picsure/query.ts';
 
 import type { ExpectedResultType, QueryV3, PhenotypicFilterInterface } from '#lib/query/query.ts';
-import type {
-  DictionaryConceptResult,
-  DictionaryFacetResult,
-  DictionarySearchRequest,
-} from '#lib/api/picsure/dictionary.types.ts';
+import type { DictionarySearchRequest } from '#lib/api/picsure/dictionary.types.ts';
 import type { StatConfig, StatField } from '#lib/config/index.ts';
 import type {
   StatResult,
@@ -61,9 +57,8 @@ function dictionaryRequest(isOpenAccess: boolean = false): Promise<DictionarySea
 function getFacetCategoryCount(category: string) {
   return async function ({ isOpenAccess }: RequestMapOptions): Promise<PatientCount> {
     const request: DictionarySearchRequest = await dictionaryRequest(isOpenAccess);
-    return api
-      .post(Picsure.Facets, request, undefined, !isOpenAccess)
-      .then((res: DictionaryFacetResult[]) => {
+    return searchFacets(request, { auth: isOpenAccess ? 'anonymous' : 'open' })
+      .then((res) => {
         const facetCat = res.find((facetCat) => facetCat.name === category);
         if (!facetCat) {
           return 0;
@@ -80,17 +75,20 @@ function getFacetCategoryCount(category: string) {
 
 async function getConceptCount({ isOpenAccess }: RequestMapOptions): Promise<PatientCount> {
   const request: DictionarySearchRequest = await dictionaryRequest(isOpenAccess);
-  return api
-    .post(`${Picsure.Concepts}?page_number=1&page_size=1`, request, undefined, !isOpenAccess)
-    .then((res: DictionaryConceptResult) => {
-      return res.totalElements || Promise.reject('total not found');
-    });
+  return searchConcepts(
+    request,
+    { pageNumber: 1, pageSize: 1 },
+    { auth: isOpenAccess ? 'anonymous' : 'open' },
+  ).then((res) => {
+    return res.totalElements || Promise.reject('total not found');
+  });
 }
 
 function blank({ addFilters, isOpenAccess }: RequestMapOptions): Promise<PatientCount> {
   const request = addFilters ? getQueryRequestV3('COUNT') : getBlankQueryRequestV3('COUNT');
-  const path = useOpenAccess(isOpenAccess) ? Picsure.QueryOpenSync : Picsure.QuerySync;
-  return api.post(path, request).then(rejectIfQueryError);
+  return runSyncQuery(request, { openAccess: useOpenAccess(isOpenAccess) }).then(
+    rejectIfQueryError,
+  );
 }
 
 function hardcoded({ stat }: RequestMapOptions) {
@@ -137,8 +135,7 @@ async function getOpenPatientCount({ addFilters }: RequestMapOptions): Promise<P
       expectedResultType: request.query.expectedResultType,
     }),
   );
-  return api
-    .post(Picsure.QueryOpenSync, request)
+  return runSyncQuery(request, { openAccess: true })
     .then(rejectIfQueryError)
     .then((counts) => countResult([counts['\\_studies_consents\\'] || 0]));
 }
@@ -152,7 +149,7 @@ function getAuthPatientCount({ addFilters }: RequestMapOptions): Promise<Patient
       expectedResultType: request.query.expectedResultType,
     }),
   );
-  return api.post(Picsure.QuerySync, request).then(rejectIfQueryError);
+  return runSyncQuery(request).then(rejectIfQueryError);
 }
 
 function patientCount(options: RequestMapOptions): Promise<PatientCount> {
@@ -167,7 +164,6 @@ function getCrossCounts(field: string, type: ExpectedResultType) {
     const request = addFilters
       ? getQueryRequestV3(type, mapper)
       : getBlankQueryRequestV3(type, mapper);
-    const path = useOpenAccess(isOpenAccess) ? Picsure.QueryOpenSync : Picsure.QuerySync;
     log(
       createLog('QUERY', 'query.execute', {
         isOpenAccess,
@@ -176,7 +172,9 @@ function getCrossCounts(field: string, type: ExpectedResultType) {
         crossCountFieldCount: fields.length,
       }),
     );
-    return api.post(path, request).then(rejectIfQueryError);
+    return runSyncQuery(request, { openAccess: useOpenAccess(isOpenAccess) }).then(
+      rejectIfQueryError,
+    );
   };
 }
 
@@ -197,8 +195,9 @@ function getConsentCount(type: ExpectedResultType) {
     const request = addFilters
       ? getQueryRequestV3(type, mapper)
       : getBlankQueryRequestV3(type, mapper);
-    const path = useOpenAccess(isOpenAccess) ? Picsure.QueryOpenSync : Picsure.QuerySync;
-    return api.post(path, request).then(rejectIfQueryError);
+    return runSyncQuery(request, { openAccess: useOpenAccess(isOpenAccess) }).then(
+      rejectIfQueryError,
+    );
   };
 }
 

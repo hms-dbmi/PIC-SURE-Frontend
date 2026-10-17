@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { SwaggerComponent, SwaggerSystem } from 'swagger-ui-dist/swagger-ui-bundle.js';
+  import { ApiError } from '#lib/api/errors.ts';
+  import { getDocumentedServices, getOpenApiDocument } from '#lib/api/picsure/openapi.ts';
 
   const services = [
     { name: 'hpds-query-service', title: 'HPDS queries' },
@@ -17,38 +19,6 @@
   let viewer: SwaggerSystem | undefined;
   let disposeViewer: (() => void) | undefined;
 
-  class DocumentationResponseError extends Error {
-    readonly status: number;
-    constructor(status: number) {
-      super('Documentation request failed');
-      this.status = status;
-    }
-  }
-
-  async function getJson(path: string, signal: AbortSignal): Promise<unknown> {
-    const requestController = new AbortController();
-    const abort = () => requestController.abort();
-    signal.addEventListener('abort', abort, { once: true });
-    if (signal.aborted) abort();
-    const timeout = setTimeout(abort, 15000);
-    try {
-      const response = await fetch(path, {
-        signal: requestController.signal,
-        credentials: 'omit',
-        redirect: 'error',
-      });
-      if (!response.ok) throw new DocumentationResponseError(response.status);
-      return await response.json();
-    } finally {
-      clearTimeout(timeout);
-      signal.removeEventListener('abort', abort);
-    }
-  }
-
-  function isObject(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
-  }
-
   async function load(index: boolean) {
     controller?.abort();
     controller = new AbortController();
@@ -58,32 +28,18 @@
     error = '';
     try {
       if (index) {
-        const registry = await getJson('/picsure/openapi', signal);
-        if (!Array.isArray(registry)) throw new Error('Invalid documentation registry');
+        const documented = await getDocumentedServices(signal);
         if (request !== generation) return;
         // Only these researcher-facing services belong on this page. Construct local
         // paths ourselves rather than trusting registry URLs or Swagger configuration.
-        available = services.filter((service) =>
-          registry.some((entry) => isObject(entry) && entry.name === service.name),
-        );
+        available = services.filter((service) => documented.includes(service.name));
         selected = available[0]?.name ?? '';
         if (!selected) {
           error = 'API documentation is unavailable on this deployment.';
           return;
         }
       }
-      const document = await getJson(`/picsure/openapi/${selected}`, signal);
-      if (
-        !isObject(document) ||
-        typeof document.openapi !== 'string' ||
-        !/^3\.(0|1)\./.test(document.openapi) ||
-        !isObject(document.info) ||
-        typeof document.info.title !== 'string' ||
-        typeof document.info.version !== 'string' ||
-        !isObject(document.paths)
-      ) {
-        throw new Error('Invalid OpenAPI document');
-      }
+      const document = await getOpenApiDocument(selected, signal);
       if (request !== generation) return;
       if (viewer) {
         viewer.specActions.updateSpec(JSON.stringify(document));
@@ -145,7 +101,7 @@
     } catch (cause) {
       if (request !== generation) return;
       error =
-        index && cause instanceof DocumentationResponseError && cause.status === 404
+        index && cause instanceof ApiError && cause.status === 404
           ? 'API documentation is unavailable on this deployment.'
           : 'Unable to load API documentation. Please try again.';
     } finally {

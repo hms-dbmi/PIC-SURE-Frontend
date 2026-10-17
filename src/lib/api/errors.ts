@@ -29,3 +29,7 @@ export class ApiError extends Error {
 export function consentDeniedMessage(e: unknown): string | undefined {
   return e instanceof ApiError && e.code === 'consent_denied' ? e.message : undefined;
 }
+
+export function isAbortError(e: unknown): boolean {
+  return (e as Error | undefined)?.name === 'AbortError';
+}

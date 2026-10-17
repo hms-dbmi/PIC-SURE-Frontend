@@ -42,10 +42,6 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
   getPageContext: () => 'explorer',
 }));
 
-vi.mock('#lib/api/client.ts', () => ({
-  isAbortError: (e: unknown) => (e as Error | undefined)?.name === 'AbortError',
-}));
-
 import type { State } from '@vincjo/datatables/server';
 import type { Facet, SearchResult } from '#lib/explorer/types.ts';
 import {

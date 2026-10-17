@@ -2,7 +2,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const mockApi = vi.hoisted(() => ({ get: vi.fn() }));
+const mockApi = vi.hoisted(() => ({ request: vi.fn() }));
 
 vi.mock('$app/env', () => ({ browser: true }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost') } }));
@@ -33,7 +33,7 @@ const accessOf = () => Object.fromEntries(get(rows).map((r) => [r.abbreviation, 
 
 describe('loadDashboardData Access column', () => {
   beforeEach(() => {
-    mockApi.get.mockReset().mockResolvedValue(structuredClone(dashboardResp));
+    mockApi.request.mockReset().mockResolvedValue(structuredClone(dashboardResp));
     setToken('a-token');
   });
 

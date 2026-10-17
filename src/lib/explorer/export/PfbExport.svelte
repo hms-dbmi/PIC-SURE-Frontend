@@ -1,7 +1,6 @@
 <script lang="ts">
   import { config } from '#lib/config/config.svelte.ts';
-  import { Picsure } from '#lib/api/paths.ts';
-  import * as api from '#lib/api/client.ts';
+  import { getSignedUrl as requestSignedUrl } from '#lib/api/picsure/query.ts';
   import { consentDeniedMessage } from '#lib/api/errors.ts';
   import DownloadButton from './DownloadButton.svelte';
   import Loading from '#lib/ui/Loading.svelte';
@@ -40,10 +39,8 @@
   }
 
   async function getSignedUrl(): Promise<string | null> {
-    const path = `${Picsure.Query}/${getDatasetId()}/signed-url`;
     try {
-      const res = await api.post(path, getQueryRequest());
-      return res.signedUrl || null;
+      return await requestSignedUrl(getDatasetId() ?? '', getQueryRequest());
     } catch (error) {
       console.error('Error getting signed URL:', error);
       throw error; // Re-throw to be handled by caller

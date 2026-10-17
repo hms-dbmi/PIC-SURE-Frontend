@@ -50,6 +50,28 @@ export const Picsure = {
     Distributions: `${VIZ}/auth/distributions`,
     DistributionsOpen: `${VIZ}/open/distributions`,
   },
+  OpenApi: `${PREFIX}/openapi`,
+};
+
+// Sub-paths of the bases above. They are e2e contracts too: dataset and uuid segments go in as
+// they are, unencoded, as the call sites always sent them.
+export const PicsurePaths = {
+  conceptDetail: (dataset: string) => `${Picsure.Concept.Detail}/${dataset}`,
+  conceptHierarchy: (dataset: string) => `${Picsure.Concept.Hierarchy}/${dataset}`,
+  conceptTree: (dataset: string) => `${Picsure.Concept.Tree}/${dataset}`,
+  dashboardDrawer: (datasetId: string) => `${Picsure.DashboardDrawer}/${datasetId}`,
+  namedDataSet: (uuid: string) => `${Picsure.NamedDataSet}/${uuid}`,
+  configurationRow: (uuid: string) => `${Picsure.Configuration.Admin}/${uuid}`,
+  bannerOrder: `${Picsure.Banners.Manage}/order`,
+  savedBanners: `${Picsure.Banners.Manage}/saved`,
+  banner: (uuid: string, action?: 'publish' | 'disable' | 'archive' | 'restore') =>
+    action ? `${Picsure.Banners.Manage}/${uuid}/${action}` : `${Picsure.Banners.Manage}/${uuid}`,
+  // the open-access endpoint answers with aggregate, obfuscated counts
+  syncQuery: (openAccess: boolean) => (openAccess ? Picsure.QueryOpenSync : Picsure.QuerySync),
+  queryResult: (queryId: string) => `${Picsure.Query}/${queryId}/result`,
+  queryStatus: (queryId: string) => `${Picsure.Query}/${queryId}/status`,
+  querySignedUrl: (queryId: string) => `${Picsure.Query}/${queryId}/signed-url`,
+  openApiDocument: (service: string) => `${Picsure.OpenApi}/${service}`,
 };
 
 export const Internal = {
@@ -70,7 +92,7 @@ export const Psama = {
     Session: 'psama/open/session',
   },
   Connection: 'psama/connection',
-  Priviege: 'psama/privilege',
+  Privilege: 'psama/privilege',
   Role: 'psama/role',
   TOS: 'psama/tos',
   Users: USER,

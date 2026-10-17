@@ -1,6 +1,6 @@
 import type { ConsentsMap, User } from '../../src/lib/auth/model/user';
 import { PicsurePrivileges, BDCPrivileges } from '../../src/lib/auth/model/privilege';
-import type { DashboardResp } from '../../src/routes/(picsure)/(public)/dashboard/dashboard.ts';
+import type { DashboardResponse } from '../../src/lib/api/picsure/dictionary.types';
 import type { Indexable } from '#lib/utils/objects.ts';
 
 export const HPDS = process.env.VITE_RESOURCE_HPDS;
@@ -277,7 +277,7 @@ export const availableDatasetResponse = {
   expiration: 0,
 };
 
-export const mockDashboard: DashboardResp = {
+export const mockDashboard: DashboardResponse = {
   columns: [
     { label: 'Name', dataElement: 'name' },
     { label: 'Link', dataElement: 'additional_info_link' },

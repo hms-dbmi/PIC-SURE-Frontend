@@ -1,8 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('#lib/api/client.ts', () => ({ get: vi.fn(), post: vi.fn(), put: vi.fn() }));
+// Routes request() by method to one fake per verb, so each test can stub and check them apart.
+const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), put: vi.fn() }));
+vi.mock('#lib/api/client.ts', () => ({
+  request: (path: string, opts: { method?: string; body?: unknown; auth?: string } = {}) => {
+    if (opts.auth !== 'open') throw new Error(`unexpected auth ${opts.auth}`);
+    if (opts.method === 'POST') return api.post(path, opts.body);
+    if (opts.method === 'PUT') return api.put(path, opts.body);
+    return api.get(path);
+  },
+}));
 
-import * as api from '#lib/api/client.ts';
 import {
   archiveBanner,
   disableBanner,

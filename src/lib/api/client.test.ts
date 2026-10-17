@@ -48,7 +48,8 @@ vi.mock('#lib/api/openSession.ts', () => ({
   recoverOpenSession: (sent: string) => mockRecoverOpenSession(sent),
 }));
 
-import { request, get, post, put, patch, del, isAbortError } from '#lib/api/client.ts';
+import { request, get, post, put, patch, del } from '#lib/api/client.ts';
+import { isAbortError } from '#lib/api/errors.ts';
 import { ApiError } from '#lib/api/errors.ts';
 import { registerSessionHooks } from '#lib/api/sessionHooks.ts';
 

@@ -1,7 +1,7 @@
 import { writable, type Writable } from 'svelte/store';
 
-import * as api from '#lib/api/client.ts';
-import { Picsure } from '#lib/api/paths.ts';
+import { getDashboard } from '#lib/api/picsure/dictionary.ts';
+import type { DashboardRow } from '#lib/api/picsure/dictionary.types.ts';
 import type { Column } from '#lib/ui/datatable/types.ts';
 import {
   accessUnavailable,
@@ -12,27 +12,13 @@ import {
 import { get } from 'svelte/store';
 export const columns: Writable<Column[]> = writable([]);
 
-export type DashboardRow = Record<string, string | number | boolean | null>;
+export type { DashboardRow };
 export const rows: Writable<DashboardRow[]> = writable([]);
 export const activeRow: Writable<DashboardRow> = writable({});
 
-export type DashboardColumn = {
-  label: string;
-  dataElement: string;
-};
-
-export type DashboardResp = {
-  columns: DashboardColumn[];
-  rows: DashboardRow[];
-};
-
-function fetchDashboard(): Promise<DashboardResp> {
-  return api.get(Picsure.Dashboard);
-}
-
 export async function loadDashboardData() {
   // Computed once, so wait rather than render an all-denied column that never corrects itself.
-  const [dashboardData] = await Promise.all([fetchDashboard(), consentsSettled()]);
+  const [dashboardData] = await Promise.all([getDashboard(), consentsSettled()]);
   columns.set(dashboardData.columns);
 
   // All-denied is indistinguishable from having no access, so say why.

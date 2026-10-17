@@ -3,7 +3,12 @@ import { log, createLog, getSessionId } from '#lib/telemetry/logger.ts';
 import { config } from '#lib/config/config.svelte.ts';
 import { isWafCaptchaResponse, handleWafCaptcha } from '#lib/api/wafCaptcha.ts';
 import { joinUrl } from '#lib/api/paths.ts';
-import { ApiError, CONSENT_DENIED_MESSAGE, type ApiErrorCode } from '#lib/api/errors.ts';
+import {
+  ApiError,
+  CONSENT_DENIED_MESSAGE,
+  isAbortError,
+  type ApiErrorCode,
+} from '#lib/api/errors.ts';
 import { sessionHooks } from '#lib/api/sessionHooks.ts';
 import {
   acceptSessionRefresh,
@@ -48,10 +53,6 @@ export interface RequestOptions {
    * the credentials live in its storage, and the backend is reached through the page's origin.
    */
   fetch?: typeof fetch;
-}
-
-export function isAbortError(e: unknown): boolean {
-  return (e as Error | undefined)?.name === 'AbortError';
 }
 
 /**
