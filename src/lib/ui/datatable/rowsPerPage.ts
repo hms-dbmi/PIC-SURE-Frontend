@@ -1,7 +1,6 @@
 import { browser } from '$app/env';
 
-// Each table's rows-per-page choice, keyed by its tableName. Read and written on demand, so tables
-// share nothing in memory and nothing touches storage at import.
+// Each table's rows-per-page choice, keyed by its tableName.
 const SETTING_NAME = 'datatableSettings';
 export const DEFAULT_ROW_NUMBER = 10;
 
@@ -11,7 +10,9 @@ function readSettings(): RowsSettings {
   const stored = localStorage.getItem(SETTING_NAME);
   if (!stored) return {};
   try {
-    return JSON.parse(stored);
+    const settings = JSON.parse(stored);
+    if (settings && typeof settings === 'object') return settings;
+    throw new TypeError(`expected an object, got ${stored}`);
   } catch (e) {
     console.error('restoring user datatable settings failed: ', e);
     localStorage.setItem(SETTING_NAME, '{}');

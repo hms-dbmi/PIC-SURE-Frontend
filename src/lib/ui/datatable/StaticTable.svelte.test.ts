@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, within } from '@testing-library/svelte';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, within } from '@testing-library/svelte';
 
 vi.mock('$app/env', () => ({ browser: true }));
 vi.mock('#lib/telemetry/logger.ts', () => ({
@@ -9,7 +9,7 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
   createLog: vi.fn(),
   getPageContext: vi.fn(),
 }));
-// The real store imports explorer components that touch localStorage at module load.
+// The real store pulls in explorer modules (and their imports) this test doesn't need.
 vi.mock('#lib/explorer/ExpandableRow.ts', async () => {
   const { writable } = await import('svelte/store');
   return {
@@ -22,7 +22,6 @@ vi.mock('#lib/explorer/ExpandableRow.ts', async () => {
 });
 
 import StaticTable from '#lib/ui/datatable/StaticTable.svelte';
-import { setDefaultRows } from '#lib/ui/datatable/rowsPerPage.ts';
 
 const data = Array.from({ length: 30 }, (_, i) => ({ name: `Row ${i}` }));
 const columns = [{ dataElement: 'name', label: 'Name' }];
@@ -34,6 +33,7 @@ function renderTable(tableName: string) {
 
 describe('StaticTable rows per page', () => {
   beforeEach(() => localStorage.clear());
+  afterEach(() => vi.restoreAllMocks());
 
   it('starts each table at its own stored page size', () => {
     localStorage.setItem('datatableSettings', JSON.stringify({ Second: 5 }));
@@ -46,13 +46,37 @@ describe('StaticTable rows per page', () => {
     });
   });
 
-  // happy-dom can't drive the rows-per-page <select> (no `:checked` on options), so this saves the
-  // choice the way the select's change handler does.
-  it('saves one table’s page size without touching another’s', () => {
-    localStorage.setItem('datatableSettings', JSON.stringify({ First: 10, Second: 5 }));
-    setDefaultRows('First', 20);
+  it('changes one mounted table’s page size without touching another’s', async () => {
+    // Svelte's select binding reads the chosen option through `:checked`, which happy-dom doesn't
+    // match on <option>.
+    const querySelector = HTMLSelectElement.prototype.querySelector;
+    vi.spyOn(HTMLSelectElement.prototype, 'querySelector').mockImplementation(function (
+      this: HTMLSelectElement,
+      selector: string,
+    ) {
+      return selector === ':checked'
+        ? (this.selectedOptions[0] ?? null)
+        : querySelector.call(this, selector);
+    });
+    localStorage.setItem('datatableSettings', JSON.stringify({ Second: 5 }));
+    const first = renderTable('First');
+    const second = renderTable('Second');
 
-    expect(renderTable('First').getAllByRole('row')).toHaveLength(21);
-    expect(renderTable('Second').getAllByRole('row')).toHaveLength(6);
+    (first.getByRole('option', { name: '20' }) as HTMLOptionElement).selected = true;
+    await fireEvent.change(first.getByRole('combobox', { name: 'Rows per page' }));
+
+    expect(first.getAllByRole('row')).toHaveLength(21);
+    expect(second.getAllByRole('row')).toHaveLength(6);
+    expect(JSON.parse(localStorage.getItem('datatableSettings') ?? '')).toEqual({
+      First: 20,
+      Second: 5,
+    });
+  });
+
+  it('falls back to the default when the stored settings are not an object', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    localStorage.setItem('datatableSettings', 'null');
+
+    expect(renderTable('First').getAllByRole('row')).toHaveLength(11);
   });
 });
