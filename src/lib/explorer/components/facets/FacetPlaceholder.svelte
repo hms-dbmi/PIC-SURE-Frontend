@@ -41,7 +41,7 @@
       count={showSearchAndButton ? Math.min(numFacets, 5) : numFacets}
       marker
       fade={fadeEffect}
-      data-testid="explorer-facet-placeholder-list"
+      data-testid="explorer-facet-placeholder-item"
     />
 
     {#if showSearchAndButton}

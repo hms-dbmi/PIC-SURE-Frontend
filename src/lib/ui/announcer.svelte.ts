@@ -15,9 +15,8 @@ const REPEAT_GAP_MS = 30;
 /** The message a `LiveRegion` speaks: debounced, optionally repeated, optionally cleared. */
 export class Announcer {
   message = $state('');
-  // Mirrors `message` without tracking, so an effect that calls announce() doesn't depend on it.
-  #current = '';
-  #timer: ReturnType<typeof setTimeout> | undefined;
+  #pending: ReturnType<typeof setTimeout> | undefined;
+  #clear: ReturnType<typeof setTimeout> | undefined;
   #settle: ((shown: boolean) => void) | undefined;
   readonly #options: AnnouncerOptions;
 
@@ -28,33 +27,36 @@ export class Announcer {
   /** Resolves true once the message is in the region, false if a later call or cancel() replaced it. */
   announce(text: string): Promise<boolean> {
     this.cancel();
-    const { delay = 0, clearAfter, repeat = false } = this.#options;
+    const { delay = 0, repeat = false } = this.#options;
     return new Promise((resolve) => {
       this.#settle = resolve;
-      this.#timer = setTimeout(() => {
-        if (text !== this.#current) return this.#show(text, clearAfter);
+      this.#pending = setTimeout(() => {
+        if (text !== this.message) return this.#show(text);
         if (!repeat) return this.#finish(true);
-        this.#set('');
-        this.#timer = setTimeout(() => this.#show(text, clearAfter), REPEAT_GAP_MS);
+        this.message = '';
+        this.#pending = setTimeout(() => this.#show(text), REPEAT_GAP_MS);
       }, delay);
     });
   }
 
-  /** Drops a pending message; what the region already says stays. */
+  /** Drops a pending message; what the region already says stays until clearAfter. */
   cancel() {
-    clearTimeout(this.#timer);
+    clearTimeout(this.#pending);
     this.#finish(false);
   }
 
-  #show(text: string, clearAfter: number | undefined) {
-    this.#set(text);
-    this.#finish(true);
-    if (clearAfter !== undefined) this.#timer = setTimeout(() => this.#set(''), clearAfter);
+  /** Stops every timer, including the pending clear. */
+  destroy() {
+    this.cancel();
+    clearTimeout(this.#clear);
   }
 
-  #set(text: string) {
-    this.#current = text;
+  #show(text: string) {
+    const { clearAfter } = this.#options;
     this.message = text;
+    this.#finish(true);
+    clearTimeout(this.#clear);
+    if (clearAfter !== undefined) this.#clear = setTimeout(() => (this.message = ''), clearAfter);
   }
 
   #finish(shown: boolean) {
@@ -66,6 +68,6 @@ export class Announcer {
 /** An Announcer whose timers stop with the component that creates it. Call during component init. */
 export function createAnnouncer(options?: AnnouncerOptions): Announcer {
   const announcer = new Announcer(options);
-  onDestroy(() => announcer.cancel());
+  onDestroy(() => announcer.destroy());
   return announcer;
 }

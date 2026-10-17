@@ -107,9 +107,9 @@
         onkeydown={(event) => onkeydown(event, index)}
       >
         {#if variant === 'page'}
-          <div class="btn hover:preset-tonal-primary" data-testid="{testid}-control-label">
+          <span class="btn hover:preset-tonal-primary" data-testid="{testid}-control-label">
             <span>{@render content(tab)}</span>
-          </div>
+          </span>
         {:else}
           {@render content(tab)}
         {/if}

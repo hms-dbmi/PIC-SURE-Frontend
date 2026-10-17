@@ -8,19 +8,19 @@ import SkeletonBar from '#lib/ui/skeleton/SkeletonBar.svelte';
 
 describe('SkeletonList', () => {
   it('renders one row per count, hidden from assistive technology', () => {
-    render(SkeletonList, { count: 4, 'data-testid': 'facet-list' });
+    render(SkeletonList, { count: 4, 'data-testid': 'facet-row' });
 
-    const list = screen.getByTestId('facet-list');
+    const list = screen.getByTestId('facet-row-0').parentElement!;
     expect(list).toHaveAttribute('aria-hidden', 'true');
     expect(list.children).toHaveLength(4);
-    expect(screen.getByTestId('facet-list-item-3')).toBe(list.children[3]);
+    expect(screen.getByTestId('facet-row-3')).toBe(list.children[3]);
   });
 
   it('fades the rows out towards the end', () => {
-    render(SkeletonList, { count: 3, fade: true, 'data-testid': 'facet-list' });
+    render(SkeletonList, { count: 3, fade: true, 'data-testid': 'facet-row' });
 
     const opacity = (index: number) =>
-      Number(screen.getByTestId(`facet-list-item-${index}`).style.opacity);
+      Number(screen.getByTestId(`facet-row-${index}`).style.opacity);
     expect(opacity(0)).toBe(1);
     expect(opacity(1)).toBeLessThan(opacity(0));
     expect(opacity(2)).toBeLessThan(opacity(1));

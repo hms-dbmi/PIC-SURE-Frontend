@@ -59,6 +59,18 @@ describe('Announcer', () => {
     expect(announcer.message).toBe('');
   });
 
+  it('still clears a message that a dropped repeat or a cancel() left in place', async () => {
+    const announcer = new Announcer({ clearAfter: 5000 });
+    void announcer.announce('Page 2 of 3');
+    await vi.advanceTimersByTimeAsync(4000);
+
+    void announcer.announce('Page 2 of 3');
+    announcer.cancel();
+    await vi.advanceTimersByTimeAsync(1000);
+
+    expect(announcer.message).toBe('');
+  });
+
   it('cancel() drops a pending message', async () => {
     const announcer = new Announcer({ delay: 100 });
 

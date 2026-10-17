@@ -11,7 +11,7 @@
     /** Fades the rows out towards the end of the list. */
     fade?: boolean;
     class?: string;
-    /** Rows get `{data-testid}-item-{index}`. */
+    /** Each row gets `{data-testid}-{index}`. */
     'data-testid'?: string;
   }
 
@@ -29,11 +29,11 @@
   }
 </script>
 
-<div class="space-y-3 {className}" aria-hidden="true" data-testid={testid}>
+<div class="space-y-3 {className}" aria-hidden="true">
   {#each { length: count }, index}
     <div
       class="flex items-center space-x-3"
-      data-testid={testid && `${testid}-item-${index}`}
+      data-testid={testid && `${testid}-${index}`}
       {@attach css({ opacity: opacity(index) })}
     >
       {#if marker}
