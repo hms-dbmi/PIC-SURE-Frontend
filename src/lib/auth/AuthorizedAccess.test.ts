@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { get } from 'svelte/store';
 
-const mockApi = vi.hoisted(() => ({ get: vi.fn() }));
+const mockApi = vi.hoisted(() => ({ request: vi.fn() }));
 
 vi.mock('$app/env', () => ({ browser: true }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost') } }));
@@ -47,14 +47,14 @@ const OPEN_ACCESS_PRIVILEGES = ['MANAGED_PRIV_OPEN_ACCESS', 'MANAGED_PRIV_DICTIO
 const navPaths = () => get(userRoutes).map((r) => r.path);
 
 beforeEach(() => {
-  mockApi.get.mockReset();
+  mockApi.request.mockReset();
   localStorage.setItem('token', 'fake-token');
   user.set({});
 });
 
 describe('AUTHORIZED_ACCESS comes from PSAMA, not from the client', () => {
   it('grants the explorer and analysis routes to an authenticated user', async () => {
-    mockApi.get.mockResolvedValue({
+    mockApi.request.mockResolvedValue({
       privileges: [...AUTHENTICATED_PRIVILEGES],
       token: 'fake-token',
     });
@@ -66,7 +66,10 @@ describe('AUTHORIZED_ACCESS comes from PSAMA, not from the client', () => {
   });
 
   it('withholds them from an open access session', async () => {
-    mockApi.get.mockResolvedValue({ privileges: [...OPEN_ACCESS_PRIVILEGES], token: 'fake-token' });
+    mockApi.request.mockResolvedValue({
+      privileges: [...OPEN_ACCESS_PRIVILEGES],
+      token: 'fake-token',
+    });
 
     await getUser(true);
 
@@ -76,7 +79,7 @@ describe('AUTHORIZED_ACCESS comes from PSAMA, not from the client', () => {
 
   // all-in-one and Auth0: every gate reading this privilege has a second arm this set satisfies.
   it('reaches both routes on the open-source privilege set, which has no AUTHORIZED_ACCESS', async () => {
-    mockApi.get.mockResolvedValue({
+    mockApi.request.mockResolvedValue({
       privileges: ['PIC_SURE_ANY_QUERY', 'API_ACCESS', 'NAMED_DATASET'],
       token: 'fake-token',
     });
@@ -91,7 +94,7 @@ describe('AUTHORIZED_ACCESS comes from PSAMA, not from the client', () => {
 
   // Stale PRIV_MANAGED_* rows still exist in every environment.
   it('no longer infers the privilege from a leftover PRIV_MANAGED_* name', async () => {
-    mockApi.get.mockResolvedValue({
+    mockApi.request.mockResolvedValue({
       privileges: [...OPEN_ACCESS_PRIVILEGES, 'PRIV_MANAGED_phs000007_c1'],
       token: 'fake-token',
     });

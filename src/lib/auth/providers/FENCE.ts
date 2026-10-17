@@ -1,9 +1,8 @@
 import type { AuthData } from '#lib/auth/providers/AuthProvider.ts';
 import AuthProvider from '#lib/auth/providers/AuthProvider.ts';
 import { browser } from '$app/env';
-import * as api from '#lib/api/client.ts';
+import * as psamaUser from '#lib/api/psama/user.ts';
 import type { User } from '#lib/auth/model/user.ts';
-import { Psama } from '#lib/api/paths.ts';
 
 interface FenceData extends AuthData {
   uri: string;
@@ -29,7 +28,7 @@ class Fence extends AuthProvider implements FenceData {
     if (!code) {
       return undefined;
     }
-    return await api.post(`${Psama.Auth}/fence`, { code });
+    return await psamaUser.authenticate('fence', { code });
   };
 
   login = async (redirectTo: string, type: string): Promise<void> => {

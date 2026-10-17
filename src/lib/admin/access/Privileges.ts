@@ -1,8 +1,7 @@
 import { get, derived, writable, type Writable } from 'svelte/store';
 import { type Privilege, mapPrivilege } from '#lib/auth/model/privilege.ts';
 
-import * as api from '#lib/api/client.ts';
-import { Psama } from '#lib/api/paths.ts';
+import * as access from '#lib/api/psama/access.ts';
 
 const loaded = writable(false);
 export const privileges: Writable<Privilege[]> = writable([]);
@@ -11,7 +10,7 @@ export const privilegeList = derived(privileges, ($p) => $p.map((p) => [p.name, 
 export async function loadPrivileges() {
   if (get(loaded)) return;
 
-  const res = await api.get(Psama.Priviege);
+  const res = await access.privileges.list();
   privileges.set(res.map(mapPrivilege));
   loaded.set(true);
 }
@@ -23,18 +22,13 @@ export async function getPrivilege(uuid: string) {
     return privilege;
   }
 
-  const res = await api.get(`${Psama.Priviege}/${uuid}`);
-  return mapPrivilege(res);
+  return mapPrivilege(await access.privileges.get(uuid));
 }
 
 export async function addPrivilege(privilege: Privilege) {
-  const res = await api.post(Psama.Priviege, [
-    {
-      ...privilege,
-      application: { uuid: privilege.application },
-    },
-  ]);
-  const newPriv = mapPrivilege(res[0]);
+  const newPriv = mapPrivilege(
+    await access.privileges.add({ ...privilege, application: { uuid: privilege.application } }),
+  );
 
   const store: Privilege[] = get(privileges);
   store.push(newPriv);
@@ -42,7 +36,7 @@ export async function addPrivilege(privilege: Privilege) {
 }
 
 export async function updatePrivilege(privilege: Privilege) {
-  await api.patch(Psama.Priviege, [privilege]);
+  await access.privileges.update(privilege);
 
   const store: Privilege[] = get(privileges);
   const privIndex: number = store.findIndex((p) => p.uuid === privilege.uuid);
@@ -55,7 +49,7 @@ export async function updatePrivilege(privilege: Privilege) {
 }
 
 export async function deletePrivilege(uuid: string) {
-  await api.del(`${Psama.Priviege}/${uuid}`);
+  await access.privileges.remove(uuid);
 
   const store: Privilege[] = get(privileges);
   const privIndex: number = store.findIndex((p) => p.uuid === uuid);

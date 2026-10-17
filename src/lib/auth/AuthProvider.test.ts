@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 
-const { post } = vi.hoisted(() => ({ post: vi.fn() }));
+const { request } = vi.hoisted(() => ({ request: vi.fn() }));
 
 vi.mock('$app/env', () => ({ browser: false }));
-vi.mock('#lib/api/client.ts', () => ({ post }));
+vi.mock('#lib/api/client.ts', () => ({ request }));
 
 import Fence from '#lib/auth/providers/FENCE.ts';
 import { Psama } from '#lib/api/paths.ts';
@@ -23,6 +23,9 @@ describe('callback values', () => {
   it('keeps everything after the first = so padded values are not truncated', async () => {
     await fence.authenticate(['code=YWJjZA==']);
 
-    expect(post).toHaveBeenCalledWith(`${Psama.Auth}/fence`, { code: 'YWJjZA==' });
+    expect(request).toHaveBeenCalledWith(`${Psama.Auth}/fence`, {
+      method: 'POST',
+      body: { code: 'YWJjZA==' },
+    });
   });
 });

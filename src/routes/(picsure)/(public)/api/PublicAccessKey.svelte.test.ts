@@ -6,9 +6,9 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import PublicAccessKey from './PublicAccessKey.svelte';
 import { ApiError } from '#lib/api/errors.ts';
 
-const { post, log } = vi.hoisted(() => ({ post: vi.fn(), log: vi.fn() }));
+const { requestPublic, log } = vi.hoisted(() => ({ requestPublic: vi.fn(), log: vi.fn() }));
 
-vi.mock('#lib/api/client.ts', () => ({ post }));
+vi.mock('#lib/api/psama/apiKeys.ts', () => ({ requestPublic }));
 
 const httpError = (status: number, text: string) => new ApiError(status, 'http', text, text);
 vi.mock('#lib/telemetry/logger.ts', () => ({
@@ -61,22 +61,17 @@ describe('PublicAccessKey', () => {
 
     expect(screen.queryByRole('button', { name: 'Request Public Key' })).not.toBeInTheDocument();
     expect(screen.getByTestId('api-public-key-unavailable')).toBeInTheDocument();
-    expect(post).not.toHaveBeenCalled();
+    expect(requestPublic).not.toHaveBeenCalled();
   });
 
   it('requests an unauthenticated key with a null captcha token and reveals it', async () => {
-    post.mockResolvedValue(mockKeyResponse);
+    requestPublic.mockResolvedValue(mockKeyResponse);
     render(PublicAccessKey, { props: { enabled: true } });
 
     await openForm();
     await submitForm();
 
-    expect(post).toHaveBeenCalledWith(
-      'psama/open/apiKey',
-      { captchaToken: null, name: null, email: null },
-      undefined,
-      false,
-    );
+    expect(requestPublic).toHaveBeenCalledWith({ captchaToken: null, name: null, email: null });
     await waitFor(() => {
       expect(screen.getByTestId('api-public-key-value')).toHaveTextContent(mockKeyResponse.apiKey);
     });
@@ -87,7 +82,7 @@ describe('PublicAccessKey', () => {
   });
 
   it('sends trimmed name and email when entered', async () => {
-    post.mockResolvedValue(mockKeyResponse);
+    requestPublic.mockResolvedValue(mockKeyResponse);
     render(PublicAccessKey, { props: { enabled: true } });
 
     await openForm();
@@ -99,16 +94,15 @@ describe('PublicAccessKey', () => {
     });
     await submitForm();
 
-    expect(post).toHaveBeenCalledWith(
-      'psama/open/apiKey',
-      { captchaToken: null, name: 'Jane Doe', email: 'researcher@example.org' },
-      undefined,
-      false,
-    );
+    expect(requestPublic).toHaveBeenCalledWith({
+      captchaToken: null,
+      name: 'Jane Doe',
+      email: 'researcher@example.org',
+    });
   });
 
   it('never logs the key value, only uuid and displayPrefix', async () => {
-    post.mockResolvedValue(mockKeyResponse);
+    requestPublic.mockResolvedValue(mockKeyResponse);
     render(PublicAccessKey, { props: { enabled: true } });
 
     await openForm();
@@ -128,7 +122,7 @@ describe('PublicAccessKey', () => {
   });
 
   it('shows the server message inline on failure and returns to the form on retry', async () => {
-    post.mockRejectedValue(httpError(400, 'CAPTCHA verification failed.'));
+    requestPublic.mockRejectedValue(httpError(400, 'CAPTCHA verification failed.'));
     render(PublicAccessKey, { props: { enabled: true } });
 
     await openForm();
@@ -143,7 +137,7 @@ describe('PublicAccessKey', () => {
   });
 
   it('falls back to a generic message when the error body is an HTML page', async () => {
-    post.mockRejectedValue(
+    requestPublic.mockRejectedValue(
       httpError(
         404,
         '<!doctype html> <html lang="en" class="light" data-theme="picsure"> <head><meta charset="utf-8" /><style>.fa-beat{animation-name:fa-beat}</style></head> <body>Not found</body> </html>',
@@ -162,7 +156,9 @@ describe('PublicAccessKey', () => {
   });
 
   it('falls back to a generic message when the error body is overlong plain text', async () => {
-    post.mockRejectedValue(httpError(500, 'java.lang.NullPointerException at '.padEnd(500, 'x')));
+    requestPublic.mockRejectedValue(
+      httpError(500, 'java.lang.NullPointerException at '.padEnd(500, 'x')),
+    );
     render(PublicAccessKey, { props: { enabled: true } });
 
     await openForm();
@@ -175,7 +171,9 @@ describe('PublicAccessKey', () => {
   });
 
   it('unwraps a JSON error body from the server', async () => {
-    post.mockRejectedValue(httpError(400, '{"message":"Public key generation is not enabled."}'));
+    requestPublic.mockRejectedValue(
+      httpError(400, '{"message":"Public key generation is not enabled."}'),
+    );
     render(PublicAccessKey, { props: { enabled: true } });
 
     await openForm();
@@ -229,7 +227,7 @@ describe('PublicAccessKey', () => {
     });
 
     it('sends the widget token with the request', async () => {
-      post.mockResolvedValue(mockKeyResponse);
+      requestPublic.mockResolvedValue(mockKeyResponse);
       render(PublicAccessKey, { props: { enabled: true } });
       await openForm();
 
@@ -239,12 +237,11 @@ describe('PublicAccessKey', () => {
       );
       await submitForm();
 
-      expect(post).toHaveBeenCalledWith(
-        'psama/open/apiKey',
-        { captchaToken: 'turnstile-token-1', name: null, email: null },
-        undefined,
-        false,
-      );
+      expect(requestPublic).toHaveBeenCalledWith({
+        captchaToken: 'turnstile-token-1',
+        name: null,
+        email: null,
+      });
     });
 
     it('re-disables Generate when the token expires', async () => {
@@ -270,7 +267,7 @@ describe('PublicAccessKey', () => {
       renderOptions?.['error-callback']();
       await screen.findByTestId('api-public-key-captcha-failed');
       await waitFor(() => expect(generate).toBeDisabled());
-      expect(post).not.toHaveBeenCalled();
+      expect(requestPublic).not.toHaveBeenCalled();
     });
 
     it('shows a load-failure message when the widget cannot initialize', async () => {
@@ -286,11 +283,11 @@ describe('PublicAccessKey', () => {
       const message = await screen.findByTestId('api-public-key-captcha-failed');
       expect(message).toHaveTextContent('The security check could not be loaded.');
       expect(screen.getByRole('button', { name: 'Generate Key' })).toBeDisabled();
-      expect(post).not.toHaveBeenCalled();
+      expect(requestPublic).not.toHaveBeenCalled();
     });
 
     it('requests a fresh widget after a failed submit', async () => {
-      post.mockRejectedValue(httpError(400, 'CAPTCHA verification failed.'));
+      requestPublic.mockRejectedValue(httpError(400, 'CAPTCHA verification failed.'));
       render(PublicAccessKey, { props: { enabled: true } });
       await openForm();
 

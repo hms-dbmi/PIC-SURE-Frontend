@@ -5,8 +5,7 @@
   import { goto } from '$app/navigation';
   import { browser } from '$app/env';
   import { config } from '#lib/config/config.svelte.ts';
-  import * as api from '#lib/api/client.ts';
-  import { Psama } from '#lib/api/paths.ts';
+  import * as tos from '#lib/api/psama/tos.ts';
   import { toaster } from '#lib/ui/toaster.ts';
   import { login, logout, user, isUserLoggedIn, getToken } from '#lib/auth/User.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
@@ -22,14 +21,14 @@
   );
 
   function loadTermsHTML() {
-    terms = api.get(Psama.TOS + '/latest', {}, false);
+    terms = tos.latest({ auth: 'none' });
   }
 
   function accept() {
     if (browser) {
       log(createLog('AUTH', 'tos.accept'));
-      api
-        .post(Psama.TOS + '/accept', {})
+      tos
+        .accept()
         .then(() => {
           const token = getToken();
           if (token) {

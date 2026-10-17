@@ -1,7 +1,7 @@
 import { browser } from '$app/env';
 import type { AuthData } from '#lib/auth/providers/AuthProvider.ts';
 import AuthProvider from '#lib/auth/providers/AuthProvider.ts';
-import * as api from '#lib/api/client.ts';
+import * as psamaUser from '#lib/api/psama/user.ts';
 import type { OktaUser } from '#lib/auth/model/user.ts';
 
 export interface OktaBaseData extends AuthData {
@@ -41,7 +41,8 @@ abstract class OktaBaseProvider extends AuthProvider implements OktaBaseData {
     return randomPart + timePart;
   }
 
-  protected abstract get psamaPath(): string;
+  /** The provider's name in PSAMA's authentication path. */
+  protected abstract get psamaProvider(): string;
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   authenticate = async (hashParts: string[]): Promise<OktaUser | undefined> => {
@@ -60,7 +61,7 @@ abstract class OktaBaseProvider extends AuthProvider implements OktaBaseData {
       return undefined;
     }
 
-    const newUser: OktaUser = await api.post(this.psamaPath, { code });
+    const newUser = await psamaUser.authenticate<OktaUser>(this.psamaProvider, { code });
     if (newUser && newUser?.oktaIdToken) {
       newUser.oktaIdToken && localStorage.setItem('oktaIdToken', newUser.oktaIdToken);
       return newUser;

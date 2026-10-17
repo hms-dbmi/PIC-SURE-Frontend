@@ -1,21 +1,12 @@
 <script lang="ts">
-  import { post } from '#lib/api/client.ts';
   import { ApiError } from '#lib/api/errors.ts';
-  import { Psama } from '#lib/api/paths.ts';
+  import * as apiKeys from '#lib/api/psama/apiKeys.ts';
   import { turnstileSiteKey } from '#lib/config/deployment.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
   import CopyButton from '#lib/ui/CopyButton.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import Loading from '#lib/ui/Loading.svelte';
   import Turnstile from './Turnstile.svelte';
-
-  interface PublicKey {
-    apiKey: string;
-    uuid: string;
-    displayPrefix: string;
-    keyType: string;
-    expiresAt: string;
-  }
 
   type View = 'idle' | 'form' | 'revealed' | 'error';
 
@@ -32,7 +23,7 @@
   let captchaToken: string | null = $state(null);
   let captchaFailed = $state(false);
   let submitting = $state(false);
-  let publicKey: PublicKey | undefined = $state();
+  let publicKey: apiKeys.PublicKey | undefined = $state.raw();
   let errorMessage = $state('');
   let firstField: HTMLInputElement | undefined = $state();
   let warning: HTMLElement | undefined = $state();
@@ -80,14 +71,13 @@
     submitting = true;
     log(createLog('ACTION', 'api.public_key.request'));
     try {
-      const response: PublicKey = await post(
-        Psama.Open.ApiKey,
-        { captchaToken, name: name.trim() || null, email: email.trim() || null },
-        undefined,
-        false,
-      );
+      const response = await apiKeys.requestPublic({
+        captchaToken,
+        name: name.trim() || null,
+        email: email.trim() || null,
+      });
       if (!response?.apiKey || !response?.uuid) {
-        // api/client.ts treats 422 and empty bodies as success; never enter 'revealed' without a key
+        // an empty body still resolves; never enter 'revealed' without a key
         throw new Error('The response has no key');
       }
       publicKey = response;

@@ -2,10 +2,9 @@ import type { AuthData } from '#lib/auth/providers/AuthProvider.ts';
 import AuthProvider from '#lib/auth/providers/AuthProvider.ts';
 import { browser } from '$app/env';
 import type { User } from '#lib/auth/model/user.ts';
-import * as api from '#lib/api/client.ts';
+import * as psamaUser from '#lib/api/psama/user.ts';
 import auth0 from 'auth0-js';
 import { AUTH0_TENANT } from '#lib/config/deployment.ts';
-import { Psama } from '#lib/api/paths.ts';
 
 interface Auth0Data extends AuthData {
   clientid: string;
@@ -27,7 +26,7 @@ class Auth0 extends AuthProvider implements Auth0Data {
     const token = responseMap.get('#access_token');
     if (browser && token) {
       const redirectURI = this.getRedirectURI();
-      return api.post(`${Psama.Auth}/auth0`, {
+      return psamaUser.authenticate('auth0', {
         access_token: token,
         redirectURI: redirectURI,
       });

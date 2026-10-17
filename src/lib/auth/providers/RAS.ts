@@ -1,4 +1,3 @@
-import { Psama } from '#lib/api/paths.ts';
 import OktaBaseProvider, { type OktaBaseData as RasData } from './OktaBaseProvider';
 
 class RAS extends OktaBaseProvider {
@@ -15,8 +14,8 @@ class RAS extends OktaBaseProvider {
     super(data, 'state', 'ras-');
   }
 
-  protected get psamaPath(): string {
-    return `${Psama.Auth}/ras`;
+  protected get psamaProvider(): string {
+    return 'ras';
   }
 
   protected get logoutRedirectUri(): string {

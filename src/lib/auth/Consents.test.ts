@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { get } from 'svelte/store';
 
-const mockApi = vi.hoisted(() => ({ get: vi.fn() }));
+const mockApi = vi.hoisted(() => ({ request: vi.fn() }));
 const mockToaster = vi.hoisted(() => ({ error: vi.fn() }));
 
 vi.mock('$app/env', () => ({ browser: false }));
@@ -28,6 +28,7 @@ import {
 } from '#lib/auth/User.ts';
 import { addConsents } from '#lib/explorer/Dictionary.ts';
 import { Psama } from '#lib/api/paths.ts';
+import { ApiError } from '#lib/api/errors.ts';
 
 const consents = {
   '\\_consents\\': ['phs001', 'phs002'],
@@ -39,7 +40,7 @@ const blankRequest = () => ({ facets: [], search: '', consents: [] });
 const runOutRetries = () => vi.advanceTimersByTimeAsync(5_000);
 
 beforeEach(() => {
-  mockApi.get.mockReset();
+  mockApi.request.mockReset();
   mockToaster.error.mockReset();
   vi.spyOn(console, 'error').mockImplementation(() => {});
   tokenStatus.set(true);
@@ -48,14 +49,14 @@ beforeEach(() => {
 
 describe('getConsents', () => {
   it('unwraps the consents map from the UserConsents entity', async () => {
-    mockApi.get.mockResolvedValue({ uuid: 'abc', userId: '1234', consents });
+    mockApi.request.mockResolvedValue({ uuid: 'abc', userId: '1234', consents });
 
     await expect(getConsents()).resolves.toEqual(consents);
-    expect(mockApi.get).toHaveBeenCalledWith(Psama.User.Consents);
+    expect(mockApi.request).toHaveBeenCalledWith(Psama.User.Consents);
   });
 
   it('returns an empty map when the response has no consents key', async () => {
-    mockApi.get.mockResolvedValue({ uuid: 'abc', userId: '1234' });
+    mockApi.request.mockResolvedValue({ uuid: 'abc', userId: '1234' });
 
     await expect(getConsents()).resolves.toEqual({});
   });
@@ -65,39 +66,39 @@ describe('getConsents', () => {
     afterEach(() => vi.useRealTimers());
 
     it('retries immediately, without waiting, on the first failure', async () => {
-      mockApi.get
+      mockApi.request
         .mockRejectedValueOnce(new Error('500'))
         .mockResolvedValueOnce({ uuid: 'abc', consents });
 
       // No timer advance: the second attempt must not be behind a delay.
       await expect(getConsents()).resolves.toEqual(consents);
-      expect(mockApi.get).toHaveBeenCalledTimes(2);
+      expect(mockApi.request).toHaveBeenCalledTimes(2);
     });
 
     it('backs off before the third attempt', async () => {
-      mockApi.get
+      mockApi.request
         .mockRejectedValueOnce(new Error('500'))
         .mockRejectedValueOnce(new Error('500'))
         .mockResolvedValueOnce({ uuid: 'abc', consents });
 
       const pending = getConsents();
       await vi.advanceTimersByTimeAsync(0);
-      expect(mockApi.get).toHaveBeenCalledTimes(2);
+      expect(mockApi.request).toHaveBeenCalledTimes(2);
 
       await runOutRetries();
       await expect(pending).resolves.toEqual(consents);
-      expect(mockApi.get).toHaveBeenCalledTimes(3);
+      expect(mockApi.request).toHaveBeenCalledTimes(3);
     });
 
     it('rejects after three attempts so callers can distinguish failure from no access', async () => {
-      mockApi.get.mockRejectedValue(new Error('500'));
+      mockApi.request.mockRejectedValue(new Error('500'));
 
       const pending = getConsents();
       const assertion = expect(pending).rejects.toThrow('500');
       await runOutRetries();
 
       await assertion;
-      expect(mockApi.get).toHaveBeenCalledTimes(3);
+      expect(mockApi.request).toHaveBeenCalledTimes(3);
     });
   });
 });
@@ -105,7 +106,7 @@ describe('getConsents', () => {
 describe('loadConsents', () => {
   it('stores the consents and leaves access available', async () => {
     user.set({});
-    mockApi.get.mockResolvedValue({ consents });
+    mockApi.request.mockResolvedValue({ consents });
 
     await loadConsents();
 
@@ -116,7 +117,7 @@ describe('loadConsents', () => {
 
   it('leaves consents undefined and toasts once the attempts are exhausted', async () => {
     vi.useFakeTimers();
-    mockApi.get.mockRejectedValue(new Error('500'));
+    mockApi.request.mockRejectedValue(new Error('500'));
 
     const pending = loadConsents();
     await runOutRetries();
@@ -132,7 +133,7 @@ describe('loadConsents', () => {
 
   it('ignores a superseded response that resolves after a later request settled', async () => {
     let resolveStale!: (value: unknown) => void;
-    mockApi.get
+    mockApi.request
       .mockImplementationOnce(() => new Promise((resolve) => (resolveStale = resolve)))
       .mockResolvedValueOnce({ consents });
 
@@ -148,7 +149,7 @@ describe('loadConsents', () => {
 
   it('does not toast when a superseded request exhausts its retries', async () => {
     vi.useFakeTimers();
-    mockApi.get
+    mockApi.request
       .mockRejectedValueOnce(new Error('500'))
       .mockRejectedValueOnce(new Error('500'))
       .mockResolvedValueOnce({ consents })
@@ -167,10 +168,21 @@ describe('loadConsents', () => {
     expect(mockToaster.error).not.toHaveBeenCalled();
   });
 
+  it('neither retries nor toasts after a 401, which has already logged the user out', async () => {
+    mockApi.request.mockRejectedValue(new ApiError(401, 'unauthorized', 'expired', 'expired'));
+
+    await loadConsents();
+
+    expect(mockApi.request).toHaveBeenCalledOnce();
+    expect(mockToaster.error).not.toHaveBeenCalled();
+  });
+
   it('drops an in-flight response when the session is cleared', async () => {
     vi.stubGlobal('sessionStorage', { removeItem: vi.fn() });
     let resolveStale!: (value: unknown) => void;
-    mockApi.get.mockImplementationOnce(() => new Promise((resolve) => (resolveStale = resolve)));
+    mockApi.request.mockImplementationOnce(
+      () => new Promise((resolve) => (resolveStale = resolve)),
+    );
 
     const stale = loadConsents();
     clearSession();
@@ -187,15 +199,15 @@ describe('ensureConsentsLoaded', () => {
     user.set({ consents });
 
     await expect(ensureConsentsLoaded()).resolves.toEqual(consents);
-    expect(mockApi.get).not.toHaveBeenCalled();
+    expect(mockApi.request).not.toHaveBeenCalled();
   });
 
   it('fetches consents when they are not set', async () => {
     user.set({});
-    mockApi.get.mockResolvedValue({ consents });
+    mockApi.request.mockResolvedValue({ consents });
 
     await expect(ensureConsentsLoaded()).resolves.toEqual(consents);
-    expect(mockApi.get).toHaveBeenCalledWith(Psama.User.Consents);
+    expect(mockApi.request).toHaveBeenCalledWith(Psama.User.Consents);
   });
 });
 

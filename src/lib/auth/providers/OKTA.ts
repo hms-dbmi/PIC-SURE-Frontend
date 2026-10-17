@@ -1,4 +1,3 @@
-import { Psama } from '#lib/api/paths.ts';
 import OktaBaseProvider, { type OktaBaseData as OktaData } from './OktaBaseProvider';
 
 const STATE_NAME = 'oauthState';
@@ -18,8 +17,8 @@ class OKTA extends OktaBaseProvider {
     this.logouturl = data.logouturl || '';
   }
 
-  protected get psamaPath(): string {
-    return `${Psama.Auth}/${this.idp}`;
+  protected get psamaProvider(): string {
+    return this.idp;
   }
 
   protected get logoutRedirectUri(): string {

@@ -1,14 +1,15 @@
 import { resolve } from '$app/paths';
 import { get, writable, derived, type Writable, type Readable } from 'svelte/store';
 import { browser } from '$app/env';
-import * as api from '#lib/api/client.ts';
+import { ApiError } from '#lib/api/errors.ts';
+import * as psamaUser from '#lib/api/psama/user.ts';
 import { registerSessionHooks } from '#lib/api/sessionHooks.ts';
 import type { Route } from '#lib/auth/model/route.ts';
 import type { ConsentsMap, User } from '#lib/auth/model/user.ts';
 import { PicsurePrivileges } from '#lib/auth/model/privilege.ts';
 import { routes } from '#lib/auth/nav.ts';
 import { config } from '#lib/config/config.svelte.ts';
-import { Psama, appPath } from '#lib/api/paths.ts';
+import { appPath } from '#lib/api/paths.ts';
 import { goto } from '$app/navigation';
 import type AuthProvider from '#lib/auth/providers/AuthProvider.ts';
 import { page } from '$app/state';
@@ -203,13 +204,13 @@ export const userRoutes: Readable<Route[]> = derived([user], ([$user]) => {
 
 export async function getUser(force?: boolean, hasToken = false) {
   if (force || !get(user)?.privileges || !get(user)?.token) {
-    const res: User = await api.get(`${Psama.User.Me}${hasToken ? '?hasToken' : ''}`);
+    const res = await psamaUser.me({ hasToken });
     user.set({ ...get(user), ...res });
   }
 }
 
 export function refreshLongTermToken() {
-  return api.get(Psama.User.Refresh).then((response: { userLongTermToken: string }) => {
+  return psamaUser.refreshLongTermToken().then((response) => {
     if (!response.userLongTermToken) {
       throw new Error('No user token was returned.');
     }
@@ -226,6 +227,9 @@ export const ACCESS_UNAVAILABLE_MESSAGE =
 /** Delay before each attempt. Retry once straight away, then back off for a real outage. */
 const CONSENTS_RETRY_DELAYS_MS = [0, 0, 3_000];
 
+// A 401 has already logged the user out: another attempt would only start a second logout.
+const endedSession = (error: unknown) => error instanceof ApiError && error.code === 'unauthorized';
+
 /**
  * Requires PSAMA to answer 200 with an empty map when a user has no consents; its 500 is
  * indistinguishable from a transient failure. Throws once attempts are exhausted rather than
@@ -235,10 +239,10 @@ export async function getConsents(): Promise<ConsentsMap> {
   for (const [attempt, delay] of CONSENTS_RETRY_DELAYS_MS.entries()) {
     if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
     try {
-      const res = await api.get(Psama.User.Consents);
-      return (res?.consents as ConsentsMap) || {};
+      const res = await psamaUser.consents();
+      return res?.consents || {};
     } catch (error) {
-      if (attempt === CONSENTS_RETRY_DELAYS_MS.length - 1) {
+      if (attempt === CONSENTS_RETRY_DELAYS_MS.length - 1 || endedSession(error)) {
         console.error(`Error fetching user consents after ${attempt + 1} attempts: ` + error);
         throw error;
       }
@@ -263,8 +267,8 @@ export function loadConsents(): Promise<void> {
     .then((consents) => {
       if (consentsRequest === request) user.set({ ...get(user), consents });
     })
-    .catch(() => {
-      if (consentsRequest === request) showAccessUnavailable();
+    .catch((error: unknown) => {
+      if (consentsRequest === request && !endedSession(error)) showAccessUnavailable();
     });
   consentsRequest = request;
   return request;
@@ -344,7 +348,7 @@ async function endSession(authProvider: AuthProvider | undefined, redirect: bool
     if (token) {
       // Log only: the provider/redirect handling below always finishes the logout, so
       // handling this failure too would navigate to /login twice.
-      await api.get(Psama.User.Logout).catch(logError);
+      await psamaUser.logout().catch(logError);
       removeToken();
     }
   }
