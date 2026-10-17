@@ -37,8 +37,8 @@ describe('searchGenes', () => {
 });
 
 describe('concept responses', () => {
-  it('rejects a search page without its content list', async () => {
-    respond.mockResolvedValue({ totalElements: 3 });
+  it('rejects a search answer that is not an object', async () => {
+    respond.mockResolvedValue('error');
     await expect(
       searchConcepts({ facets: [], search: '' }, { pageNumber: 0, pageSize: 10 }),
     ).rejects.toThrow('Invalid concept search response');

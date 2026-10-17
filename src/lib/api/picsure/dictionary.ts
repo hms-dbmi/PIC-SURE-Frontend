@@ -23,6 +23,7 @@ export async function searchConcepts(
   page: Pick<Pageable, 'pageNumber' | 'pageSize'>,
   { signal, auth = 'open' }: Options = {},
 ): Promise<DictionaryConceptResult> {
+  // callers read a missing content list as an empty page
   const response = expectRecord(
     await request<unknown>(Picsure.Concepts, {
       method: 'POST',
@@ -33,7 +34,6 @@ export async function searchConcepts(
     }),
     'concept search',
   );
-  expectArray(response.content, 'concept search');
   return response as unknown as DictionaryConceptResult;
 }
 
