@@ -22,7 +22,6 @@ export interface TableProps {
   options?: number[];
   columns?: Column[];
   cellOverides?: Indexable;
-  tableAuto?: boolean;
   stickyHeader?: boolean;
   showPagination?: boolean;
   class?: string;

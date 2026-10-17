@@ -460,7 +460,7 @@
 
   <form
     data-testid="banner-editor-form"
-    class="card border border-surface-300 p-6"
+    class="card p-6"
     onsubmit={(event) => {
       event.preventDefault();
       publish();

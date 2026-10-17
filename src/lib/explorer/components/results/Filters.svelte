@@ -53,7 +53,7 @@
             id="results-advanced-filtering-open"
             href={resolve(`${isDiscoverPage ? 'discover' : 'explorer'}/advanced-filtering`)}
             data-testid="results-advanced-filtering-open"
-            class="{aqbBtnClass} !mr-0 hover:preset-filled-primary-500"
+            class="{aqbBtnClass} mr-0 hover:preset-filled-primary-500"
           >
             Build Advanced Query
           </a>

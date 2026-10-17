@@ -151,7 +151,6 @@
     <div class="flex flex-col">
       {#if overShowLimit}
         <input
-          class="text-sm"
           type="search"
           placeholder={'Filter ' + facetCategory.display}
           name="facet-fitler"

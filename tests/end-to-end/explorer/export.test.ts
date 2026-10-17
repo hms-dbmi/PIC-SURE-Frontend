@@ -288,14 +288,14 @@ test.describe('Export Page', () => {
     const pfbExportOption = page.getByTestId('export-type-pfb');
     await expect(csvExportOption).toBeVisible();
     await expect(pfbExportOption).toBeVisible();
-    await expect(csvExportOption).toHaveClass(/preset-outlined-primary-500/);
-    await expect(pfbExportOption).toHaveClass(/preset-outlined-primary-500/);
+    await expect(csvExportOption).not.toHaveClass(/preset-filled-primary-500/);
+    await expect(pfbExportOption).not.toHaveClass(/preset-filled-primary-500/);
     await pfbExportOption.click();
-    await expect(csvExportOption).toHaveClass(/preset-outlined-primary-500/);
+    await expect(csvExportOption).not.toHaveClass(/preset-filled-primary-500/);
     await expect(pfbExportOption).toHaveClass(/preset-filled-primary-500/);
     await csvExportOption.click();
     await expect(csvExportOption).toHaveClass(/preset-filled-primary-500/);
-    await expect(pfbExportOption).toHaveClass(/preset-outlined-primary-500/);
+    await expect(pfbExportOption).not.toHaveClass(/preset-filled-primary-500/);
     await expect(nextButton).not.toBeDisabled();
     await mockApiSuccess(page, queryPath, newDatasetResponse);
     await nextButton.click();

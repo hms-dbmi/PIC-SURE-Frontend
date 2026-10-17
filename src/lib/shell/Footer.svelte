@@ -67,7 +67,7 @@
     </div>
   </div>
 {/if}
-<footer id="app-footer" class="flex relativem mt-4">
+<footer id="app-footer" class="flex relativem">
   <ul>
     {#if config.features.termsOfService}
       <li>

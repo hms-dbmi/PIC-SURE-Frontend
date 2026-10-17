@@ -179,12 +179,12 @@
         transition:slide={{ axis: 'y' }}
       >
         <div>
-          <h3 class="text-sm font-bold uppercase tracking-wide">Visibility</h3>
+          <h3 class="font-bold uppercase tracking-wide">Visibility</h3>
           <p><strong>Audience:</strong> {BANNER_AUDIENCE_LABELS[banner.audience]}</p>
           <p><strong>Pages:</strong> {pageTargetSummary()}</p>
         </div>
         <div>
-          <h3 class="text-sm font-bold uppercase tracking-wide">Last change</h3>
+          <h3 class="font-bold uppercase tracking-wide">Last change</h3>
           <p>{new Date(banner.updatedAt).toLocaleString()}</p>
           <p>Last changed by {banner.updatedBy}</p>
           {#if banner.restoredFromUuid}

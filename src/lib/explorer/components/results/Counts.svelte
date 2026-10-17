@@ -38,7 +38,7 @@
 
 {#if hasError && !isLoading}
   <ErrorAlert color="warning" iconSize="2xl">
-    <p class="text-[0.6rem] !m-0">
+    <p class="text-[0.6rem] m-0">
       <!-- eslint-disable-next-line svelte/no-at-html-tags -->
       {@html sanitizeHTML(config.branding.explorePage.queryErrorText)}
     </p>

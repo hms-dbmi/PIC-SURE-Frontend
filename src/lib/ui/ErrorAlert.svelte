@@ -1,10 +1,10 @@
 <script lang="ts">
   interface Props {
     title?: string;
-    color?: string;
+    color?: 'error' | 'warning' | 'secondary';
     solid?: boolean;
     icon?: boolean;
-    iconSize?: string;
+    iconSize?: '4xl' | '2xl' | 'lg';
     closeText?: string;
     'data-testid'?: string;
     onclose?: () => void;
@@ -22,16 +22,21 @@
     onclose,
     children,
   }: Props = $props();
+
+  const presets = {
+    error: { tonal: 'preset-tonal-error', filled: 'preset-filled-error-500' },
+    warning: { tonal: 'preset-tonal-warning', filled: 'preset-filled-warning-500' },
+    secondary: { tonal: 'preset-tonal-secondary', filled: 'preset-filled-secondary-500' },
+  };
+  const iconSizes = { '4xl': 'text-4xl', '2xl': 'text-2xl', lg: 'text-lg' };
 </script>
 
 <aside
   data-testid={testid}
-  class="card flex gap-4 preset-{solid ? 'filled' : 'tonal'}-{color}{solid
-    ? '-500'
-    : ''} border border-{color}-500 py-2 px-3 m-2"
+  class="card flex gap-4 {presets[color][solid ? 'filled' : 'tonal']} py-2 px-3 m-2"
 >
   {#if icon}<i
-      class="fa-solid fa-circle-exclamation text-{iconSize} content-center"
+      class="fa-solid fa-circle-exclamation {iconSizes[iconSize]} content-center"
       aria-hidden="true"
     ></i>{/if}
   <div class="alert-message content-center">

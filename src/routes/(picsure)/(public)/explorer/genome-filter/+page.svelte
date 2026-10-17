@@ -101,7 +101,7 @@
         <button
           data-testid="genomic-filter-save"
           type="button"
-          class="btn btn-sm preset-filled-primary-500 text-lg disabled:opacity-75"
+          class="btn btn-sm preset-filled-primary-500 disabled:opacity-75"
           onclick={onComplete}
           disabled={!canComplete}
         >
@@ -113,7 +113,7 @@
         <button
           data-testid="genomic-filter-add"
           type="button"
-          class="btn btn-sm preset-filled-primary-500 text-lg disabled:opacity-75"
+          class="btn btn-sm preset-filled-primary-500 disabled:opacity-75"
           title={canComplete
             ? 'Add Filter'
             : selectedOption === Option.Genomic

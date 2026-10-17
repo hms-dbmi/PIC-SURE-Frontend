@@ -37,7 +37,7 @@
 </script>
 
 <section
-  class={`main-content ${full ? 'w-full' : ''} pb-6 ${className}`}
+  class={`main-content ${full ? 'main-content-full' : ''} pb-6 ${className}`}
   in:fly={{ duration: 300, x: transition ? '100%' : '0' }}
 >
   {#if backUrl}<AngleButton data-testid="ui-page-back" onclick={onBack}>{backTitle}</AngleButton

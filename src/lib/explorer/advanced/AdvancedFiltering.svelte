@@ -678,7 +678,7 @@
       {/if}
       {#each $genomicFilters as gFilter (gFilter.uuid)}
         <div
-          class="card flex flex-row gap-2 items-center p-4 bg-white border-surface-400 border opacity-75"
+          class="card flex flex-row gap-2 items-center p-4 bg-white opacity-75"
           data-testid="filter-genomic-item"
         >
           <div class="flex items-center">

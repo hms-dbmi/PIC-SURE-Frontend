@@ -33,7 +33,6 @@
     options = [5, 10, 20, 50, 100],
     columns = [],
     cellOverides = {},
-    tableAuto = true,
     stickyHeader = false,
     showPagination = true,
     class: className = '',
@@ -311,7 +310,7 @@
   <table
     id={tableId}
     data-testid={testid}
-    class="table table-{tableAuto ? 'auto' : 'fixed'} {className}"
+    class="table {className}"
     class:w-max={fullWidth}
     class:clickable={isClickable}
     role={isClickable ? 'grid' : undefined}

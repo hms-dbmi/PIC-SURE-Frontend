@@ -27,7 +27,7 @@
     tonal: 'preset-tonal-primary hover:preset-filled-primary-500',
     filled: 'preset-filled-primary-500',
   };
-  const btnStyle = $derived(`btn btn-sm h-fit border ${variants[variant]} text-lg`);
+  const btnStyle = $derived(`btn btn-sm h-fit border ${variants[variant]}`);
 </script>
 
 {#snippet label()}

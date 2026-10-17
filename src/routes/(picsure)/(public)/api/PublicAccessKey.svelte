@@ -222,7 +222,7 @@
       role="alert"
       tabindex="-1"
       bind:this={warning}
-      class="card preset-tonal-warning border border-warning-500 flex items-center gap-4 py-2 px-3 mb-4"
+      class="card preset-tonal-warning flex items-center gap-4 py-2 px-3 mb-4"
     >
       <i class="fa-solid fa-triangle-exclamation text-3xl" aria-hidden="true"></i>
       <p class="m-0 font-bold">

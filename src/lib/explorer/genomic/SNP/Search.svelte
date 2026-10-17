@@ -17,7 +17,7 @@
   } = $props();
 
   interface Warning {
-    color: string;
+    color: 'error' | 'warning';
     message: string;
   }
 
@@ -99,7 +99,7 @@
   <button
     type="button"
     data-testid="genomic-snp-search"
-    class="btn btn-sm preset-filled-primary-500 text-lg disabled:opacity-75"
+    class="btn btn-sm preset-filled-primary-500 disabled:opacity-75"
     onclick={searchSnp}
     disabled={disabled || !validSNPString || searching}
   >

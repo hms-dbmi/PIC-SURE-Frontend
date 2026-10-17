@@ -110,7 +110,6 @@
           {rowClickHandler}
           isClickable
           searchable
-          tableAuto={false}
         />
       </div>
     {/each}

@@ -45,7 +45,7 @@
     {#if dataset?.queryId}
       <section data-testid="dataset-summary-container" class="my-4">
         <h2 class="text-left h4 mb-2 mt-6">Dataset ID Summary</h2>
-        <table class="table bg-transparent">
+        <table class="table">
           <tbody>
             <tr>
               <td>Dataset ID Name:</td>

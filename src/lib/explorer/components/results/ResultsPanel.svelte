@@ -130,7 +130,7 @@
   <div id="results-export-filters" class="flex flex-col items-center mt-7 w-80">
     <hr />
     <div class="flex content-center items-center mt-6">
-      <h5 class="text-xl flex-auto ml-9 mr-2 mb-2 pt-1">Filtered Data Summary</h5>
+      <h5 class="flex-auto ml-9 mr-2 mb-2 pt-1">Filtered Data Summary</h5>
       {#if hasFilterOrExport}
         <button
           data-testid="results-reset"
@@ -165,7 +165,7 @@
   {#if showExplorerDistributions || showDiscoverDistributions || showVariantExplorer}
     <div class="flex flex-col items-center mt-7">
       <hr />
-      <h5 class="text-center text-xl mt-7">Tool Suite</h5>
+      <h5 class="text-center mt-7">Tool Suite</h5>
       <div class="flex flex-row flex-wrap justify-items-center gap-4 w-80 justify-center">
         {#if showExplorerDistributions}
           <CardButton

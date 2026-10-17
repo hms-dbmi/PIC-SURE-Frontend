@@ -101,7 +101,7 @@
     data-testid="filter-item"
     class="card flex flex-col gap-2 py-1 px-2 {activeId === filter.uuid && !isOverlay
       ? 'invisible'
-      : ''} bg-white border-surface-400 border"
+      : ''} bg-white"
   >
     <div class="flex flex-row items-center justify-start gap-2">
       <div

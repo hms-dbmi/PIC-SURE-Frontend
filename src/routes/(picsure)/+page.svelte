@@ -19,6 +19,8 @@
     }
   }
 
+  const actionWidths: Record<number, string> = { 2: 'w-1/2', 3: 'w-1/3', 4: 'w-1/4' };
+
   const actionsToDisplay = $derived(
     config.branding.landing.actions.filter((action) => {
       if (isUserLoggedIn()) {
@@ -43,7 +45,7 @@
   </section>
   <section id="landing-actions" class="flex flex-row justify-evenly items-center mb-auto w-2/3">
     {#each actionsToDisplay as { title, description, icon, url, btnText }, i}
-      <div class="flex flex-col items-center w-1/{actionsToDisplay?.length || 3}">
+      <div class="flex flex-col items-center {actionWidths[actionsToDisplay.length] ?? ''}">
         <div class="text-3xl my-1">{title}</div>
         <i class="text-[5rem] my-3 text-secondary-600-400 {icon}"></i>
         <div class="subtitle my-3">{description}</div>

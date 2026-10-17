@@ -28,7 +28,7 @@
 </script>
 
 <input
-  class="input text-sm sm:w-64 w-36"
+  class="input"
   type="search"
   placeholder="Search..."
   bind:value={search.value}

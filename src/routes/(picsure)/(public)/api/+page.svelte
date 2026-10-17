@@ -218,7 +218,7 @@
           </div>
         {/if}
         <div id="capabilities" class="flex-1 min-w-64">
-          <h3 class="text-lg font-bold mb-3">What you can do</h3>
+          <h3 class="font-bold mb-3">What you can do</h3>
           <ul class="space-y-3">
             {#each capabilities as capability}
               {@const locked = !loggedIn && capability.requiresLogin}

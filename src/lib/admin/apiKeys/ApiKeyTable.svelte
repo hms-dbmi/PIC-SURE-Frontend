@@ -93,13 +93,5 @@
 {#if loadError}
   <ErrorAlert title="API Error" data-testid="admin-api-key-list-error">{loadError}</ErrorAlert>
 {:else}
-  <RemoteTable
-    {tableName}
-    {id}
-    data-testid={testid}
-    {handler}
-    {columns}
-    {cellOverides}
-    tableAuto={false}
-  />
+  <RemoteTable {tableName} {id} data-testid={testid} {handler} {columns} {cellOverides} />
 {/if}

@@ -29,9 +29,8 @@
     onclick = () => {},
   }: Props = $props();
 
-  const cardClasses = $derived(
-    `card card-btn ${size !== 'other' ? 'card-btn-' + size : ''} ${className} hover:scale-110 hover:shadow-lg`,
-  );
+  const sizes = { sm: 'card-btn-sm', md: 'card-btn-md', lg: 'card-btn-lg', other: '' };
+  const cardClasses = $derived(`card card-btn ${sizes[size]} ${className}`);
 </script>
 
 {#snippet cardContent()}
@@ -48,7 +47,6 @@
       data-testid={testid}
       class={cardClasses}
       class:preset-filled-primary-500={active}
-      class:preset-outlined-primary-500={!active}
       tabindex="0"
       {onclick}
     >
@@ -63,7 +61,6 @@
       rel="external"
       class={cardClasses}
       class:preset-filled-primary-500={active}
-      class:preset-outlined-primary-500={!active}
       tabindex="0"
       {onclick}
     >
@@ -77,7 +74,6 @@
     type="button"
     class={cardClasses}
     class:preset-filled-primary-500={active}
-    class:preset-outlined-primary-500={!active}
     {onclick}
     {disabled}
   >

@@ -36,6 +36,7 @@
   @reference "../../styles/app.css";
 
   .show-more {
-    @apply btn btn-sm preset-outlined-surface-500 rounded-container;
+    /* Skeleton's own small button, without the app's .btn and .btn-sm overrides */
+    @apply btn px-3 py-1 text-xs preset-outlined-surface-500 rounded-container;
   }
 </style>

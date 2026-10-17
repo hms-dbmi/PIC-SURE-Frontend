@@ -23,7 +23,7 @@
 </script>
 
 {#if title}
-  <h2 data-testid="dashboard-drawer-title" class="text-2xl font-bold ml-4">{title}</h2>
+  <h2 data-testid="dashboard-drawer-title" class="font-bold ml-4">{title}</h2>
 {/if}
 <hr />
 {#await getDataset()}

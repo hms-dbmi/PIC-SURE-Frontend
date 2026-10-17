@@ -134,7 +134,7 @@
   <div class="flex flex-1 flex-col h-full p-3 m-1 card bg-surface-100 rounded-xl">
     <header class="flex pb-1">
       <input
-        class="input text-sm"
+        class="input"
         type="search"
         name="search"
         bind:value={searchInput}
@@ -144,7 +144,7 @@
       {#if showSelectAll}
         <button
           data-testid="ui-options-selection-list-select-all"
-          class="btn preset-outlined-surface-500 hover:preset-filled-primary-500 ml-2 text-sm"
+          class="btn preset-outlined-surface-500 hover:preset-filled-primary-500 ml-2 leading-(--text-sm--line-height)"
           disabled={unselectedOptions.length === 0}
           onclick={selectAllOptions}>Select All</button
         >
@@ -183,7 +183,7 @@
       {#if showClearAll}
         <button
           data-testid="ui-options-selection-list-clear"
-          class="btn preset-outlined-surface-500 hover:preset-filled-primary-500 ml-2 text-sm"
+          class="btn preset-outlined-surface-500 hover:preset-filled-primary-500 ml-2 leading-(--text-sm--line-height)"
           onclick={clearSelectedOptions}
           disabled={selectedOptions.length === 0}>Clear</button
         >

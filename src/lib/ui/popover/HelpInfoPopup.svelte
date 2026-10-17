@@ -7,7 +7,7 @@
     text?: string;
     'data-testid'?: string;
     type?: 'question' | 'info' | 'exclamation' | 'xmark';
-    color?: string;
+    color?: 'primary' | 'warning';
     size?: string;
     popoverSize?: string;
     children?: Snippet;
@@ -22,14 +22,18 @@
     popoverSize = '',
     children,
   }: Props = $props();
+
+  const colors = {
+    primary: 'text-primary-950-50 hover:text-primary-300-700',
+    warning: 'text-warning-950-50 hover:text-warning-300-700',
+  };
 </script>
 
 {#if text || children}
   <div data-testid={testid}>
     <Popover data-testid="{testid}-content" triggerTypes={['click', 'hover']} size={popoverSize}>
       {#snippet trigger()}
-        <i class="fa-solid fa-circle-{type} text-{color}-950-50 hover:text-{color}-300-700 {size}"
-        ></i>
+        <i class="fa-solid fa-circle-{type} {colors[color]} {size}"></i>
       {/snippet}
       {#if children}
         {@render children?.()}

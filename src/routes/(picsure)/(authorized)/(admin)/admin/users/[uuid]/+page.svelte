@@ -45,7 +45,7 @@
     <Loading />
   {:then}
     <section id="admin-user-view">
-      <table class="table bg-transparent">
+      <table class="table">
         <tbody>
           <tr>
             <td>Id:</td>

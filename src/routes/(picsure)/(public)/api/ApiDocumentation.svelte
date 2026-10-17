@@ -171,7 +171,7 @@
       <label for="api-document-service" class="font-bold">Select service:</label>
       <select
         id="api-document-service"
-        class="select w-auto! max-w-full bg-white! py-2!"
+        class="select w-auto max-w-full bg-white"
         bind:value={selected}
         onchange={() => void load(false)}
       >

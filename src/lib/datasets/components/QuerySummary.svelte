@@ -66,7 +66,7 @@
 </script>
 
 {#await queryData.errors}
-  <div class="float-right placeholder animate-pulse text-sm btn-sm">Restore Filters</div>
+  <div class="float-right placeholder animate-pulse btn-sm">Restore Filters</div>
 {:then errors}
   {@const hasErrors = errors.length > 0}
   {#if hasErrors}
