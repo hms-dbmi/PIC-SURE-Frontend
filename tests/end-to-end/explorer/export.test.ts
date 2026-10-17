@@ -16,7 +16,7 @@ import {
   picsureUser,
   mockDataWithChildren,
 } from '../../support/mock-data';
-import { getOption, userIsLoggedIn } from '../utils';
+import { getOption, userIsLoggedIn, chooseGenomicFilterType } from '../utils';
 
 const queryPath = '*/**/picsure/hpds/auth/query';
 const countResultPath = `${queryPath}/sync`;
@@ -82,7 +82,7 @@ async function setupExportPageAndAddFilterAndExport(
 
   if (includeGenomicFilter) {
     await page.getByTestId('explorer-genomic-filter-open').click();
-    await page.getByTestId('genomic-type-gene').click();
+    await chooseGenomicFilterType(page, 'gene');
     await expect(page.getByTestId('genomic-filter-add')).not.toBeEnabled();
     const optionsContainer = page.getByTestId('ui-options-selection-list-available');
     await optionsContainer.getByLabel(geneValues.results[0]).click();

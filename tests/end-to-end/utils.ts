@@ -109,3 +109,12 @@ export const expectAnimationsFinished = async (locator: Locator) => {
     .poll(() => locator.evaluate((element) => element.getAnimations({ subtree: true }).length))
     .toBe(0);
 };
+
+// The genomic-filter page is reached by a client-side navigation, and a click that lands on its
+// type card while the pages are still swapping is dropped. Click until the chosen panel shows.
+export const chooseGenomicFilterType = async (page: Page, type: 'gene' | 'snp') => {
+  await expect(async () => {
+    await page.getByTestId(`genomic-type-${type}`).click();
+    await expect(page.getByTestId(`genomic-${type}-panel`)).toBeVisible({ timeout: 1000 });
+  }).toPass();
+};

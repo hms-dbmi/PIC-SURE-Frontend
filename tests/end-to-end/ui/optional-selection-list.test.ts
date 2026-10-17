@@ -11,7 +11,13 @@ import {
   facetResultPath,
   facetsResponse,
 } from '../../support/mock-data';
-import { getOption, clickNthFilterIcon, optionsHaveLoaded, userIsLoggedIn } from '../utils';
+import {
+  getOption,
+  clickNthFilterIcon,
+  optionsHaveLoaded,
+  userIsLoggedIn,
+  chooseGenomicFilterType,
+} from '../utils';
 
 const queryResultPath = '*/**/picsure/hpds/auth/query/sync';
 
@@ -205,7 +211,7 @@ test.describe('OptionalSelectionList', () => {
     // When
     await page.getByTestId('explorer-genomic-filter-open').click();
     await expect(page.getByTestId('genomic-type-gene')).toBeVisible({ timeout: 10000 });
-    await page.getByTestId('genomic-type-gene').click();
+    await chooseGenomicFilterType(page, 'gene');
     const component = page.getByTestId('ui-options-selection-list');
     const optionContainer = component.getByTestId('ui-options-selection-list-available');
 

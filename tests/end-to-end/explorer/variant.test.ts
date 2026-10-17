@@ -11,7 +11,7 @@ import {
   searchResults as mockData,
   searchResultPath,
 } from '../../support/mock-data';
-import { getOption, clickNthFilterIcon, userIsLoggedIn } from '../utils';
+import { getOption, clickNthFilterIcon, userIsLoggedIn, chooseGenomicFilterType } from '../utils';
 
 const SyncQueryPath = '*/**/picsure/hpds/auth/query/sync';
 
@@ -44,8 +44,7 @@ test.describe('variant explorer', () => {
       // open the sidebar to reduce locator time on result panel items during testing
       await page.locator('#results-panel-toggle').click();
       await page.getByTestId('explorer-genomic-filter-open').click();
-      await expect(page.getByTestId('genomic-type-gene')).toBeVisible();
-      await page.getByTestId('genomic-type-gene').click();
+      await chooseGenomicFilterType(page, 'gene');
       await page
         .getByTestId('ui-options-selection-list-available')
         .getByLabel(geneValues.results[0])
@@ -149,8 +148,7 @@ test.describe('variant explorer', () => {
       await mockApiSuccess(page, `*/**/picsure/hpds/auth/search/values*`, geneValues);
       await page.locator('#results-panel-toggle').click();
       await page.getByTestId('explorer-genomic-filter-open').click();
-      await expect(page.getByTestId('genomic-type-gene')).toBeVisible();
-      await page.getByTestId('genomic-type-gene').click();
+      await chooseGenomicFilterType(page, 'gene');
       await page
         .getByTestId('ui-options-selection-list-available')
         .getByLabel(geneValues.results[0])

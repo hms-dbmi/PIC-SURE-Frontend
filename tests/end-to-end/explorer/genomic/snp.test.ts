@@ -7,7 +7,7 @@ import {
   searchResultPath,
   facetResultPath,
 } from '../../../support/mock-data';
-import { userIsLoggedIn } from '../../utils';
+import { userIsLoggedIn, chooseGenomicFilterType } from '../../utils';
 
 const queryResultPath = '*/**/picsure/hpds/auth/query/sync';
 
@@ -39,8 +39,7 @@ test('Selecting SNP option advances snp filter options', async ({ page }) => {
   await page.getByTestId('explorer-genomic-filter-open').click();
 
   // When
-  await expect(page.getByTestId('genomic-type-snp')).toBeVisible();
-  await page.getByTestId('genomic-type-snp').click();
+  await chooseGenomicFilterType(page, 'snp');
 
   // Then
   await expect(page.locator('#genomic-snp-search')).toBeVisible();
@@ -50,8 +49,7 @@ test('Search box enforces valid snp format', async ({ page }) => {
   await page.goto('/explorer');
   await userIsLoggedIn(page);
   await page.getByTestId('explorer-genomic-filter-open').click();
-  await expect(page.getByTestId('genomic-type-snp')).toBeVisible();
-  await page.getByTestId('genomic-type-snp').click();
+  await chooseGenomicFilterType(page, 'snp');
 
   // When
   await page.getByTestId('genomic-snp-search-input').fill(invalidSnp);
@@ -67,8 +65,7 @@ test('Search request returns 0, indicating no SNP was found', async ({ page }) =
   await page.goto('/explorer');
   await userIsLoggedIn(page);
   await page.getByTestId('explorer-genomic-filter-open').click();
-  await expect(page.getByTestId('genomic-type-snp')).toBeVisible();
-  await page.getByTestId('genomic-type-snp').click();
+  await chooseGenomicFilterType(page, 'snp');
 
   // When
   await mockApiSuccess(page, queryResultPath, 0);
@@ -83,8 +80,7 @@ test('Search returns > 0, indicating SNP was found', async ({ page }) => {
   await page.goto('/explorer');
   await userIsLoggedIn(page);
   await page.getByTestId('explorer-genomic-filter-open').click();
-  await expect(page.getByTestId('genomic-type-snp')).toBeVisible();
-  await page.getByTestId('genomic-type-snp').click();
+  await chooseGenomicFilterType(page, 'snp');
 
   // When
   await mockApiSuccess(page, queryResultPath, 12);
@@ -99,8 +95,7 @@ test('Apply Filters button enables once genotype interest selection is made', as
   await page.goto('/explorer');
   await userIsLoggedIn(page);
   await page.getByTestId('explorer-genomic-filter-open').click();
-  await expect(page.getByTestId('genomic-type-snp')).toBeVisible();
-  await page.getByTestId('genomic-type-snp').click();
+  await chooseGenomicFilterType(page, 'snp');
 
   await mockApiSuccess(page, queryResultPath, 12);
   await page.getByTestId('genomic-snp-search-input').fill(validSnp);
@@ -118,8 +113,7 @@ test.describe('Summary Panel', () => {
     await page.goto('/explorer');
     await userIsLoggedIn(page);
     await page.getByTestId('explorer-genomic-filter-open').click();
-    await expect(page.getByTestId('genomic-type-snp')).toBeVisible();
-    await page.getByTestId('genomic-type-snp').click();
+    await chooseGenomicFilterType(page, 'snp');
     await mockApiSuccess(page, queryResultPath, 12);
     await page.getByTestId('genomic-snp-search-input').fill(validSnp);
     await page.getByTestId('genomic-snp-search').click();
@@ -193,8 +187,7 @@ test('Apply Filter adds to sidepanel', async ({ page }) => {
   await page.goto('/explorer');
   await userIsLoggedIn(page);
   await page.getByTestId('explorer-genomic-filter-open').click();
-  await expect(page.getByTestId('genomic-type-snp')).toBeVisible();
-  await page.getByTestId('genomic-type-snp').click();
+  await chooseGenomicFilterType(page, 'snp');
 
   await mockApiSuccess(page, queryResultPath, 12);
   await page.getByTestId('genomic-snp-search-input').fill(validSnp);
@@ -217,8 +210,7 @@ test('Clicking edit filter button in results panel returns to snp filter with co
   await page.goto('/explorer');
   await userIsLoggedIn(page);
   await page.getByTestId('explorer-genomic-filter-open').click();
-  await expect(page.getByTestId('genomic-type-snp')).toBeVisible();
-  await page.getByTestId('genomic-type-snp').click();
+  await chooseGenomicFilterType(page, 'snp');
   await mockApiSuccess(page, queryResultPath, 12);
   await page.getByTestId('genomic-snp-search-input').fill(validSnp);
   await page.getByTestId('genomic-snp-search').click();
@@ -247,8 +239,7 @@ test('Editing filter from results panel updates results panel on save', async ({
   await page.goto('/explorer');
   await userIsLoggedIn(page);
   await page.getByTestId('explorer-genomic-filter-open').click();
-  await expect(page.getByTestId('genomic-type-snp')).toBeVisible();
-  await page.getByTestId('genomic-type-snp').click();
+  await chooseGenomicFilterType(page, 'snp');
   await mockApiSuccess(page, queryResultPath, 12);
   await page.getByTestId('genomic-snp-search-input').fill(validSnp);
   await page.getByTestId('genomic-snp-search').click();
@@ -287,8 +278,7 @@ test('Clicking Genomic Filtering after adding a snp filter navigates to edit fil
   await page.goto('/explorer');
   await userIsLoggedIn(page);
   await page.getByTestId('explorer-genomic-filter-open').click();
-  await expect(page.getByTestId('genomic-type-snp')).toBeVisible();
-  await page.getByTestId('genomic-type-snp').click();
+  await chooseGenomicFilterType(page, 'snp');
   await mockApiSuccess(page, queryResultPath, 12);
   await page.getByTestId('genomic-snp-search-input').fill(validSnp);
   await page.getByTestId('genomic-snp-search').click();
@@ -299,8 +289,7 @@ test('Clicking Genomic Filtering after adding a snp filter navigates to edit fil
 
   // When
   await page.getByTestId('explorer-genomic-filter-open').click();
-  await expect(page.getByTestId('genomic-type-snp')).toBeVisible();
-  await page.getByTestId('genomic-type-snp').click();
+  await chooseGenomicFilterType(page, 'snp');
 
   // Then
   await expect(page.getByTestId('genomic-summary-panel').getByText(validSnp)).toBeVisible();
