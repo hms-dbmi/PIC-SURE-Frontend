@@ -35,6 +35,8 @@ export class AdvancedFilteringPage {
 
   // Root group controls
   readonly rootAndOrSegment: Locator;
+  // Names in the list itself, without the copy in the drag preview
+  readonly listedFilterNames: Locator;
 
   // Equation Summary
   readonly logicTreeSection: Locator;
@@ -66,6 +68,7 @@ export class AdvancedFilteringPage {
 
     // Root group AND/OR segment (first one on the page)
     this.rootAndOrSegment = this.modal.getByRole('radiogroup').first();
+    this.listedFilterNames = this.modal.getByTestId('filter-root').getByTestId('filter-name');
 
     // Equation Summary
     this.logicTreeSection = page.getByTestId('logic-tree-summary');
@@ -492,9 +495,9 @@ export class AdvancedFilteringPage {
     const handle = this.getFilterCard(filterName).getByRole('button', {
       name: 'Click and drag to reorder and group filters',
     });
-    const names = this.modal.getByTestId('filter-root').getByTestId('filter-name');
-    const from = (await names.allTextContents()).indexOf(filterName);
     await this.readyToDrag(handle);
+    const names = this.listedFilterNames;
+    const from = (await names.allTextContents()).indexOf(filterName);
     await handle.focus();
     await this.page.keyboard.press('Enter');
     await expect(this.getDropPreviews().first()).toBeVisible();
