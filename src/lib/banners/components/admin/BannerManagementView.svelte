@@ -33,7 +33,10 @@
     type DragOverEvent,
     type DragEndEvent,
   } from '@dnd-kit/dom';
-  import FilterSearch from '../../../ui/FilterSearch.svelte';
+  import SearchInput from '#lib/ui/SearchInput.svelte';
+  import LiveRegion from '#lib/ui/LiveRegion.svelte';
+  import Tabs from '#lib/ui/Tabs.svelte';
+  import { createAnnouncer } from '#lib/ui/announcer.svelte.ts';
   import { createUnsavedGuard } from '#lib/ui/unsavedGuard.svelte.ts';
   import { toaster } from '#lib/ui/toaster.ts';
   import {
@@ -70,6 +73,7 @@
   let loading = $state(true);
   let failed = $state(false);
   let activeTab: LifecycleTab = $state('orderable');
+  let lifecycleTabList: ReturnType<typeof Tabs<LifecycleTab>> | undefined = $state();
   let search = $state('');
   let openUuid: string | null = $state(null);
   let mode: 'list' | 'create' | 'edit' | 'restore' = $state('list');
@@ -125,16 +129,15 @@
   const broadOverlapCount = $derived(broadBannerOverlapCount({ records, orderUuids }));
   const visibleRecords = $derived(visibleBannerRecords({ records, orderUuids }, activeTab, search));
 
-  let searchAnnouncement = $state('');
+  const searchAnnouncer = createAnnouncer({ delay: 250 });
   $effect(() => {
     const query = search.trim();
     const count = visibleRecords.length;
-    const timer = setTimeout(() => {
-      searchAnnouncement = `${count} ${count === 1 ? 'banner' : 'banners'} ${
+    void searchAnnouncer.announce(
+      `${count} ${count === 1 ? 'banner' : 'banners'} ${
         query ? (count === 1 ? 'matches this search.' : 'match this search.') : 'in this section.'
-      }`;
-    }, 250);
-    return () => clearTimeout(timer);
+      }`,
+    );
   });
 
   function applyList(next: BannerListState) {
@@ -212,21 +215,7 @@
   function applyLifecycleTab(tab: LifecycleTab, focus = false) {
     activeTab = tab;
     openUuid = null;
-    if (focus) document.getElementById(`banner-management-tab-${tab}`)?.focus();
-  }
-
-  function handleLifecycleTabKeydown(event: KeyboardEvent, index: number) {
-    let destination: number | undefined;
-    if (event.key === 'ArrowRight') destination = (index + 1) % lifecycleTabs.length;
-    if (event.key === 'ArrowLeft')
-      destination = (index - 1 + lifecycleTabs.length) % lifecycleTabs.length;
-    if (event.key === 'Home') destination = 0;
-    if (event.key === 'End') destination = lifecycleTabs.length - 1;
-    if (destination === undefined) return;
-
-    event.preventDefault();
-    const tab = lifecycleTabs[destination].value;
-    selectLifecycleTab(tab, true);
+    if (focus) lifecycleTabList?.focusTab(tab);
   }
 
   function keepOrdering() {
@@ -474,91 +463,78 @@
             </button>
           </div>
         {/if}
-        <div
-          class="mt-6 border-b border-surface-300"
-          role="tablist"
-          aria-label="Banner lifecycle states"
+        <Tabs
+          class="mt-6"
+          variant="section"
+          label="Banner lifecycle states"
+          data-testid="banner-lifecycle-tabs"
+          tabs={lifecycleTabs}
+          value={activeTab}
+          onchange={(tab, { focus }) => selectLifecycleTab(tab, focus)}
+          bind:this={lifecycleTabList}
         >
-          {#each lifecycleTabs as tab, index}
-            <button
-              type="button"
-              role="tab"
-              id={`banner-management-tab-${tab.value}`}
-              class="mr-6 border-b-3 px-1 py-3 font-bold {activeTab === tab.value
-                ? 'border-primary-500 text-primary-700'
-                : 'border-transparent text-surface-600'}"
-              aria-selected={activeTab === tab.value}
-              aria-controls="banner-management-panel"
-              tabindex={activeTab === tab.value ? 0 : -1}
-              onclick={() => selectLifecycleTab(tab.value)}
-              onkeydown={(event) => handleLifecycleTabKeydown(event, index)}
-            >
-              {tab.label}
-              <span class="ml-1 rounded-full bg-surface-200 px-2 py-1 text-xs"
-                >{counts[tab.value]}</span
-              >
-            </button>
-          {/each}
-        </div>
+          {#snippet tab({ value, label })}
+            {label}
+            <span class="ml-1 rounded-full bg-surface-200 px-2 py-1 text-xs">{counts[value]}</span>
+          {/snippet}
+          {#snippet panel(tab)}
+            {#if tab === activeTab}
+              <SearchInput
+                class="mt-5 w-full max-w-sm"
+                placeholder="Search banner text"
+                label="Search banner text"
+                data-testid="banner-search"
+                bind:value={search}
+              />
 
-        <FilterSearch
-          class="mt-5 max-w-sm"
-          placeholder="Search banner text"
-          label="Search banner text"
-          testId="banner-search"
-          bind:value={search}
-        />
+              <LiveRegion message={searchAnnouncer.message} aria-label="Banner search results" />
 
-        <p class="sr-only" role="status" aria-label="Banner search results" aria-atomic="true">
-          {searchAnnouncement}
-        </p>
-
-        <div
-          id="banner-management-panel"
-          class="mt-5 grid min-w-0 gap-3"
-          role="tabpanel"
-          aria-labelledby={`banner-management-tab-${activeTab}`}
-        >
-          {#if visibleRecords.length === 0}
-            <p class="rounded border border-surface-300 p-6 text-center text-surface-600">
-              {search.trim() ? 'No banners match this search.' : 'No banners in this section.'}
-            </p>
-          {:else}
-            {#each visibleRecords as banner (banner.uuid)}
-              <div
-                data-banner-row={banner.uuid}
-                class="min-w-0"
-                class:banner-arrival={arrivalUuid === banner.uuid}
-              >
-                <BannerManagementRow
-                  {banner}
-                  actionLabel={actionLabels.get(banner.uuid)!}
-                  open={openUuid === banner.uuid}
-                  ontoggle={() => (openUuid = openUuid === banner.uuid ? null : banner.uuid)}
-                  onedit={() => editBanner(banner)}
-                  ondisable={() => disable(banner.uuid)}
-                  onarchive={() => archive(banner.uuid)}
-                  onrestore={() => restoreBanner(banner)}
-                  orderable={activeTab === 'orderable' &&
-                    !search.trim() &&
-                    !savingOrder &&
-                    orderUuids.includes(banner.uuid)}
-                  position={activeTab === 'orderable' && orderUuids.includes(banner.uuid)
-                    ? orderUuids.indexOf(banner.uuid) + 1
-                    : null}
-                  index={orderUuids.indexOf(banner.uuid)}
-                  activeId={activeDragUuid}
-                  busy={savingOrder ||
-                    archivingUuid === banner.uuid ||
-                    disablingUuid === banner.uuid}
-                  disableDisabled={disablingUuid !== null}
-                  restoreDisabled={savingOrder}
-                  archiveDisabled={archivingUuid !== null}
-                />
+              <div class="mt-5 grid min-w-0 gap-3">
+                {#if visibleRecords.length === 0}
+                  <p class="rounded border border-surface-300 p-6 text-center text-surface-600">
+                    {search.trim()
+                      ? 'No banners match this search.'
+                      : 'No banners in this section.'}
+                  </p>
+                {:else}
+                  {#each visibleRecords as banner (banner.uuid)}
+                    <div
+                      data-banner-row={banner.uuid}
+                      class="min-w-0"
+                      class:banner-arrival={arrivalUuid === banner.uuid}
+                    >
+                      <BannerManagementRow
+                        {banner}
+                        actionLabel={actionLabels.get(banner.uuid)!}
+                        open={openUuid === banner.uuid}
+                        ontoggle={() => (openUuid = openUuid === banner.uuid ? null : banner.uuid)}
+                        onedit={() => editBanner(banner)}
+                        ondisable={() => disable(banner.uuid)}
+                        onarchive={() => archive(banner.uuid)}
+                        onrestore={() => restoreBanner(banner)}
+                        orderable={activeTab === 'orderable' &&
+                          !search.trim() &&
+                          !savingOrder &&
+                          orderUuids.includes(banner.uuid)}
+                        position={activeTab === 'orderable' && orderUuids.includes(banner.uuid)
+                          ? orderUuids.indexOf(banner.uuid) + 1
+                          : null}
+                        index={orderUuids.indexOf(banner.uuid)}
+                        activeId={activeDragUuid}
+                        busy={savingOrder ||
+                          archivingUuid === banner.uuid ||
+                          disablingUuid === banner.uuid}
+                        disableDisabled={disablingUuid !== null}
+                        restoreDisabled={savingOrder}
+                        archiveDisabled={archivingUuid !== null}
+                      />
+                    </div>
+                  {/each}
+                {/if}
               </div>
-            {/each}
-          {/if}
-        </div>
+            {/if}
+          {/snippet}
+        </Tabs>
         <DragOverlay>
           {#if activeDragUuid}
             {@const activeBanner = records.find((banner) => banner.uuid === activeDragUuid)}

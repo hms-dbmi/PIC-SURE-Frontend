@@ -14,6 +14,8 @@
   import RowCount from '#lib/ui/datatable/accessories/Count.svelte';
   import Pagination from '#lib/ui/datatable/accessories/Pagination.svelte';
   import Search from '#lib/ui/datatable/accessories/Search.svelte';
+  import LiveRegion from '#lib/ui/LiveRegion.svelte';
+  import { createAnnouncer } from '#lib/ui/announcer.svelte.ts';
   import Loading from '#lib/ui/Loading.svelte';
 
   interface Props extends TableProps {
@@ -58,19 +60,7 @@
 
   let tbodyElement: HTMLTableSectionElement | undefined = $state();
   let activeRowIndex = $state(0);
-  let announcement = $state('');
-  let announceTimer: ReturnType<typeof setTimeout> | undefined;
-
-  // Clear-then-set so a repeated identical message is still announced, and
-  // clear afterwards so stale text does not linger in the live region.
-  function announce(text: string) {
-    clearTimeout(announceTimer);
-    announcement = '';
-    announceTimer = setTimeout(() => {
-      announcement = text;
-      announceTimer = setTimeout(() => (announcement = ''), 5000);
-    }, 30);
-  }
+  const announcer = createAnnouncer({ repeat: true, clearAfter: 5000 });
   let pendingPageFocus: {
     page: number;
     rowsAtRequest: unknown;
@@ -145,7 +135,7 @@
     }
     pendingPageFocus = null;
     focusRow(rows[0], 0);
-    announce(`Page ${handler.currentPage} of ${handler.pages?.length ?? 1}`);
+    void announcer.announce(`Page ${handler.currentPage} of ${handler.pages?.length ?? 1}`);
   });
 
   function pageByKeyboard(direction: 'previous' | 'next') {
@@ -305,7 +295,7 @@
       to close an expanded row; from a text field, the first Escape returns focus to the row.
       Additional single-key shortcuts are listed in each action button's label.
     </p>
-    <div class="sr-only" aria-live="polite">{announcement}</div>
+    <LiveRegion message={announcer.message} />
   {/if}
   <table
     id={tableId}

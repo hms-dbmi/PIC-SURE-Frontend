@@ -1,4 +1,5 @@
 <script lang="ts">
+  import OperatorBadge from '#lib/ui/OperatorBadge.svelte';
   import type {
     Filter,
     FilterInterface,
@@ -71,11 +72,7 @@
 {#snippet operatorDivider(operator: string)}
   <div class="flex items-center gap-2 px-0 my-0.5" data-testid="dataset-operator-divider">
     <div class="h-px flex-1 {operator === 'OR' ? 'bg-secondary-300' : 'bg-primary-300'}"></div>
-    <span
-      class="badge font-bold text-xs uppercase {operator === 'OR'
-        ? 'preset-filled-secondary-200-800'
-        : 'preset-filled-primary-200-800'}">{operator}</span
-    >
+    <OperatorBadge {operator} />
     <div class="h-px flex-1 {operator === 'OR' ? 'bg-secondary-300' : 'bg-primary-300'}"></div>
   </div>
 {/snippet}

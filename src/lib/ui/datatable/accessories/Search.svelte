@@ -2,6 +2,7 @@
   import { TableHandler } from '@vincjo/datatables';
   import { TableHandler as RemoteTableHandler } from '@vincjo/datatables/server';
   import { log, createLog } from '#lib/telemetry/logger.ts';
+  import SearchInput from '#lib/ui/SearchInput.svelte';
 
   let {
     handler,
@@ -27,10 +28,4 @@
   }
 </script>
 
-<input
-  class="input"
-  type="search"
-  placeholder="Search..."
-  bind:value={search.value}
-  oninput={handleInput}
-/>
+<SearchInput label="Search table" bind:value={search.value} oninput={handleInput} />

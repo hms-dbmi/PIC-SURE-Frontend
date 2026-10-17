@@ -4,7 +4,6 @@
   import { afterNavigate, beforeNavigate, goto, replaceState } from '$app/navigation';
   import { page } from '$app/state';
   import { appPath } from '#lib/api/paths.ts';
-  import { Tabs } from '@skeletonlabs/skeleton-svelte';
 
   import type { Indexable } from '#lib/utils/objects.ts';
   import { config } from '#lib/config/config.svelte.ts';
@@ -12,7 +11,7 @@
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import Content from '#lib/shell/Content.svelte';
   import Datatable from '#lib/ui/datatable/StaticTable.svelte';
-  import TabItem from '#lib/ui/TabItem.svelte';
+  import Tabs from '#lib/ui/Tabs.svelte';
   import TermsEditor from '#lib/admin/terms/TermsEditor.svelte';
   import RoleActions from '#lib/admin/access/cell/RoleActions.svelte';
   import PrivilegeActions from '#lib/admin/access/cell/PrivilegeActions.svelte';
@@ -183,114 +182,111 @@
 {/snippet}
 
 <Content title="Configuration">
-  <Tabs value={tabSet} onValueChange={(e: { value: string }) => (requestedTab = e.value)}>
-    {#snippet list()}
-      {#each visibleTabs as tab (tab)}
-        <TabItem bind:group={requestedTab} value={tab}>{tab}</TabItem>
-      {/each}
-    {/snippet}
-    {#snippet content()}
-      {#if $isTopAdmin}
-        <Tabs.Panel value="Access Control">
-          <div id="admin-role-section" class="mb-10">
-            <h2>Roles Management</h2>
-            {#await loadRoles()}
-              <Loading />
-            {:then}
-              <div class="flex gap-4 my-6">
-                <div class="flex-auto">
-                  <a
-                    data-testid="admin-role-add"
-                    class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-                    href={resolve('admin/configuration/role/new')}
-                  >
-                    + Add Role
-                  </a>
-                </div>
+  <Tabs
+    label="Configuration sections"
+    tabs={visibleTabs.map((tab) => ({ value: tab, label: tab }))}
+    value={tabSet}
+    onchange={(tab) => (requestedTab = tab)}
+  >
+    {#snippet panel(tab)}
+      {#if tab === 'Access Control'}
+        <div id="admin-role-section" class="mb-10">
+          <h2>Roles Management</h2>
+          {#await loadRoles()}
+            <Loading />
+          {:then}
+            <div class="flex gap-4 my-6">
+              <div class="flex-auto">
+                <a
+                  data-testid="admin-role-add"
+                  class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
+                  href={resolve('admin/configuration/role/new')}
+                >
+                  + Add Role
+                </a>
               </div>
-              <Datatable
-                tableName="Roles"
-                data-testid="admin-role-table"
-                id="admin-role-table"
-                data={$roles}
-                columns={roleTable.columns}
-                cellOverides={roleTable.overrides}
-                rowClickHandler={roleRowCLick}
-                isClickable
-              />
-            {:catch}
-              <ErrorAlert title="API Error">
-                Something went wrong when sending your request for roles.
-              </ErrorAlert>
-            {/await}
-          </div>
-          <div id="admin-privilege-section" class="mb-10">
-            <h2>Privileges Management</h2>
-            {#await loadAppsAndPriv()}
-              <Loading />
-            {:then}
-              <div class="flex gap-4 my-6">
-                <div class="flex-auto">
-                  <a
-                    data-testid="admin-privilege-add"
-                    class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-                    href={resolve('admin/configuration/privilege/new')}
-                  >
-                    + Add Privilege
-                  </a>
-                </div>
+            </div>
+            <Datatable
+              tableName="Roles"
+              data-testid="admin-role-table"
+              id="admin-role-table"
+              data={$roles}
+              columns={roleTable.columns}
+              cellOverides={roleTable.overrides}
+              rowClickHandler={roleRowCLick}
+              isClickable
+            />
+          {:catch}
+            <ErrorAlert title="API Error">
+              Something went wrong when sending your request for roles.
+            </ErrorAlert>
+          {/await}
+        </div>
+        <div id="admin-privilege-section" class="mb-10">
+          <h2>Privileges Management</h2>
+          {#await loadAppsAndPriv()}
+            <Loading />
+          {:then}
+            <div class="flex gap-4 my-6">
+              <div class="flex-auto">
+                <a
+                  data-testid="admin-privilege-add"
+                  class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
+                  href={resolve('admin/configuration/privilege/new')}
+                >
+                  + Add Privilege
+                </a>
               </div>
-              <Datatable
-                tableName="Privileges"
-                data-testid="admin-privilege-table"
-                id="admin-privilege-table"
-                data={$privileges}
-                columns={privilegesTable.columns}
-                cellOverides={privilegesTable.overrides}
-                rowClickHandler={privilegeRowClick}
-                isClickable
-              />
-            {:catch}
-              <ErrorAlert title="API Error">
-                Something went wrong when sending your request for priviledges and applications.
-              </ErrorAlert>
-            {/await}
-          </div>
-          <div id="admin-connection-section" class="mb-10">
-            <h2>Connections Management</h2>
-            {#await loadConnections()}
-              <Loading />
-            {:then}
-              <div class="flex gap-4 my-6">
-                <div class="flex-auto">
-                  <a
-                    data-testid="admin-connection-add"
-                    class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-                    href={resolve('admin/configuration/connection/new')}
-                  >
-                    + Add Connection
-                  </a>
-                </div>
+            </div>
+            <Datatable
+              tableName="Privileges"
+              data-testid="admin-privilege-table"
+              id="admin-privilege-table"
+              data={$privileges}
+              columns={privilegesTable.columns}
+              cellOverides={privilegesTable.overrides}
+              rowClickHandler={privilegeRowClick}
+              isClickable
+            />
+          {:catch}
+            <ErrorAlert title="API Error">
+              Something went wrong when sending your request for priviledges and applications.
+            </ErrorAlert>
+          {/await}
+        </div>
+        <div id="admin-connection-section" class="mb-10">
+          <h2>Connections Management</h2>
+          {#await loadConnections()}
+            <Loading />
+          {:then}
+            <div class="flex gap-4 my-6">
+              <div class="flex-auto">
+                <a
+                  data-testid="admin-connection-add"
+                  class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
+                  href={resolve('admin/configuration/connection/new')}
+                >
+                  + Add Connection
+                </a>
               </div>
-              <Datatable
-                tableName="Connections"
-                data-testid="admin-connection-table"
-                id="admin-connection-table"
-                data={$connections}
-                columns={connectionTable.columns}
-                cellOverides={connectionTable.overrides}
-                rowClickHandler={connectionRowClick}
-                isClickable
-              />
-            {:catch}
-              <ErrorAlert title="API Error">
-                Something went wrong when sending your request for connections.
-              </ErrorAlert>
-            {/await}
-          </div>
-        </Tabs.Panel>
-      {/if}
-      <Tabs.Panel value="Site banners">
+            </div>
+            <Datatable
+              tableName="Connections"
+              data-testid="admin-connection-table"
+              id="admin-connection-table"
+              data={$connections}
+              columns={connectionTable.columns}
+              cellOverides={connectionTable.overrides}
+              rowClickHandler={connectionRowClick}
+              isClickable
+            />
+          {:catch}
+            <ErrorAlert title="API Error">
+              Something went wrong when sending your request for connections.
+            </ErrorAlert>
+          {/await}
+        </div>
+      {:else if tab === 'Site banners'}
         {#if tabSet === 'Site banners'}
           {#key bannerViewKey}
             <BannerManagementView
@@ -300,28 +296,22 @@
             />
           {/key}
         {/if}
-      </Tabs.Panel>
-      <Tabs.Panel value="Settings & Features">
+      {:else if tab === 'Settings & Features'}
         {@render readOnlyNotice('Settings & Features')}
         <ConfigKindTab
           kinds={['features', 'settings']}
           title="Settings & Features"
           readOnly={!$isTopAdmin}
         />
-      </Tabs.Panel>
-      <Tabs.Panel value="Branding">
+      {:else if tab === 'Branding'}
         {@render readOnlyNotice('Branding')}
         <ConfigKindTab kinds={['branding']} title="Branding" readOnly={!$isTopAdmin} />
-      </Tabs.Panel>
-      <Tabs.Panel value="API Keys">
+      {:else if tab === 'API Keys'}
         {#if tabSet === 'API Keys'}
           <ApiKeysPanel />
         {/if}
-      </Tabs.Panel>
-      {#if config.features.termsOfService}
-        <Tabs.Panel value="Terms of Service">
-          <TermsEditor />
-        </Tabs.Panel>
+      {:else if tab === 'Terms of Service'}
+        <TermsEditor />
       {/if}
     {/snippet}
   </Tabs>

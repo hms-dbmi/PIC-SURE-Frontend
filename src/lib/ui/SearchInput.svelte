@@ -2,21 +2,29 @@
   interface Props {
     value?: string;
     placeholder?: string;
+    /** The accessible name; visually hidden. */
     label?: string;
-    testId?: string;
+    size?: 'sm' | 'md';
+    /** Wrapper classes; set a width (default `w-full`). */
     class?: string;
+    'data-testid'?: string;
+    oninput?: (event: Event & { currentTarget: HTMLInputElement }) => void;
   }
 
   let {
     value = $bindable(''),
     placeholder = 'Search...',
     label = 'Search',
-    testId,
-    class: className = '',
+    size = 'md',
+    class: className = 'w-full',
+    'data-testid': testid,
+    oninput,
   }: Props = $props();
+
+  const sizes = { sm: 'text-sm', md: '' } as const;
 </script>
 
-<label class="relative block w-full {className}">
+<label class="relative block {className}">
   <span class="sr-only">{label}</span>
   <i
     class="fa-solid fa-magnifying-glass pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-xs opacity-50"
@@ -24,16 +32,16 @@
   ></i>
   <input
     type="search"
-    class="filter-search-input input w-full"
+    class="search-input input w-full {sizes[size]}"
     {placeholder}
-    aria-label={label}
-    data-testid={testId}
+    data-testid={testid}
     bind:value
+    {oninput}
   />
 </label>
 
 <style>
-  .filter-search-input[type='search'] {
+  .search-input[type='search'] {
     padding-left: 2rem;
   }
 </style>

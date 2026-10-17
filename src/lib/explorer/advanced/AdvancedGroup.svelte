@@ -1,4 +1,5 @@
 <script lang="ts">
+  import OperatorBadge from '#lib/ui/OperatorBadge.svelte';
   import { css } from '#lib/ui/style.ts';
   import { useSortable } from '@dnd-kit-svelte/svelte/sortable';
   import {
@@ -107,13 +108,7 @@
 <div class="relative" {@attach ref}>
   {#if showLeadingOperator && leadingOperator}
     <div class="flex justify-center py-2 {activeId === id && !isOverlay ? 'invisible' : ''}">
-      <span
-        class="badge font-bold text-xs uppercase {leadingOperator === 'OR'
-          ? 'preset-filled-secondary-200-800'
-          : 'preset-filled-primary-200-800'}"
-      >
-        {leadingOperator}
-      </span>
+      <OperatorBadge operator={leadingOperator} />
     </div>
   {/if}
 

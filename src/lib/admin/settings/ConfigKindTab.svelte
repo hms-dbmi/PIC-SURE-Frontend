@@ -25,7 +25,7 @@
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import Loading from '#lib/ui/Loading.svelte';
   import ConfirmDialog from '#lib/ui/dialog/ConfirmDialog.svelte';
-  import FilterSearch from '../../ui/FilterSearch.svelte';
+  import SearchInput from '#lib/ui/SearchInput.svelte';
   import { toaster } from '#lib/ui/toaster.ts';
   import { humanizeKey } from '#lib/utils/strings.ts';
 
@@ -186,11 +186,11 @@
   {/if}
   <div class="flex items-center gap-3 my-3">
     {#if kindedSchema.length > SEARCH_BOX_MIN_LENGTH}
-      <FilterSearch
-        class="max-w-sm flex-1"
+      <SearchInput
+        class="w-full max-w-sm flex-1"
         placeholder="Search fields…"
         label="Search fields"
-        testId={`admin-config-search-${testIdBase}`}
+        data-testid={`admin-config-search-${testIdBase}`}
         bind:value={query}
       />
       <span class="text-xs opacity-60 whitespace-nowrap">

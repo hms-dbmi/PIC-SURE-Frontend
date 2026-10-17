@@ -612,12 +612,9 @@ describe('BannerManagementView', () => {
     expect(screen.queryByText(/pagination/i)).not.toBeInTheDocument();
     expect(parse).toHaveBeenCalledTimes(records.length);
     const selectedTab = screen.getByRole('tab', { name: /Saved & disabled/ });
-    expect(selectedTab).toHaveAttribute('id', 'banner-management-tab-saved');
-    expect(selectedTab).toHaveAttribute('aria-controls', 'banner-management-panel');
-    expect(screen.getByRole('tabpanel')).toHaveAttribute(
-      'aria-labelledby',
-      'banner-management-tab-saved',
-    );
+    const panel = screen.getByRole('tabpanel');
+    expect(selectedTab).toHaveAttribute('aria-controls', panel.id);
+    expect(panel).toHaveAttribute('aria-labelledby', selectedTab.id);
   });
 
   it('moves focus and selection through lifecycle tabs from the keyboard', async () => {

@@ -320,8 +320,8 @@ test.describe('Export Page', () => {
 
     // Start Analysis
     await checkStepRenderedCorrectly(page, 5, 'Start Analysis:', false, 'Done', false);
-    const tabGroup = page.getByTestId('tabs-list');
-    const codeBlock = page.getByTestId('tabs-panel').locator('.code-block').first();
+    const tabGroup = page.getByTestId('ui-tabs-list');
+    const codeBlock = page.getByTestId('ui-tabs-panel').locator('.code-block').first();
     await expect(tabGroup).toBeVisible();
     await expect(codeBlock).toBeVisible();
     await expect(codeBlock).toContainText('python');
@@ -564,7 +564,7 @@ test.describe('Export Page', () => {
     await mockApiSuccess(page, '*/**/psama/user/me?hasToken', picsureUser);
     await nextButton.click(); // -> Start Analysis
 
-    const tabGroup = page.getByTestId('tabs-list');
+    const tabGroup = page.getByTestId('ui-tabs-list');
     await tabGroup.getByTestId('ui-tabs-control').nth(2).click(); // Download tab
   }
 

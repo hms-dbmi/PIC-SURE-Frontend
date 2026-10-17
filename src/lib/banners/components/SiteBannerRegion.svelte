@@ -14,6 +14,8 @@
   import { getActiveBanners } from '#lib/api/picsure/banners.ts';
   import { hasValidToken } from '#lib/auth/User.ts';
   import SiteBanner from '#lib/banners/components/SiteBanner.svelte';
+  import LiveRegion from '#lib/ui/LiveRegion.svelte';
+  import { createAnnouncer } from '#lib/ui/announcer.svelte.ts';
   import {
     matchesBannerPageTargets,
     parseBannerPageTargets,
@@ -36,8 +38,7 @@
   let pathname = $state('/');
   let refreshRevision = 0;
   let destroyed = false;
-  let announcement = $state('');
-  let announcementRevision = 0;
+  const announcer = createAnnouncer({ repeat: true });
   const announced: Record<string, string | undefined> = Object.create(null);
   let fallbackText = $state('');
   let container: HTMLDivElement;
@@ -74,19 +75,18 @@
   }
 
   $effect(() => {
-    const revision = ++announcementRevision;
     const newlyVisible = visibleBanners.filter(
       (banner) => announced[banner.uuid] !== banner.presentationHash,
     );
-    if (newlyVisible.length === 0) return;
+    if (newlyVisible.length === 0) {
+      announcer.cancel();
+      return;
+    }
     const names = newlyVisible.slice(0, 2).map((banner) => announcementName(banner));
     const message = `${newlyVisible.length} new or updated site ${newlyVisible.length === 1 ? 'announcement' : 'announcements'}. ${names.join('. ')}${newlyVisible.length > 2 ? `. And ${newlyVisible.length - 2} more.` : ''}`;
-    announcement = '';
-    void tick().then(() => {
-      if (!destroyed && revision === announcementRevision) {
-        announcement = message;
+    void announcer.announce(message).then((shown) => {
+      if (shown)
         for (const banner of newlyVisible) announced[banner.uuid] = banner.presentationHash;
-      }
     });
   });
 
@@ -192,7 +192,7 @@
 </script>
 
 <div class="w-full flex-none" bind:this={container}>
-  <p class="sr-only" role="status" aria-live="polite" aria-atomic="true">{announcement}</p>
+  <LiveRegion message={announcer.message} />
   {#if visibleBanners.length > 0}
     <div class="w-full flex-none" data-testid="banner-region">
       {#each visibleBanners as banner (banner.uuid)}

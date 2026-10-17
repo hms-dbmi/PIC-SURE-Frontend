@@ -6,7 +6,6 @@
     lessLabel?: string;
     moreLabel?: string;
     'data-testid'?: string;
-    'data-testId'?: string;
   }
 
   const {
@@ -15,15 +14,12 @@
     class: className = '',
     lessLabel = 'Show Less',
     moreLabel = 'Show More',
-    'data-testid': dataTestId = '',
-    'data-testId': legacyDataTestId = '',
+    'data-testid': testid = 'ui-show-more',
   }: Props = $props();
-
-  const testId = $derived(dataTestId || legacyDataTestId || 'ui-show-more');
 </script>
 
 <button
-  data-testid={testId}
+  data-testid={testid}
   type="button"
   class="show-more w-fit mx-auto my-1 {className}"
   {onclick}

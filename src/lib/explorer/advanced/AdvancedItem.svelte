@@ -1,4 +1,5 @@
 <script lang="ts">
+  import OperatorBadge from '#lib/ui/OperatorBadge.svelte';
   import {
     type Filter,
     type FilterInterface,
@@ -87,13 +88,7 @@
         ? 'invisible'
         : ''}"
     >
-      <span
-        class="badge font-bold text-xs uppercase {leadingOperator === 'OR'
-          ? 'preset-filled-secondary-200-800'
-          : 'preset-filled-primary-200-800'}"
-      >
-        {leadingOperator}
-      </span>
+      <OperatorBadge operator={leadingOperator} />
     </div>
   {/if}
 

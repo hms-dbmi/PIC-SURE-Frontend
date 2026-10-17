@@ -24,6 +24,7 @@
   import ConfirmDialog from '#lib/ui/dialog/ConfirmDialog.svelte';
   import Popover from '#lib/ui/popover/Popover.svelte';
   import FilterCardPlaceholder from './FilterCardPlaceholder.svelte';
+  import SkeletonBar from '#lib/ui/skeleton/SkeletonBar.svelte';
 
   let {
     query,
@@ -134,9 +135,8 @@
   <h2 class="text-left h4 mb-2 mt-6">Variables Included in Dataset</h2>
   {#await queryData.exports}
     <div class="grid grid-cols-10 gap-4">
-      <!-- eslint-disable-next-line @typescript-eslint/no-unused-vars -->
-      {#each Array(estimate.exports) as _unused, i}
-        <div class="placeholder animate-pulse"></div>
+      {#each { length: estimate.exports }}
+        <SkeletonBar />
       {/each}
     </div>
   {:then exports}

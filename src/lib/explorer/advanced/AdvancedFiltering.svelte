@@ -1,4 +1,5 @@
 <script lang="ts">
+  import OperatorBadge from '#lib/ui/OperatorBadge.svelte';
   /* eslint-disable @typescript-eslint/no-explicit-any -- dnd-kit events lack exported types */
   import {
     type FilterInterface,
@@ -673,7 +674,7 @@
     <div data-testid="filter-genomic-section">
       {#if (localTree.root as FilterGroupInterface).children.length > 0}
         <div class="flex justify-center pb-3" data-testid="filter-genomic-separator">
-          <span class="badge preset-filled-surface-200-800 font-bold text-xs uppercase">AND</span>
+          <OperatorBadge operator="AND" tone="neutral" />
         </div>
       {/if}
       {#each $genomicFilters as gFilter (gFilter.uuid)}
