@@ -8,7 +8,7 @@ import { BDCPrivileges, PicsurePrivileges } from '../auth/model/privilege';
 import type { User } from '../auth/model/user';
 import { routes } from '#lib/config/config.svelte.ts';
 
-// Registered lazily by Filter.ts to avoid circular dependency: Filter → logger → Filter
+// Registered lazily by query/filters.ts to avoid circular dependency: Filter → logger → Filter
 let _associatedStudies: import('svelte/store').Readable<string[]> | undefined;
 export function registerAssociatedStudies(store: import('svelte/store').Readable<string[]>) {
   _associatedStudies = store;

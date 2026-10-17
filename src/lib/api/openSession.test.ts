@@ -2,7 +2,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-// the real api.ts and openSession.ts together; only the network is faked
+// the real api/client.ts and openSession.ts together; only the network is faked
 
 vi.mock('$app/env', () => ({ browser: true }));
 
@@ -59,7 +59,7 @@ const keyInvalid = () => json(401, { errorType: 'api_key_invalid', message: 'x',
 
 type Handler = (url: string, init: RequestInit) => Promise<Response> | Response;
 
-describe('open-access sessions through api.ts', () => {
+describe('open-access sessions through api/client.ts', () => {
   let issued: string[];
   let issuance: Handler;
   let data: Handler;

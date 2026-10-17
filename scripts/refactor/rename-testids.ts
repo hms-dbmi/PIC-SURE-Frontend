@@ -118,7 +118,7 @@ export const testids: Kind = {
   noun: 'testid',
   script: 'scripts/refactor/rename-testids.ts',
   scanFile: /\.(?:[cm]?[jt]s|svelte|json)$/,
-  skip: new Set(['tests/unit/renameTestidsScript.test.ts']),
+  skip: new Set(['scripts/refactor/rename-testids.test.ts']),
   attribute: /(?<![\w:-])(?:data-test[iI]d|test[iI][dD])=/g,
   key: /^(?:data-test[iI]d|test[iI][dD])$/,
   variable: /^(?:\w*_)?(?:test|modal)_?id$/i,

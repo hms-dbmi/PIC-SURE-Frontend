@@ -40,7 +40,7 @@ export const GET: RequestHandler = async ({ request }) => {
   try {
     // force = true so this actually fetches instead of serving whatever's cached.
     // getConfigKind only overwrites a kind's cache entry on a successful fetch (see
-    // its comment in configCache.ts) - so a kind that fails here just keeps serving
+    // its comment in config/server/cache.ts) - so a kind that fails here just keeps serving
     // its last known-good value instead of losing it.
     const config = await getConfig(true);
     return Response.json(config);

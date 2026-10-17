@@ -33,7 +33,7 @@
 </button>
 
 <style lang="postcss">
-  @reference "../../../styles/app.css";
+  @reference "../../styles/app.css";
 
   .show-more {
     @apply btn btn-sm preset-outlined-surface-500 rounded-container;

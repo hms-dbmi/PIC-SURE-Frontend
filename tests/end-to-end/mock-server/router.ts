@@ -5,7 +5,7 @@ export interface RouteContext {
   res: ServerResponse;
   params: Record<string, string>;
   query: URLSearchParams;
-  // Parsed JSON when the body is valid JSON, otherwise the raw text (see api.ts: some
+  // Parsed JSON when the body is valid JSON, otherwise the raw text (see src/lib/api/client.ts: some
   // endpoints send a bare string body with a `Content-Type: application/json` header).
   body: unknown;
 }

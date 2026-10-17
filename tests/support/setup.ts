@@ -2,7 +2,7 @@ import { afterEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { resetConfig } from '#lib/config/config.svelte.ts';
 
-// Config is a module-scope singleton (see src/lib/configuration.svelte.ts), so a
+// Config is a module-scope singleton (see src/lib/config/config.svelte.ts), so a
 // test that seeds features/settings/branding would otherwise leak into the next
 // test in the same file/worker. Reset it after every test.
 afterEach(() => resetConfig());

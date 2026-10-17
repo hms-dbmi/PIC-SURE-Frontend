@@ -5,6 +5,49 @@ import prettier from 'eslint-config-prettier';
 import svelte from 'eslint-plugin-svelte';
 import globals from 'globals';
 
+// Files that already imported app code when the ui/utils boundary rules were added. The PR that
+// cleans one removes it from this list; nothing new gets added.
+const boundaryExceptions = [
+  'src/lib/ui/AngleButton.svelte',
+  'src/lib/ui/CardButton.svelte',
+  'src/lib/ui/CopyButton.svelte',
+  'src/lib/ui/OptionsSelectionList.svelte',
+  'src/lib/ui/PlotlyPlot.svelte',
+  'src/lib/ui/datatable/RemoteTable.svelte',
+  'src/lib/ui/datatable/Row.svelte',
+  'src/lib/ui/datatable/accessories/Pagination.svelte',
+  'src/lib/ui/datatable/accessories/Rows.svelte',
+  'src/lib/ui/datatable/accessories/Search.svelte',
+  'src/lib/ui/datatable/types.ts',
+  'src/lib/ui/stepper/Stepper.svelte',
+  'src/lib/ui/tree/RemoteTree.svelte',
+  'src/lib/ui/unsavedGuard.svelte.ts',
+  'src/lib/utils/hierarchy.ts',
+  'src/lib/utils/objects.ts',
+];
+
+// `folder` (under src/lib/) may import only from `allowed` folders and packages: no `#lib/` or
+// `$lib/` specifier outside them, and no relative path that climbs out of `folder` (one config per
+// nesting depth, so `../` is allowed exactly as deep as the file sits). Stylesheets are exempt.
+function importBoundary(folder, allowed) {
+  const message = `${folder}/ may import only ${allowed.map((f) => `${f}/`).join(', ')} and packages.`;
+  return [1, 2, 3, 4, 5, 6].map((depth) => ({
+    files: [`src/lib/${folder}/${'*/'.repeat(depth - 1)}*.{ts,svelte}`],
+    ignores: ['**/*.test.ts', ...boundaryExceptions],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            { regex: `^[#$]lib/(?!(${allowed.join('|')})(/|$))`, message },
+            { regex: `^(\\.\\./){${depth - 1}}\\.\\.(/|$)(?!.*\\.css$)`, message },
+          ],
+        },
+      ],
+    },
+  }));
+}
+
 export default [
   {
     linterOptions: {
@@ -70,7 +113,7 @@ export default [
   },
   {
     // Typed linting is limited to tests to keep the rest of lint fast.
-    files: ['tests/**/*.ts', 'src/**/*.test.ts'],
+    files: ['tests/**/*.ts', 'src/**/*.test.ts', 'scripts/**/*.test.ts'],
     languageOptions: {
       parser: tsParser,
       parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },
@@ -97,6 +140,8 @@ export default [
       ],
     },
   },
+  ...importBoundary('ui', ['ui', 'utils']),
+  ...importBoundary('utils', ['utils']),
   ...svelte.configs['flat/prettier'],
   {
     files: ['**/*.svelte.js', '**/*.svelte.ts'],

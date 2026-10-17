@@ -85,7 +85,7 @@
         false,
       );
       if (!response?.apiKey || !response?.uuid) {
-        // api.ts treats 422 and empty bodies as success; never enter 'revealed' without a key
+        // api/client.ts treats 422 and empty bodies as success; never enter 'revealed' without a key
         throw { body: { message: '' } };
       }
       publicKey = response;

@@ -20,7 +20,7 @@
       redirectTo = sessionStorage.getItem('redirect') || '/';
     }
 
-    // Retrives the providers from the server's AuthProviderRegistry created via hooks.server.ts
+    // Retrives the providers from the server's providerRegistry created via hooks.server.ts
     const provider = findLoginProvider(page.data?.providers);
     if (!provider) {
       throw new Error('Provider not found');

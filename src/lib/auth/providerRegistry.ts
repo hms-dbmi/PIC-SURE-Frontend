@@ -34,7 +34,7 @@ export function getAllProviderData() {
 
 export async function createInstance(authData: AuthData): Promise<AuthProvider> {
   try {
-    const providerModule = await import(`./auth/${authData.type}.ts`);
+    const providerModule = await import(`./providers/${authData.type}.ts`);
     const ProviderClass = providerModule.default;
     const providerInstance = new ProviderClass(authData);
     return providerInstance;

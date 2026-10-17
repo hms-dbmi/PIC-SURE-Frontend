@@ -31,7 +31,7 @@ vi.mock('#lib/explorer/mode.ts', () => ({
   isOpenAccess: vi.fn(() => false),
 }));
 
-// Same minimal store stub used by DatatableRow.test.ts / DatatableKeyboardNav.test.ts:
+// Same minimal store stub used by ui/datatable's Row.svelte.test.ts and RemoteTable.svelte.test.ts:
 // the real store eagerly imports explorer components that touch localStorage at
 // module load, which isn't available in this environment.
 vi.mock('#lib/explorer/ExpandableRow.ts', () => {

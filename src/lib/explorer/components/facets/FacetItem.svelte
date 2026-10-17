@@ -132,7 +132,7 @@
 
 <style lang="postcss">
   input.indeterminate {
-    background-image: url('../../assets/dash.svg');
+    background-image: url('../../../assets/dash.svg');
     background-size: 100% 100%;
     background-repeat: no-repeat;
     background-position: center;

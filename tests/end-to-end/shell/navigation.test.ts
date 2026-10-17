@@ -3,7 +3,7 @@ import { test, mockApiConfig, mockApiSuccess } from '../custom-context';
 import { picsureUser } from '../../support/mock-data';
 import { userIsLoggedIn } from '../utils';
 
-// Every role x route combination is covered by tests/component/Navigation.test.ts; these
+// Every role x route combination is covered by src/lib/shell/Navigation.svelte.test.ts; these
 // check the real app wires the signed-in user and current page into the bar.
 
 test.describe('Public Routes Navigation', () => {

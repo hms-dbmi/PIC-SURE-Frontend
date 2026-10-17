@@ -27,7 +27,7 @@ function bearer(headers: Record<string, string>): string | undefined {
 const SUB_1 = '11111111-1111-4111-8111-111111111111';
 const SUB_2 = '22222222-2222-4222-8222-222222222222';
 
-// the dictionary requests the discover page makes through api.ts, with the API key each carried as its bearer
+// the dictionary requests the discover page makes through api/client.ts, with the API key each carried as its bearer
 function recordDataRequests(page: Page): { url: string; apiKey?: string }[] {
   const seen: { url: string; apiKey?: string }[] = [];
   page.on('request', (request) => {

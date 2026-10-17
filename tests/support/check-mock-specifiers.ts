@@ -3,7 +3,7 @@
 // treats an unresolvable specifier as a module nobody imports, so the mock silently does
 // nothing and the test exercises the real module instead. Specifiers are resolved through the
 // project's own Vite config (same plugins, aliases and #lib imports that Vitest uses),
-// relative to the file that contains them. Checks every file under src/ and tests/, or only
+// relative to the file that contains them. Checks every file under src/, tests/ and scripts/, or only
 // the files given as arguments.
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
@@ -11,7 +11,7 @@ import ts from 'typescript';
 import { createServer } from 'vite';
 
 const root = path.resolve(import.meta.dirname, '../..');
-const scanDirs = ['src', 'tests'];
+const scanDirs = ['src', 'tests', 'scripts'];
 const skipDirs = new Set(['node_modules', 'end-to-end']);
 const mockMethods = new Set(['mock', 'doMock', 'unmock', 'doUnmock', 'importActual', 'importMock']);
 

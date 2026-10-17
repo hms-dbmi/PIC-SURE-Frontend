@@ -243,7 +243,7 @@ export function apiConfigMap(apiRows: ConfigObject[]): ConfigMap {
 // Combines an already-built API map and env map by precedence, so callers that need
 // to resolve just a handful of keys (e.g. the admin UI's per-field origin pill) aren't
 // forced to rebuild both maps from scratch just to reuse this rule - see
-// ConfigResolution.ts's describeConfigField.
+// resolve.ts's describeConfigField.
 export function mergeConfigMaps(apiMap: ConfigMap, envMap: ConfigMap): ConfigMap {
   return getConfigMode() === 'override' ? { ...apiMap, ...envMap } : { ...envMap, ...apiMap };
 }
@@ -256,7 +256,7 @@ export type ConfigKind = 'features' | 'settings' | 'branding';
 
 // The "kind" value sent as ?kind=<value> to the backend and used to gate whether API
 // overrides are available at all for a config kind - empty means the deployment
-// hasn't wired up the API for that kind. Used both server-side (configCache.ts's SSR
+// hasn't wired up the API for that kind. Used both server-side (config/server/cache.ts's SSR
 // bootstrap) and client-side (AdminConfiguration.ts's admin CRUD store,
 // ConfigKindTab.svelte's "unavailable" messaging) - centralized here so the env var
 // naming convention has exactly one place to change.

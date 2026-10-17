@@ -301,7 +301,7 @@ export async function login(token: string) {
   }
 }
 
-// A 401 or 403 from PSAMA's logout call makes api.ts start another logout, which would
+// A 401 or 403 from PSAMA's logout call makes api/client.ts start another logout, which would
 // navigate to /login a second time, so later calls share the logout already running.
 let pendingLogout: Promise<void> | undefined;
 

@@ -20,7 +20,7 @@
     "test:unit": "vitest run --project node",
     "test:component": "vitest run --project client",
     "test:integration": "playwright test",
-    "test:integration:slim": "playwright test --project chromium --reporter=./tests/minimal-reporter.ts --retries=1",
+    "test:integration:slim": "playwright test --project chromium --reporter=./tests/support/minimal-reporter.ts --retries=1",
     "playwright": "playwright test --ui",
     "playwright:dev": "PLAYWRIGHT_DEV=1 playwright test --ui",
     "precommit": "vite build && pnpm -s clean && pnpm -s check && pnpm -s test"

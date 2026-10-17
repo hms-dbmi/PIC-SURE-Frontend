@@ -8,7 +8,7 @@ import { findStyleNonceProblem, withStyleNonce } from './lib/server/csp';
 const PROVIDER_PREFIX = 'VITE_AUTH_PROVIDER_MODULE_';
 
 // Runs when the server starts. Registers all enabled auth providers in the .env file.
-// Providers are registered in the AuthProviderRegistry on the server and used to build
+// Providers are registered in the providerRegistry on the server and used to build
 // AuthProvider instances for each psrovider when required during login/logout.
 const enabledProviders = Object.keys(import.meta.env)
   .filter((key) => key.startsWith(PROVIDER_PREFIX) && import.meta.env[key] === 'true')
@@ -56,7 +56,7 @@ function analyzeRedirect(pathname: string): Response | undefined {
 }
 
 // Wraps each request in an isolated config store so concurrent requests can't
-// observe each other's config (see lib/server/configuration.ts).
+// observe each other's config (see lib/config/server/scope.ts).
 export const handle: Handle = async ({ event, resolve }) => {
   const redirect = analyzeRedirect(event.url.pathname);
   if (redirect) return redirect;

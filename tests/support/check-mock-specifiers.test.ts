@@ -15,14 +15,14 @@ afterEach(() => {
 // The fixture has to sit inside the repo: #lib and relative specifiers resolve from its location.
 describe('tests/support/check-mock-specifiers.ts', { timeout: 20_000 }, () => {
   it('reports every mock that does not resolve, and only those', () => {
-    dir = mkdtempSync(path.join(root, 'tests/unit/mock-check-'));
+    dir = mkdtempSync(path.join(root, 'tests/support/mock-check-'));
     const file = path.join(dir, 'fixture.ts');
     writeFileSync(
       file,
       [
-        `vi.mock('#lib/utilities/HTML.ts');`,
+        `vi.mock('#lib/utils/html.ts');`,
         `vi.mock('$app/state');`,
-        `vi.mock(import('../HTML.test.ts'));`,
+        `vi.mock(import('../check-mock-specifiers.test.ts'));`,
         `vi.mock('#lib/nope.ts');`,
         `vi.doMock('./nope.ts');`,
         `vi.mock('$app/nope');`,

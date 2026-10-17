@@ -75,7 +75,7 @@ export async function deleteConfigRow(kind: AdminConfigKind, uuid: string): Prom
 }
 
 // Forces the server-side config cache (used to build the app's own runtime config for
-// every session, see configCache.ts) to refetch immediately, instead of waiting for its
+// every session, see config/server/cache.ts) to refetch immediately, instead of waiting for its
 // routine up-to-4-hour expiry. Distinct from loadAdminConfig's `force`, which only
 // re-reads this admin UI's own view of the rows.
 export function invalidateConfigCache(): Promise<ConfigCache> {

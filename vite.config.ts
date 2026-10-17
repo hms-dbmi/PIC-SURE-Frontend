@@ -47,7 +47,7 @@ export default defineConfig(async ({ mode }) => {
           test: {
             name: 'node',
             environment: 'node',
-            include: ['src/**/*.test.ts', 'tests/unit/**/*.test.ts'],
+            include: ['src/**/*.test.ts', 'scripts/**/*.test.ts', 'tests/support/**/*.test.ts'],
             exclude: [...configDefaults.exclude, '**/*.svelte.test.ts'],
           },
         },
@@ -56,20 +56,16 @@ export default defineConfig(async ({ mode }) => {
           test: {
             name: 'client',
             environment: 'happy-dom',
-            include: [
-              'src/**/*.svelte.test.ts',
-              'tests/unit/**/*.svelte.test.ts',
-              'tests/component/**/*.test.ts',
-            ],
+            include: ['src/**/*.svelte.test.ts'],
           },
         },
       ],
     } satisfies ViteUserConfig['test'],
     server: {
       // Forwards to `npm run mock-api` (tests/end-to-end/mock-server), which serves fixture
-      // data from tests/end-to-end/mock-data.ts so `npm run dev` has something to talk to.
+      // data from tests/support/mock-data.ts so `npm run dev` has something to talk to.
       // The double-slash variants cover VITE_ORIGIN values with a trailing slash (see
-      // configCache.ts, which builds `${ORIGIN}/${path}`). Dev-only: this never applies to
+      // config/server/cache.ts, which builds `${ORIGIN}/${path}`). Dev-only: this never applies to
       // Playwright's build+preview run (mode 'test'), which mocks routes per-test instead.
       proxy:
         mode === 'test'

@@ -14,7 +14,7 @@ pnpm run dev              # vite dev server
 pnpm run check            # svelte-check typecheck, and every vi.mock path resolves
 pnpm run lint             # prettier --check and eslint
 pnpm run test:unit        # vitest, node project (*.test.ts)
-pnpm run test:component   # vitest, client project (*.svelte.test.ts, tests/component)
+pnpm run test:component   # vitest, client project (*.svelte.test.ts)
 pnpm run test:integration # playwright
 ```
 
