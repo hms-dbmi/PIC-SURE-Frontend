@@ -33,7 +33,7 @@
   {#await load()}
     <Loading />
   {:then}
-    <section id="connection-edit">
+    <section id="admin-connection-edit">
       <ConnectionForm {connection} />
     </section>
   {:catch}

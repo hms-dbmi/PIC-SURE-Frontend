@@ -48,6 +48,7 @@
       <Datatable
         tableName="variant-explorer"
         data-testid="explorer-variant-table"
+        id="explorer-variant-table"
         ariaLabel="Variant data"
         data={varData.rows}
         columns={varData.columns}

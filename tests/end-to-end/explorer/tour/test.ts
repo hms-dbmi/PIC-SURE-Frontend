@@ -86,7 +86,7 @@ test('Explorer tour button opens instruction modal', async ({ page }) => {
   await page.getByTestId('explorer-tour-start').click();
 
   // Then
-  await expect(page.locator('#modal-component')).toBeVisible();
+  await expect(page.getByRole('dialog')).toBeVisible();
 });
 test('Tour Finishes', async ({ page }) => {
   // Given
@@ -102,8 +102,8 @@ test('Tour Finishes', async ({ page }) => {
   await page.goto('/explorer');
   await userIsLoggedIn(page);
   await page.getByTestId('explorer-tour-start').click();
-  await expect(page.locator('#modal-component')).toBeVisible();
-  await page.locator('#modal-component').getByRole('button', { name: 'Start Tour' }).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.getByRole('dialog').getByRole('button', { name: 'Start Tour' }).click();
 
   // Then
   await walkTourAssertingRealHighlights(page);
@@ -127,8 +127,8 @@ test('Tour Finishes for BDC-Auth, with every step highlighting a real element', 
   await page.goto('/explorer');
   await userIsLoggedIn(page);
   await page.getByTestId('explorer-tour-start').click();
-  await expect(page.locator('#modal-component')).toBeVisible();
-  await page.locator('#modal-component').getByRole('button', { name: 'Start Tour' }).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.getByRole('dialog').getByRole('button', { name: 'Start Tour' }).click();
 
   // Then
   await walkTourAssertingRealHighlights(page);
@@ -139,10 +139,10 @@ test('Explorer tour starts from modal', async ({ page }) => {
   await userIsLoggedIn(page);
   await expect(page.getByTestId('explorer-tour-start')).toBeVisible();
   await page.getByTestId('explorer-tour-start').click();
-  await expect(page.locator('#modal-component')).toBeVisible();
+  await expect(page.getByRole('dialog')).toBeVisible();
 
   // When
-  await page.locator('#modal-component').getByRole('button', { name: 'Start Tour' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Start Tour' }).click();
 
   // Then
   await expect(page.locator('#driver-popover-content')).toBeVisible({ timeout: 10000 });
@@ -153,8 +153,8 @@ test('Escape key closes tour', async ({ page }) => {
   await userIsLoggedIn(page);
   await expect(page.getByTestId('explorer-tour-start')).toBeVisible();
   await page.getByTestId('explorer-tour-start').click();
-  await expect(page.locator('#modal-component')).toBeVisible();
-  await page.locator('#modal-component').getByRole('button', { name: 'Start Tour' }).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.getByRole('dialog').getByRole('button', { name: 'Start Tour' }).click();
   await expect(page.locator('#driver-popover-content')).toBeVisible({ timeout: 10000 });
 
   // When
@@ -185,7 +185,7 @@ test.describe('AUTH_TOUR_NAME', () => {
     await userIsLoggedIn(page);
 
     await page.getByTestId('explorer-tour-start').click();
-    await expect(page.locator('#modal-component')).toBeVisible();
+    await expect(page.getByRole('dialog')).toBeVisible();
 
     // Then
     await expect(page.getByTestId('ui-modal-header')).toContainText(

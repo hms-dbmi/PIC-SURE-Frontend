@@ -79,7 +79,6 @@
   onOpenChange={(e) => (open = e.open)}
   contentBase="overflow-auto max-w-screen w-1/2 max-h-screen"
   backdropClasses="backdrop-blur-sm"
-  ids={{ content: 'modal-component' }}
 >
   {#snippet content()}
     <ErrorAlert data-testid="explorer-filter-warning" color="warning">

@@ -9,7 +9,7 @@ import {
   picsureUser,
   userTypes,
 } from '../../../mock-data';
-import { userIsLoggedIn } from '../../../utils';
+import { expectUniqueIds, userIsLoggedIn } from '../../../utils';
 
 // Uses the browser's constraint validation state rather than its localized message text
 const isMissing = (field: Locator) =>
@@ -23,6 +23,18 @@ test.beforeEach(async ({ page }) => {
   await mockApiSuccess(page, '*/**/psama/privilege', mockPrivileges);
   await mockApiSuccess(page, '*/**/psama/application', mockApps);
   await mockApiSuccess(page, '*/**/psama/connection', mockConnections);
+});
+
+test('Configuration page ids stay unique with all three tables', async ({ page }) => {
+  // Given
+  await page.goto('/admin/configuration');
+  await userIsLoggedIn(page);
+
+  // Then
+  for (const table of ['admin-role-table', 'admin-privilege-table', 'admin-connection-table']) {
+    await expect(page.getByTestId(table)).toBeVisible();
+  }
+  await expectUniqueIds(page);
 });
 
 test('Add role button takes user to new role page', async ({ page }) => {
@@ -132,7 +144,7 @@ test('Clicking row takes user to edit role form', async ({ page }) => {
   await userIsLoggedIn(page);
 
   // When
-  await page.locator('#role-table table tbody tr').first().click();
+  await page.locator('#admin-role-section table tbody tr').first().click();
 
   // Then
   await page.waitForURL(`**/admin/configuration/role/${mockRoles[0].uuid}/edit`);
@@ -235,7 +247,7 @@ test.describe('Admin on Configuration page', () => {
     await expect(
       page.getByTestId('ui-tabs-control').filter({ hasText: 'Access Control' }),
     ).toHaveCount(0);
-    await expect(page.locator('#role-table')).toHaveCount(0);
+    await expect(page.locator('#admin-role-section')).toHaveCount(0);
     await expect(page.getByRole('button', { name: '+ Create banner' })).toBeVisible();
   });
   for (const path of ['new', `${mockRoles[0].uuid}/edit`]) {

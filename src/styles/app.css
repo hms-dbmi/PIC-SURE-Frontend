@@ -173,37 +173,37 @@ hr {
   }
 
   .btn,
-  #appShell div:has(nav#page-navigation),
-  #appShell div:has(div#user-session-avatar) {
+  #app-shell div:has(nav#app-nav),
+  #app-shell div:has(div#app-nav-user) {
     display: none;
   }
 
-  #page-footer {
+  #app-page-footer {
     display: none;
   }
 
-  header:has(#nav-logo) {
+  header:has(#app-nav-logo) {
     border: none !important;
     content: center;
   }
 
   body.overflow-hidden,
-  #appShell.overflow-hidden,
-  #appShell div.overflow-hidden {
+  #app-shell.overflow-hidden,
+  #app-shell div.overflow-hidden {
     overflow: auto !important;
   }
   body.h-full,
-  #appShell.h-full,
-  #appShell div.h-full {
+  #app-shell.h-full,
+  #app-shell div.h-full {
     height: auto !important;
   }
 }
 
-#sidebar-right {
+#results-sidebar {
   height: 100%;
   border-left: 2px solid var(--color-surface-500);
 }
-#appShell > header {
+#app-shell > header {
   border-bottom: 2px solid var(--color-surface-500);
 }
 
@@ -326,19 +326,19 @@ header .app-bar {
   border-bottom: solid var(--color-surface-400) 2px;
 }
 
-/* #page is the app's scroll viewport (the nav bar sits outside it). Declaring it
+/* #app-page is the app's scroll viewport (the nav bar sits outside it). Declaring it
    a size container lets pages size full-height sections with cqh units. */
-#page {
+#app-page {
   container-type: size;
 }
 
-#page-footer {
+#app-page-footer {
   border-style: solid;
   border-top-width: 1px;
   @apply border-surface-400-600;
 }
 
-#sitemap-footer {
+#app-footer-sitemap {
   padding: 0.5em 0 0;
   margin: 0 auto;
   text-align: center;
@@ -346,34 +346,34 @@ header .app-bar {
   @apply bg-primary-50-950;
 }
 
-#sitemap-footer ul {
+#app-footer-sitemap ul {
   text-align: left;
   margin: 0 2em;
 }
 
-#main-footer {
+#app-footer {
   padding: 0.75rem;
   margin-top: 0;
   @apply preset-filled-primary-100-900;
 }
 
-#main-footer ul {
+#app-footer ul {
   margin: 0 auto;
   text-align: center;
 }
 
-#main-footer ul li {
+#app-footer ul li {
   display: inline;
   padding: 0 0.45rem;
   border-style: solid;
   border-right-width: 1px;
   @apply border-primary-400-600;
 }
-#main-footer ul li:last-child {
+#app-footer ul li:last-child {
   border-right: none;
 }
 
-nav#page-navigation {
+nav#app-nav {
   display: flex;
   flex-flow: row wrap;
   align-items: stretch;
@@ -382,16 +382,16 @@ nav#page-navigation {
   margin: 0.6rem -0.6rem 0;
 }
 
-nav#page-navigation ul {
+nav#app-nav ul {
   list-style-type: none;
 }
 
-nav#page-navigation li {
+nav#app-nav li {
   float: left;
   margin: 0.4rem 0.2rem;
 }
 
-nav#page-navigation li a.nav-link {
+nav#app-nav li a.nav-link {
   font-size: 1rem;
   padding: 0 1rem;
   line-height: 1rem;
@@ -405,49 +405,49 @@ nav#page-navigation li a.nav-link {
   @apply rounded-xl;
 }
 
-nav#page-navigation a.nav-link[aria-current='page'] {
+nav#app-nav a.nav-link[aria-current='page'] {
   @apply preset-filled-primary-500;
 }
 
-nav#page-navigation a.nav-link:hover,
-nav#page-navigation a.nav-link:active,
-nav#page-navigation a.nav-link:focus,
-nav#page-navigation li.open a.nav-link,
-nav#page-navigation a.nav-link.highlight {
+nav#app-nav a.nav-link:hover,
+nav#app-nav a.nav-link:active,
+nav#app-nav a.nav-link:focus,
+nav#app-nav li.open a.nav-link,
+nav#app-nav a.nav-link.highlight {
   @apply preset-filled-secondary-500;
 }
 
-nav#page-navigation li .nav-dropdown {
+nav#app-nav li .nav-dropdown {
   position: absolute;
   padding-bottom: var(--radius-container);
   width: 8rem;
   @apply rounded-container bg-primary-400-600;
 
-  /* link top padding (from nav#page-navigation li: 0.4rem) + link height (from nav#page-navigation li a.nav-link: 2.75rem) */
+  /* link top padding (from nav#app-nav li: 0.4rem) + link height (from nav#app-nav li a.nav-link: 2.75rem) */
   top: 3.15rem;
 }
-nav#page-navigation li .nav-dropdown li {
+nav#app-nav li .nav-dropdown li {
   display: block;
   width: 100%;
   margin: 0;
 }
 
-nav#page-navigation li.open > .nav-dropdown {
+nav#app-nav li.open > .nav-dropdown {
   border-radius: 0 0 var(--radius-container) var(--radius-container);
 }
 
-nav#page-navigation li.open a.nav-link {
+nav#app-nav li.open a.nav-link {
   border-radius: var(--radius-container) var(--radius-container) 0 0;
 }
 
-nav#page-navigation li .nav-dropdown a {
+nav#app-nav li .nav-dropdown a {
   display: block;
   text-align: center;
   padding: 0.2em;
 }
 
-nav#page-navigation li .nav-dropdown a:hover,
-nav#page-navigation li .nav-dropdown a:focus {
+nav#app-nav li .nav-dropdown a:hover,
+nav#app-nav li .nav-dropdown a:focus {
   @apply bg-secondary-400-600;
 }
 
@@ -455,7 +455,7 @@ nav#page-navigation li .nav-dropdown a:focus {
   @apply anchor;
 }
 
-#visualizations {
+#explorer-visualizations {
   .main-svg {
     border-radius: var(--radius-container);
     box-shadow: 0 0 2px 0px var(--color-surface-500);
@@ -482,7 +482,7 @@ nav#page-navigation li .nav-dropdown a:focus {
 }
 
 .input-border,
-#user-token #token {
+#user-token #user-token-value {
   @apply input;
   overflow: auto;
   overflow-wrap: break-word;

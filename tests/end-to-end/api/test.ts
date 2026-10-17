@@ -12,7 +12,7 @@ async function expectSectionAligned(page: Page, id: string) {
   await expect
     .poll(() =>
       page.evaluate((sectionId) => {
-        const scroller = document.getElementById('page')!;
+        const scroller = document.getElementById('app-page')!;
         const section = document.getElementById(sectionId)!;
         const sectionTop =
           section.getBoundingClientRect().top -
@@ -323,8 +323,8 @@ test.describe('API page', () => {
     await userIsLoggedIn(page);
 
     // When
-    const expires = page.locator('#expires');
-    const badge = page.locator('#expires-badge');
+    const expires = page.locator('#user-token-expires');
+    const badge = page.locator('#user-token-expires-badge');
 
     // Then
     await expect(expires).toBeVisible();
@@ -339,7 +339,7 @@ test.describe('API page', () => {
     await userIsLoggedIn(page);
 
     // When
-    const userEmail = page.locator('#account');
+    const userEmail = page.locator('#user-token-account');
 
     // Then
     await expect(userEmail).toBeVisible();
@@ -351,7 +351,7 @@ test.describe('API page', () => {
     await userIsLoggedIn(page);
 
     // When
-    const userToken = page.locator('#token');
+    const userToken = page.locator('#user-token-value');
 
     // Then
     await expect(userToken).toBeVisible();
@@ -407,7 +407,7 @@ test.describe('API page', () => {
     // When
     const revealButton = page.getByTestId('user-token-reveal');
     await revealButton.click();
-    const userToken = page.locator('#token');
+    const userToken = page.locator('#user-token-value');
 
     // Then
     // The page shows the token from the user served in beforeEach
@@ -432,7 +432,7 @@ test.describe('API page', () => {
 
     // When
     const refreshButton = page.getByTestId('user-token-refresh-trigger');
-    const userToken = page.locator('#token');
+    const userToken = page.locator('#user-token-value');
     await refreshButton.click();
 
     // Then
@@ -453,7 +453,7 @@ test.describe('API page', () => {
 
     // When
     const refreshButton = page.getByTestId('user-token-refresh-trigger');
-    const expires = page.locator('#expires');
+    const expires = page.locator('#user-token-expires');
     await refreshButton.click();
     // Confirm Modal pops up
     const confrimButton = page.locator('button:has-text("Confirm")');
@@ -463,7 +463,7 @@ test.describe('API page', () => {
     await expect(refreshButton).toHaveText('Refreshed!');
     await expect(refreshButton).toBeDisabled();
 
-    const userToken = page.locator('#token');
+    const userToken = page.locator('#user-token-value');
     await expect(userToken).not.toHaveText(placeHolderDots);
     await expect(userToken).toHaveText(newToken);
     await expect(expires).toContainText('Tue Jul 07 2274');
@@ -474,9 +474,9 @@ test.describe('API page', () => {
     await userIsLoggedIn(page);
 
     // When
-    const userToken = page.locator('#token');
+    const userToken = page.locator('#user-token-value');
     const refreshButton = page.getByTestId('user-token-refresh-trigger');
-    const expires = page.locator('#expires');
+    const expires = page.locator('#user-token-expires');
     await refreshButton.click();
     // Confirm Modal pops up
     const cancel = page.locator('button:has-text("Cancel")');
@@ -517,7 +517,7 @@ test.describe('API page', () => {
       await expect(page.locator('#user-token')).toBeVisible();
       await expect(async () => {
         const offset = await page.evaluate((itemId) => {
-          const scroller = document.getElementById('page');
+          const scroller = document.getElementById('app-page');
           const item = document.getElementById(itemId);
           if (!scroller || !item) return NaN;
           const itemTop =
@@ -709,7 +709,7 @@ test.describe('API page logged out', () => {
     await expect(workflowLink).toHaveAttribute('aria-current', 'true');
     await expect(authLink).not.toHaveAttribute('aria-current', 'true');
 
-    const hasOverflow = await page.locator('#page').evaluate((scroller) => {
+    const hasOverflow = await page.locator('#app-page').evaluate((scroller) => {
       scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'instant' });
       return scroller.scrollHeight > scroller.clientHeight;
     });
@@ -717,7 +717,7 @@ test.describe('API page logged out', () => {
     await expect(docsLink).toHaveAttribute('aria-current', 'true');
     await expect(toc.locator('a[aria-current="true"]')).toHaveCount(1);
 
-    await page.locator('#page').evaluate((scroller) => {
+    await page.locator('#app-page').evaluate((scroller) => {
       scroller.scrollTo({ top: 0, behavior: 'instant' });
     });
     await expect(authLink).toHaveAttribute('aria-current', 'true');
@@ -806,7 +806,7 @@ test.describe('API page logged out', () => {
       'true',
     );
     const before = (await toc.boundingBox())!;
-    const scrolledBy = await page.locator('#page').evaluate((scroller) => {
+    const scrolledBy = await page.locator('#app-page').evaluate((scroller) => {
       const before = scroller.scrollTop;
       scroller.scrollBy({ top: 100, behavior: 'instant' });
       return scroller.scrollTop - before;

@@ -21,17 +21,17 @@
   <div class="contents">
     <main class="w-full h-full">
       <div
-        id="appShell"
+        id="app-shell"
         class="w-full h-full flex flex-col overflow-hidden"
         data-testid="app-shell"
       >
         {@render header?.()}
         <div class="flex-auto w-full h-full flex overflow-hidden">
-          <div id="page" class="flex-1 overflow-x-hidden flex flex-col">
-            <main id="page-content" class="flex-auto">
+          <div id="app-page" class="flex-1 overflow-x-hidden flex flex-col">
+            <main id="app-page-content" class="flex-auto">
               {@render children?.()}
             </main>
-            <footer id="page-footer" class="flex-none">
+            <footer id="app-page-footer" class="flex-none">
               {@render pageFooter?.()}
             </footer>
           </div>

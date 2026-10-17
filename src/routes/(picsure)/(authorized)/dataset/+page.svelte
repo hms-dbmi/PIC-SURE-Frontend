@@ -50,6 +50,7 @@
       searchable
       tableName="ActiveDatasets"
       data-testid="dataset-active-table"
+      id="dataset-active-table"
       title="Active Datasets"
       data={$active}
       {rowClickHandler}
@@ -63,6 +64,7 @@
         searchable
         tableName="ArchivedDatasets"
         data-testid="dataset-archived-table"
+        id="dataset-archived-table"
         title="Deleted Datasets"
         data={$archived}
         {rowClickHandler}

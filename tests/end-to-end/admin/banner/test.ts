@@ -28,7 +28,7 @@ test.describe('Visitors receive banners across navigation', () => {
       .poll(() =>
         page.evaluate(() => {
           const bannerElement = document.querySelector('[data-testid="banner-region"]');
-          const navigationElement = document.querySelector('#page-navigation');
+          const navigationElement = document.querySelector('#app-nav');
           return Boolean(
             bannerElement &&
             navigationElement &&
@@ -39,7 +39,7 @@ test.describe('Visitors receive banners across navigation', () => {
       )
       .toBe(true);
 
-    await page.locator('#nav-link-help').click();
+    await page.locator('#app-nav-link-help').click();
     await expect(page).toHaveURL('/help');
     await expect.poll(() => feedRequests).toBeGreaterThanOrEqual(2);
     await expect(bannerRegion).toBeVisible();
@@ -266,7 +266,7 @@ test.describe('Admins review and target published banners', () => {
     await expect(page.getByRole('region', { name: 'Release notice' })).toHaveCount(0);
     await expect(page.getByRole('region', { name: 'For everyone' })).toBeVisible();
 
-    await page.locator('#nav-link-help').click();
+    await page.locator('#app-nav-link-help').click();
     await expect(page).toHaveURL('/help');
     await expect(page.getByRole('region', { name: 'Release notice' })).toContainText(
       'Saved query limits are changing',
@@ -378,7 +378,7 @@ test.describe('Visitors dismiss a banner until its content changes', () => {
       `{"${dismissalBanner.uuid}":"${dismissalBanner.presentationHash}"}`,
     );
 
-    await page.locator('#nav-link-help').click();
+    await page.locator('#app-nav-link-help').click();
     await expect(page).toHaveURL('/help');
     await expect.poll(() => feedRequests).toBeGreaterThanOrEqual(2);
     await expect(page.getByRole('region', { name: 'Dismissible maintenance' })).toHaveCount(0);
@@ -528,14 +528,14 @@ test.describe('Admins create, edit, and publish banners', () => {
     await startEditing();
 
     // When: the nav's Configuration link opens Site banners, the tab that's already open
-    await page.locator('#nav-link-admin-configuration').click();
+    await page.locator('#app-nav-link-admin-configuration').click();
     await page.getByRole('button', { name: 'Keep editing' }).click();
 
     // Then
     await expect(editor).toContainText('Unsaved configuration-link content');
 
     // When
-    await page.locator('#nav-link-admin-configuration').click();
+    await page.locator('#app-nav-link-admin-configuration').click();
     await page.getByRole('button', { name: 'Discard changes' }).click();
 
     // Then

@@ -113,7 +113,7 @@
   {#if showExportButton}
     <div class="h-11 mt-4">
       <button
-        id="export-data-button"
+        id="results-export-open"
         type="button"
         class="btn preset-filled-primary-500"
         disabled={resultCountsState.loading}
@@ -127,7 +127,7 @@
       </button>
     </div>
   {/if}
-  <div id="export-filters" class="flex flex-col items-center mt-7 w-80">
+  <div id="results-export-filters" class="flex flex-col items-center mt-7 w-80">
     <hr />
     <div class="flex content-center items-center mt-6">
       <h5 class="text-xl flex-auto ml-9 mr-2 mb-2 pt-1">Filtered Data Summary</h5>
@@ -170,7 +170,7 @@
         {#if showExplorerDistributions}
           <CardButton
             href={resolve('explorer/distributions')}
-            id="explorer-distributions-btn"
+            id="results-distributions-open"
             data-testid="results-distributions-open"
             title="Variable Distributions"
             icon="fa-solid fa-chart-pie"
@@ -181,7 +181,7 @@
         {#if showDiscoverDistributions}
           <CardButton
             href={resolve('discover/distributions')}
-            id="explorer-distributions-btn"
+            id="results-distributions-open"
             data-testid="results-distributions-open"
             title="Variable Distributions"
             icon="fa-solid fa-chart-pie"

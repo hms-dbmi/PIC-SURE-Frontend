@@ -23,7 +23,7 @@
   let providerInstance: AuthProvider | undefined = $state(undefined);
 
   function getId({ path, id }: { path: string; id?: string; text: string }) {
-    return `nav-link` + (id ? `-` + id : path.replaceAll('/', '-'));
+    return `app-nav-link` + (id ? `-` + id : path.replaceAll('/', '-'));
   }
 
   function handleLogin(e: Event) {
@@ -70,7 +70,7 @@
       <Logo height={4} class="mx-1" />
     </a>
   {/snippet}
-  <nav id="page-navigation">
+  <nav id="app-nav">
     <ul>
       {#each $userRoutes as route}
         <li>
@@ -86,7 +86,7 @@
     </ul>
   </nav>
   {#snippet trail()}
-    <div id="user-session-avatar" class="content-center">
+    <div id="app-nav-user" class="content-center">
       {#if $user && $user.privileges && $user.email && isUserLoggedIn()}
         <!-- Logout -->
         <Popover data-testid="app-nav-user-menu">
@@ -105,7 +105,7 @@
           <div class="flex flex-col items-center">
             <p class="pb-6">{$user.email}</p>
             <button
-              id="user-logout-btn"
+              id="app-nav-logout"
               class="btn preset-filled-primary-500 w-fit"
               title="Logout"
               onclick={() => {
@@ -118,7 +118,7 @@
       {:else}
         <!-- Login -->
         <button
-          id="user-login-btn"
+          id="app-nav-login"
           title="Login"
           class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
           onclick={handleLogin}

@@ -65,7 +65,7 @@
   {/snippet}
   {#snippet sidebarRight()}
     {#if showSidebar}
-      <div id="sidebar-right" class="flex overflow-auto">
+      <div id="results-sidebar" class="flex overflow-auto">
         <SidePanel />
       </div>
     {/if}

@@ -109,7 +109,7 @@ test('Clicking row takes user to edit connection form', async ({ page }) => {
   await userIsLoggedIn(page);
 
   // When
-  await page.locator('#connection-table table tbody tr').first().click();
+  await page.locator('#admin-connection-section table tbody tr').first().click();
 
   // Then
   await page.waitForURL(`**/admin/configuration/connection/${mockConnections[0].uuid}/edit`);

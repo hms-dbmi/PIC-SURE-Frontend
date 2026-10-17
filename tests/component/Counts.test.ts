@@ -54,7 +54,7 @@ describe('Counts.svelte rendering', () => {
     render(Counts);
     const node = await screen.findByText('600±3');
     expect(node).toBeInTheDocument();
-    expect(node.id).toBe('result-count-number');
+    expect(node.id).toBe('results-count-number');
   });
 
   it('renders a plain numeric count with locale formatting', async () => {

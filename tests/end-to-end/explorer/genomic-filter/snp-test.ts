@@ -43,7 +43,7 @@ test('Selecting SNP option advances snp filter options', async ({ page }) => {
   await page.getByTestId('genomic-type-snp').click();
 
   // Then
-  await expect(page.locator('#snp-search')).toBeVisible();
+  await expect(page.locator('#genomic-snp-search')).toBeVisible();
 });
 test('Search box enforces valid snp format', async ({ page }) => {
   // Given

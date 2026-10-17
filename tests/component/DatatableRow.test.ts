@@ -61,6 +61,7 @@ describe('Datatable Row', () => {
 
     const { container } = render(Row, {
       tableName: 'ExplorerTable',
+      tableId: 'test-table',
       columns,
       index: 0,
       row,
@@ -79,6 +80,7 @@ describe('Datatable Row', () => {
   it('emits search_result.row_click for the search-results table that opts in via rowClickLogAction', async () => {
     const { container } = render(Row, {
       tableName: 'ExplorerTable',
+      tableId: 'test-table',
       columns,
       index: 0,
       row,
@@ -97,6 +99,7 @@ describe('Datatable Row', () => {
 
     const { container } = render(Row, {
       tableName: 'ExplorerTable',
+      tableId: 'test-table',
       columns,
       index: 0,
       row,
@@ -118,6 +121,7 @@ describe('Datatable Row', () => {
 
     const { container } = render(Row, {
       tableName: 'ActiveDatasets',
+      tableId: 'test-table',
       columns,
       index: 0,
       row,
@@ -140,6 +144,7 @@ describe('Datatable Row', () => {
 
     const { container } = render(Row, {
       tableName: 'ActiveDatasets',
+      tableId: 'test-table',
       columns,
       index: 0,
       row,
@@ -160,6 +165,7 @@ describe('Datatable Row', () => {
 
     const { container } = render(Row, {
       tableName: 'ActiveDatasets',
+      tableId: 'test-table',
       columns,
       index: 0,
       row,
@@ -179,6 +185,7 @@ describe('Datatable Row', () => {
 
     const { container } = render(Row, {
       tableName: 'ActiveDatasets',
+      tableId: 'test-table',
       columns,
       index: 0,
       row,

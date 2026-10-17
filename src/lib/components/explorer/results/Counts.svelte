@@ -23,12 +23,12 @@
   {#if isLoading}
     <Loading ring size="mini" />
   {:else}
-    <div id="result-count">
+    <div id="results-count">
       {#if !hasCount}
         <span class="text-4xl font-bold">{ERROR_VALUE}</span>
       {:else}
         <div class="flex flex-row h-full">
-          <span id="result-count-number" class="text-4xl">{count}</span>
+          <span id="results-count-number" class="text-4xl">{count}</span>
         </div>
       {/if}
     </div>

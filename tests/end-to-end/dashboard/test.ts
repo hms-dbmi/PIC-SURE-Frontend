@@ -23,7 +23,7 @@ test.describe('Dashboard page', () => {
       await userIsLoggedIn(page);
 
       // Then
-      await expect(page.locator('#data-container')).toBeVisible();
+      await expect(page.locator('#dashboard-data')).toBeVisible();
     });
     test('Dashboard renders buttons', async ({ page }) => {
       // Given
@@ -48,7 +48,7 @@ test.describe('Dashboard page', () => {
 
       // Then
       await expect(page).toHaveURL(/\/dashboard$/);
-      await expect(page.locator('#drawer')).not.toBeVisible();
+      await expect(page.getByRole('dialog')).not.toBeVisible();
     });
     test('Dashboard rows are clickable and open drawer', async ({ page }) => {
       // Given
@@ -59,11 +59,11 @@ test.describe('Dashboard page', () => {
       await userIsLoggedIn(page);
 
       // When
-      await page.locator('#ExplorerTable-row-0-col-0').click();
+      await page.locator('#dashboard-table-row-0-col-0').click();
 
       // Then
-      await expect(page.locator('#drawer')).toBeVisible();
-      await expect(page.locator('#drawer').getByTestId('dashboard-drawer-title')).toHaveText(
+      await expect(page.getByRole('dialog')).toBeVisible();
+      await expect(page.getByRole('dialog').getByTestId('dashboard-drawer-title')).toHaveText(
         mockDashboard.rows[0].name as string,
       );
     });
@@ -76,13 +76,13 @@ test.describe('Dashboard page', () => {
       await userIsLoggedIn(page);
 
       // When
-      await page.locator('#ExplorerTable-row-0-col-0').click();
+      await page.locator('#dashboard-table-row-0-col-0').click();
 
       // Then
-      await expect(page.locator('#drawer')).toBeVisible();
+      await expect(page.getByRole('dialog')).toBeVisible();
       const entries = Object.entries(mockDashboard.rows[0]);
       const drawerText = await page
-        .locator('#drawer')
+        .getByRole('dialog')
         .getByTestId('dashboard-drawer-details')
         .innerText();
       const lines = drawerText.split('\n');

@@ -69,7 +69,7 @@ test.describe('Access unavailable', () => {
     await page.goto('/dashboard');
     await userIsLoggedIn(page);
 
-    await expect(page.locator('#data-container')).toBeVisible();
+    await expect(page.locator('#dashboard-data')).toBeVisible();
     await expect(page.getByTestId('toast-root')).not.toBeVisible();
   });
 });

@@ -115,7 +115,7 @@ test('Clicking row takes user to edit priviledge form', async ({ page }) => {
   await userIsLoggedIn(page);
 
   // When
-  await page.locator('#privilege-table table tbody tr').first().click();
+  await page.locator('#admin-privilege-section table tbody tr').first().click();
 
   // Then
   await page.waitForURL(`**/admin/configuration/privilege/${mockPrivileges[0].uuid}/edit`);

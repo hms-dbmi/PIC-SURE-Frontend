@@ -1,6 +1,6 @@
 import { expect, type BrowserContext, type Route } from '@playwright/test';
 import { test, mockApiSuccess, mockApiSuccessByMethod } from '../../custom-context';
-import { userIsLoggedIn } from '../../utils';
+import { expectUniqueIds, userIsLoggedIn } from '../../utils';
 import { picsureUser, userTypes } from '../../mock-data';
 import type { ApiKeyMetadata } from '../../../../src/lib/models/ApiKey';
 
@@ -96,6 +96,7 @@ test.describe('api keys list', () => {
     await expect(userTable).toContainText('Active');
     await expect(userTable).toContainText('Expired');
     await expect(userTable).not.toContainText('picsure_p_def67890…');
+    await expectUniqueIds(page);
   });
 
   test('Shows the server total in the table footer', async ({ context, page }) => {

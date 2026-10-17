@@ -25,7 +25,6 @@
   <label class="flex place-items-center"
     >Show
     <select
-      id="row-count-select"
       class="ml-2 rounded-xl"
       aria-label="Rows per page"
       bind:value={handler.rowsPerPage}

@@ -59,7 +59,7 @@ test.describe('Single-flag branches', () => {
     await expect(page).toHaveURL('/explorer/genome-filter');
     await expect(page.getByTestId('genomic-type-gene')).not.toBeVisible();
     await expect(page.getByTestId('genomic-type-snp')).not.toBeVisible();
-    await expect(page.locator('#gene-search')).toBeVisible();
+    await expect(page.locator('#genomic-gene-search')).toBeVisible();
   });
 
   test('ENABLE_GENE_QUERY=false / ENABLE_SNP_QUERY=true skips the type selector and goes straight to SNP search', async ({
@@ -82,7 +82,7 @@ test.describe('Single-flag branches', () => {
     await expect(page).toHaveURL('/explorer/genome-filter');
     await expect(page.getByTestId('genomic-type-gene')).not.toBeVisible();
     await expect(page.getByTestId('genomic-type-snp')).not.toBeVisible();
-    await expect(page.locator('#snp-search')).toBeVisible();
+    await expect(page.locator('#genomic-snp-search')).toBeVisible();
   });
 
   test('ENABLE_GENE_QUERY=false / ENABLE_SNP_QUERY=false hides the genomic filter entry point entirely', async ({

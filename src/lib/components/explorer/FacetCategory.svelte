@@ -155,7 +155,6 @@
           type="search"
           placeholder={'Filter ' + facetCategory.display}
           name="facet-fitler"
-          id={facetCategory.name + '-filter'}
           bind:value={textFilterValue}
           onblur={() => {
             if (textFilterValue)
@@ -185,7 +184,10 @@
 {#if !$openFacets.includes(facetCategory.name)}
   <div class="mb-2 flex flex-wrap gap-2" transition:scale={{ easing: elasticInOut }}>
     {#each selectedFacetsChips as facet}
-      <span class="badge z-10 preset-outlined-surface-500 py-2 overflow-hidden" id={facet.name}>
+      <span
+        class="badge z-10 preset-outlined-surface-500 py-2 overflow-hidden"
+        data-testid="explorer-facet-badge-{facet.name}"
+      >
         <span class="overflow-hidden text-ellipsis whitespace-nowrap min-w-0">
           {facet.display}
         </span>

@@ -192,7 +192,7 @@
     {#snippet content()}
       {#if $isTopAdmin}
         <Tabs.Panel value="Access Control">
-          <div id="role-table" class="mb-10">
+          <div id="admin-role-section" class="mb-10">
             <h2>Roles Management</h2>
             {#await loadRoles()}
               <Loading />
@@ -211,6 +211,7 @@
               <Datatable
                 tableName="Roles"
                 data-testid="admin-role-table"
+                id="admin-role-table"
                 data={$roles}
                 columns={roleTable.columns}
                 cellOverides={roleTable.overrides}
@@ -223,7 +224,7 @@
               </ErrorAlert>
             {/await}
           </div>
-          <div id="privilege-table" class="mb-10">
+          <div id="admin-privilege-section" class="mb-10">
             <h2>Privileges Management</h2>
             {#await loadAppsAndPriv()}
               <Loading />
@@ -242,6 +243,7 @@
               <Datatable
                 tableName="Privileges"
                 data-testid="admin-privilege-table"
+                id="admin-privilege-table"
                 data={$privileges}
                 columns={privilegesTable.columns}
                 cellOverides={privilegesTable.overrides}
@@ -254,7 +256,7 @@
               </ErrorAlert>
             {/await}
           </div>
-          <div id="connection-table" class="mb-10">
+          <div id="admin-connection-section" class="mb-10">
             <h2>Connections Management</h2>
             {#await loadConnections()}
               <Loading />
@@ -273,6 +275,7 @@
               <Datatable
                 tableName="Connections"
                 data-testid="admin-connection-table"
+                id="admin-connection-table"
                 data={$connections}
                 columns={connectionTable.columns}
                 cellOverides={connectionTable.overrides}

@@ -24,8 +24,8 @@
 
   $effect(() => {
     const targets = entries.map(({ id }) => ({ id, element: document.getElementById(id) }));
-    // The page shell scrolls #page rather than window; TocLayout's sticky rail shares this container.
-    const scroller = document.getElementById('page');
+    // The page shell scrolls #app-page rather than window; TocLayout's sticky rail shares this container.
+    const scroller = document.getElementById('app-page');
     if (!scroller || targets.length === 0) return;
 
     const update = () => {

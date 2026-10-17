@@ -5,11 +5,7 @@
   import type { TableProps } from './types';
 
   import { activeTable, activeRow, closeActiveRow } from '#lib/stores/ExpandableRow.ts';
-  import {
-    isFormField,
-    isTextEntryField,
-    tableIdPrefix,
-  } from '#lib/components/datatable/keyboard.ts';
+  import { isFormField, isTextEntryField } from '#lib/components/datatable/keyboard.ts';
   import { log, createLog } from '#lib/logger.ts';
   import ExpandableRow from '#lib/components/datatable/Row.svelte';
   import ThFilter from '#lib/components/datatable/accessories/Filter.svelte';
@@ -26,6 +22,7 @@
 
   let {
     tableName,
+    id,
     'data-testid': testid,
     handler,
     isLoading = $bindable(false),
@@ -79,13 +76,14 @@
     page: number;
     rowsAtRequest: unknown;
   } | null = null;
-  const idPrefix = $derived(tableIdPrefix(tableName));
-  const helpId = $derived(`${idPrefix}-kbd-help`);
+  const uid = $props.id();
+  const tableId = $derived(id ?? uid);
+  const helpId = $derived(`${tableId}-kbd-help`);
 
   function dataRows(): HTMLTableRowElement[] {
     if (!tbodyElement) return [];
     return Array.from(
-      tbodyElement.querySelectorAll<HTMLTableRowElement>(`tr[id^="${idPrefix}-row-"]`),
+      tbodyElement.querySelectorAll<HTMLTableRowElement>(`tr[id^="${tableId}-row-"]`),
     );
   }
 
@@ -311,7 +309,7 @@
     <div class="sr-only" aria-live="polite">{announcement}</div>
   {/if}
   <table
-    id="{tableName}-table"
+    id={tableId}
     data-testid={testid}
     class="table table-{tableAuto ? 'auto' : 'fixed'} {className}"
     class:w-max={fullWidth}
@@ -354,6 +352,7 @@
         {#each handler.rows as row, i}
           <ExpandableRow
             {tableName}
+            {tableId}
             {cellOverides}
             {columns}
             index={i}

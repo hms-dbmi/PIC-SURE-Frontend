@@ -38,8 +38,8 @@ test.describe('Discover for unauthenticated users', () => {
     await page.goto('/discover');
 
     // Then
-    await expect(page.locator('#search-bar')).toBeVisible();
-    await expect(page.locator('#facet-side-bar')).toBeVisible();
+    await expect(page.locator('#explorer-search-bar')).toBeVisible();
+    await expect(page.locator('#explorer-facet-sidebar')).toBeVisible();
   });
   test('Discover can display ±3 ', async ({ page }) => {
     // Given
@@ -64,7 +64,7 @@ test.describe('Discover for unauthenticated users', () => {
     const plusMinus = match?.[2] || '0';
     // Then
     await expect(page.locator('#results-panel')).toBeVisible();
-    await expect(page.locator('#result-count')).toContainText(
+    await expect(page.locator('#results-count')).toContainText(
       new RegExp(`^${numeric.toLocaleString()}\\s*±\\s*${plusMinus}\\s*$`),
     );
   });
@@ -103,7 +103,7 @@ test.describe('Discover for unauthenticated users', () => {
       hierarchyResponse,
     );
     await page.goto('/discover?search=somedata');
-    const row = page.locator(`#ExplorerTable-row-${rowIndex}`);
+    const row = page.locator(`#explorer-table-row-${rowIndex}`);
     const hierarchyButton = row.locator('td').last().locator('button').nth(2);
     await hierarchyButton.click();
     // Then
@@ -161,7 +161,7 @@ test.describe('OPEN_TOUR_NAME', () => {
     await page.goto('/discover');
 
     await page.getByTestId('explorer-tour-start').click();
-    await expect(page.locator('#modal-component')).toBeVisible();
+    await expect(page.getByRole('dialog')).toBeVisible();
 
     // Then
     await expect(page.getByTestId('ui-modal-header')).toContainText('Welcome to PIC-SURE');

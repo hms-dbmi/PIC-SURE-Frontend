@@ -152,10 +152,10 @@ test('The Configuration nav link returns to the default tab', async ({ page }) =
   await expect(page.getByTestId('admin-config-tab-branding')).toBeVisible();
 
   // When
-  await page.locator('#nav-link-admin-configuration').click();
+  await page.locator('#app-nav-link-admin-configuration').click();
 
   // Then
-  await expect(page.locator('#role-table')).toBeVisible();
+  await expect(page.locator('#admin-role-section')).toBeVisible();
   await expect(page).toHaveURL(/\/admin\/configuration\?tab=access-control$/);
 });
 
@@ -191,7 +191,7 @@ test('Terms of Service is hidden while the terms feature is off', async ({ page 
     'Branding',
     'API Keys',
   ]);
-  await expect(page.locator('#role-table')).toBeVisible();
+  await expect(page.locator('#admin-role-section')).toBeVisible();
 });
 
 test('Top admins land on Access Control and see no read-only notice', async ({ page }) => {
@@ -200,7 +200,7 @@ test('Top admins land on Access Control and see no read-only notice', async ({ p
   await userIsLoggedIn(page);
 
   // Then
-  await expect(page.locator('#role-table')).toBeVisible();
+  await expect(page.locator('#admin-role-section')).toBeVisible();
 
   // When
   await clickTab(page, 'Branding');

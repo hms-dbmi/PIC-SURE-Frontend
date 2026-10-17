@@ -144,7 +144,7 @@
     </ErrorAlert>
   </div>
 {/if}
-<div id="visualizations" class="flex flex-row flex-wrap gap-6 items-center justify-center">
+<div id="explorer-visualizations" class="flex flex-row flex-wrap gap-6 items-center justify-center">
   {#if loading}
     <Loading ring size="medium" />
   {:else if plotValues.length}

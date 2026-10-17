@@ -30,7 +30,7 @@
   }
 </script>
 
-<div id="snp-search" class="grid grid-cols-1 gap-3 {className || ''}">
+<div id="genomic-snp-search" class="grid grid-cols-1 gap-3 {className || ''}">
   <Panel data-testid="genomic-snp-panel" title="Search for Genomic Variants">
     <Search disabled={!!snp.search} search={snp.search} {onvalid} />
     {#if snp.search}

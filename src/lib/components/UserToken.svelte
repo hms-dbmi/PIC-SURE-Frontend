@@ -94,20 +94,22 @@
         </div>
       </header>
       <section class="p-4 grid grid-cols-2 gap-y-2 items-center">
-        <label for="account">Account:</label>
-        <span id="account" class="w-full">{account}</span>
-        <label for="token">Token:</label>
-        <div id="token">{revealed ? token : placeHolderToken}</div>
-        <label for="expires">Expires:</label>
+        <label for="user-token-account">Account:</label>
+        <span id="user-token-account" class="w-full">{account}</span>
+        <label for="user-token-value">Token:</label>
+        <div id="user-token-value">{revealed ? token : placeHolderToken}</div>
+        <label for="user-token-expires">Expires:</label>
         <div>
-          <span id="expires" class="w-1/3 mr-2"
+          <span id="user-token-expires" class="w-1/3 mr-2"
             >{getTokenExpirationAsDate($user?.token || '')
               ?.toString()
               ?.substring(0, 24)}</span
           >
           {#if badge}
-            <span id="expires-badge" class="badge {badge}" data-testid="user-token-expires"
-              >{badge.toUpperCase()}</span
+            <span
+              id="user-token-expires-badge"
+              class="badge {badge}"
+              data-testid="user-token-expires">{badge.toUpperCase()}</span
             >
           {/if}
         </div>

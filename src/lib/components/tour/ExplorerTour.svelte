@@ -65,7 +65,7 @@
 
   const clickFilterOption = (activeRowSelector?: string) => {
     const allOptions = document.querySelector(
-      `#${activeRowSelector} #select-all`,
+      `#${activeRowSelector} [data-testid="ui-options-selection-list-select-all"]`,
     ) as HTMLInputElement;
     allOptions?.click();
 
@@ -106,8 +106,7 @@
   const findAndSetFirstNonStigmatizedAvailableFilterThenNext: DriverHook = () => {
     // click the first row that doesn't have a disabled filter button
     // Work from the table rows to find the first one that has a filter button
-    // #ExplorerTable-table
-    const table = document.querySelector('#ExplorerTable-table') as HTMLTableElement;
+    const table = document.querySelector('#explorer-table') as HTMLTableElement;
     const rows = table.querySelectorAll('tr');
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
@@ -225,7 +224,7 @@
       );
       resetSearch();
       selectedFacets.set([]);
-      const sidePanel = document.querySelector('#side-panel') as HTMLElement;
+      const sidePanel = document.querySelector('#results-side-panel') as HTMLElement;
       if (sidePanel.classList.contains('open-panel')) {
         (document.querySelector('#results-panel-toggle') as HTMLElement)?.click();
       }
@@ -295,7 +294,7 @@
 <button
   type="button"
   data-testid="explorer-tour-start"
-  id="tourBtn"
+  id="explorer-tour-start"
   class="btn preset-filled-secondary-500"
   onclick={() => {
     started = false;

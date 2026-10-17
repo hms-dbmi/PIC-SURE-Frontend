@@ -9,6 +9,7 @@
     isRoot = false,
     disabled = false,
   }: { node: RadioNodeInterface; index: number; isRoot?: boolean; disabled?: boolean } = $props();
+  const uid = $props.id();
 </script>
 
 <details
@@ -30,7 +31,7 @@
       ></i>
     {/if}
     <input
-      id="radio:{node.name}"
+      id="{uid}-radio"
       data-testid="ui-tree-radio-{node.name}"
       class="radio tree-item-radio self-center {isRoot ? 'ml-[28px]' : ''}"
       type="radio"
@@ -40,9 +41,7 @@
       checked={node.selected}
       onclick={() => node.select()}
     />
-    <label for="{node.isLeaf ? 'radio:' : 'tree-item-btn:'}{node.name}" class="w-full"
-      >{node.name}</label
-    >
+    <label for="{uid}-{node.isLeaf ? 'radio' : 'toggle'}" class="w-full">{node.name}</label>
   </summary>
   <div class="tree-item-children ml-4" data-testid="ui-tree-children-{node.name}" role="group">
     {#if !node.isLeaf}

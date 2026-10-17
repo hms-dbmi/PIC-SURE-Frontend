@@ -268,7 +268,7 @@ test.describe('Add Filters', () => {
     await clickNthFilterIcon(page);
     const component = page.getByTestId('ui-options-selection-list');
     await optionsHaveLoaded(page);
-    const selectAllButton = component.locator('#select-all');
+    const selectAllButton = component.getByTestId('ui-options-selection-list-select-all');
     await selectAllButton.click();
 
     const addFilterButton = page.getByTestId('filter-add');
@@ -296,7 +296,7 @@ test.describe('Add Filters', () => {
 
     // When
     await clickNthFilterIcon(page, 5);
-    const selectAllButton = page.locator('#select-all');
+    const selectAllButton = page.getByTestId('ui-options-selection-list-select-all');
     await selectAllButton.click();
 
     const addFilterButton = page.getByTestId('filter-add');
@@ -309,7 +309,7 @@ test.describe('Add Filters', () => {
     );
 
     await clickNthFilterIcon(page, 6);
-    const selectAllButton2 = page.locator('#select-all');
+    const selectAllButton2 = page.getByTestId('ui-options-selection-list-select-all');
     await selectAllButton2.click();
 
     const addFilterButton2 = page.getByTestId('filter-add');
@@ -500,7 +500,7 @@ test.describe('Add Filters', () => {
     await edit.click();
 
     // Then
-    const modal = page.locator('#modal-component');
+    const modal = page.getByRole('dialog');
     await expect(modal).toBeVisible();
     await expect(modal.getByTestId('ui-modal-header')).toContainText('Edit Filter');
   });
@@ -528,8 +528,8 @@ test.describe('Add Filters', () => {
     await expect(firstAddedFilter).toBeVisible();
     const edit = firstAddedFilter.locator('button').first();
     await edit.click();
-    const modal = page.locator('#modal-component');
-    const selectedOptionContainer = modal.locator('#selected-options-container');
+    const modal = page.getByRole('dialog');
+    const selectedOptionContainer = modal.getByTestId('ui-options-selection-list-selected');
     const selectedOptions = await selectedOptionContainer.getByRole('listitem').all();
     const firstSelectedOption = selectedOptions[0];
 
@@ -559,7 +559,7 @@ test.describe('Add Filters', () => {
     await expect(firstAddedFilter).toBeVisible();
     const edit = firstAddedFilter.locator('button').first();
     await edit.click();
-    const modal = page.locator('#modal-component');
+    const modal = page.getByRole('dialog');
     const variableInfo = modal.locator('.variable-info');
 
     // Then
@@ -596,9 +596,9 @@ test.describe('Add Filters', () => {
     const firstValueString = await section.innerText();
     const edit = firstAddedFilter.locator('button').first();
     await edit.click();
-    const modal = page.locator('#modal-component');
+    const modal = page.getByRole('dialog');
     await expect(modal).toBeVisible();
-    const selectedOptionContainer = modal.locator('#selected-options-container');
+    const selectedOptionContainer = modal.getByTestId('ui-options-selection-list-selected');
     const firstUnslectedOption = await getOption(modal);
     await firstUnslectedOption.click();
     const selectedOptions = await selectedOptionContainer.getByRole('listitem').all();
@@ -650,7 +650,7 @@ test.describe('Any record of filter', () => {
     await secondItem.click();
     const addFilterButton = page.getByTestId('filter-add');
     await addFilterButton.click();
-    await expect(page.locator('#modal-component')).not.toBeVisible();
+    await expect(page.getByRole('dialog')).not.toBeVisible();
     await expect(page.getByTestId(/^results-filter-any-record-of-.*-trigger$/)).toBeVisible();
   });
   test('Adding an any record of filter adds the filter to the results panel', async ({ page }) => {
@@ -697,11 +697,7 @@ test.describe('Any record of filter', () => {
     await addedFilter.click();
     const modal = page.getByTestId('results-any-record-of-view');
     await expect(modal).toBeVisible();
-    await page
-      .locator('#modal-component')
-      .filter({ has: modal })
-      .getByTestId('ui-modal-close')
-      .click();
+    await page.getByRole('dialog').filter({ has: modal }).getByTestId('ui-modal-close').click();
     await expect(modal).not.toBeVisible();
   });
   test('If there is only Any Record of filter, the distributions button is hidden', async ({
@@ -724,7 +720,7 @@ test.describe('User with no query scopes can add filters without error', () => {
     // When
     await clickNthFilterIcon(page, outOfScopeStudy);
     await page.getByTestId('filter-add').click();
-    await page.locator('#export-data-button').click();
+    await page.locator('#results-export-open').click();
 
     // Then
     await expect(page.locator('#discover-error-container')).not.toBeVisible();
@@ -798,7 +794,7 @@ test.describe('Query V3 OR features', () => {
       detailResForAge,
     );
     await clickNthFilterIcon(page, 5);
-    const selectAllButton = page.locator('#select-all');
+    const selectAllButton = page.getByTestId('ui-options-selection-list-select-all');
     await selectAllButton.click();
     const addFilterButton = page.getByTestId('filter-add');
     await addFilterButton.click();
@@ -809,7 +805,7 @@ test.describe('Query V3 OR features', () => {
       detailResForAge2,
     );
     await clickNthFilterIcon(page, 6);
-    const selectAllButton2 = page.locator('#select-all');
+    const selectAllButton2 = page.getByTestId('ui-options-selection-list-select-all');
     await selectAllButton2.click();
     const addFilterButton2 = page.getByTestId('filter-add');
     await addFilterButton2.click();

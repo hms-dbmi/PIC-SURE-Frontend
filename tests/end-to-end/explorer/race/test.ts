@@ -25,7 +25,7 @@ function resultsWith(rowCount: number) {
 }
 
 function resultRows(page: Page) {
-  return page.locator('#ExplorerTable-table tbody tr[id^="ExplorerTable-row-"]');
+  return page.locator('#explorer-table tbody tr[id^="explorer-table-row-"]');
 }
 
 // Cancellation surfaces only as a requestfailed event. Assert the count, not the
@@ -78,7 +78,7 @@ async function holdFirstSearchFor(page: Page, term: string) {
 
 async function searchFor(page: Page, term: string) {
   await page.getByTestId('ui-search-input').fill(term);
-  await page.locator('#search-button').click();
+  await page.locator('#explorer-search-submit').click();
 }
 
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
@@ -116,7 +116,7 @@ test('a search started on /explorer does not land on /discover', async ({ page }
   // cancel the request by itself and the test would pass with teardown deleted.
   await searchFor(page, 'age');
   await slowSearch.requested;
-  await page.locator('#nav-link-discover').click();
+  await page.locator('#app-nav-link-discover').click();
   await expect(page).toHaveURL(/\/discover/);
   // /discover re-runs the search itself (Explorer preserves $searchTerm)
   await expect(resultRows(page)).toHaveCount(CURRENT_ROWS);
@@ -146,7 +146,7 @@ test('the incoming page still searches after the outgoing one is destroyed', asy
   await expect(resultRows(page)).toHaveCount(CURRENT_ROWS);
 
   // When
-  await page.locator('#nav-link-discover').click();
+  await page.locator('#app-nav-link-discover').click();
   await expect(page).toHaveURL(/\/discover/);
   await searchFor(page, 'bmi');
 

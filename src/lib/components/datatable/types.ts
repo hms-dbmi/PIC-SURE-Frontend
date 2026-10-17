@@ -9,7 +9,10 @@ export interface Column {
 }
 
 export interface TableProps {
+  // Also the rows-per-page storage key and the fallback caption.
   tableName: string;
+  // The table's DOM id (unique by default); its rows are `<id>-row-<n>`.
+  id?: string;
   'data-testid'?: string;
   isLoading?: boolean;
   searchable?: boolean;

@@ -8,7 +8,7 @@
     }
   },
   {
-    "element": "#search-button",
+    "element": "#explorer-search-submit",
     "popover": {
       "title": "Search",
       "description": "Press the Enter key or click the search icon to submit your search.",
@@ -16,7 +16,7 @@
     }
   },
   {
-    "element": "#ExplorerTable-table",
+    "element": "#explorer-table",
     "popover": {
       "title": "Search results",
       "description": "The results of the search are displayed in this area. Each row describes a different variable that matches your search result.",
@@ -59,7 +59,7 @@
     }
   },
   {
-    "element": "#sidebar-right",
+    "element": "#results-sidebar",
     "popover": {
       "title": "Filters added",
       "description": "Any filters added will end up in the results sidebar."
@@ -75,7 +75,7 @@
     }
   },
   {
-    "element": "#active-row-1 #options-container",
+    "element": "#active-row-1 [data-testid=ui-options-selection-list-available]",
     "popover": {
       "title": "Add categorical filter",
       "description": "To add a categorical filter, click on the options you want to include in the filter.",
@@ -93,7 +93,7 @@
     }
   },
   {
-    "element": "#sidebar-right",
+    "element": "#results-sidebar",
     "popover": {
       "title": "Added filters",
       "description": "You can view, edit, or delete previously added filters from the result sidebar.",
@@ -110,7 +110,7 @@
     }
   },
   {
-    "element": "#sidebar-right",
+    "element": "#results-sidebar",
     "popover": {
       "title": "Added exports",
       "description": "You can view, or delete previously added variables for export from the result sidebar.",
@@ -118,7 +118,7 @@
     }
   },
   {
-    "element": "#nav-link-help",
+    "element": "#app-nav-link-help",
     "onHighlighted": "addHighlightClass",
     "onDeselected": "removeHighlightClass",
     "popover": {

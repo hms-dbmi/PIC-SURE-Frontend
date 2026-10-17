@@ -61,7 +61,6 @@
 </script>
 
 <div
-  id={filter.uuid}
   class="flex flex-col card bg-surface-100 p-1 m-1"
   in:scale={{ easing: elasticInOut }}
   out:fade={{ duration: 300 }}

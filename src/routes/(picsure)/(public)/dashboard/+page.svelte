@@ -54,13 +54,14 @@
   <title>{config.branding.applicationName}</title>
 </svelte:head>
 <Content title="Data Dashboard" class="content-center" full>
-  <section id="data-container" class="">
+  <section id="dashboard-data" class="">
     {#await dataLoadPromise}
       <Loading />
     {:then}
       <Datatable
         {tableName}
         data-testid="dashboard-table"
+        id="dashboard-table"
         ariaLabel="Data dashboard"
         data={currentRows}
         columns={currentColumns}

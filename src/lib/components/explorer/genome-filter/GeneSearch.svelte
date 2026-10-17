@@ -21,7 +21,7 @@
   const helpText = $derived(config.branding.help.popups.genomicFilter);
 </script>
 
-<div id="gene-search" class="grid grid-cols-3 gap-3 {className || ''}">
+<div id="genomic-gene-search" class="grid grid-cols-3 gap-3 {className || ''}">
   <Panel
     data-testid="genomic-gene-panel"
     title="Search for Gene with Variant"

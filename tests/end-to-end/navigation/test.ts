@@ -14,9 +14,9 @@ test.describe('Public Routes Navigation', () => {
 
     await page.goto('/help');
 
-    await expect(page.locator('#nav-link-help')).toHaveAttribute('aria-current', 'page');
-    await expect(page.locator('#nav-link-api')).not.toHaveAttribute('aria-current');
-    await expect(page.locator('#nav-link-dataset')).toHaveCount(0);
+    await expect(page.locator('#app-nav-link-help')).toHaveAttribute('aria-current', 'page');
+    await expect(page.locator('#app-nav-link-api')).not.toHaveAttribute('aria-current');
+    await expect(page.locator('#app-nav-link-dataset')).toHaveCount(0);
   });
 });
 
@@ -36,30 +36,30 @@ test.describe('Any logged in user', () => {
 
   test('Session avatar should reflect correct user initial after login', async ({ page }) => {
     // Then
-    await expect(page.locator('#user-session-avatar')).toContainText(
+    await expect(page.locator('#app-nav-user')).toContainText(
       (picsureUser as { email: string }).email.charAt(0).toUpperCase(),
     );
   });
   test('Session avatar should not have user initial after logout', async ({ page }) => {
     // When
-    await page.locator('#user-session-avatar button').first().click();
-    await expect(page.locator('#user-logout-btn')).toBeVisible();
+    await page.locator('#app-nav-user button').first().click();
+    await expect(page.locator('#app-nav-logout')).toBeVisible();
 
-    const logoutButton = page.locator('#user-logout-btn');
+    const logoutButton = page.locator('#app-nav-logout');
     await logoutButton.click();
     await page.waitForURL(/\/login/);
 
     await page.goto('/');
 
     // Then
-    await expect(page.locator('#user-session-avatar')).toContainText('Login');
+    await expect(page.locator('#app-nav-user')).toContainText('Login');
   });
   test('Clicking logout redirects to login page', async ({ page }) => {
     // When
-    const popoutButton = page.locator('#user-session-avatar button').first();
+    const popoutButton = page.locator('#app-nav-user button').first();
     await popoutButton.click();
 
-    const logoutButton = page.locator('#user-logout-btn');
+    const logoutButton = page.locator('#app-nav-logout');
     await expect(logoutButton).toBeVisible();
     await logoutButton.click();
     await page.waitForURL('/login');
@@ -70,7 +70,7 @@ test.describe('Any logged in user', () => {
 });
 
 const roleLandings = [
-  { userType: 'generalUser', path: '/explorer', hidden: '#nav-link-admin-users' },
+  { userType: 'generalUser', path: '/explorer', hidden: '#app-nav-link-admin-users' },
   { userType: 'adminUser', path: '/admin/users', hidden: undefined },
   { userType: 'superUser', path: '/admin/configuration', hidden: undefined },
 ];
@@ -86,9 +86,9 @@ roleLandings.forEach(({ userType, path, hidden }) => {
       await page.goto(path);
       await userIsLoggedIn(page);
 
-      const navItem = page.locator(`#nav-link${path.replaceAll('/', '-')}`);
+      const navItem = page.locator(`#app-nav-link${path.replaceAll('/', '-')}`);
       await expect(navItem).toHaveAttribute('aria-current', 'page');
-      await expect(page.locator('#nav-link-help')).not.toHaveAttribute('aria-current');
+      await expect(page.locator('#app-nav-link-help')).not.toHaveAttribute('aria-current');
       if (hidden) await expect(page.locator(hidden)).toHaveCount(0);
     });
   });
@@ -106,7 +106,7 @@ test.describe('Navigation', () => {
     await page.goto('/');
 
     // When
-    const loginButton = page.locator('#user-login-btn');
+    const loginButton = page.locator('#app-nav-login');
     await expect(loginButton).toBeVisible();
     await loginButton.click();
 
@@ -123,7 +123,7 @@ test.describe('Navigation', () => {
     await page.goto('/?search=somedata');
 
     // When
-    const loginButton = page.locator('#user-login-btn');
+    const loginButton = page.locator('#app-nav-login');
     await expect(loginButton).toBeVisible();
     await loginButton.click();
 
@@ -143,7 +143,7 @@ test.describe('Navigation', () => {
 
     // Then
     await expect(page).toHaveURL('/');
-    await expect(page.locator('#landing')).toBeVisible();
+    await expect(page.locator('#landing-page')).toBeVisible();
   });
   test('Print page hides navigation links', async ({ page }) => {
     // Given
@@ -153,7 +153,7 @@ test.describe('Navigation', () => {
     await page.emulateMedia({ media: 'print' });
 
     // Then
-    await expect(page.locator('#page-navigation')).not.toBeVisible();
+    await expect(page.locator('#app-nav')).not.toBeVisible();
   });
 });
 

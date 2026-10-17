@@ -45,7 +45,7 @@ test.describe('Filter warning navigation', () => {
     });
 
     await page.goto('/discover');
-    await page.locator('#nav-link-explorer').click();
+    await page.locator('#app-nav-link-explorer').click();
 
     await expect(page).toHaveURL(/\/discover$/);
     const warning = page.getByTestId('explorer-filter-warning');
@@ -81,10 +81,10 @@ test.describe('Filter warning navigation', () => {
     });
 
     await page.goto('/discover');
-    await page.locator('#nav-link-api').click();
+    await page.locator('#app-nav-link-api').click();
     await expect(page).toHaveURL(/\/api$/);
 
-    await page.locator('#nav-link-explorer').click();
+    await page.locator('#app-nav-link-explorer').click();
 
     await expect(page).toHaveURL(/\/api$/);
     await expect(page.getByTestId('explorer-filter-warning')).toBeVisible();
@@ -111,7 +111,7 @@ test.describe('Filter warning navigation', () => {
     });
 
     await page.goto('/discover');
-    await page.locator('#nav-link-explorer').click();
+    await page.locator('#app-nav-link-explorer').click();
 
     await expect(page).toHaveURL(/\/discover$/);
     await expect(page.getByTestId('explorer-filter-warning')).toBeVisible();

@@ -14,7 +14,6 @@
 </script>
 
 <div
-  id={variable.studyId ? `${variable.studyId}-${variable.conceptPath}` : variable.conceptPath}
   data-testid="results-export-item-{variable.conceptPath}"
   class="flex flex-col card bg-surface-100 p-1 m-1"
   transition:fade={{ duration: 300 }}

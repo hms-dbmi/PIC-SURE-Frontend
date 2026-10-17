@@ -33,8 +33,8 @@
   });
 </script>
 
-<div id="side-panel" class="flex {$panelOpen ? 'open' : 'closed'}-panel">
-  <div id="side-panel-bar">
+<div id="results-side-panel" class="flex {$panelOpen ? 'open' : 'closed'}-panel">
+  <div id="results-side-panel-bar">
     <button
       type="button"
       id="results-panel-toggle"
@@ -57,14 +57,14 @@
 </div>
 
 <style>
-  #side-panel-bar {
+  #results-side-panel-bar {
     display: flex;
     flex-direction: column;
     justify-content: top;
     width: 42px;
     padding: 0 0.25rem;
   }
-  #side-panel-bar #results-panel-toggle {
+  #results-side-panel-bar #results-panel-toggle {
     margin-top: 2.3rem;
   }
 </style>

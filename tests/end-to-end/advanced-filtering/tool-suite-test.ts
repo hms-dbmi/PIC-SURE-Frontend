@@ -208,6 +208,6 @@ test.describe('Advanced Query Builder - Build Advanced Query Button', () => {
     expect(page.url()).toContain('/advanced-filtering');
 
     // Verify the sidebar opened and shows the OR operator
-    await expect(page.locator('#side-panel')).toBeVisible();
+    await expect(page.locator('#results-side-panel')).toBeVisible();
   });
 });

@@ -8,7 +8,7 @@ import {
   conceptTreePath,
   conceptsDetailPath,
 } from '../mock-data';
-import { userIsLoggedIn } from '../utils';
+import { expectUniqueIds, userIsLoggedIn } from '../utils';
 
 const datasetPath = '*/**/picsure/operations/dataset/named';
 
@@ -81,6 +81,7 @@ test.describe('dataset', () => {
     // Then
     await expect(page.getByTestId('dataset-toggle-archive')).toBeVisible();
     await expect(page.getByText(mockData[1].query.uuid, { exact: true })).toBeVisible();
+    await expectUniqueIds(page);
   });
   test('Copy button displays popup msg', async ({ page }) => {
     // Given
@@ -143,7 +144,7 @@ test.describe('dataset', () => {
 
     // When
     const table = page.getByTestId('dataset-active-table');
-    const firstRow = table.locator('tr[id^="ActiveDatasets-row-"]').first();
+    const firstRow = table.locator('tr[id^="dataset-active-table-row-"]').first();
     await expect(firstRow).toBeVisible();
     await firstRow.focus();
 
@@ -172,7 +173,7 @@ test.describe('dataset', () => {
     // When
     const archiveButton = page.getByTestId(`dataset-action-archive-${mockData[0].uuid}`);
     await expect(archiveButton).toBeVisible();
-    const row = page.locator('tr[id^="ActiveDatasets-row-"]', { has: archiveButton }).first();
+    const row = page.locator('tr[id^="dataset-active-table-row-"]', { has: archiveButton }).first();
     await row.focus();
     await page.keyboard.press('d');
     await page.getByTestId('dataset-toggle-archive').click();

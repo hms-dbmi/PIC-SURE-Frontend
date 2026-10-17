@@ -32,8 +32,9 @@
   const {
     keyType,
     tableName,
+    id,
     'data-testid': testid,
-  }: { keyType: ApiKeyType; tableName: string; 'data-testid'?: string } = $props();
+  }: { keyType: ApiKeyType; tableName: string; id?: string; 'data-testid'?: string } = $props();
 
   let loadError = $state('');
 
@@ -94,6 +95,7 @@
 {:else}
   <RemoteTable
     {tableName}
+    {id}
     data-testid={testid}
     {handler}
     {columns}

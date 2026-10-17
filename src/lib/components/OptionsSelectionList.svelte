@@ -117,9 +117,6 @@
     );
   }
 
-  function getID(option: string) {
-    return option.replaceAll(' ', '-').toLowerCase();
-  }
   let infiniteScroll = $derived(allOptions === undefined);
   let totalAvailableOptions = $derived(
     infiniteScroll ? Infinity : (allOptions?.length || 0) - selectedOptions.length,
@@ -146,7 +143,7 @@
       />
       {#if showSelectAll}
         <button
-          id="select-all"
+          data-testid="ui-options-selection-list-select-all"
           class="btn preset-outlined-surface-500 hover:preset-filled-primary-500 ml-2 text-sm"
           disabled={unselectedOptions.length === 0}
           onclick={selectAllOptions}>Select All</button
@@ -155,14 +152,13 @@
     </header>
     <section class="card-body">
       <div
-        id="options-container"
+        data-testid="ui-options-selection-list-available"
         bind:this={unselectedOptionsContainer}
         class="overflow-scroll scrollbar-color h-25vh"
         onscroll={handleScroll}
       >
         {#each unselectedOptions as option}
           <label
-            id="option-{getID(option)}"
             class="p-1 m-1 block cursor-pointer hover:preset-tonal-surface hover:rounded-md"
             role="listitem"
           >
@@ -186,7 +182,7 @@
       <div class="py-2">Selected:</div>
       {#if showClearAll}
         <button
-          id="clear"
+          data-testid="ui-options-selection-list-clear"
           class="btn preset-outlined-surface-500 hover:preset-filled-primary-500 ml-2 text-sm"
           onclick={clearSelectedOptions}
           disabled={selectedOptions.length === 0}>Clear</button
@@ -195,14 +191,13 @@
     </header>
     <section class="card-body">
       <div
-        id="selected-options-container"
+        data-testid="ui-options-selection-list-selected"
         bind:this={selectedOptionsContainer}
         class="overflow-scroll scrollbar-color h-25vh"
         onscroll={loadMoreSelectedOptions}
       >
         {#each displayedSelectedOptions as option (option)}
           <label
-            id="option-{getID(option)}"
             class="p-1 m-1 block hover:preset-tonal-surface hover:rounded-md cursor-pointer"
             role="listitem"
           >

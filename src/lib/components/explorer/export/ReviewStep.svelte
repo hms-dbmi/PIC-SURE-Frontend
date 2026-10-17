@@ -167,7 +167,7 @@
   }
 </script>
 
-<div id="first-step-container" class="flex flex-col w-full h-full items-center">
+<div id="export-review-step" class="flex flex-col w-full h-full items-center">
   <Summary />
   <section class="w-full">
     {#if dataLimitExceeded}
@@ -185,6 +185,7 @@
       <Datatable
         tableName="ExportSummary"
         data-testid="export-summary-table"
+        id="export-summary-table"
         ariaLabel="Export summary"
         data={activeRows}
         {columns}
@@ -192,7 +193,7 @@
       {#if config.features.explorer.enableSampleIdCheckbox}
         <div>
           <label
-            for="sample-ids-checkbox"
+            for="export-sample-ids"
             class="flex items-center"
             data-testid="export-sample-ids-label"
           >
@@ -203,7 +204,7 @@
                 type="checkbox"
                 class="mr-1 &[aria-disabled=“true”]:opacity-75"
                 data-testid="export-sample-ids-checkbox"
-                id="sample-ids-checkbox"
+                id="export-sample-ids"
                 bind:checked={sampleIds}
                 onchange={toggleSampleIds}
               />

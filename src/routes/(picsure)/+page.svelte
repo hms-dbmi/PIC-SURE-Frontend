@@ -35,13 +35,13 @@
 </svelte:head>
 
 <div
-  id="landing"
+  id="landing-page"
   class="flex flex-wrap flex-col justify-evenly text-center items-center w-full h-full mt-8"
 >
-  <section id="search-section" class="flex flex-col text-center items-center my-auto w-2/3">
+  <section id="landing-search" class="flex flex-col text-center items-center my-auto w-2/3">
     <Searchbox placeholder={config.branding.landing.searchPlaceholder} bind:searchTerm {search} />
   </section>
-  <section id="actions-section" class="flex flex-row justify-evenly items-center mb-auto w-2/3">
+  <section id="landing-actions" class="flex flex-row justify-evenly items-center mb-auto w-2/3">
     {#each actionsToDisplay as { title, description, icon, url, btnText }, i}
       <div class="flex flex-col items-center w-1/{actionsToDisplay?.length || 3}">
         <div class="text-3xl my-1">{title}</div>

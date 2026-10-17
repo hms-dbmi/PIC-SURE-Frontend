@@ -14,6 +14,7 @@ import {
 } from '../mock-data';
 import { type SearchResult } from '../../../src/lib/models/Search';
 import {
+  expectUniqueIds,
   getOption,
   clickNthFilterIcon,
   optionsHaveLoaded,
@@ -41,11 +42,11 @@ test.describe('Explorer for authenticated users', () => {
     // Given
     await page.goto('/');
     await page.getByTestId('ui-search-input').fill('somedata');
-    await page.locator('#search-button').click();
+    await page.locator('#explorer-search-submit').click();
 
     // Then
-    await expect(page.locator('#search-bar')).toBeVisible();
-    await expect(page.locator('#facet-side-bar')).toBeVisible();
+    await expect(page.locator('#explorer-search-bar')).toBeVisible();
+    await expect(page.locator('#explorer-facet-sidebar')).toBeVisible();
   });
   test('Has filters, and searchbar when a search is from the url', async ({ page }) => {
     // Given
@@ -53,8 +54,8 @@ test.describe('Explorer for authenticated users', () => {
     await userIsLoggedIn(page);
 
     // Then
-    await expect(page.locator('#search-bar')).toBeVisible();
-    await expect(page.locator('#facet-side-bar')).toBeVisible();
+    await expect(page.locator('#explorer-search-bar')).toBeVisible();
+    await expect(page.locator('#explorer-facet-sidebar')).toBeVisible();
   });
   test('Facets with zero count are hidden', async ({ page }) => {
     await page.route(facetResultPath, async (route: Route) =>
@@ -65,7 +66,7 @@ test.describe('Explorer for authenticated users', () => {
     await userIsLoggedIn(page);
 
     // Then
-    await expect(page.locator('#facet-side-bar')).toBeVisible();
+    await expect(page.locator('#explorer-facet-sidebar')).toBeVisible();
     await expect(
       page
         .getByTestId('accordion-item')
@@ -79,8 +80,8 @@ test.describe('Explorer for authenticated users', () => {
     await userIsLoggedIn(page);
 
     // Then
-    await expect(page.locator('#search-bar')).toBeVisible();
-    await expect(page.locator('#search-button')).not.toBeDisabled();
+    await expect(page.locator('#explorer-search-bar')).toBeVisible();
+    await expect(page.locator('#explorer-search-submit')).not.toBeDisabled();
   });
   test('Has search result table when search is executed', async ({ page }) => {
     // Given
@@ -92,7 +93,7 @@ test.describe('Explorer for authenticated users', () => {
 
     // When
     await page.getByTestId('ui-search-input').fill('somedata');
-    await page.locator('#search-button').click();
+    await page.locator('#explorer-search-submit').click();
 
     // Then
     await expect(page.locator('table')).toBeVisible();
@@ -145,10 +146,10 @@ test.describe('Explorer for authenticated users', () => {
     await userIsLoggedIn(page);
 
     await page.getByLabel('Rows per page').selectOption('100');
-    await expect(
-      page.locator('#ExplorerTable-table tbody tr[id^="ExplorerTable-row-"]'),
-    ).toHaveCount(100);
-    const scrollContainer = page.locator('#page');
+    await expect(page.locator('#explorer-table tbody tr[id^="explorer-table-row-"]')).toHaveCount(
+      100,
+    );
+    const scrollContainer = page.locator('#app-page');
     await scrollContainer.evaluate((element) => element.scrollTo(0, element.scrollHeight));
     expect(await scrollContainer.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
 
@@ -157,8 +158,8 @@ test.describe('Explorer for authenticated users', () => {
     await expect(page.getByText('page-two-result-0', { exact: true })).toBeVisible();
     await expect
       .poll(() =>
-        page.locator('#ExplorerTable-table').evaluate((table) => {
-          const container = document.querySelector('#page');
+        page.locator('#explorer-table').evaluate((table) => {
+          const container = document.querySelector('#app-page');
           return Math.abs(
             table.getBoundingClientRect().top - (container?.getBoundingClientRect().top ?? 0),
           );
@@ -169,7 +170,7 @@ test.describe('Explorer for authenticated users', () => {
     const currentPageButton = page.getByLabel('Page 2');
     await currentPageButton.scrollIntoViewIfNeeded();
     const currentPageScroll = await currentPageButton.evaluate((button) => {
-      const container = document.querySelector('#page');
+      const container = document.querySelector('#app-page');
       if (!container) throw new Error('Page scroll container not found');
 
       const before = container.scrollTop;
@@ -207,7 +208,7 @@ test.describe('Explorer for authenticated users', () => {
 
         // When
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="explorer-table-row-"]').first();
         await expect(firstRow).toBeVisible();
         await firstRow.focus();
         await page.keyboard.press('Enter');
@@ -236,17 +237,17 @@ test.describe('Explorer for authenticated users', () => {
 
         // When
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="explorer-table-row-"]').first();
         await expect(firstRow).toBeVisible();
         await firstRow.focus();
         await page.keyboard.press('ArrowDown');
 
         // Then
-        await expect(tableBody.locator('#ExplorerTable-row-1')).toBeFocused();
+        await expect(tableBody.locator('#explorer-table-row-1')).toBeFocused();
 
         // When
         await page.keyboard.press('ArrowUp');
-        await expect(tableBody.locator('#ExplorerTable-row-0')).toBeFocused();
+        await expect(tableBody.locator('#explorer-table-row-0')).toBeFocused();
         await page.keyboard.press('f');
 
         // Then
@@ -266,7 +267,7 @@ test.describe('Explorer for authenticated users', () => {
         // When
         await expect(page.locator('tbody')).toBeVisible();
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="explorer-table-row-"]').first();
         await expect(firstRow).toBeVisible();
         await firstRow.click();
 
@@ -288,7 +289,7 @@ test.describe('Explorer for authenticated users', () => {
         // When
         const tableBody = page.locator('tbody');
         await expect(tableBody).toBeVisible();
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="explorer-table-row-"]').first();
         await expect(firstRow).toBeVisible();
         await firstRow.click();
 
@@ -314,7 +315,7 @@ test.describe('Explorer for authenticated users', () => {
         // When
         await expect(page.locator('tbody')).toBeVisible();
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="explorer-table-row-"]').first();
         const infoIcon = firstRow.locator('td').last().locator('button').first();
         await expect(infoIcon).toBeVisible();
         await infoIcon.click();
@@ -343,7 +344,7 @@ test.describe('Explorer for authenticated users', () => {
         // When
         await expect(page.locator('tbody')).toBeVisible();
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="explorer-table-row-"]').first();
         const infoIcon = firstRow.locator('td').last().locator('button').first();
         await expect(infoIcon).toBeVisible();
         await infoIcon.click();
@@ -392,7 +393,7 @@ test.describe('Explorer for authenticated users', () => {
         await expect(filterPanel).toBeVisible();
         // Filtered to data rows, so the open expansion row between them - and the
         // spinner row during loading - cannot shift the index.
-        const secondDataRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').nth(1);
+        const secondDataRow = tableBody.locator('tr[id^="explorer-table-row-"]').nth(1);
         await expect(secondDataRow).toBeVisible();
         await secondDataRow.click();
 
@@ -501,7 +502,7 @@ test.describe('Explorer for authenticated users', () => {
           value.toLowerCase().includes(searchValue.toLowerCase());
         const include = (row.values || []).filter(searchString);
         const exclude = (row.values || []).filter((value) => !searchString(value));
-        const options = page.locator('#options-container');
+        const options = page.getByTestId('ui-options-selection-list-available');
         await Promise.all([
           ...include.map((value) =>
             expect(options.getByLabel(value, { exact: true })).toBeVisible(),
@@ -510,6 +511,7 @@ test.describe('Explorer for authenticated users', () => {
             expect(options.getByLabel(value, { exact: true })).not.toBeVisible(),
           ),
         ]);
+        await expectUniqueIds(page);
       });
       test('Select all disabled when all options are added', async ({ page }) => {
         // Given
@@ -527,11 +529,11 @@ test.describe('Explorer for authenticated users', () => {
         await clickNthFilterIcon(page, 0);
 
         // When
-        const searchBtn = page.locator('#select-all');
-        await page.locator('#select-all').click();
+        const searchBtn = page.getByTestId('ui-options-selection-list-select-all');
+        await page.getByTestId('ui-options-selection-list-select-all').click();
 
         // Then
-        await expect(page.locator('#options-container')).toBeEmpty();
+        await expect(page.getByTestId('ui-options-selection-list-available')).toBeEmpty();
         await expect(searchBtn).toBeDisabled();
       });
       test('The dictionary details are different for the same dataset', async ({ page }) => {
@@ -635,7 +637,7 @@ test.describe('Explorer for authenticated users', () => {
         // When
         await expect(page.locator('tbody')).toBeVisible();
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="explorer-table-row-"]').first();
         const exportButton = firstRow.locator('td').last().locator('button').last();
         await expect(exportButton).toBeVisible();
         const iconExport = exportButton.locator('i');
@@ -658,7 +660,7 @@ test.describe('Explorer for authenticated users', () => {
         // When
         await expect(page.locator('tbody')).toBeVisible();
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="explorer-table-row-"]').first();
         const exportButton = firstRow.locator('td').last().locator('button').last();
         await exportButton.click();
 
@@ -678,7 +680,7 @@ test.describe('Explorer for authenticated users', () => {
         // When
         await expect(page.locator('tbody')).toBeVisible();
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="explorer-table-row-"]').first();
         const exportButton = firstRow.locator('td').last().locator('button').last();
         await exportButton.click();
 
@@ -700,7 +702,7 @@ test.describe('Explorer for authenticated users', () => {
         // When
         await expect(page.locator('tbody')).toBeVisible();
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="explorer-table-row-"]').first();
         const exportButton = firstRow.locator('td').last().locator('button').last();
         await exportButton.click();
         const addedExport = page.getByTestId(
@@ -723,9 +725,9 @@ test.describe('Explorer for authenticated users', () => {
         // When
         await expect(page.locator('tbody')).toBeVisible();
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="explorer-table-row-"]').first();
         const exportButton = firstRow.locator('td').last().locator('button').last();
-        const firstRow2 = tableBody.locator('tr[id^="ExplorerTable-row-"]').nth(1);
+        const firstRow2 = tableBody.locator('tr[id^="explorer-table-row-"]').nth(1);
         const exportButton2 = firstRow2.locator('td').last().locator('button').last();
         await exportButton.click();
         await exportButton2.click();
@@ -750,9 +752,9 @@ test.describe('Explorer for authenticated users', () => {
         // When
         await expect(page.locator('tbody')).toBeVisible();
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="explorer-table-row-"]').first();
         const exportButton = firstRow.locator('td').last().locator('button').last();
-        const firstRow2 = tableBody.locator('tr[id^="ExplorerTable-row-"]').nth(1);
+        const firstRow2 = tableBody.locator('tr[id^="explorer-table-row-"]').nth(1);
         const exportButton2 = firstRow2.locator('td').last().locator('button').last();
         await exportButton.click();
         await exportButton2.click();
@@ -786,7 +788,7 @@ test.describe('Explorer for authenticated users', () => {
         await userIsLoggedIn(page);
         // When
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="explorer-table-row-"]').first();
         const hierarchyButton = firstRow.locator('td').last().locator('button').nth(2);
         await hierarchyButton.click();
       });
@@ -802,7 +804,7 @@ test.describe('Explorer for authenticated users', () => {
         // When
         await expect(page.getByTestId('explorer-hierarchy')).toBeVisible();
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="explorer-table-row-"]').first();
         const hierarchyButton = firstRow.locator('td').last().locator('button').nth(2);
         await hierarchyButton.click();
         // Then
@@ -858,7 +860,7 @@ test.describe('Explorer for unauthenticated users', () => {
     // Then
     await expect(page).toHaveURL('/explorer');
     await userIsLoggedOut(page);
-    await expect(page.locator('#search-bar')).toBeVisible();
+    await expect(page.locator('#explorer-search-bar')).toBeVisible();
   });
 
   test('User is prompted to login if not authenticated and explorer is not open', async ({

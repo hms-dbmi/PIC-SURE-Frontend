@@ -41,7 +41,7 @@ test.describe('External link warning', () => {
     await page.goto('/');
     await userIsLoggedIn(page);
     // When
-    await page.locator('#main-footer').getByRole('link', { name: externalLink.title }).click();
+    await page.locator('#app-footer').getByRole('link', { name: externalLink.title }).click();
     // Then
     const modal = page.getByTestId('app-external-link-warning');
     await expect(modal).toBeVisible();
@@ -60,7 +60,7 @@ test.describe('External link warning', () => {
     );
     await page.goto('/');
     await userIsLoggedIn(page);
-    await page.locator('#main-footer').getByRole('link', { name: externalLink.title }).click();
+    await page.locator('#app-footer').getByRole('link', { name: externalLink.title }).click();
     // When
     // The new tab is opened with noopener, so wait on the context, not a page popup event
     const newPagePromise = page.context().waitForEvent('page');
@@ -86,7 +86,7 @@ test.describe('External link warning', () => {
     const logged = collectExternalLinkLogs(page);
     await page.goto('/');
     await userIsLoggedIn(page);
-    await page.locator('#main-footer').getByRole('link', { name: externalLink.title }).click();
+    await page.locator('#app-footer').getByRole('link', { name: externalLink.title }).click();
     // When
     const newPagePromise = page.context().waitForEvent('page');
     await page.getByRole('button', { name: branding.externalLinkWarning?.okText || 'OK' }).click();
@@ -133,7 +133,7 @@ test.describe('External link warning', () => {
     await page.goto('/');
     await userIsLoggedIn(page);
     // When
-    await page.locator('#nav-link-help').click();
+    await page.locator('#app-nav-link-help').click();
     // Then
     await expect(page).toHaveURL('/help');
     await expect(page.getByTestId('app-external-link-warning')).not.toBeVisible();

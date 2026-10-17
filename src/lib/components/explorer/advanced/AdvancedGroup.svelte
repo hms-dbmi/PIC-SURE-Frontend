@@ -168,13 +168,13 @@
       </div>
       <!-- TODO: NOT operator support — hidden until backend supports negation -->
       <div class="hidden flex items-center gap-2 ml-auto">
-        <label for="not">Not:</label>
+        <span>Not:</span>
         <Switch name="not" checked={not} onCheckedChange={handleNotChange}>
           {#snippet activeChild()}!{/snippet}
         </Switch>
       </div>
       {#if isDraggable}
-        <div id={`group-controls-${group.uuid}`} class="ml-auto">
+        <div id={`filter-group-controls-${group.uuid}`} class="ml-auto">
           <button
             type="button"
             title="Remove Subquery"
@@ -238,7 +238,7 @@
   {#if showDropPreview}
     <div
       data-testid="filter-drop-preview"
-      id={`drop-preview-${id}`}
+      id={`filter-drop-preview-${id}`}
       class="max-md:hidden absolute inset-0 bg-primary-500/10 border border-dashed border-primary-500 rounded-lg flex items-center justify-center mt-1"
     >
       <span class="text-primary-600 text-xs font-semibold uppercase tracking-wide">

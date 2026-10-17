@@ -39,7 +39,7 @@
           >
             {#snippet trigger()}
               <button
-                id="advanced-query-btn"
+                id="results-advanced-filtering-open"
                 data-testid="results-advanced-filtering-open"
                 class={aqbBtnClass}
                 disabled
@@ -50,7 +50,7 @@
           </Popover>
         {:else}
           <a
-            id="advanced-query-btn"
+            id="results-advanced-filtering-open"
             href={resolve(`${isDiscoverPage ? 'discover' : 'explorer'}/advanced-filtering`)}
             data-testid="results-advanced-filtering-open"
             class="{aqbBtnClass} !mr-0 hover:preset-filled-primary-500"

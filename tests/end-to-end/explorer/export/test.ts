@@ -85,13 +85,13 @@ async function setupExportPageAndAddFilterAndExport(
     await page.getByTestId('explorer-genomic-filter-open').click();
     await page.getByTestId('genomic-type-gene').click();
     await expect(page.getByTestId('genomic-filter-add')).not.toBeEnabled();
-    const optionsContainer = page.locator('#options-container');
+    const optionsContainer = page.getByTestId('ui-options-selection-list-available');
     await optionsContainer.getByLabel(geneValues.results[0]).click();
     await mockApiSuccess(page, countResultPath, 200);
     await page.getByTestId('genomic-filter-add').click();
   }
 
-  const exportForAnalysisButton = page.locator('button#export-data-button');
+  const exportForAnalysisButton = page.locator('button#results-export-open');
   await expect(exportForAnalysisButton).toBeVisible();
   await exportForAnalysisButton.click();
 }
@@ -112,9 +112,9 @@ async function checkStepRenderedCorrectly(
 
   // Check that the summary section is rendered if expected
   if (showSummary) {
-    await expect(page.locator('div#stats')).toBeVisible();
+    await expect(page.locator('div#export-summary-stats')).toBeVisible();
   } else {
-    await expect(page.locator('div#stats')).not.toBeVisible();
+    await expect(page.locator('div#export-summary-stats')).not.toBeVisible();
   }
 
   // Check that the next button is rendered with correct text and disabled state
@@ -195,44 +195,44 @@ test.describe('Export Page', () => {
 
     // Verify standard identifiers come first (Patient ID hardcoded, then system fields from env)
     for (let i = 0; i < standardIdentifiers.length; i++) {
-      await expect(page.locator(`#ExportSummary-row-${i}-col-0`)).toHaveText(
+      await expect(page.locator(`#export-summary-table-row-${i}-col-0`)).toHaveText(
         standardIdentifiers[i].name,
       );
-      await expect(page.locator(`#ExportSummary-row-${i}-col-1`)).toHaveText(
+      await expect(page.locator(`#export-summary-table-row-${i}-col-1`)).toHaveText(
         standardIdentifiers[i].description,
       );
-      await expect(page.locator(`#ExportSummary-row-${i}-col-2`)).toHaveText(
+      await expect(page.locator(`#export-summary-table-row-${i}-col-2`)).toHaveText(
         standardIdentifiers[i].type,
       );
     }
 
     // System field from VITE_EXPORT_SYSTEM_FIELDS (_consents)
     const systemFieldOffset = standardIdentifiers.length;
-    await expect(page.locator(`#ExportSummary-row-${systemFieldOffset}-col-0`)).toHaveText(
+    await expect(page.locator(`#export-summary-table-row-${systemFieldOffset}-col-0`)).toHaveText(
       '_consents',
     );
 
     // Filter row
     const filterRowIndex = systemFieldOffset + 1;
-    await expect(page.locator(`#ExportSummary-row-${filterRowIndex}-col-0`)).toHaveText(
+    await expect(page.locator(`#export-summary-table-row-${filterRowIndex}-col-0`)).toHaveText(
       detailResponseCat.display,
     );
-    await expect(page.locator(`#ExportSummary-row-${filterRowIndex}-col-1`)).toHaveText(
+    await expect(page.locator(`#export-summary-table-row-${filterRowIndex}-col-1`)).toHaveText(
       detailResponseCat.description,
     );
-    await expect(page.locator(`#ExportSummary-row-${filterRowIndex}-col-2`)).toHaveText(
+    await expect(page.locator(`#export-summary-table-row-${filterRowIndex}-col-2`)).toHaveText(
       detailResponseCat.type,
     );
 
     // Export row
     const exportRowIndex = filterRowIndex + 1;
-    await expect(page.locator(`#ExportSummary-row-${exportRowIndex}-col-0`)).toHaveText(
+    await expect(page.locator(`#export-summary-table-row-${exportRowIndex}-col-0`)).toHaveText(
       detailResponseCatSameDataset.display,
     );
-    await expect(page.locator(`#ExportSummary-row-${exportRowIndex}-col-1`)).toHaveText(
+    await expect(page.locator(`#export-summary-table-row-${exportRowIndex}-col-1`)).toHaveText(
       detailResponseCatSameDataset.description,
     );
-    await expect(page.locator(`#ExportSummary-row-${exportRowIndex}-col-2`)).toHaveText(
+    await expect(page.locator(`#export-summary-table-row-${exportRowIndex}-col-2`)).toHaveText(
       detailResponseCatSameDataset.type,
     );
   });
@@ -301,10 +301,12 @@ test.describe('Export Page', () => {
 
     // Save Dataset ID
     await checkStepRenderedCorrectly(page, 4, 'Save Dataset ID:', true, 'Next', true);
-    const datasetNameInput = page.locator('input#dataset-name');
+    const datasetNameInput = page.locator('input#export-dataset-name');
     await expect(datasetNameInput).toBeVisible();
     await datasetNameInput.fill('test-dataset');
-    await expect(page.locator('div#dataset-id')).toHaveText(newDatasetResponse.picsureResultId);
+    await expect(page.locator('div#export-dataset-id')).toHaveText(
+      newDatasetResponse.picsureResultId,
+    );
     await expect(nextButton).not.toBeDisabled();
     await mockApiSuccess(page, `*/**/picsure/operations/dataset/named`, newDatasetResponse);
     await mockApiSuccess(
@@ -336,7 +338,7 @@ test.describe('Export Page', () => {
     await expect(downloadButton).toBeEnabled();
     const userToken = page.locator('div#user-token');
     await expect(userToken).toBeVisible();
-    await expect(userToken.locator('span#account')).toHaveText(picsureUser.email || '');
+    await expect(userToken.locator('span#user-token-account')).toHaveText(picsureUser.email || '');
 
     const doneButton = page.getByTestId('ui-stepper-complete');
     await expect(doneButton).toBeVisible();
@@ -413,7 +415,9 @@ test.describe('Export Page', () => {
     await nextButton.click(); // Submit query
 
     // Wait for the dataset ID to appear (indicating query was submitted)
-    await expect(page.locator('div#dataset-id')).toHaveText(newDatasetResponse.picsureResultId);
+    await expect(page.locator('div#export-dataset-id')).toHaveText(
+      newDatasetResponse.picsureResultId,
+    );
 
     // Verify the captured query contains the system fields but NOT patient_id
     expect(capturedQuery).not.toBeNull();
@@ -528,7 +532,9 @@ test.describe('Export Page', () => {
     await nextButton.click(); // Select Type -> Save Dataset (this triggers submitQuery)
 
     // Wait for the dataset ID to appear (indicating query was submitted)
-    await expect(page.locator('div#dataset-id')).toHaveText(newDatasetResponse.picsureResultId);
+    await expect(page.locator('div#export-dataset-id')).toHaveText(
+      newDatasetResponse.picsureResultId,
+    );
 
     // Verify the captured query contains the sample ID fields
     expect(capturedQuery).not.toBeNull();
@@ -547,7 +553,7 @@ test.describe('Export Page', () => {
     await mockApiSuccess(page, queryPath, newDatasetResponse);
     await nextButton.click(); // Submit query -> Save Dataset ID
 
-    await page.locator('input#dataset-name').fill('test-dataset');
+    await page.locator('input#export-dataset-name').fill('test-dataset');
     await mockApiSuccess(page, `*/**/picsure/operations/dataset/named`, newDatasetResponse);
     await mockApiSuccess(
       page,
@@ -576,7 +582,7 @@ test.describe('Export Page', () => {
     await downloadButton.click();
 
     // Then
-    const modal = page.locator('#modal-component');
+    const modal = page.getByRole('dialog');
     await expect(modal).toBeVisible();
     await expect(modal.getByTestId('ui-modal-header')).toContainText(
       'Are you sure you want to download data?',
@@ -604,6 +610,6 @@ test.describe('Export Page', () => {
 
     // Then
     expect(download).toBeTruthy();
-    await expect(page.locator('#modal-component')).not.toBeVisible();
+    await expect(page.getByRole('dialog')).not.toBeVisible();
   });
 });

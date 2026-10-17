@@ -46,7 +46,10 @@ test.describe('variant explorer', () => {
       await page.getByTestId('explorer-genomic-filter-open').click();
       await expect(page.getByTestId('genomic-type-gene')).toBeVisible();
       await page.getByTestId('genomic-type-gene').click();
-      await page.locator('#options-container').getByLabel(geneValues.results[0]).click();
+      await page
+        .getByTestId('ui-options-selection-list-available')
+        .getByLabel(geneValues.results[0])
+        .click();
       await page.getByTestId('genomic-filter-add').click();
       await expect(page).toHaveURL('/explorer');
     });
@@ -148,7 +151,10 @@ test.describe('variant explorer', () => {
       await page.getByTestId('explorer-genomic-filter-open').click();
       await expect(page.getByTestId('genomic-type-gene')).toBeVisible();
       await page.getByTestId('genomic-type-gene').click();
-      await page.locator('#options-container').getByLabel(geneValues.results[0]).click();
+      await page
+        .getByTestId('ui-options-selection-list-available')
+        .getByLabel(geneValues.results[0])
+        .click();
       await page.getByTestId('genomic-filter-add').click();
       await expect(page).toHaveURL('/explorer');
       await page.getByTestId('results-variant-explorer-open').click();

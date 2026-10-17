@@ -103,7 +103,7 @@ export class AdvancedFilteringPage {
     );
     await clickNthFilterIcon(this.page, rowIndex);
     if (selectAll) {
-      const selectAllButton = this.page.locator('#select-all');
+      const selectAllButton = this.page.getByTestId('ui-options-selection-list-select-all');
       await selectAllButton.click();
     } else {
       const firstItem = await getOption(this.page);
@@ -365,7 +365,7 @@ export class AdvancedFilteringPage {
     // User should still be on the advanced-filtering page
     expect(this.page.url()).toContain('/advanced-filtering');
     // The sidebar should have opened (panelOpen auto-opens on filter change)
-    await expect(this.page.locator('#side-panel')).toBeVisible();
+    await expect(this.page.locator('#results-side-panel')).toBeVisible();
   }
 
   async expectAddGroupButtonVisible() {

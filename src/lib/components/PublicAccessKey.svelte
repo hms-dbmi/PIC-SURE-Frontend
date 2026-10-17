@@ -136,9 +136,9 @@
   {:else if view === 'form'}
     <form class="flex flex-col gap-4 flex-1" onsubmit={generateKey}>
       <div class="label">
-        <label for="public-key-name">Name <span class="text-sm">(optional)</span></label>
+        <label for="api-public-key-name">Name <span class="text-sm">(optional)</span></label>
         <input
-          id="public-key-name"
+          id="api-public-key-name"
           class="input"
           type="text"
           name="name"
@@ -150,9 +150,9 @@
         />
       </div>
       <div class="label">
-        <label for="public-key-email">Email <span class="text-sm">(optional)</span></label>
+        <label for="api-public-key-email">Email <span class="text-sm">(optional)</span></label>
         <input
-          id="public-key-email"
+          id="api-public-key-email"
           class="input"
           type="email"
           name="email"
@@ -160,11 +160,11 @@
           placeholder="you@example.org"
           pattern="[^\s@]+@[^\s@]+\.[^\s@]+"
           title="Enter an email address like you@example.org"
-          aria-describedby="public-key-email-hint"
+          aria-describedby="api-public-key-email-hint"
           bind:value={email}
           disabled={submitting}
         />
-        <span id="public-key-email-hint" class="text-sm">
+        <span id="api-public-key-email-hint" class="text-sm">
           Only used to contact you if there is a problem with your key. No account is created.
         </span>
       </div>
@@ -186,7 +186,7 @@
             again.
           </p>
         {:else if !captchaToken}
-          <span id="public-key-captcha-hint" class="sr-only">
+          <span id="api-public-key-captcha-hint" class="sr-only">
             Complete the security check to enable key generation.
           </span>
         {/if}
@@ -197,7 +197,7 @@
           class="btn preset-filled-primary-500"
           disabled={submitting || (!!turnstileSiteKey && !captchaToken)}
           aria-describedby={turnstileSiteKey && !captchaToken && !captchaFailed
-            ? 'public-key-captcha-hint'
+            ? 'api-public-key-captcha-hint'
             : undefined}
         >
           {#if submitting}

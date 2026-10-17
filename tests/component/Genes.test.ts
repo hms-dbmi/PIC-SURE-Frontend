@@ -36,8 +36,8 @@ function genesHaveLoaded() {
 }
 
 function uncheck(gene: string) {
-  const selected = document.getElementById('selected-options-container');
-  const checkbox = selected?.querySelector(`input[value="${gene}"]`);
+  const selected = screen.getByTestId('ui-options-selection-list-selected');
+  const checkbox = selected.querySelector(`input[value="${gene}"]`);
   if (!checkbox) throw new Error(`${gene} is not in the selected list`);
   return fireEvent.click(checkbox);
 }
@@ -53,7 +53,7 @@ describe('Genes', () => {
     render(Genes);
     await genesHaveLoaded();
 
-    expect(optionsIn('options-container')).toEqual(GENES);
+    expect(optionsIn('available')).toEqual(GENES);
   });
 
   it('moves a gene to the selected list when it is checked', async () => {
@@ -63,8 +63,8 @@ describe('Genes', () => {
     await fireEvent.click(screen.getByRole('checkbox', { name: 'BRCA1' }));
 
     expect(get(selectedGenes)).toEqual(['BRCA1']);
-    expect(optionsIn('selected-options-container')).toEqual(['BRCA1']);
-    expect(optionsIn('options-container')).toEqual(['BRCA2', 'CFTR']);
+    expect(optionsIn('selected')).toEqual(['BRCA1']);
+    expect(optionsIn('available')).toEqual(['BRCA2', 'CFTR']);
   });
 
   it('returns a gene to the options list exactly once when it is unchecked', async () => {
@@ -75,8 +75,8 @@ describe('Genes', () => {
     await uncheck('BRCA1');
 
     expect(get(selectedGenes)).toEqual([]);
-    expect(optionsIn('selected-options-container')).toEqual([]);
-    expect(optionsIn('options-container')).toEqual(GENES);
+    expect(optionsIn('selected')).toEqual([]);
+    expect(optionsIn('available')).toEqual(GENES);
   });
 
   it('keeps an unchecked gene from a saved filter in the options list', async () => {
@@ -86,12 +86,12 @@ describe('Genes', () => {
     await genesHaveLoaded();
 
     await uncheck('ZZZ3');
-    expect(optionsIn('options-container')).toEqual(['ZZZ3', ...GENES]);
+    expect(optionsIn('available')).toEqual(['ZZZ3', ...GENES]);
 
     // Any later selection change recomputes the options list; ZZZ3 must survive it.
     await fireEvent.click(screen.getByRole('checkbox', { name: 'BRCA1' }));
 
-    expect(optionsIn('options-container')).toEqual(['ZZZ3', 'BRCA2', 'CFTR']);
+    expect(optionsIn('available')).toEqual(['ZZZ3', 'BRCA2', 'CFTR']);
   });
 
   it('sends one search request for a burst of typing', async () => {

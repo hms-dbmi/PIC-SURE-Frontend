@@ -87,11 +87,12 @@
         ]
       : [],
   );
+  const uid = $props.id();
 </script>
 
 <label
   data-testId={`explorer-facet-label-${facet.name}`}
-  for={facet.name}
+  for="{uid}-checkbox"
   class="flex gap-1 m-1 leading-[normal]"
 >
   {#if facet?.children !== undefined && facet?.children?.length > 0}
@@ -108,8 +109,8 @@
   {/if}
   <input
     type="checkbox"
+    id="{uid}-checkbox"
     class={`&[aria-disabled=“true”]:opacity-75 ${checkedState(facet.name)}`}
-    id={facet.name}
     name={facet.name}
     value={facet}
     {checked}

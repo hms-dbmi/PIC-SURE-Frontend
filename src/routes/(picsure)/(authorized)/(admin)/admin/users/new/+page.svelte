@@ -25,7 +25,7 @@
   {#await load()}
     <Loading />
   {:then}
-    <section id="user-new">
+    <section id="admin-user-new">
       <UserForm connections={$connections} roleList={$roleList} />
     </section>
   {:catch}

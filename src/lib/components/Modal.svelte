@@ -91,7 +91,6 @@
     onOpenChange={(e) => (modalOpen = e.open)}
     contentBase="card bg-surface-50-950 p-4 pb-6 space-4 shadow-xl overflow-auto max-w-screen {width} max-h-screen {height} {className}"
     backdropClasses="backdrop-blur-sm"
-    ids={{ content: 'modal-component' }}
     closeOnInteractOutside={closeable}
     closeOnEscape={closeable}
   >

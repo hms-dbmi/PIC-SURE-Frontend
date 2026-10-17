@@ -7,7 +7,7 @@
     class="border rounded-sm border-surface-500 flex flex-col items-center justify-center w-3/15 p-2"
   >
     <span class="font-bold">Geneomic Region: </span>
-    <div id="selected-variant" class="text-center break-words">
+    <div id="genomic-summary-variant" class="text-center break-words">
       {#each $selectedGenes as gene, index}
         {#if index !== 0}
           <span class="font-bold mx-1 text-primary-500">OR</span>
@@ -24,7 +24,7 @@
     class="border rounded-sm border-surface-500 flex flex-col items-center justify-center w-3/15 p-2"
   >
     <span class="font-bold">Calculated Consequence:</span>
-    <div id="selected-consequence" class="text-center break-words">
+    <div id="genomic-summary-consequence" class="text-center break-words">
       {#each $consequences as cons, index}
         {#if index !== 0}
           <span class="font-bold mx-1 text-primary-500">OR</span>
@@ -41,7 +41,7 @@
     class="border rounded-sm border-surface-500 flex flex-col items-center justify-center w-3/15 p-2"
   >
     <span class="font-bold">Variant Frequency: </span>
-    <div id="selected-frequency" class="text-center break-words">
+    <div id="genomic-summary-frequency" class="text-center break-words">
       {#each $selectedFrequency as freq, index}
         {#if index !== 0}
           <span class="font-bold mx-1 text-primary-500">OR</span>

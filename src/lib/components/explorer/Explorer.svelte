@@ -32,6 +32,8 @@
 
   let searchInput = $state(page.url.searchParams.get('search') || $searchTerm || '');
   const tableName = 'ExplorerTable';
+  // The tour's steps select this table and its rows by id.
+  const tableId = 'explorer-table';
   const tableColumns = $derived(config.branding.explorePage.columns || []);
   const columns: Column[] = $derived([
     ...tableColumns,
@@ -65,7 +67,7 @@
   }
 
   function scrollToSearchResults() {
-    document.getElementById(`${tableName}-table`)?.scrollIntoView({ block: 'start' });
+    document.getElementById(tableId)?.scrollIntoView({ block: 'start' });
   }
 
   let releaseHandler: (() => void) | undefined;
@@ -89,12 +91,12 @@
   onDestroy(() => releaseHandler?.());
 </script>
 
-<section id="search-container" class="flex gap-9">
-  <div id="facet-side-bar" class="flex-none flex-col items-center w-80">
+<section id="explorer-main" class="flex gap-9">
+  <div id="explorer-facet-sidebar" class="flex-none flex-col items-center w-80">
     <FacetSideBar />
   </div>
-  <div id="search-results-col" class="flex-auto">
-    <div id="search-bar" class="flex gap-2 mb-6">
+  <div id="explorer-results" class="flex-auto">
+    <div id="explorer-search-bar" class="flex gap-2 mb-6">
       <div class="flex-auto">
         <Searchbox bind:searchTerm={searchInput} search={update} />
       </div>
@@ -128,6 +130,7 @@
         isClickable
         ariaLabel="Search results"
         {tableName}
+        id={tableId}
         data-testid="explorer-results-table"
         {handler}
         {columns}

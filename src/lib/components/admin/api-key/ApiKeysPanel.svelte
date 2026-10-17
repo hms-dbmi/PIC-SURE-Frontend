@@ -21,10 +21,16 @@
     keyType="PLATFORM"
     tableName="PlatformApiKeys"
     data-testid="admin-api-key-platform-table"
+    id="admin-api-key-platform-table"
   />
 </section>
 
 <section>
   <h2 class="h3 mb-3">User Keys</h2>
-  <ApiKeyTable keyType="USER" tableName="UserApiKeys" data-testid="admin-api-key-user-table" />
+  <ApiKeyTable
+    keyType="USER"
+    tableName="UserApiKeys"
+    data-testid="admin-api-key-user-table"
+    id="admin-api-key-user-table"
+  />
 </section>

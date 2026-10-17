@@ -28,7 +28,7 @@ test.describe('Results Panel', () => {
     await userIsLoggedIn(page);
 
     // Then
-    await expect(page.locator('#side-panel-bar')).toBeVisible();
+    await expect(page.locator('#results-side-panel-bar')).toBeVisible();
     await expect(page.locator('#results-panel-toggle')).toBeVisible();
   });
   test('Result toggle button opens and closes the results panel', async ({ page }) => {
@@ -67,13 +67,16 @@ test.describe('Results Panel', () => {
       detailResponseCat,
     );
     await mockApiFail(page, countResultPath, 'failed');
-    await page.locator('#ExplorerTable-row-0 button[title^=Filter]').click();
-    await page.locator('#options-container label:nth-child(1)').click();
+    await page.locator('#explorer-table-row-0 button[title^=Filter]').click();
+    await page
+      .getByTestId('ui-options-selection-list-available')
+      .locator('label:nth-child(1)')
+      .click();
     await page.getByTestId('filter-add').click();
 
     // Then
-    await expect(page.locator('#result-count')).toBeVisible();
-    await expect(page.locator('#result-count')).toHaveText('N/A');
+    await expect(page.locator('#results-count')).toBeVisible();
+    await expect(page.locator('#results-count')).toHaveText('N/A');
     const errorAlert = page.getByTestId('ui-error-alert');
     await expect(errorAlert).toBeVisible();
     await expect(errorAlert).toContainText(
@@ -92,7 +95,7 @@ test.describe('Results Panel', () => {
     await page.locator('#results-panel-toggle').click();
 
     // Then
-    await expect(page.locator('#result-count')).toBeVisible();
+    await expect(page.locator('#results-count')).toBeVisible();
     const errorAlert = page.getByTestId('ui-error-alert');
     await expect(errorAlert).toBeVisible();
     await expect(errorAlert).toContainText(
@@ -110,8 +113,8 @@ test.describe('Results Panel', () => {
     await expect(page.locator('#results-panel')).toBeVisible();
 
     // Then
-    await expect(page.locator('#result-count')).toBeVisible();
-    await expect(page.locator('#result-count')).not.toHaveText('0');
+    await expect(page.locator('#results-count')).toBeVisible();
+    await expect(page.locator('#results-count')).not.toHaveText('0');
   });
   test('Result panel shows no filters added when there are no filters', async ({ page }) => {
     // Given
@@ -139,7 +142,7 @@ test.describe('Results Panel', () => {
 
     // Then
     await expect(page.getByText('No filters added')).toBeVisible();
-    await expect(page.locator('#export-data-button')).not.toBeVisible();
+    await expect(page.locator('#results-export-open')).not.toBeVisible();
   });
   test('Export button hidden when count is 0', async ({ page }) => {
     // Given
@@ -154,7 +157,7 @@ test.describe('Results Panel', () => {
 
     // Then
     await expect(page.locator('#results-panel')).toBeVisible();
-    await expect(page.locator('#export-data-button')).not.toBeVisible();
+    await expect(page.locator('#results-export-open')).not.toBeVisible();
   });
   test('Export button hidden when filter error', async ({ page }) => {
     // Given
@@ -172,13 +175,16 @@ test.describe('Results Panel', () => {
       detailResponseCat,
     );
     await mockApiFail(page, countResultPath, 'failed');
-    await page.locator('#ExplorerTable-row-0 button[title^=Filter]').click();
-    await page.locator('#options-container label:nth-child(1)').click();
+    await page.locator('#explorer-table-row-0 button[title^=Filter]').click();
+    await page
+      .getByTestId('ui-options-selection-list-available')
+      .locator('label:nth-child(1)')
+      .click();
     await page.getByTestId('filter-add').click();
 
     // Then
     await expect(page.locator('#results-panel')).toBeVisible();
-    await expect(page.locator('#export-data-button')).not.toBeVisible();
+    await expect(page.locator('#results-export-open')).not.toBeVisible();
   });
   test('Export button hidden when count is not 0 and there is no filters', async ({ page }) => {
     // Given
@@ -194,8 +200,8 @@ test.describe('Results Panel', () => {
 
     // Then
     await expect(page.locator('#results-panel')).toBeVisible();
-    await expect(page.locator('#result-count')).toBeVisible({ timeout: 15000 });
-    await expect(page.locator('#export-data-button')).not.toBeVisible();
+    await expect(page.locator('#results-count')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('#results-export-open')).not.toBeVisible();
   });
 
   test('Export button disabled during counts loading then enabled after', async ({ page }) => {
@@ -222,16 +228,19 @@ test.describe('Results Panel', () => {
     await userIsLoggedIn(page);
     await page.locator('#results-panel-toggle').click();
     await expect(page.locator('#results-panel')).toBeVisible({ timeout: 10000 });
-    await expect(page.locator('#result-count')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('#results-count')).toBeVisible({ timeout: 15000 });
     await mockApiSuccess(
       page,
       `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
-    await page.locator('#ExplorerTable-row-0 button[title^=Filter]').click();
-    await page.locator('#options-container label:nth-child(1)').click();
+    await page.locator('#explorer-table-row-0 button[title^=Filter]').click();
+    await page
+      .getByTestId('ui-options-selection-list-available')
+      .locator('label:nth-child(1)')
+      .click();
     await page.getByTestId('filter-add').click();
-    const exportButton = page.locator('#export-data-button');
+    const exportButton = page.locator('#results-export-open');
     await expect(exportButton).toBeVisible();
     await expect(exportButton).toBeEnabled();
 
@@ -241,8 +250,8 @@ test.describe('Results Panel', () => {
       `${conceptsDetailPath}/${detailResponseCat2.dataset}`,
       detailResponseCat2,
     );
-    await page.locator('#ExplorerTable-row-2 button[title^=Filter]').click();
-    await page.locator('#select-all').click();
+    await page.locator('#explorer-table-row-2 button[title^=Filter]').click();
+    await page.getByTestId('ui-options-selection-list-select-all').click();
     await page.getByTestId('filter-add').click();
 
     await expect(exportButton).toBeVisible();
@@ -250,7 +259,7 @@ test.describe('Results Panel', () => {
     await expect.poll(() => heldRequests).toBeGreaterThan(0);
     // Then the button enables once the count arrives
     releaseCount();
-    await expect(page.locator('#result-count-number')).toBeVisible();
+    await expect(page.locator('#results-count-number')).toBeVisible();
     await expect(exportButton).toBeEnabled();
   });
   test('Clear All clears exports and filters', async ({ page }) => {
@@ -289,7 +298,7 @@ test.describe('Results Panel', () => {
 
     // When
     await page.getByTestId('results-reset').click();
-    await page.locator('#modal-component').getByRole('button', { name: 'Yes' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Yes' }).click();
 
     // Then
     await expect(page.getByText('No filters added')).toBeVisible();
@@ -325,8 +334,11 @@ test.describe('Results Panel', () => {
         `${conceptsDetailPath}/${detailResponseCat.dataset}`,
         detailResponseCat,
       );
-      await page.locator('#ExplorerTable-row-0 button[title^=Filter]').click();
-      await page.locator('#options-container label:nth-child(1)').click();
+      await page.locator('#explorer-table-row-0 button[title^=Filter]').click();
+      await page
+        .getByTestId('ui-options-selection-list-available')
+        .locator('label:nth-child(1)')
+        .click();
       const firstItem = await getOption(page);
       await firstItem.click();
       const addFilterButton = page.getByTestId('filter-add');
@@ -336,8 +348,11 @@ test.describe('Results Panel', () => {
         `${conceptsDetailPath}/${detailResponseCat.dataset}`,
         detailResponseCat2,
       );
-      await page.locator('#ExplorerTable-row-2 button[title^=Filter]').click();
-      await page.locator('#options-container label:nth-child(1)').click();
+      await page.locator('#explorer-table-row-2 button[title^=Filter]').click();
+      await page
+        .getByTestId('ui-options-selection-list-available')
+        .locator('label:nth-child(1)')
+        .click();
       const secondItem = await getOption(page);
       await secondItem.click();
       const addFilterButton2 = page.getByTestId('filter-add');
@@ -363,7 +378,7 @@ test.describe('Results Panel', () => {
       await userIsLoggedIn(page);
 
       // When
-      await page.locator('#ExplorerTable-row-0 button[title^=Filter]').click();
+      await page.locator('#explorer-table-row-0 button[title^=Filter]').click();
       const firstItem = await getOption(page);
       await firstItem.click();
       await page.getByTestId('filter-add').click();
@@ -392,11 +407,11 @@ test.describe('Results Panel', () => {
         `${conceptsDetailPath}/${detailResponseCat.dataset}`,
         detailResponseCat,
       );
-      await page.locator('#ExplorerTable-row-0 button[title^=Filter]').click();
+      await page.locator('#explorer-table-row-0 button[title^=Filter]').click();
       const firstItem = await getOption(page);
       await firstItem.click();
       await page.getByTestId('filter-add').click();
-      await expect(page.locator('#result-count-number')).toHaveText('9,999');
+      await expect(page.locator('#results-count-number')).toHaveText('9,999');
       await expect(page.getByTestId('results-distributions-open')).toBeEnabled();
 
       await mockApiSuccess(
@@ -404,11 +419,11 @@ test.describe('Results Panel', () => {
         `${conceptsDetailPath}/${detailResponseCat2.dataset}`,
         detailResponseCat2,
       );
-      await page.locator('#ExplorerTable-row-2 button[title^=Filter]').click();
+      await page.locator('#explorer-table-row-2 button[title^=Filter]').click();
       const secondItem = await getOption(page);
       await secondItem.click();
       await page.getByTestId('filter-add').click();
-      await expect(page.locator('#result-count-number')).toHaveText('0');
+      await expect(page.locator('#results-count-number')).toHaveText('0');
       await expect(page.getByTestId('results-distributions-open')).toBeDisabled();
 
       // When
@@ -418,7 +433,7 @@ test.describe('Results Panel', () => {
         .click();
 
       // Then: the previous one-filter query is served from cache; button state should follow it.
-      await expect(page.locator('#result-count-number')).toHaveText('9,999');
+      await expect(page.locator('#results-count-number')).toHaveText('9,999');
       await expect(page.getByTestId('results-distributions-open')).toBeEnabled();
     });
 
@@ -448,8 +463,11 @@ test.describe('Results Panel', () => {
       await userIsLoggedIn(page);
 
       // When
-      await page.locator('#ExplorerTable-row-0 button[title^=Filter]').click();
-      await page.locator('#options-container label:nth-child(1)').click();
+      await page.locator('#explorer-table-row-0 button[title^=Filter]').click();
+      await page
+        .getByTestId('ui-options-selection-list-available')
+        .locator('label:nth-child(1)')
+        .click();
       const firstItem = await getOption(page);
       await firstItem.click();
       await page.getByTestId('filter-add').click();

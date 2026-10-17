@@ -362,7 +362,7 @@
 
 <style>
   @media (prefers-reduced-motion: no-preference) {
-    :global(#page) {
+    :global(#app-page) {
       scroll-behavior: smooth;
     }
   }

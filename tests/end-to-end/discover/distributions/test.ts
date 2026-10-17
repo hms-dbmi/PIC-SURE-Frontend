@@ -89,12 +89,12 @@ test.describe('Discover distributions', () => {
     const request = await requestPromise;
     expect(request.url()).toContain('/visualization/auth/distributions');
     expect(request.headers()).not.toHaveProperty('authorization');
-    await expect(page.locator('#plot-0')).toBeVisible();
-    await expect(page.locator('#plot-1')).toBeVisible();
-    await expect(page.locator('#plot-0')).toContainText('7');
-    await expect(page.locator('#plot-1')).toContainText('6');
-    await expect(page.locator('#visualizations')).not.toContainText('±');
-    await expect(page.locator('#visualizations')).not.toContainText('< 10');
+    await expect(page.locator('#explorer-plot-0')).toBeVisible();
+    await expect(page.locator('#explorer-plot-1')).toBeVisible();
+    await expect(page.locator('#explorer-plot-0')).toContainText('7');
+    await expect(page.locator('#explorer-plot-1')).toContainText('6');
+    await expect(page.locator('#explorer-visualizations')).not.toContainText('±');
+    await expect(page.locator('#explorer-visualizations')).not.toContainText('< 10');
   });
 
   test('renders charts with backend-provided count, display, and variance', async ({ page }) => {
@@ -117,9 +117,9 @@ test.describe('Discover distributions', () => {
     await page.goto('/discover/distributions');
 
     // Then: one categorical and one continuous plot render
-    const visualizations = page.locator('#visualizations');
-    await expect(page.locator('#plot-0')).toBeVisible();
-    await expect(page.locator('#plot-1')).toBeVisible();
+    const visualizations = page.locator('#explorer-visualizations');
+    await expect(page.locator('#explorer-plot-0')).toBeVisible();
+    await expect(page.locator('#explorer-plot-1')).toBeVisible();
 
     // And the bar labels come straight from the backend display strings
     await expect(visualizations).toContainText('< 10');
@@ -152,10 +152,10 @@ test.describe('Discover distributions', () => {
 
     // When
     await page.goto('/discover/distributions');
-    await expect(page.locator('#plot-0')).toBeVisible();
+    await expect(page.locator('#explorer-plot-0')).toBeVisible();
 
     // Then - the categorical plot's bars pick up the configured palette in order
-    const bars = page.locator('#plot-0 .point path');
+    const bars = page.locator('#explorer-plot-0 .point path');
     await expect(bars.first()).toHaveAttribute('style', /fill:\s*rgb\(255,\s*0,\s*0\)/);
     await expect(bars.nth(1)).toHaveAttribute('style', /fill:\s*rgb\(0,\s*255,\s*0\)/);
   });

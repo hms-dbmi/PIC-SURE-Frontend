@@ -98,10 +98,11 @@
       </div>
     </div>
     {#each $usersByConnection as connection, i}
-      <div id={`user-table-${connection.label.replaceAll(' ', '_')}`} class="mb-10">
+      <div class="mb-10">
         <Datatable
           tableName="Users-{connection.label}"
           data-testid="admin-user-table-{i}"
+          id="admin-user-table-{i}"
           data={connection.users}
           {columns}
           {cellOverides}

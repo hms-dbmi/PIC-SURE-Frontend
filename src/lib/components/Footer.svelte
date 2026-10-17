@@ -35,7 +35,7 @@
 </script>
 
 {#if !hideSitemap && config.branding.sitemap.length > 0}
-  <div id="sitemap-footer">
+  <div id="app-footer-sitemap">
     <div class="flex flex-wrap place-content-center">
       {#each sitemap as section}
         {#if section.show}
@@ -67,7 +67,7 @@
     </div>
   </div>
 {/if}
-<footer id="main-footer" class="flex relativem mt-4">
+<footer id="app-footer" class="flex relativem mt-4">
   <ul>
     {#if config.features.termsOfService}
       <li>

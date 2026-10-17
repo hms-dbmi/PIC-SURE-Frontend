@@ -12,7 +12,7 @@ import {
   roles as mockRoles,
   privileges as mockPrivileges,
 } from '../../mock-data';
-import { userIsLoggedIn } from '../../utils';
+import { expectUniqueIds, userIsLoggedIn } from '../../utils';
 
 const validationText = {
   invalidEmail: /([Pp]lease )?([Ee]nter|[Ii]nclude) an ('@' in the )?email address.?/,
@@ -47,10 +47,9 @@ test.describe('users', () => {
 
     // Then
     await Promise.all(
-      mockConns.map((connection) =>
-        expect(page.locator(`#user-table-${connection.label.replaceAll(' ', '_')}`)).toBeVisible(),
-      ),
+      mockConns.map((_, i) => expect(page.getByTestId(`admin-user-table-${i}`)).toBeVisible()),
     );
+    await expectUniqueIds(page);
   });
   test('Correct user goes to the right idp table', async ({ page }) => {
     // Given
@@ -61,7 +60,9 @@ test.describe('users', () => {
     await Promise.all(
       mockUsers.map((mockUser) =>
         expect(
-          page.locator(`#user-table-${mockUser.connection.label.replaceAll(' ', '_')}`),
+          page.getByTestId(
+            `admin-user-table-${mockConns.findIndex((c) => c.label === mockUser.connection.label)}`,
+          ),
         ).toContainText(mockUser.email),
       ),
     );
@@ -197,10 +198,7 @@ test.describe('users', () => {
     await userIsLoggedIn(page);
 
     // When
-    await page
-      .locator(`#user-table-${mockConns[0].label.replaceAll(' ', '_')} table tbody tr`)
-      .first()
-      .click();
+    await page.getByTestId('admin-user-table-0').locator('tbody tr').first().click();
 
     // Then
     await page.waitForURL(`**/admin/users/${mockUsers[0].uuid}/edit`);

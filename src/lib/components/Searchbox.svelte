@@ -26,7 +26,7 @@
     onkeydown={(e) => e.key === 'Enter' && search()}
   />
   <button
-    id="search-button"
+    id="explorer-search-submit"
     class="btn preset-filled-primary-500 search-button"
     aria-label="Search"
     title="Search"

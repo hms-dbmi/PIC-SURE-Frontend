@@ -33,7 +33,7 @@
   {#await load()}
     <Loading />
   {:then}
-    <section id="privilege-edit">
+    <section id="admin-privilege-edit">
       <PrivilegeForm applicationList={$applicationList} {privilege} />
     </section>
   {:catch}

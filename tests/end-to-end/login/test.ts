@@ -115,7 +115,7 @@ test.describe('Login page', () => {
     );
     await expect(page.locator('.top-dots')).toBeVisible();
     await expect(page.locator('.bottom-dots')).toBeVisible();
-    await expect(page.locator('#main-footer')).toBeVisible();
+    await expect(page.locator('#app-footer')).toBeVisible();
   });
   test('Site banner pushes the dots down without hiding them behind the footer', async ({
     page,
@@ -130,7 +130,7 @@ test.describe('Login page', () => {
     const bannerBox = await bannerRegion.boundingBox();
     const topDotsBox = await page.locator('.top-dots').boundingBox();
     const bottomDotsBox = await page.locator('.bottom-dots').boundingBox();
-    const footerBox = await page.locator('#main-footer').boundingBox();
+    const footerBox = await page.locator('#app-footer').boundingBox();
     // Then
     expect(bannerBox).not.toBeNull();
     expect(topDotsBox).not.toBeNull();
