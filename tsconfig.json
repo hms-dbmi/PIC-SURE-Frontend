@@ -4,5 +4,5 @@
     "sourceMap": true,
     "strict": true
   },
-  "include": ["src", "tests", "vite.config.ts", "csp.config.js"]
+  "include": ["src", "tests", "scripts", "vite.config.ts", "csp.config.js"]
 }
