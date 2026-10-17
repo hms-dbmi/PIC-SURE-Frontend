@@ -16,6 +16,7 @@
     error,
     tour,
     resetSearch,
+    nextSearchSettled,
     loading as isLoading,
   } from '#lib/stores/Search.ts';
   import type { TourDataType } from '#lib/models/Tour.ts';
@@ -81,7 +82,8 @@
       handler.invalidate();
     }
     if (page.url.searchParams.get('startTour') === 'true') {
-      // A search earlier in the session hides the tour button
+      // A load with a search term hides the tour, so let the one started above finish first
+      await nextSearchSettled();
       tour.set(true);
       await tick();
       const tourBtn = document.querySelector('#explorer-tour-start');

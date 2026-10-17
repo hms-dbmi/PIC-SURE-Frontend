@@ -111,10 +111,13 @@ test('Learn How opens the tour instructions after a search hid the tour button',
     link.click();
   });
 
+  const searchReloaded = page.waitForResponse(searchResultPath);
+
   // When
   await page.getByRole('button', { name: 'Learn How' }).click();
 
   // Then
+  await searchReloaded;
   await expect(page.getByRole('dialog').getByRole('button', { name: 'Start Tour' })).toBeVisible();
 });
 test('Tour Finishes', async ({ page }) => {
