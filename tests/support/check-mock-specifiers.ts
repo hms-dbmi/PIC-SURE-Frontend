@@ -1,8 +1,10 @@
 // Fails when a vi.mock / doMock / unmock / doUnmock / importActual / importMock specifier
-// doesn't resolve to a module file, or isn't a static string that can be checked. Vitest treats an unresolvable specifier as a module nobody imports, so the mock
-// silently does nothing and the test exercises the real module instead. Specifiers are
-// resolved through the project's own Vite config (same plugins, aliases and #lib imports
-// that Vitest uses), relative to the file that contains them.
+// doesn't resolve to a module file, or isn't a static string that can be checked. Vitest
+// treats an unresolvable specifier as a module nobody imports, so the mock silently does
+// nothing and the test exercises the real module instead. Specifiers are resolved through the
+// project's own Vite config (same plugins, aliases and #lib imports that Vitest uses),
+// relative to the file that contains them. Checks every file under src/ and tests/, or only
+// the files given as arguments.
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
@@ -33,27 +35,29 @@ function specifierOf(arg: ts.Expression | undefined): string | undefined {
   if (arg && ts.isStringLiteralLike(arg)) return arg.text;
 }
 
+const only = process.argv.slice(2).map((file) => path.resolve(file));
+const files = only.length
+  ? only
+  : scanDirs.flatMap((dir) => [...sourceFiles(path.join(root, dir))]);
 const found: { where: string; file: string; specifier: string | undefined }[] = [];
-for (const dir of scanDirs) {
-  for (const file of sourceFiles(path.join(root, dir))) {
-    const source = readFileSync(file, 'utf-8');
-    const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest);
-    const visit = (node: ts.Node) => {
-      if (
-        ts.isCallExpression(node) &&
-        ts.isPropertyAccessExpression(node.expression) &&
-        ts.isIdentifier(node.expression.expression) &&
-        node.expression.expression.text === 'vi' &&
-        mockMethods.has(node.expression.name.text)
-      ) {
-        const { line } = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
-        const where = `${path.relative(root, file)}:${line + 1}`;
-        found.push({ where, file, specifier: specifierOf(node.arguments[0]) });
-      }
-      ts.forEachChild(node, visit);
-    };
-    visit(sourceFile);
-  }
+for (const file of files) {
+  const source = readFileSync(file, 'utf-8');
+  const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest);
+  const visit = (node: ts.Node) => {
+    if (
+      ts.isCallExpression(node) &&
+      ts.isPropertyAccessExpression(node.expression) &&
+      ts.isIdentifier(node.expression.expression) &&
+      node.expression.expression.text === 'vi' &&
+      mockMethods.has(node.expression.name.text)
+    ) {
+      const { line } = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
+      const where = `${path.relative(root, file)}:${line + 1}`;
+      found.push({ where, file, specifier: specifierOf(node.arguments[0]) });
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
 }
 
 const server = await createServer({

@@ -85,14 +85,14 @@ function move(...args: string[]) {
 
 const read = (file: string) => readFileSync(path.join(repo, file), 'utf-8');
 
-beforeEach(() => {
-  repo = mkdtempSync(path.join(tmpdir(), 'move-script-'));
-  for (const [file, text] of Object.entries(fixture)) {
+function write(files: Record<string, string>) {
+  for (const [file, text] of Object.entries(files)) {
     mkdirSync(path.dirname(path.join(repo, file)), { recursive: true });
     writeFileSync(path.join(repo, file), text);
   }
-  writeFileSync(path.join(repo, 'map.txt'), mapping);
-  git('init', '-q');
+}
+
+function commit(message: string) {
   git('add', '-A');
   git(
     '-c',
@@ -103,8 +103,16 @@ beforeEach(() => {
     'commit.gpgsign=false',
     'commit',
     '-qm',
-    'base',
+    message,
   );
+}
+
+beforeEach(() => {
+  repo = mkdtempSync(path.join(tmpdir(), 'move-script-'));
+  write(fixture);
+  writeFileSync(path.join(repo, 'map.txt'), mapping);
+  git('init', '-q');
+  commit('base');
 });
 
 afterEach(() => rmSync(repo, { recursive: true, force: true }));
@@ -229,5 +237,18 @@ describe('scripts/refactor/move.ts', { timeout: 20_000 }, () => {
     const { status, out } = move('merge.txt', '--reverse', '--check');
     expect(status).toBe(1);
     expect(out).toContain('src/lib/all is the source of two lines');
+  });
+
+  it('respells an unchanged import that a moved-in file would shadow', () => {
+    write({
+      'src/lib/old/consumer.ts': `import { h } from './helper';\n`,
+      'src/lib/old/helper/index.ts': `export const h = 1;\n`,
+      'src/lib/new/helper.ts': `export const h = 2;\n`,
+    });
+    commit('shadow');
+    writeFileSync(path.join(repo, 'shadow.txt'), 'src/lib/old -> src/lib/new\n');
+    const { status, out } = move('shadow.txt');
+    expect(status, out).toBe(0);
+    expect(read('src/lib/new/consumer.ts')).toBe(`import { h } from './helper/index';\n`);
   });
 });

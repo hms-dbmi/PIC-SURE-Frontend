@@ -73,7 +73,8 @@ const mockMethods = new Set(['mock', 'doMock', 'unmock', 'doUnmock', 'importActu
 // Suffixes a specifier may leave off, tried in this order when the exact path isn't a file.
 const impliedSuffixes = ['.ts', '.js', '/index.ts', '/index.js'];
 const suffixesLongestFirst = [...impliedSuffixes].sort((a, b) => b.length - a.length);
-const mentionSkip = new Set(['pnpm-lock.yaml']);
+// The script's own test builds a fixture tree out of repo-shaped paths.
+const mentionSkip = new Set(['pnpm-lock.yaml', 'tests/unit/moveScript.test.ts']);
 
 type Edit = { start: number; end: number; text: string; line: number; from: string };
 type Plan = {
@@ -353,14 +354,9 @@ function plan(pairs: [string, string][], files: Set<string>, read: (file: string
         const target = resolve(spec, importer, files);
         if (!target) continue;
         const newTarget = newPath(target.file);
-        if (newTarget === target.file && (newImporter === importer || target.alias)) continue;
-        // A relative import that still reaches its target from the new location stays as written.
-        if (
-          !target.alias &&
-          posix.join(posix.dirname(newImporter), target.bare) + target.suffix === newTarget
-        ) {
-          continue;
-        }
+        // A specifier that still names its target in the new tree stays as written. Resolving it
+        // there catches a moved-in `x.ts` shadowing an unchanged `./x` that meant `x/index.ts`.
+        if (resolve(spec, newImporter, newFiles)?.file === newTarget) continue;
         newSpec = write(target, newTarget, newImporter, newFiles);
       }
       if (newSpec !== undefined && newSpec !== spec) {
