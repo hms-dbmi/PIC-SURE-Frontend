@@ -4,10 +4,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 
 import PublicAccessKey from './PublicAccessKey.svelte';
+import { ApiError } from '#lib/api/errors.ts';
 
 const { post, log } = vi.hoisted(() => ({ post: vi.fn(), log: vi.fn() }));
 
 vi.mock('#lib/api/client.ts', () => ({ post }));
+
+const httpError = (status: number, text: string) => new ApiError(status, 'http', text, text);
 vi.mock('#lib/telemetry/logger.ts', () => ({
   log,
   createLog: (eventType: string, action?: string, metadata?: Record<string, unknown>) => ({
@@ -125,7 +128,7 @@ describe('PublicAccessKey', () => {
   });
 
   it('shows the server message inline on failure and returns to the form on retry', async () => {
-    post.mockRejectedValue({ status: 400, body: { message: 'CAPTCHA verification failed.' } });
+    post.mockRejectedValue(httpError(400, 'CAPTCHA verification failed.'));
     render(PublicAccessKey, { props: { enabled: true } });
 
     await openForm();
@@ -140,13 +143,12 @@ describe('PublicAccessKey', () => {
   });
 
   it('falls back to a generic message when the error body is an HTML page', async () => {
-    post.mockRejectedValue({
-      status: 404,
-      body: {
-        message:
-          '<!doctype html> <html lang="en" class="light" data-theme="picsure"> <head><meta charset="utf-8" /><style>.fa-beat{animation-name:fa-beat}</style></head> <body>Not found</body> </html>',
-      },
-    });
+    post.mockRejectedValue(
+      httpError(
+        404,
+        '<!doctype html> <html lang="en" class="light" data-theme="picsure"> <head><meta charset="utf-8" /><style>.fa-beat{animation-name:fa-beat}</style></head> <body>Not found</body> </html>',
+      ),
+    );
     render(PublicAccessKey, { props: { enabled: true } });
 
     await openForm();
@@ -160,10 +162,7 @@ describe('PublicAccessKey', () => {
   });
 
   it('falls back to a generic message when the error body is overlong plain text', async () => {
-    post.mockRejectedValue({
-      status: 500,
-      body: { message: 'java.lang.NullPointerException at '.padEnd(500, 'x') },
-    });
+    post.mockRejectedValue(httpError(500, 'java.lang.NullPointerException at '.padEnd(500, 'x')));
     render(PublicAccessKey, { props: { enabled: true } });
 
     await openForm();
@@ -176,10 +175,7 @@ describe('PublicAccessKey', () => {
   });
 
   it('unwraps a JSON error body from the server', async () => {
-    post.mockRejectedValue({
-      status: 400,
-      body: { message: '{"message":"Public key generation is not enabled."}' },
-    });
+    post.mockRejectedValue(httpError(400, '{"message":"Public key generation is not enabled."}'));
     render(PublicAccessKey, { props: { enabled: true } });
 
     await openForm();
@@ -294,7 +290,7 @@ describe('PublicAccessKey', () => {
     });
 
     it('requests a fresh widget after a failed submit', async () => {
-      post.mockRejectedValue({ status: 400, body: { message: 'CAPTCHA verification failed.' } });
+      post.mockRejectedValue(httpError(400, 'CAPTCHA verification failed.'));
       render(PublicAccessKey, { props: { enabled: true } });
       await openForm();
 

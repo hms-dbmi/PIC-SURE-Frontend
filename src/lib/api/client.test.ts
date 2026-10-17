@@ -8,13 +8,6 @@ vi.mock('$app/env', () => ({
   },
 }));
 
-const mockLogout = vi.fn();
-const mockLogin = vi.fn();
-vi.mock('#lib/auth/User.ts', () => ({
-  logout: (...args: unknown[]) => mockLogout(...args),
-  login: (...args: unknown[]) => mockLogin(...args),
-}));
-
 const mockLog = vi.fn();
 const mockCreateLog = vi.fn((...args: unknown[]) => args);
 const mockGetSessionId = vi.fn(() => 'test-session-id');
@@ -22,14 +15,6 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
   log: (...args: unknown[]) => mockLog(...args),
   createLog: (...args: unknown[]) => mockCreateLog(...args),
   getSessionId: () => mockGetSessionId(),
-}));
-
-vi.mock('@sveltejs/kit', () => ({
-  error: (status: number, body: string | { message: string }) => {
-    throw new Error(`${status}: ${typeof body === 'string' ? body : body.message}`);
-  },
-  // Unused here; consentError.test.ts covers the real HttpError shape.
-  isHttpError: () => false,
 }));
 
 let mockWafFlag = false;
@@ -63,7 +48,11 @@ vi.mock('#lib/api/openSession.ts', () => ({
   recoverOpenSession: (sent: string) => mockRecoverOpenSession(sent),
 }));
 
-import { get, post, put, del, isAbortError } from '#lib/api/client.ts';
+import { request, get, post, put, patch, del, isAbortError } from '#lib/api/client.ts';
+import { ApiError } from '#lib/api/errors.ts';
+import { registerSessionHooks } from '#lib/api/sessionHooks.ts';
+
+const SESSION = 'picsure_s_header.payload.signature';
 
 function mockFetchResponse(overrides: {
   ok?: boolean;
@@ -98,555 +87,453 @@ function mockFetchResponse(overrides: {
   return response;
 }
 
-describe('api', () => {
-  let fetchMock: Mock;
+// the second argument of every fetch call so far
+function sent(call = 0): RequestInit & { headers: Record<string, string> } {
+  return fetchMock.mock.calls[call][1];
+}
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockBrowser = true;
-    mockWafFlag = false;
-    mockIsWafCaptchaResponse.mockReturnValue(false);
-    mockHandleWafCaptcha.mockReturnValue(true);
-    mockGetSessionId.mockReturnValue('test-session-id');
-    mockOpenSessionToken.mockResolvedValue(null);
-    mockRecoverOpenSession.mockResolvedValue(null);
+function rejection(promise: Promise<unknown>): Promise<ApiError> {
+  return promise.then(
+    () => {
+      throw new Error('expected the request to reject');
+    },
+    (e: unknown) => {
+      expect(e).toBeInstanceOf(ApiError);
+      return e as ApiError;
+    },
+  );
+}
 
-    fetchMock = vi.fn().mockResolvedValue(mockFetchResponse({}));
-    vi.stubGlobal('fetch', fetchMock);
+async function settles(promise: Promise<unknown>): Promise<boolean> {
+  const outcome = await Promise.race([
+    promise.then(
+      () => 'settled',
+      () => 'settled',
+    ),
+    new Promise((resolve) => setTimeout(() => resolve('pending'), 10)),
+  ]);
+  return outcome === 'settled';
+}
 
-    vi.stubGlobal('window', {
-      location: { origin: 'https://example.com' },
-    });
+let fetchMock: Mock;
+let token: string | null;
+const onUnauthorized = vi.fn();
+const onForbidden = vi.fn();
+const onTokenRefreshed = vi.fn();
 
-    const storage: Record<string, string> = {};
-    vi.stubGlobal('localStorage', {
-      getItem: vi.fn((key: string) => storage[key] ?? null),
-      setItem: vi.fn((key: string, value: string) => {
-        storage[key] = value;
-      }),
-      removeItem: vi.fn((key: string) => {
-        delete storage[key];
-      }),
-    });
+beforeEach(() => {
+  vi.clearAllMocks();
+  mockBrowser = true;
+  mockWafFlag = false;
+  mockIsWafCaptchaResponse.mockReturnValue(false);
+  mockHandleWafCaptcha.mockReturnValue(true);
+  mockGetSessionId.mockReturnValue('test-session-id');
+  mockOpenSessionToken.mockResolvedValue(null);
+  mockRecoverOpenSession.mockResolvedValue(null);
 
-    vi.stubGlobal('sessionStorage', {
-      getItem: vi.fn(() => null),
-      setItem: vi.fn(),
-      removeItem: vi.fn(),
-    });
-  });
+  token = null;
+  registerSessionHooks({ getToken: () => token, onUnauthorized, onForbidden, onTokenRefreshed });
 
-  describe('HTTP methods', () => {
-    it('get() sends a GET request', async () => {
-      await get('picsure/query');
+  fetchMock = vi.fn().mockResolvedValue(mockFetchResponse({}));
+  vi.stubGlobal('fetch', fetchMock);
+  vi.stubGlobal('window', { location: { origin: 'https://example.com' } });
+});
+
+describe('request', () => {
+  describe('the request it sends', () => {
+    it('GETs the path under the page origin by default', async () => {
+      await request('picsure/query/sync');
+
       expect(fetchMock).toHaveBeenCalledWith(
-        'https://example.com/picsure/query',
+        'https://example.com/picsure/query/sync',
         expect.objectContaining({ method: 'GET' }),
       );
     });
 
-    it('post() sends a POST request', async () => {
-      await post('picsure/query', { foo: 'bar' });
-      expect(fetchMock).toHaveBeenCalledWith(
-        'https://example.com/picsure/query',
-        expect.objectContaining({ method: 'POST' }),
+    it('sends the given method', async () => {
+      await request('psama/role', { method: 'DELETE' });
+      expect(sent().method).toBe('DELETE');
+    });
+
+    it('appends query params, leaving out undefined values', async () => {
+      await request('picsure/concepts', { query: { page_number: 0, page_size: 10, q: undefined } });
+      expect(fetchMock.mock.calls[0][0]).toBe(
+        'https://example.com/picsure/concepts?page_number=0&page_size=10',
       );
     });
 
-    it('put() sends a PUT request', async () => {
-      await put('picsure/query', { foo: 'bar' });
-      expect(fetchMock).toHaveBeenCalledWith(
-        'https://example.com/picsure/query',
-        expect.objectContaining({ method: 'PUT' }),
+    it('encodes query values and joins a path that already has a query', async () => {
+      await request('picsure/values?x=1', { query: { query: 'a b&c', open: true } });
+      expect(fetchMock.mock.calls[0][0]).toBe(
+        'https://example.com/picsure/values?x=1&query=a+b%26c&open=true',
       );
     });
 
-    it('del() sends a DELETE request', async () => {
-      await del('picsure/query');
-      expect(fetchMock).toHaveBeenCalledWith(
-        'https://example.com/picsure/query',
-        expect.objectContaining({ method: 'DELETE' }),
-      );
-    });
-  });
+    it('sends a JSON body with its content type', async () => {
+      const body = { key: 'value', nested: { a: 1 } };
+      await request('picsure/test', { method: 'POST', body });
 
-  describe('header logic', () => {
-    it('sets Authorization and request-source=Authorized when token exists', async () => {
-      (localStorage.getItem as Mock).mockReturnValue('my-token');
-      await get('picsure/test');
-
-      const headers = fetchMock.mock.calls[0][1].headers;
-      expect(headers['Authorization']).toBe('Bearer my-token');
-      expect(headers['request-source']).toBe('Authorized');
+      expect(sent().headers['Content-Type']).toBe('application/json');
+      expect(sent().body).toBe(JSON.stringify(body));
     });
 
-    it('sets request-source=Open when no token', async () => {
-      (localStorage.getItem as Mock).mockReturnValue(null);
-      await get('picsure/test');
-
-      const headers = fetchMock.mock.calls[0][1].headers;
-      expect(headers['Authorization']).toBeUndefined();
-      expect(headers['request-source']).toBe('Open');
+    it('sends a string body as it is', async () => {
+      await request('picsure/test', { method: 'POST', body: '\\a\\b\\' });
+      expect(sent().body).toBe('\\a\\b\\');
     });
 
-    it('always sets X-Session-Id in browser', async () => {
-      await get('picsure/test');
+    it('sends no body or content type without one', async () => {
+      await request('picsure/test');
 
-      const headers = fetchMock.mock.calls[0][1].headers;
-      expect(headers['X-Session-Id']).toBe('test-session-id');
+      expect(sent().headers['Content-Type']).toBeUndefined();
+      expect(sent().body).toBeUndefined();
     });
 
-    it('uses the value from getSessionId()', async () => {
+    it('lets custom headers override the content type but not the credentials', async () => {
+      token = 'my-token';
+      await request('picsure/test', {
+        method: 'POST',
+        body: {},
+        headers: { 'Content-Type': 'text/plain', Authorization: 'Bearer other', 'X-Custom': 'hi' },
+      });
+
+      expect(sent().headers).toMatchObject({
+        'Content-Type': 'text/plain',
+        Authorization: 'Bearer my-token',
+        'X-Custom': 'hi',
+      });
+    });
+
+    it('sends the session id from telemetry', async () => {
       mockGetSessionId.mockReturnValue('custom-session-42');
-      await get('picsure/test');
+      await request('picsure/test');
+      expect(sent().headers['X-Session-Id']).toBe('custom-session-42');
+    });
 
-      const headers = fetchMock.mock.calls[0][1].headers;
-      expect(headers['X-Session-Id']).toBe('custom-session-42');
+    it('uses the fetch it is given', async () => {
+      const kitFetch = vi.fn().mockResolvedValue(mockFetchResponse({ body: '{"a":1}' }));
+
+      await expect(request('picsure/test', { fetch: kitFetch })).resolves.toEqual({ a: 1 });
+
+      expect(kitFetch).toHaveBeenCalledWith('https://example.com/picsure/test', expect.any(Object));
+      expect(fetchMock).not.toHaveBeenCalled();
     });
   });
 
-  describe('authenticate=false', () => {
-    it('does not send the login token even when one exists', async () => {
-      (localStorage.getItem as Mock).mockReturnValue('my-token');
-      await get('picsure/test', undefined, false);
+  describe('credentials', () => {
+    it.each(['user', 'open'] as const)(
+      'auth %s sends the signed-in user token as Authorized',
+      async (auth) => {
+        token = 'my-token';
+        mockOpenSessionToken.mockResolvedValue(SESSION);
+        await request('picsure/test', { auth });
 
-      const headers = fetchMock.mock.calls[0][1].headers;
-      expect(headers['Authorization']).toBeUndefined();
-      expect(headers['request-source']).toBe('Open');
+        expect(sent().headers['Authorization']).toBe('Bearer my-token');
+        expect(sent().headers['request-source']).toBe('Authorized');
+        expect(mockOpenSessionToken).not.toHaveBeenCalled();
+      },
+    );
+
+    it('auth user goes keyless and without a session when nobody is signed in', async () => {
+      mockOpenSessionToken.mockResolvedValue(SESSION);
+      await request('psama/open/validate');
+
+      expect(sent().headers['Authorization']).toBeUndefined();
+      expect(sent().headers['request-source']).toBe('Open');
+      expect(mockOpenSessionToken).not.toHaveBeenCalled();
+    });
+
+    it('auth open sends the open-access session when nobody is signed in', async () => {
+      mockOpenSessionToken.mockResolvedValue(SESSION);
+      await request('picsure/query/sync', { auth: 'open' });
+
+      expect(sent().headers['Authorization']).toBe(`Bearer ${SESSION}`);
+      expect(sent().headers['request-source']).toBe('Open');
+    });
+
+    it('auth open goes keyless when there is no session', async () => {
+      await request('picsure/query/sync', { auth: 'open' });
+      expect(sent().headers['Authorization']).toBeUndefined();
+    });
+
+    it('auth none sends neither the token nor a session', async () => {
+      token = 'my-token';
+      mockOpenSessionToken.mockResolvedValue(SESSION);
+      await request('psama/open/apiKey', { auth: 'none' });
+
+      expect(sent().headers['Authorization']).toBeUndefined();
+      expect(sent().headers['request-source']).toBe('Open');
+      expect(mockOpenSessionToken).not.toHaveBeenCalled();
+    });
+
+    it('sends no credentials or session id outside the browser', async () => {
+      mockBrowser = false;
+      token = 'my-token';
+      await request('picsure/test', { auth: 'open' });
+
+      expect(sent().headers['Authorization']).toBeUndefined();
+      expect(sent().headers['request-source']).toBeUndefined();
+      expect(sent().headers['X-Session-Id']).toBeUndefined();
+      expect(mockGetSessionId).not.toHaveBeenCalled();
     });
   });
 
-  describe('data serialization', () => {
-    it('sets Content-Type and stringifies object data', async () => {
-      const data = { key: 'value', nested: { a: 1 } };
-      await post('picsure/test', data);
-
-      const opts = fetchMock.mock.calls[0][1];
-      expect(opts.headers['Content-Type']).toBe('application/json');
-      expect(opts.body).toBe(JSON.stringify(data));
-    });
-
-    it('passes string data through without re-stringifying', async () => {
-      const data = 'already a string';
-      await post('picsure/test', data);
-
-      const opts = fetchMock.mock.calls[0][1];
-      expect(opts.headers['Content-Type']).toBe('application/json');
-      expect(opts.body).toBe('already a string');
-    });
-
-    it('does not set Content-Type or body when no data', async () => {
-      await get('picsure/test');
-
-      const opts = fetchMock.mock.calls[0][1];
-      expect(opts.headers['Content-Type']).toBeUndefined();
-      expect(opts.body).toBeUndefined();
-    });
-  });
-
-  describe('custom headers', () => {
-    it('merges custom headers with generated headers', async () => {
-      (localStorage.getItem as Mock).mockReturnValue('my-token');
-      await get('picsure/test', { 'X-Custom': 'hello' });
-
-      const headers = fetchMock.mock.calls[0][1].headers;
-      expect(headers['X-Custom']).toBe('hello');
-      expect(headers['Authorization']).toBe('Bearer my-token');
-      expect(headers['X-Session-Id']).toBe('test-session-id');
-    });
-
-    it('custom headers override data headers', async () => {
-      await post('picsure/test', { foo: 'bar' }, { 'Content-Type': 'text/plain' });
-
-      const headers = fetchMock.mock.calls[0][1].headers;
-      expect(headers['Content-Type']).toBe('text/plain');
-    });
-  });
-
-  describe('response handling', () => {
-    it('parses JSON response', async () => {
+  describe('a successful response', () => {
+    it('resolves with parsed JSON', async () => {
       fetchMock.mockResolvedValue(mockFetchResponse({ body: '{"result": "success"}' }));
-
-      const result = await get('picsure/test');
-      expect(result).toEqual({ result: 'success' });
+      await expect(request('picsure/test')).resolves.toEqual({ result: 'success' });
     });
 
-    it('returns text when response is not valid JSON', async () => {
+    it('resolves with the text when it is not JSON', async () => {
       fetchMock.mockResolvedValue(mockFetchResponse({ body: 'plain text response' }));
-
-      const result = await get('picsure/test');
-      expect(result).toBe('plain text response');
+      await expect(request('picsure/test')).resolves.toBe('plain text response');
     });
 
-    it('returns ArrayBuffer for octet-stream content type', async () => {
+    it('resolves with an ArrayBuffer for octet-stream', async () => {
       const buffer = new ArrayBuffer(8);
       fetchMock.mockResolvedValue(
-        mockFetchResponse({
-          contentType: 'application/octet-stream',
-          arrayBuffer: buffer,
-        }),
+        mockFetchResponse({ contentType: 'application/octet-stream', arrayBuffer: buffer }),
       );
-
-      const result = await get('picsure/test');
-      expect(result).toBe(buffer);
+      await expect(request('picsure/test')).resolves.toBe(buffer);
     });
 
-    it('handles 422 as a successful response', async () => {
+    it('hands a refreshed token to the session', async () => {
+      fetchMock.mockResolvedValue(
+        mockFetchResponse({ headers: { Authorization: 'Bearer new-token-123' } }),
+      );
+      await request('picsure/test');
+      expect(onTokenRefreshed).toHaveBeenCalledWith('new-token-123');
+    });
+
+    it('leaves the session alone without a refreshed token', async () => {
+      await request('picsure/test');
+      expect(onTokenRefreshed).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('a failed response', () => {
+    it('rejects with the status, parsed body and raw text, and logs it', async () => {
+      const text = '{"errorType":"error","message":"bad"}';
+      fetchMock.mockResolvedValue(mockFetchResponse({ ok: false, status: 500, body: text }));
+
+      const e = await rejection(request('picsure/test'));
+
+      expect(e).toMatchObject({ status: 500, code: 'http', message: text });
+      expect(e.body).toEqual({ errorType: 'error', message: 'bad' });
+      expect(mockCreateLog).toHaveBeenCalledWith('ERROR', 'error.unknown', undefined, {
+        status: 500,
+        error: { message: text },
+      });
+      expect(onUnauthorized).not.toHaveBeenCalled();
+      expect(onForbidden).not.toHaveBeenCalled();
+    });
+
+    it('rejects a 422 like any other failure', async () => {
       fetchMock.mockResolvedValue(
         mockFetchResponse({ ok: false, status: 422, body: '{"errors": ["invalid"]}' }),
       );
 
-      const result = await get('picsure/test');
-      expect(result).toEqual({ errors: ['invalid'] });
-    });
-  });
+      const e = await rejection(request('picsure/test'));
 
-  describe('token refresh', () => {
-    it('calls login() when response has Authorization header', async () => {
-      fetchMock.mockResolvedValue(
-        mockFetchResponse({
-          headers: { Authorization: 'Bearer new-token-123' },
-        }),
-      );
-
-      await get('picsure/test');
-      expect(mockLogin).toHaveBeenCalledWith('new-token-123');
+      expect(e).toMatchObject({ status: 422, code: 'http', body: { errors: ['invalid'] } });
     });
 
-    it('does not call login() when no Authorization header in response', async () => {
-      fetchMock.mockResolvedValue(mockFetchResponse({}));
+    it('ends the session on a 401 for a signed-in request', async () => {
+      token = 'my-token';
+      fetchMock.mockResolvedValue(mockFetchResponse({ ok: false, status: 401, body: 'expired' }));
 
-      await get('picsure/test');
-      expect(mockLogin).not.toHaveBeenCalled();
-    });
-  });
+      const e = await rejection(request('picsure/test'));
 
-  describe('error handling', () => {
-    it('calls logout with session message on a 401 for a bearer request', async () => {
-      (localStorage.getItem as Mock).mockReturnValue('my-token');
-      fetchMock.mockResolvedValue(
-        mockFetchResponse({ ok: false, status: 401, body: 'Unauthorized' }),
-      );
-
-      await get('picsure/test');
-
-      expect(mockLog).toHaveBeenCalled();
+      expect(e).toMatchObject({ status: 401, code: 'unauthorized', message: 'expired' });
+      expect(onUnauthorized).toHaveBeenCalledTimes(1);
       expect(mockCreateLog).toHaveBeenCalledWith('AUTH', 'session.unauthorized', undefined, {
         status: 401,
       });
-      expect(sessionStorage.setItem).toHaveBeenCalledWith(
-        'logout-reason',
-        'Your session has timed out. Please log in.',
-      );
-      expect(mockLogout).toHaveBeenCalledWith(undefined, true);
     });
 
-    it('calls logout and clears session on 403 then throws', async () => {
+    it('ends the session on a 401 for a keyless request', async () => {
+      fetchMock.mockResolvedValue(mockFetchResponse({ ok: false, status: 401, body: '' }));
+
+      await rejection(request('psama/user/me'));
+
+      expect(onUnauthorized).toHaveBeenCalledTimes(1);
+    });
+
+    it('leaves the session alone on a 401 for an anonymous open request', async () => {
+      mockOpenSessionToken.mockResolvedValue(SESSION);
+      fetchMock.mockResolvedValue(mockFetchResponse({ ok: false, status: 401, body: 'nope' }));
+
+      const e = await rejection(request('picsure/query/sync', { auth: 'open' }));
+
+      expect(e).toMatchObject({ status: 401, code: 'http' });
+      expect(onUnauthorized).not.toHaveBeenCalled();
+    });
+
+    it('ends the session on a 403', async () => {
+      token = 'my-token';
       fetchMock.mockResolvedValue(mockFetchResponse({ ok: false, status: 403, body: 'Forbidden' }));
 
-      await expect(get('picsure/test')).rejects.toThrow('403: Forbidden');
+      const e = await rejection(request('picsure/test'));
 
+      expect(e).toMatchObject({ status: 403, code: 'forbidden', message: 'Forbidden' });
+      expect(onForbidden).toHaveBeenCalledTimes(1);
       expect(mockCreateLog).toHaveBeenCalledWith('AUTH', 'session.forbidden', undefined, {
         status: 403,
       });
-      expect(sessionStorage.removeItem).toHaveBeenCalledWith('logout-reason');
-      expect(mockLogout).toHaveBeenCalledWith(undefined, false);
-    });
-
-    it('reports consent denial without logging out', async () => {
-      fetchMock.mockResolvedValue(
-        mockFetchResponse({
-          ok: false,
-          status: 403,
-          body: JSON.stringify({
-            errorType: 'consent_denied',
-            message: 'You no longer have consent for this saved result',
-          }),
-        }),
-      );
-
-      await expect(get('picsure/test')).rejects.toThrow(
-        '403: You no longer have consent for this saved result',
-      );
-
-      expect(mockLogout).not.toHaveBeenCalled();
-      expect(sessionStorage.removeItem).not.toHaveBeenCalled();
-    });
-
-    it('throws error with status for other error codes', async () => {
-      fetchMock.mockResolvedValue(
-        mockFetchResponse({ ok: false, status: 500, body: 'Internal Server Error' }),
-      );
-
-      await expect(get('picsure/test')).rejects.toThrow('500: Internal Server Error');
-    });
-
-    it('logs the error before throwing for non-401/403 errors', async () => {
-      fetchMock.mockResolvedValue(
-        mockFetchResponse({ ok: false, status: 500, body: 'Server Error' }),
-      );
-
-      await expect(get('picsure/test')).rejects.toThrow();
-
       expect(mockCreateLog).toHaveBeenCalledWith('ERROR', 'error.unknown', undefined, {
-        status: 500,
-        error: { message: 'Server Error' },
+        status: 403,
+        error: { message: 'Forbidden' },
       });
+    });
+
+    it('reports a consent denial with its message and keeps the session', async () => {
+      const body = { errorType: 'consent_denied', message: 'Consent for phs000007 was withdrawn' };
+      fetchMock.mockResolvedValue(
+        mockFetchResponse({ ok: false, status: 403, body: JSON.stringify(body) }),
+      );
+
+      const e = await rejection(request('picsure/test'));
+
+      expect(e).toMatchObject({ status: 403, code: 'consent_denied', body });
+      expect(e.message).toBe('Consent for phs000007 was withdrawn');
+      expect(onForbidden).not.toHaveBeenCalled();
     });
   });
 
   describe('WAF CAPTCHA recovery', () => {
-    const wafResponse = () =>
+    const wafResponse = (status = 405) =>
       mockFetchResponse({
         ok: false,
-        status: 405,
+        status,
         headers: { 'x-amzn-waf-action': 'captcha' },
         body: '<html>waf interstitial</html>',
         contentType: 'text/html',
       });
 
-    it('never settles and stays silent when a reload is imminent', async () => {
+    beforeEach(() => {
       mockWafFlag = true;
       mockIsWafCaptchaResponse.mockReturnValue(true);
-      mockHandleWafCaptcha.mockReturnValue(true);
-      fetchMock.mockResolvedValue(wafResponse());
-
-      const outcome = await Promise.race([
-        get('picsure/test').then(
-          () => 'settled',
-          () => 'settled',
-        ),
-        new Promise((resolve) => setTimeout(() => resolve('pending'), 10)),
-      ]);
-
-      expect(outcome).toBe('pending');
-      expect(mockHandleWafCaptcha).toHaveBeenCalledWith('/picsure/test');
-      expect(mockCreateLog).not.toHaveBeenCalledWith(
-        'ERROR',
-        'error.unknown',
-        undefined,
-        expect.anything(),
-      );
     });
 
-    it('falls through to the generic error when the loop guard trips', async () => {
-      mockWafFlag = true;
-      mockIsWafCaptchaResponse.mockReturnValue(true);
-      mockHandleWafCaptcha.mockReturnValue(false);
+    it('never settles and stays silent when a reload is imminent', async () => {
       fetchMock.mockResolvedValue(wafResponse());
 
-      await expect(get('picsure/test')).rejects.toThrow('405');
+      expect(await settles(request('picsure/test'))).toBe(false);
 
+      expect(mockHandleWafCaptcha).toHaveBeenCalledWith('/picsure/test');
+      expect(mockLog).not.toHaveBeenCalled();
+    });
+
+    it('rejects as a plain failure, without ending the session, when the loop guard trips', async () => {
+      token = 'my-token';
+      mockHandleWafCaptcha.mockReturnValue(false);
+      fetchMock.mockResolvedValue(wafResponse(403));
+
+      const e = await rejection(request('picsure/test'));
+
+      expect(e).toMatchObject({ status: 403, code: 'http' });
+      expect(onForbidden).not.toHaveBeenCalled();
       expect(mockCreateLog).toHaveBeenCalledWith('ERROR', 'error.unknown', undefined, {
-        status: 405,
+        status: 403,
         error: { message: '<html>waf interstitial</html>' },
       });
     });
 
-    it('takes the generic error path when the feature flag is off', async () => {
+    it('is off when the feature flag is off', async () => {
       mockWafFlag = false;
       fetchMock.mockResolvedValue(wafResponse());
 
-      await expect(get('picsure/test')).rejects.toThrow('405');
+      await rejection(request('picsure/test'));
 
       expect(mockIsWafCaptchaResponse).not.toHaveBeenCalled();
       expect(mockHandleWafCaptcha).not.toHaveBeenCalled();
     });
 
-    it('takes the generic error path outside the browser', async () => {
+    it('is off outside the browser', async () => {
       mockBrowser = false;
-      mockWafFlag = true;
       fetchMock.mockResolvedValue(wafResponse());
 
-      await expect(get('picsure/test')).rejects.toThrow('405');
+      await rejection(request('picsure/test'));
 
       expect(mockHandleWafCaptcha).not.toHaveBeenCalled();
     });
 
-    it('takes the generic error path when the response is not a WAF CAPTCHA', async () => {
-      mockWafFlag = true;
+    it('leaves other failures alone', async () => {
       mockIsWafCaptchaResponse.mockReturnValue(false);
       fetchMock.mockResolvedValue(mockFetchResponse({ ok: false, status: 405, body: 'nope' }));
 
-      await expect(get('picsure/test')).rejects.toThrow('405: nope');
+      await expect(rejection(request('picsure/test'))).resolves.toMatchObject({ message: 'nope' });
 
       expect(mockHandleWafCaptcha).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('non-browser context', () => {
-    beforeEach(() => {
-      mockBrowser = false;
-    });
-
-    it('does not set Authorization, request-source, or X-Session-Id', async () => {
-      (localStorage.getItem as Mock).mockReturnValue('my-token');
-      await get('picsure/test');
-
-      const headers = fetchMock.mock.calls[0][1].headers;
-      expect(headers['Authorization']).toBeUndefined();
-      expect(headers['request-source']).toBeUndefined();
-      expect(headers['X-Session-Id']).toBeUndefined();
-    });
-
-    it('does not call getSessionId()', async () => {
-      await get('picsure/test');
-      expect(mockGetSessionId).not.toHaveBeenCalled();
-    });
-
-    it('does not set sessionStorage on 401', async () => {
-      fetchMock.mockResolvedValue(
-        mockFetchResponse({ ok: false, status: 401, body: 'Unauthorized' }),
-      );
-
-      await get('picsure/test');
-
-      expect(sessionStorage.setItem).not.toHaveBeenCalled();
-    });
-
-    it('does not clear sessionStorage on 403', async () => {
-      fetchMock.mockResolvedValue(mockFetchResponse({ ok: false, status: 403, body: 'Forbidden' }));
-
-      await expect(get('picsure/test')).rejects.toThrow('403');
-
-      expect(sessionStorage.removeItem).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('URL construction', () => {
-    it('constructs URL from window.location.origin and path', async () => {
-      await get('picsure/query/sync');
-
-      expect(fetchMock).toHaveBeenCalledWith(
-        'https://example.com/picsure/query/sync',
-        expect.any(Object),
-      );
     });
   });
 
   describe('open-access sessions', () => {
-    const SESSION = 'picsure_s_header.payload.signature';
     const keyError = (errorType: string) =>
       mockFetchResponse({
         ok: false,
         status: 401,
         body: JSON.stringify({ errorType, message: 'x', requestId: null }),
       });
+    const open = (opts = {}) => request('picsure/query/sync', { auth: 'open', ...opts });
 
-    it('sends token-less picsure requests directly, with the session as the bearer', async () => {
+    beforeEach(() => {
       mockOpenSessionToken.mockResolvedValue(SESSION);
-      await get('picsure/query/sync');
-
-      expect(fetchMock).toHaveBeenCalledWith(
-        'https://example.com/picsure/query/sync',
-        expect.any(Object),
-      );
-      expect(fetchMock.mock.calls[0][1].headers['Authorization']).toBe(`Bearer ${SESSION}`);
-    });
-
-    it('sends a token-less request keyless when there is no session', async () => {
-      await get('picsure/query/sync');
-
-      expect(fetchMock.mock.calls[0][1].headers['Authorization']).toBeUndefined();
-    });
-
-    it('sends the login token instead of the session when there is one', async () => {
-      (localStorage.getItem as Mock).mockReturnValue('my-token');
-      mockOpenSessionToken.mockResolvedValue(SESSION);
-      await get('picsure/query/sync');
-
-      expect(mockOpenSessionToken).not.toHaveBeenCalled();
-      expect(fetchMock.mock.calls[0][1].headers['Authorization']).toBe('Bearer my-token');
-    });
-
-    it('sends the session, not the token, when authenticate:false suppresses the token', async () => {
-      (localStorage.getItem as Mock).mockReturnValue('my-token');
-      mockOpenSessionToken.mockResolvedValue(SESSION);
-      await post('picsure/query/sync', {}, undefined, false);
-
-      const headers = fetchMock.mock.calls[0][1].headers;
-      expect(headers['Authorization']).toBe(`Bearer ${SESSION}`);
-      expect(headers['request-source']).toBe('Open');
-    });
-
-    it('gives non-picsure paths no session', async () => {
-      mockOpenSessionToken.mockResolvedValue(SESSION);
-      await get('psama/open/validate');
-
-      expect(mockOpenSessionToken).not.toHaveBeenCalled();
-      expect(fetchMock).toHaveBeenCalledWith(
-        'https://example.com/psama/open/validate',
-        expect.any(Object),
-      );
     });
 
     it('offers every open response to the refresh handler', async () => {
-      mockOpenSessionToken.mockResolvedValue(SESSION);
-      await get('picsure/query/sync');
-
+      await open();
       expect(mockAcceptSessionRefresh).toHaveBeenCalledWith(await fetchMock.mock.results[0].value);
     });
 
     it('retries once with the recovered session after a key-caused 401', async () => {
-      mockOpenSessionToken.mockResolvedValue(SESSION);
       mockRecoverOpenSession.mockResolvedValue('picsure_s_new.payload.signature');
       fetchMock
         .mockResolvedValueOnce(keyError('api_key_invalid'))
         .mockResolvedValueOnce(mockFetchResponse({ body: '{"ok":true}' }));
 
-      await expect(get('picsure/query/sync')).resolves.toEqual({ ok: true });
+      await expect(open()).resolves.toEqual({ ok: true });
 
       expect(mockRecoverOpenSession).toHaveBeenCalledWith(SESSION);
       expect(fetchMock).toHaveBeenCalledTimes(2);
-      expect(fetchMock.mock.calls[1][1].headers['Authorization']).toBe(
-        'Bearer picsure_s_new.payload.signature',
-      );
-      expect(mockLogout).not.toHaveBeenCalled();
-    });
-
-    it('surfaces a second key-caused 401 without looping or logging out', async () => {
-      mockOpenSessionToken.mockResolvedValue(SESSION);
-      mockRecoverOpenSession.mockResolvedValue('picsure_s_new.payload.signature');
-      fetchMock.mockResolvedValue(keyError('api_key_invalid'));
-
-      await expect(get('picsure/query/sync')).rejects.toThrow('401');
-
-      expect(fetchMock).toHaveBeenCalledTimes(2);
-      expect(mockRecoverOpenSession).toHaveBeenCalledTimes(1);
-      expect(mockLogout).not.toHaveBeenCalled();
-    });
-
-    it('forgets the retry token when it is rejected too', async () => {
-      mockOpenSessionToken.mockResolvedValue(SESSION);
-      mockRecoverOpenSession.mockResolvedValue('picsure_s_new.payload.signature');
-      fetchMock.mockResolvedValue(keyError('api_key_invalid'));
-
-      await expect(get('picsure/query/sync')).rejects.toThrow('401');
-
-      expect(mockForgetOpenSession).toHaveBeenCalledWith('picsure_s_new.payload.signature');
-    });
-
-    it('offers the retry response to the refresh handler too', async () => {
-      mockOpenSessionToken.mockResolvedValue(SESSION);
-      mockRecoverOpenSession.mockResolvedValue('picsure_s_new.payload.signature');
-      fetchMock
-        .mockResolvedValueOnce(keyError('api_key_invalid'))
-        .mockResolvedValueOnce(mockFetchResponse({ body: '{"ok":true}' }));
-
-      await get('picsure/query/sync');
-
-      expect(mockAcceptSessionRefresh).toHaveBeenCalledTimes(2);
+      expect(sent(1).headers['Authorization']).toBe('Bearer picsure_s_new.payload.signature');
+      expect(sent(1).redirect).toBe('error');
       expect(mockAcceptSessionRefresh).toHaveBeenLastCalledWith(
         await fetchMock.mock.results[1].value,
       );
       expect(mockForgetOpenSession).not.toHaveBeenCalled();
+      expect(onUnauthorized).not.toHaveBeenCalled();
+    });
+
+    it('retries with the fetch it is given', async () => {
+      mockRecoverOpenSession.mockResolvedValue('picsure_s_new.payload.signature');
+      const kitFetch = vi
+        .fn()
+        .mockResolvedValueOnce(keyError('api_key_invalid'))
+        .mockResolvedValueOnce(mockFetchResponse({}));
+
+      await open({ fetch: kitFetch });
+
+      expect(kitFetch).toHaveBeenCalledTimes(2);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('surfaces a second key-caused 401 and forgets the retry token', async () => {
+      mockRecoverOpenSession.mockResolvedValue('picsure_s_new.payload.signature');
+      fetchMock.mockResolvedValue(keyError('api_key_invalid'));
+
+      await expect(rejection(open())).resolves.toMatchObject({ status: 401, code: 'http' });
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(mockRecoverOpenSession).toHaveBeenCalledTimes(1);
+      expect(mockForgetOpenSession).toHaveBeenCalledWith('picsure_s_new.payload.signature');
+      expect(onUnauthorized).not.toHaveBeenCalled();
     });
 
     it('logs a rejected session without the token', async () => {
-      mockOpenSessionToken.mockResolvedValue(SESSION);
       fetchMock.mockResolvedValue(keyError('api_key_invalid'));
 
-      await expect(get('picsure/query/sync')).rejects.toThrow('401');
+      await rejection(open());
 
       expect(mockCreateLog).toHaveBeenCalledWith('AUTH', 'open_session.rejected', undefined, {
         status: 401,
@@ -654,142 +541,236 @@ describe('api', () => {
       expect(JSON.stringify(mockCreateLog.mock.calls)).not.toContain(SESSION);
     });
 
-    it('neither retries nor logs out on an open 401 without an error code', async () => {
-      mockOpenSessionToken.mockResolvedValue(SESSION);
-      fetchMock.mockResolvedValue(
-        mockFetchResponse({ ok: false, status: 401, body: 'Unauthorized' }),
-      );
+    it.each([
+      ['a 401 without an error code', mockFetchResponse({ ok: false, status: 401, body: 'no' })],
+      ['a 401 from the access rules', keyError('unauthorized')],
+    ])('neither retries nor ends the session on %s', async (_name, response) => {
+      fetchMock.mockResolvedValue(response);
 
-      await expect(get('picsure/query/sync')).rejects.toThrow('401');
+      await rejection(open());
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
       expect(mockRecoverOpenSession).not.toHaveBeenCalled();
-      expect(mockLogout).not.toHaveBeenCalled();
+      expect(onUnauthorized).not.toHaveBeenCalled();
+    });
+
+    it('does not retry a keyless request', async () => {
+      mockOpenSessionToken.mockResolvedValue(null);
+      fetchMock.mockResolvedValue(keyError('api_key_missing'));
+
+      await rejection(open());
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(mockRecoverOpenSession).not.toHaveBeenCalled();
+      expect(onUnauthorized).not.toHaveBeenCalled();
+    });
+
+    it('gives up when recovery has no session to offer', async () => {
+      fetchMock.mockResolvedValue(keyError('api_key_invalid'));
+
+      await rejection(open());
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
     it('refuses redirects on a request carrying the session, and only then', async () => {
       mockOpenSessionToken.mockResolvedValueOnce(SESSION).mockResolvedValueOnce(null);
-      await get('picsure/query/sync');
-      await get('picsure/query/sync');
+      await open();
+      await open();
 
-      expect(fetchMock.mock.calls[0][1].redirect).toBe('error');
-      expect('redirect' in fetchMock.mock.calls[1][1]).toBe(false);
+      expect(sent(0).redirect).toBe('error');
+      expect('redirect' in sent(1)).toBe(false);
     });
 
     it('stops waiting for an acquisition when the request is aborted', async () => {
       mockOpenSessionToken.mockReturnValue(new Promise(() => {}));
       const controller = new AbortController();
 
-      const request = get('picsure/query/sync', undefined, undefined, {
-        signal: controller.signal,
-      });
+      const pending = open({ signal: controller.signal });
       controller.abort();
 
-      await expect(request).rejects.toSatisfy(isAbortError);
+      await expect(pending).rejects.toSatisfy(isAbortError);
       expect(fetchMock).not.toHaveBeenCalled();
-    });
-
-    it('does not retry a 401 from the access rules, and does not log out', async () => {
-      mockOpenSessionToken.mockResolvedValue(SESSION);
-      fetchMock.mockResolvedValue(keyError('unauthorized'));
-
-      await expect(get('picsure/query/sync')).rejects.toThrow('401');
-
-      expect(fetchMock).toHaveBeenCalledTimes(1);
-      expect(mockRecoverOpenSession).not.toHaveBeenCalled();
-      expect(mockLogout).not.toHaveBeenCalled();
-    });
-
-    it('does not retry a keyless request, and does not log out', async () => {
-      fetchMock.mockResolvedValue(keyError('api_key_missing'));
-
-      await expect(get('picsure/query/sync')).rejects.toThrow('401');
-
-      expect(fetchMock).toHaveBeenCalledTimes(1);
-      expect(mockRecoverOpenSession).not.toHaveBeenCalled();
-      expect(mockLogout).not.toHaveBeenCalled();
-    });
-
-    it('gives up when recovery has no session to offer', async () => {
-      mockOpenSessionToken.mockResolvedValue(SESSION);
-      fetchMock.mockResolvedValue(keyError('api_key_invalid'));
-
-      await expect(get('picsure/query/sync')).rejects.toThrow('401');
-
-      expect(fetchMock).toHaveBeenCalledTimes(1);
-      expect(mockLogout).not.toHaveBeenCalled();
     });
   });
 
   describe('abort signal', () => {
-    it('forwards a signal to fetch when one is given', async () => {
+    it('forwards a signal to fetch', async () => {
       const controller = new AbortController();
-
-      await post('picsure/query', { foo: 'bar' }, undefined, undefined, {
-        signal: controller.signal,
-      });
-
-      expect(fetchMock).toHaveBeenCalledWith(
-        'https://example.com/picsure/query',
-        expect.objectContaining({ signal: controller.signal }),
-      );
+      await request('picsure/query', { signal: controller.signal });
+      expect(sent().signal).toBe(controller.signal);
     });
 
-    it.each([
-      ['get', () => get('picsure/query', undefined, undefined, { signal: makeSignal() })],
-      ['del', () => del('picsure/query', undefined, undefined, { signal: makeSignal() })],
-      ['put', () => put('picsure/query', {}, undefined, undefined, { signal: makeSignal() })],
-    ])('%s() forwards a signal', async (_name, call) => {
-      await call();
-      expect(fetchMock.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal);
+    it('omits the signal when none is given', async () => {
+      await request('picsure/query');
+      expect('signal' in sent()).toBe(false);
     });
 
-    it('omits signal entirely when none is given, so existing callers are unaffected', async () => {
-      await post('picsure/query', { foo: 'bar' });
+    it('rejects with the abort error without touching the session or logging', async () => {
+      token = 'my-token';
+      fetchMock.mockRejectedValue(Object.assign(new Error('aborted'), { name: 'AbortError' }));
 
-      const opts = fetchMock.mock.calls[0][1];
-      expect('signal' in opts).toBe(false);
-    });
+      await expect(request('picsure/test')).rejects.toThrow('aborted');
 
-    it('omits signal when an options object is passed without one', async () => {
-      await post('picsure/query', { foo: 'bar' }, undefined, undefined, {});
-
-      expect('signal' in fetchMock.mock.calls[0][1]).toBe(false);
-    });
-
-    it('rejects with the abort error without running response handling', async () => {
-      const abortError = Object.assign(new Error('aborted'), { name: 'AbortError' });
-      fetchMock.mockRejectedValue(abortError);
-
-      await expect(get('picsure/test')).rejects.toThrow('aborted');
-
-      // An aborted fetch rejects before handleResponse, so none of the failure
-      // paths - logout, error logging - may fire.
-      expect(mockLogout).not.toHaveBeenCalled();
+      expect(onUnauthorized).not.toHaveBeenCalled();
       expect(mockLog).not.toHaveBeenCalled();
     });
   });
 
-  describe('isAbortError', () => {
-    it('is true for the DOMException a real aborted fetch throws', () => {
-      expect(isAbortError(new DOMException('The operation was aborted.', 'AbortError'))).toBe(true);
+  describe('softFail', () => {
+    it('is never cached', async () => {
+      await request('picsure/operations/banners/active', { softFail: true });
+      expect(sent().cache).toBe('no-store');
     });
 
-    it('is true for an error named AbortError', () => {
-      expect(isAbortError(Object.assign(new Error('x'), { name: 'AbortError' }))).toBe(true);
+    it('is cached as usual without softFail', async () => {
+      await request('picsure/operations/banners/active');
+      expect('cache' in sent()).toBe(false);
     });
 
-    it('is false for an ordinary error', () => {
-      expect(isAbortError(new Error('boom'))).toBe(false);
+    it.each([401, 403, 500])(
+      'resolves undefined on a %i without touching the session or logging',
+      async (status) => {
+        token = 'my-token';
+        fetchMock.mockResolvedValue(mockFetchResponse({ ok: false, status, body: 'x' }));
+
+        await expect(request('picsure/test', { softFail: true })).resolves.toBeUndefined();
+
+        expect(onUnauthorized).not.toHaveBeenCalled();
+        expect(onForbidden).not.toHaveBeenCalled();
+        expect(mockLog).not.toHaveBeenCalled();
+      },
+    );
+
+    it('does not reload for a WAF CAPTCHA', async () => {
+      mockWafFlag = true;
+      mockIsWafCaptchaResponse.mockReturnValue(true);
+      fetchMock.mockResolvedValue(mockFetchResponse({ ok: false, status: 405 }));
+
+      await expect(request('picsure/test', { softFail: true })).resolves.toBeUndefined();
+
+      expect(mockHandleWafCaptcha).not.toHaveBeenCalled();
     });
 
-    it('is false for null and undefined', () => {
-      expect(isAbortError(null)).toBe(false);
-      expect(isAbortError(undefined)).toBe(false);
+    it('resolves undefined when the network fails', async () => {
+      fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
+      await expect(request('picsure/test', { softFail: true })).resolves.toBeUndefined();
+    });
+
+    it('still rejects an abort', async () => {
+      fetchMock.mockRejectedValue(new DOMException('The operation was aborted.', 'AbortError'));
+      await expect(request('picsure/test', { softFail: true })).rejects.toSatisfy(isAbortError);
+    });
+
+    it('resolves the body on success', async () => {
+      fetchMock.mockResolvedValue(mockFetchResponse({ body: '[1]' }));
+      await expect(request('picsure/test', { softFail: true })).resolves.toEqual([1]);
     });
   });
 });
 
-function makeSignal(): AbortSignal {
-  return new AbortController().signal;
-}
+describe('the legacy helpers', () => {
+  it.each([
+    ['get', () => get('picsure/query'), 'GET'],
+    ['del', () => del('picsure/query'), 'DELETE'],
+    ['post', () => post('picsure/query', { foo: 'bar' }), 'POST'],
+    ['put', () => put('picsure/query', { foo: 'bar' }), 'PUT'],
+    ['patch', () => patch('picsure/query', { foo: 'bar' }), 'PATCH'],
+  ])('%s() sends a %s request', async (_name, call, method) => {
+    await call();
+    expect(sent().method).toBe(method);
+  });
+
+  it('sends data as the body, and no body for empty data', async () => {
+    await post('psama/role', { foo: 'bar' });
+    await post('psama/role', '');
+
+    expect(sent(0).body).toBe('{"foo":"bar"}');
+    expect(sent(1).body).toBeUndefined();
+    expect(sent(1).headers['Content-Type']).toBeUndefined();
+  });
+
+  it('merges custom headers', async () => {
+    token = 'my-token';
+    await get('picsure/test', { 'X-Custom': 'hello' });
+
+    expect(sent().headers).toMatchObject({
+      'X-Custom': 'hello',
+      Authorization: 'Bearer my-token',
+      'X-Session-Id': 'test-session-id',
+    });
+  });
+
+  it('gives an anonymous picsure request the open-access session', async () => {
+    mockOpenSessionToken.mockResolvedValue(SESSION);
+    await get('picsure/query/sync');
+    expect(sent().headers['Authorization']).toBe(`Bearer ${SESSION}`);
+  });
+
+  it('gives an anonymous request elsewhere no session', async () => {
+    mockOpenSessionToken.mockResolvedValue(SESSION);
+    await get('psama/open/validate');
+
+    expect(mockOpenSessionToken).not.toHaveBeenCalled();
+    expect(sent().headers['Authorization']).toBeUndefined();
+  });
+
+  it('sends no credentials with authenticate=false', async () => {
+    token = 'my-token';
+    mockOpenSessionToken.mockResolvedValue(SESSION);
+    await post('picsure/query/sync', {}, undefined, false);
+
+    expect(sent().headers['Authorization']).toBeUndefined();
+    expect(sent().headers['request-source']).toBe('Open');
+    expect(mockOpenSessionToken).not.toHaveBeenCalled();
+  });
+
+  it('forwards a signal, and omits it when none is given', async () => {
+    const controller = new AbortController();
+    await post('picsure/query', {}, undefined, undefined, { signal: controller.signal });
+    await post('picsure/query', {}, undefined, undefined, {});
+
+    expect(sent(0).signal).toBe(controller.signal);
+    expect('signal' in sent(1)).toBe(false);
+  });
+
+  it('resolves a 422 with its body', async () => {
+    fetchMock.mockResolvedValue(
+      mockFetchResponse({ ok: false, status: 422, body: '{"errors": ["invalid"]}' }),
+    );
+    await expect(get('picsure/test')).resolves.toEqual({ errors: ['invalid'] });
+  });
+
+  it('resolves undefined on a 401 that ends the session', async () => {
+    token = 'my-token';
+    fetchMock.mockResolvedValue(mockFetchResponse({ ok: false, status: 401, body: 'expired' }));
+
+    await expect(get('picsure/test')).resolves.toBeUndefined();
+
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects other failures with an ApiError', async () => {
+    fetchMock.mockResolvedValue(mockFetchResponse({ ok: false, status: 409, body: 'in use' }));
+    await expect(rejection(del('psama/role/1'))).resolves.toMatchObject({ status: 409 });
+  });
+});
+
+describe('isAbortError', () => {
+  it('is true for the DOMException a real aborted fetch throws', () => {
+    expect(isAbortError(new DOMException('The operation was aborted.', 'AbortError'))).toBe(true);
+  });
+
+  it('is true for an error named AbortError', () => {
+    expect(isAbortError(Object.assign(new Error('x'), { name: 'AbortError' }))).toBe(true);
+  });
+
+  it('is false for an ordinary error', () => {
+    expect(isAbortError(new Error('boom'))).toBe(false);
+  });
+
+  it('is false for null and undefined', () => {
+    expect(isAbortError(null)).toBe(false);
+    expect(isAbortError(undefined)).toBe(false);
+  });
+});

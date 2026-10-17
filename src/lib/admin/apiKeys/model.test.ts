@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { ApiError } from '#lib/api/errors.ts';
 
 import {
   getApiKeyStatus,
@@ -128,16 +129,14 @@ describe('toPlatformKeyRequest', () => {
 });
 
 describe('extractApiError', () => {
-  it('unwraps a JSON error body from an HttpError message', () => {
-    const error = {
-      status: 400,
-      body: { message: JSON.stringify({ errorType: 'error', message: 'Expiry must be future' }) },
-    };
+  it('unwraps a JSON error body', () => {
+    const body = { errorType: 'error', message: 'Expiry must be future' };
+    const error = new ApiError(400, 'http', body, JSON.stringify(body));
     expect(extractApiError(error)).toBe('Expiry must be future');
   });
 
   it('returns a plain-text error message as-is', () => {
-    const error = { status: 400, body: { message: 'plain failure' } };
+    const error = new ApiError(400, 'http', 'plain failure', 'plain failure');
     expect(extractApiError(error)).toBe('plain failure');
   });
 

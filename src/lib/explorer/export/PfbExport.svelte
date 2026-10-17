@@ -2,6 +2,7 @@
   import { config } from '#lib/config/config.svelte.ts';
   import { Picsure } from '#lib/api/paths.ts';
   import * as api from '#lib/api/client.ts';
+  import { consentDeniedMessage } from '#lib/api/errors.ts';
   import DownloadButton from './DownloadButton.svelte';
   import Loading from '#lib/ui/Loading.svelte';
   import { toaster } from '#lib/ui/toaster.ts';
@@ -30,7 +31,7 @@
     } catch (error) {
       console.error('Error during export:', error);
       toaster.error({
-        title: api.consentDeniedMessage(error) ?? 'Export failed. Please try again.',
+        title: consentDeniedMessage(error) ?? 'Export failed. Please try again.',
         closable: true,
       });
     } finally {

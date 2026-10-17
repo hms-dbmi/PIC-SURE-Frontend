@@ -6,23 +6,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('$app/env', () => ({ browser: true }));
 
-const mockLogout = vi.fn();
-vi.mock('#lib/auth/User.ts', () => ({
-  logout: (...args: unknown[]) => mockLogout(...args),
-  login: vi.fn(),
-}));
+const mockUnauthorized = vi.fn();
 
 vi.mock('#lib/telemetry/logger.ts', () => ({
   log: vi.fn(),
   createLog: vi.fn((...args: unknown[]) => args),
   getSessionId: () => 'test-session-id',
-}));
-
-vi.mock('@sveltejs/kit', () => ({
-  error: (status: number, body: string | { message: string }) => {
-    throw new Error(`${status}: ${typeof body === 'string' ? body : body.message}`);
-  },
-  isHttpError: () => false,
 }));
 
 vi.mock('#lib/config/config.svelte.ts', () => ({
@@ -96,6 +85,12 @@ describe('open-access sessions through api/client.ts', () => {
     vi.stubGlobal('fetch', fetchMock);
     // fresh module state (single-flight promise, "sessions unavailable") for every test
     api = await import('#lib/api/client.ts');
+    (await import('#lib/api/sessionHooks.ts')).registerSessionHooks({
+      getToken: () => localStorage.getItem('token'),
+      onUnauthorized: mockUnauthorized,
+      onForbidden: vi.fn(),
+      onTokenRefreshed: vi.fn(),
+    });
   });
 
   afterEach(() => {
@@ -201,7 +196,7 @@ describe('open-access sessions through api/client.ts', () => {
 
     expect(dataCalls().map(bearerOf)).toEqual([T1, T2]);
     expect(localStorage.getItem(STORAGE_KEY)).toBe(T2);
-    expect(mockLogout).not.toHaveBeenCalled();
+    expect(mockUnauthorized).not.toHaveBeenCalled();
   });
 
   it('keeps the session another request recovered when a stale 401 arrives late', async () => {
@@ -265,7 +260,7 @@ describe('open-access sessions through api/client.ts', () => {
     issued = [T2, T3];
     data = (_url, init) => (bearerOf(init) === T3 ? json(200, { ok: true }) : keyInvalid());
 
-    await expect(api.get('picsure/query/sync')).rejects.toThrow('401');
+    await expect(api.get('picsure/query/sync')).rejects.toMatchObject({ status: 401 });
     expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
     await expect(api.get('picsure/query/sync')).resolves.toEqual({ ok: true });
 

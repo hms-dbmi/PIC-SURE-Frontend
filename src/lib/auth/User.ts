@@ -2,6 +2,7 @@ import { resolve } from '$app/paths';
 import { get, writable, derived, type Writable, type Readable } from 'svelte/store';
 import { browser } from '$app/env';
 import * as api from '#lib/api/client.ts';
+import { registerSessionHooks } from '#lib/api/sessionHooks.ts';
 import type { Route } from '#lib/auth/model/route.ts';
 import type { ConsentsMap, User } from '#lib/auth/model/user.ts';
 import { PicsurePrivileges } from '#lib/auth/model/privilege.ts';
@@ -302,7 +303,22 @@ export async function login(token: string) {
   }
 }
 
-// A 401 or 403 from PSAMA's logout call makes api/client.ts start another logout, which would
+registerSessionHooks({
+  getToken,
+  onUnauthorized: () => {
+    if (browser) {
+      sessionStorage.setItem('logout-reason', 'Your session has timed out. Please log in.');
+    }
+    logout(undefined, true);
+  },
+  onForbidden: () => {
+    if (browser) sessionStorage.removeItem('logout-reason');
+    logout(undefined, false);
+  },
+  onTokenRefreshed: login,
+});
+
+// A 401 or 403 from PSAMA's logout call makes the API client start another logout, which would
 // navigate to /login a second time, so later calls share the logout already running.
 let pendingLogout: Promise<void> | undefined;
 

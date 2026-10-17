@@ -7,12 +7,6 @@ vi.mock('$app/env', () => ({
   },
 }));
 
-const mockLogout = vi.fn();
-vi.mock('#lib/auth/User.ts', () => ({
-  logout: (...args: unknown[]) => mockLogout(...args),
-  login: vi.fn(),
-}));
-
 vi.mock('#lib/telemetry/logger.ts', () => ({
   log: vi.fn(),
   createLog: vi.fn((...args: unknown[]) => args),
@@ -28,8 +22,11 @@ vi.mock('#lib/api/wafCaptcha.ts', () => ({
   handleWafCaptcha: () => true,
 }));
 
-// @sveltejs/kit is left unmocked on purpose: error() must throw a real HttpError.
-import { get, consentDeniedMessage, CONSENT_DENIED_MESSAGE } from '#lib/api/client.ts';
+import { get } from '#lib/api/client.ts';
+import { consentDeniedMessage, CONSENT_DENIED_MESSAGE } from '#lib/api/errors.ts';
+import { registerSessionHooks } from '#lib/api/sessionHooks.ts';
+
+const onForbidden = vi.fn();
 
 describe('consentDeniedMessage', () => {
   let fetchMock: Mock;
@@ -40,11 +37,11 @@ describe('consentDeniedMessage', () => {
     fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
     vi.stubGlobal('window', { location: { origin: 'https://example.com' } });
-    vi.stubGlobal('localStorage', { getItem: () => null, setItem: vi.fn(), removeItem: vi.fn() });
-    vi.stubGlobal('sessionStorage', {
-      getItem: () => null,
-      setItem: vi.fn(),
-      removeItem: vi.fn(),
+    registerSessionHooks({
+      getToken: () => 'my-token',
+      onUnauthorized: vi.fn(),
+      onForbidden,
+      onTokenRefreshed: vi.fn(),
     });
   });
 
@@ -82,7 +79,7 @@ describe('consentDeniedMessage', () => {
 
   it('preserves the session on a denial', async () => {
     await rejectionFrom(JSON.stringify({ errorType: 'consent_denied', message: 'gone' }));
-    expect(mockLogout).not.toHaveBeenCalled();
+    expect(onForbidden).not.toHaveBeenCalled();
   });
 
   it('ignores a 403 that is not a consent denial', async () => {

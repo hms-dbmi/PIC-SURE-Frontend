@@ -1,5 +1,6 @@
 <script lang="ts">
   import { post } from '#lib/api/client.ts';
+  import { ApiError } from '#lib/api/errors.ts';
   import { Psama } from '#lib/api/paths.ts';
   import { turnstileSiteKey } from '#lib/config/deployment.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
@@ -54,7 +55,7 @@
 
   function extractErrorMessage(err: unknown): string {
     const fallback = 'Unable to generate a public access key. Please try again later.';
-    const message = (err as { body?: { message?: string } })?.body?.message;
+    const message = err instanceof ApiError ? err.message : undefined;
     if (!message) return fallback;
     try {
       const parsed = JSON.parse(message);
@@ -87,7 +88,7 @@
       );
       if (!response?.apiKey || !response?.uuid) {
         // api/client.ts treats 422 and empty bodies as success; never enter 'revealed' without a key
-        throw { body: { message: '' } };
+        throw new Error('The response has no key');
       }
       publicKey = response;
       view = 'revealed';
