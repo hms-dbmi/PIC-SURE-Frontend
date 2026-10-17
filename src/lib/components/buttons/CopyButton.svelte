@@ -57,7 +57,7 @@
   data-testid={testid || 'ui-copy'}
   data-key={dataKey}
   {triggerTitle}
-  triggerStyle="ml-4 {useIcon ? 'text-black-600 hover:text-primary-600' : 'btn'} {className}"
+  triggerStyle="ml-4 {useIcon ? 'hover:text-primary-600' : 'btn'} {className}"
   onengage={updateButton}
   onTriggerClick={(e) => e.stopPropagation()}
   color="secondary"

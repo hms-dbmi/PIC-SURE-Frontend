@@ -80,7 +80,6 @@
     "vitest": "^4.1.11"
   },
   "imports": {
-    "#lib": "./src/lib/index.ts",
     "#lib/*": "./src/lib/*"
   }
 }

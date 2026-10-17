@@ -390,9 +390,8 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
         "Shows the 'Restore Filters' button for older (V2) saved queries; V3 queries always show it regardless.",
     },
 
-    // --- Guided Tour --- (joined by AUTH_TOUR_NAME, OPEN_TOUR_NAME, and
-    // EXPLORE_TOUR_SEARCH_TERM from settings, once features+settings are merged in the
-    // admin UI)
+    // --- Guided Tour --- (joined by AUTH_TOUR_NAME and OPEN_TOUR_NAME from settings, once
+    // features+settings are merged in the admin UI)
     EXPLORE_TOUR: {
       group: 'Guided Tour',
       type: 'boolean',
