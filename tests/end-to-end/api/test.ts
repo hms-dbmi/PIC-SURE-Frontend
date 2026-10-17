@@ -1,47 +1,12 @@
-import { expect, type Locator, type Page } from '@playwright/test';
+import { expect } from '@playwright/test';
 import { test, mockApiFail, mockApiSuccess, mockApiConfig } from '../custom-context';
 import { picsureUser, roles as mockRoles, mockExpiredToken, mockToken } from '../mock-data';
-import { userIsLoggedIn } from '../utils';
+import { expectAnimationsFinished, expectSectionAligned, userIsLoggedIn } from '../utils';
 import type { Branding } from '../../../src/lib/models/Configuration';
 import brandingJson from '../../../src/lib/assets/configuration.json' with { type: 'json' };
 const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
 
 const capabilities = branding?.apiPage?.capabilities || [];
-
-// Waits for the scroll to land on the section and stop. A smooth scroll's last few
-// pixels still move the page, and a click Playwright retries then scrolls (smoothly)
-// again and can miss.
-async function expectSectionAligned(page: Page, id: string) {
-  await expect
-    .poll(
-      () =>
-        page.evaluate(async (sectionId) => {
-          const scroller = document.getElementById('app-page')!;
-          const section = document.getElementById(sectionId)!;
-          const start = scroller.scrollTop;
-          for (let frame = 0; frame < 5; frame++) {
-            await new Promise(requestAnimationFrame);
-          }
-          if (Math.abs(scroller.scrollTop - start) >= 1) return Infinity;
-          const sectionTop =
-            section.getBoundingClientRect().top -
-            scroller.getBoundingClientRect().top +
-            scroller.scrollTop;
-          const destination = Math.min(sectionTop, scroller.scrollHeight - scroller.clientHeight);
-          return Math.abs(scroller.scrollTop - destination);
-        }, id),
-      { message: `#${id} aligned and at rest (Infinity: still scrolling)` },
-    )
-    .toBeLessThan(4);
-}
-
-// Accordion panels slide open and shut as Web Animations, moving everything below
-// them; a click that starts mid-slide can land its mouseup on another element.
-async function expectAnimationsFinished(locator: Locator) {
-  await expect
-    .poll(() => locator.evaluate((element) => element.getAnimations({ subtree: true }).length))
-    .toBe(0);
-}
 
 // A JWT whose exp claim is the given number of days from now. The page only
 // decodes the payload, so the signature is a placeholder.
