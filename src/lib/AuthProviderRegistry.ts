@@ -28,10 +28,6 @@ export function registerProviderData(providerModule: AuthData) {
   providerDataRegistry.push(providerModule);
 }
 
-export function getProviderData(providerName: string) {
-  return providerDataRegistry.find((provider) => provider.name === providerName);
-}
-
 export function getAllProviderData() {
   return providerDataRegistry;
 }

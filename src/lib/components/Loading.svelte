@@ -86,7 +86,7 @@
       {/if}
     </ProgressRing>
     {#if label && size === 'micro'}
-      <span class="bold">{label}</span>
+      <span>{label}</span>
     {/if}
   </div>
 {:else}

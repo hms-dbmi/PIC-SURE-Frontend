@@ -350,7 +350,6 @@ describe('api', () => {
         status: 403,
       });
       expect(sessionStorage.removeItem).toHaveBeenCalledWith('logout-reason');
-      expect(sessionStorage.removeItem).toHaveBeenCalledWith('filters');
       expect(mockLogout).toHaveBeenCalledWith(undefined, false);
     });
 

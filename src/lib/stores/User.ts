@@ -60,9 +60,6 @@ export const user: Writable<User> = writable(restoreUser());
 export const isTopAdmin = derived(user, ($user: User) => {
   return $user?.privileges?.includes(PicsurePrivileges.SUPER);
 });
-export const isAdmin = derived(user, ($user: User) => {
-  return $user?.privileges?.includes(PicsurePrivileges.ADMIN);
-});
 
 /**
  * `\_consents\` is the complete grant list; the harmonized and topmed keys are subsets the

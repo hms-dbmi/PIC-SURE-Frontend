@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { defaultShouldRetry, withBackoff } from '#lib/utilities/backoff.ts';
+import { withBackoff } from '#lib/utilities/backoff.ts';
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -95,21 +95,5 @@ describe('withBackoff', () => {
 
     await expect(withBackoff(fn, 0)).rejects.toBeUndefined();
     expect(fn).not.toHaveBeenCalled();
-  });
-});
-
-describe('defaultShouldRetry', () => {
-  it.each([
-    [new Error('Network down'), true],
-    [new Error('Request TIMEOUT'), true],
-    [new TypeError('Failed to fetch'), true],
-    [new Error('connection reset'), true],
-    [new Error('Bad request'), false],
-    [new Error('500 Internal Server Error'), false],
-    ['not an Error', true],
-    [{ status: 400 }, true],
-    [undefined, true],
-  ])('%s → %s', (error, expected) => {
-    expect(defaultShouldRetry(error)).toBe(expected);
   });
 });

@@ -41,7 +41,7 @@
     <a
       data-testid={testid}
       aria-disabled={disabled}
-      class="{btnStyle} &[aria-disabled=“true”]:opacity-75 {className}"
+      class="{btnStyle} {className}"
       href={resolve(appPath(href))}
     >
       {@render label()}
@@ -50,7 +50,7 @@
     <a
       data-testid={testid}
       aria-disabled={disabled}
-      class="{btnStyle} &[aria-disabled=“true”]:opacity-75 {className}"
+      class="{btnStyle} {className}"
       rel="external"
       {href}
     >

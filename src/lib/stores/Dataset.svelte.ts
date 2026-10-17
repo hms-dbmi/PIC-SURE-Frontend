@@ -55,12 +55,3 @@ export async function getDataset(uuid: string) {
   const res = await api.get(`${Picsure.NamedDataSet}/${uuid}`);
   return mapDataset(res);
 }
-
-export default {
-  subscribe: datasets.subscribe,
-  active,
-  archived,
-  loadDatasets,
-  toggleArchived,
-  getDataset,
-};

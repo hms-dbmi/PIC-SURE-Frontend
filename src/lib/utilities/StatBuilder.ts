@@ -53,7 +53,7 @@ export const StatPromise = {
     result.status === 'fulfilled' ? result.value : 0,
 };
 
-export function getStatFields(key: string): StatField[] {
+function getStatFields(key: string): StatField[] {
   const statKeys = config.branding.statFields ? Object.keys(config.branding.statFields) : [];
   return statKeys.includes(key) ? config.branding.statFields[key] : [];
 }

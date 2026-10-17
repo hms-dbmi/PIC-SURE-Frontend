@@ -20,7 +20,6 @@ const HPDS_OPEN = `${PREFIX}/hpds/open`;
 const API = '/api/v1';
 
 export const LocalServer = {
-  Configs: `${API}/config`,
   ConfigRefresh: `${API}/config/refresh`,
 };
 
@@ -42,7 +41,6 @@ export const Picsure = {
   Dashboard: `${DICT}/dashboard`,
   DashboardDrawer: `${DICT}/dashboard-drawer`,
   NamedDataSet: `${PREFIX}/operations/dataset/named`,
-  Dictionary: DICT,
   Facets: `${DICT}/facets`,
   SearchValues: `${HPDS_AUTH}/search/values`,
   QueryOpenSync: `${HPDS_OPEN}/query/sync`,
@@ -65,7 +63,6 @@ export const Psama = {
   ApiKey: {
     Admin: 'psama/apiKey',
     Platform: 'psama/apiKey/platform',
-    Open: 'psama/open/apiKey',
   },
   Auth: 'psama/authentication',
   Open: {

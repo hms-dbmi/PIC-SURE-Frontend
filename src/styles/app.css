@@ -47,10 +47,6 @@
   --input-bg-color: var(--body-background-color);
 }
 
-:root {
-  --color-gic-blue: #338fff;
-}
-
 @layer utilities {
 }
 
@@ -128,11 +124,6 @@ hr {
 .card {
   border-radius: var(--radius-container);
   @apply border border-surface-200;
-}
-
-.w-modal {
-  width: 100%;
-  max-width: 640px;
 }
 
 .popover {
@@ -243,21 +234,6 @@ input:disabled {
   cursor: not-allowed;
 }
 
-ol.primary-list,
-ul.primary-list {
-  padding-left: 3rem;
-}
-ol.primary-list {
-  list-style: decimal;
-}
-ul.primary-list {
-  list-style: disc;
-}
-ol.primary-list li::marker,
-ul.primary-list li::marker {
-  color: var(--color-primary-500);
-}
-
 /* Loading progress bar animation */
 .anim-progress-bar {
   transform-origin: 0% 50%;
@@ -316,14 +292,6 @@ ul.primary-list li::marker {
   background-color: var(--color-surface-300);
   outline: 2px solid var(--color-surface-500);
   outline-offset: -2px;
-}
-
-.table.align-middle tbody td {
-  vertical-align: middle;
-}
-
-header .app-bar {
-  border-bottom: solid var(--color-surface-400) 2px;
 }
 
 /* #app-page is the app's scroll viewport (the nav bar sits outside it). Declaring it
@@ -417,38 +385,8 @@ nav#app-nav a.nav-link.highlight {
   @apply preset-filled-secondary-500;
 }
 
-nav#app-nav li .nav-dropdown {
-  position: absolute;
-  padding-bottom: var(--radius-container);
-  width: 8rem;
-  @apply rounded-container bg-primary-400-600;
-
-  /* link top padding (from nav#app-nav li: 0.4rem) + link height (from nav#app-nav li a.nav-link: 2.75rem) */
-  top: 3.15rem;
-}
-nav#app-nav li .nav-dropdown li {
-  display: block;
-  width: 100%;
-  margin: 0;
-}
-
-nav#app-nav li.open > .nav-dropdown {
-  border-radius: 0 0 var(--radius-container) var(--radius-container);
-}
-
 nav#app-nav li.open a.nav-link {
   border-radius: var(--radius-container) var(--radius-container) 0 0;
-}
-
-nav#app-nav li .nav-dropdown a {
-  display: block;
-  text-align: center;
-  padding: 0.2em;
-}
-
-nav#app-nav li .nav-dropdown a:hover,
-nav#app-nav li .nav-dropdown a:focus {
-  @apply bg-secondary-400-600;
 }
 
 .help-text a {
@@ -481,7 +419,6 @@ nav#app-nav li .nav-dropdown a:focus {
   @apply preset-filled-success-500;
 }
 
-.input-border,
 #user-token #user-token-value {
   @apply input;
   overflow: auto;
@@ -707,11 +644,4 @@ label.required input:invalid,
   a {
     @apply anchor;
   }
-}
-
-.operator-select {
-  @apply my-2 ml-8 w-32 px-2 py-1 bg-surface-200;
-}
-.filter-group-or {
-  @apply p-1 border border-surface-200-800;
 }

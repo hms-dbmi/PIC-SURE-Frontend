@@ -203,7 +203,7 @@
             {:else}
               <input
                 type="checkbox"
-                class="mr-1 &[aria-disabled=“true”]:opacity-75"
+                class="mr-1"
                 data-testid="export-sample-ids-checkbox"
                 id="export-sample-ids"
                 bind:checked={sampleIds}

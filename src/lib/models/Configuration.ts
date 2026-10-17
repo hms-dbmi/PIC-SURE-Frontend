@@ -382,13 +382,6 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
       description:
         "Shows an 'Include sample identifiers' checkbox in the export review step that adds sample IDs to the export/query.",
     },
-    USE_QUERY_TEMPLATE: {
-      group: 'Explorer & Search',
-      type: 'boolean',
-      default: false,
-      description:
-        "Applies the logged-in user's saved query template (and its consent categories) as the base of new queries and dashboard filtering.",
-    },
     RESTORE_V2_QUERY: {
       group: 'Explorer & Search',
       type: 'boolean',
@@ -732,7 +725,6 @@ export function mapFeatures(apiFeatures: ConfigObject[]): Features {
     },
     restoreV2queries: parse('RESTORE_V2_QUERY'),
     termsOfService: parse('ENABLE_TOS'),
-    useQueryTemplate: parse('USE_QUERY_TEMPLATE'),
     wafCaptchaRecovery: parse('WAF_CAPTCHA_RECOVERY'),
   };
 }

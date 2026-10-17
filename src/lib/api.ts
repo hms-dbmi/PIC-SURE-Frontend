@@ -214,7 +214,6 @@ async function handleResponse(res: Response, openRequest = false) {
     log(createLog('AUTH', 'session.forbidden', undefined, { status: 403 }));
     if (browser) {
       sessionStorage.removeItem('logout-reason');
-      sessionStorage.removeItem('filters');
     }
     logout(undefined, false);
     fail(res.status, resText);
