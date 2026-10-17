@@ -1,11 +1,11 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
-  import { appPath } from '#lib/paths.ts';
+  import { appPath } from '#lib/api/paths.ts';
   import type { Snippet } from 'svelte';
   import { beforeNavigate, goto } from '$app/navigation';
-  import { clearSession, isTokenExpired } from '#lib/stores/User.ts';
-  import { loginRedirectPath } from '#lib/utilities/LoginRedirect.ts';
-  import { log, createLog } from '#lib/logger.ts';
+  import { clearSession, isTokenExpired } from '#lib/auth/User.ts';
+  import { loginRedirectPath } from '#lib/auth/loginRedirect.ts';
+  import { log, createLog } from '#lib/telemetry/logger.ts';
 
   let { children }: { children?: Snippet } = $props();
 

@@ -1,0 +1,126 @@
+<script lang="ts">
+  import type { SearchResult } from '#lib/explorer/types.ts';
+  import { setActiveRow } from '#lib/explorer/ExpandableRow.ts';
+  import {
+    exports,
+    addExport,
+    removeExport,
+    mapSearchResultAsExport,
+  } from '#lib/explorer/export/Export.ts';
+  import { panelOpen } from '#lib/explorer/panel.ts';
+  import { config } from '#lib/config/config.svelte.ts';
+  import { isOpenAccess } from '#lib/explorer/mode.ts';
+  import { log, createLog, getPageContext } from '#lib/telemetry/logger.ts';
+
+  interface Props {
+    data: { row: SearchResult; tableName?: string };
+  }
+
+  let { data }: Props = $props();
+  let exportItem = $derived(mapSearchResultAsExport(data.row));
+
+  function updateActiveRow(componentName: string) {
+    return (event: Event) => {
+      event.stopPropagation();
+      log(
+        createLog('ACTION', `search_result.${componentName}`, {
+          variable: data.row.display || data.row.name,
+          conceptPath: data.row.conceptPath,
+          pageContext: getPageContext(),
+        }),
+      );
+      setActiveRow({
+        row: data.row.conceptPath,
+        component: componentName,
+        table: data?.tableName,
+      });
+    };
+  }
+
+  const insertInfoContent = updateActiveRow('info');
+  const insertFilterContent = updateActiveRow('filter');
+  const insertHierarchyContent = updateActiveRow('hierarchy');
+
+  function insertExportContent(e: Event) {
+    e.stopPropagation();
+    if (isExported) {
+      log(
+        createLog('ACTION', 'search_result.export_remove', {
+          variable: data.row.display || data.row.name,
+          conceptPath: data.row.conceptPath,
+          pageContext: getPageContext(),
+        }),
+      );
+      removeExport(exportItem);
+    } else {
+      log(
+        createLog('ACTION', 'search_result.export_add', {
+          variable: data.row.display || data.row.name,
+          conceptPath: data.row.conceptPath,
+          pageContext: getPageContext(),
+        }),
+      );
+      addExport(exportItem);
+      $panelOpen = true;
+    }
+  }
+
+  let isExported = $derived(
+    $exports.map((exp) => exp.conceptPath).includes(exportItem.conceptPath),
+  );
+  let shouldDisableFilter = $derived(isOpenAccess() && !data.row.allowFiltering);
+</script>
+
+<button
+  type="button"
+  title="Information (i)"
+  data-key="i"
+  class="row-action-info btn-icon-color"
+  onclick={insertInfoContent}
+>
+  <i class="fa-solid fa-circle-info fa-xl"></i>
+  <span class="sr-only">View Information (i)</span>
+</button>
+<button
+  type="button"
+  title={shouldDisableFilter ? 'Filtering is not available for this variable' : 'Filter (f)'}
+  data-key="f"
+  class="row-action-filter btn-icon-color"
+  disabled={shouldDisableFilter}
+  onclick={insertFilterContent}
+>
+  <i class="fa-solid fa-filter fa-xl"></i>
+  <span class="sr-only"
+    >{shouldDisableFilter
+      ? 'Filtering is not available for this variable'
+      : 'View Filter (f)'}</span
+  >
+</button>
+{#if config.features.explorer.enableHierarchy}
+  <button
+    type="button"
+    title="Data Hierarchy (h)"
+    data-key="h"
+    class="row-action-hierarchy btn-icon-color"
+    onclick={insertHierarchyContent}
+  >
+    <i class="fa-solid fa-sitemap fa-xl"></i>
+    <span class="sr-only">View Data Hierarchy (h)</span>
+  </button>
+{/if}
+{#if config.features.explorer.exportsEnableExport && !isOpenAccess()}
+  <button
+    type="button"
+    title={isExported ? 'Remove from Analysis (e)' : 'Add for Analysis (e)'}
+    data-key="e"
+    class="row-action-export btn-icon-color"
+    onclick={insertExportContent}
+  >
+    {#if isExported}
+      <i class="fa-regular fa-square-check fa-xl"></i>
+    {:else}
+      <i class="fa-solid fa-right-from-bracket fa-xl"></i>
+    {/if}
+    <span class="sr-only">{isExported ? 'Remove from Analysis (e)' : 'Add for Analysis (e)'}</span>
+  </button>
+{/if}

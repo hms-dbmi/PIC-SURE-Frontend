@@ -1,0 +1,368 @@
+import { expect } from '@playwright/test';
+import {
+  test,
+  mockApiSuccess,
+  mockApiFail,
+  mockHTMLBodySuccess,
+  mockApiConfig,
+} from '../custom-context';
+import {
+  searchResults as mockSearchResults,
+  facetsResponse,
+  privileges as mockPrivileges,
+  roles as mockRoles,
+  applications as mockApps,
+  connections as mockConnections,
+  picsureUser,
+} from '../../support/mock-data';
+import { userIsLoggedIn } from '../utils';
+
+import type { Branding } from '../../../src/lib/config/Configuration';
+import brandingJson from '../../../src/lib/assets/configuration.json' with { type: 'json' };
+const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
+
+// The terms editor moved from its own /admin/configuration/terms/edit route into a
+// tab on the shared /admin/configuration page (see TermsEditor.svelte).
+const clickTab = (page: import('@playwright/test').Page, name: string) =>
+  page.getByTestId('ui-tabs-control').filter({ hasText: name }).click();
+const gotoTermsEditor = async (page: import('@playwright/test').Page) => {
+  await page.goto('/admin/configuration');
+  await userIsLoggedIn(page);
+  await clickTab(page, 'Terms of Service');
+};
+
+const Psama: { [key: string]: string } = {
+  TOS: '*/**/psama/tos',
+  User: '*/**/psama/user',
+};
+Psama.Latest = Psama.TOS + '/latest';
+Psama.Accept = Psama.TOS + '/accept';
+Psama.Update = Psama.TOS + '/update';
+Psama.Me = Psama.User + '/me';
+Psama.Consents = Psama.User + '/me/consents';
+Psama.Logout = '*/**/psama/logout';
+
+const mockTerms = '<h1>Terms of Service</h1><p>Please accept the terms to use this site.</p>';
+
+test.beforeEach(async ({ page }) => {
+  await mockApiConfig(page, {
+    features: [
+      { name: 'ANALYZE_ANALYSIS', value: 'false' },
+      { name: 'ANALYZE_API', value: 'true' },
+      { name: 'ENABLE_TOS', value: 'true' },
+      { name: 'ENFORCE_TOS_ACCEPT', value: 'true' },
+    ],
+    settings: [],
+  });
+  await mockApiSuccess(page, 'https://www.googletagmanager.com/**/*', {});
+  await mockApiSuccess(page, '*/**/picsure/hpds/auth/query/sync', 99);
+  await mockApiSuccess(page, '*/**/picsure/dictionary/concepts*', mockSearchResults);
+  await mockApiSuccess(page, '*/**/picsure/dictionary/facets', facetsResponse);
+});
+
+test.describe('Not logged in', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
+
+  test('Terms do not open when user is not logged in', async ({ page }) => {
+    // When: '/' sends signed-out visitors to /login once the app hydrates
+    await page.goto('/');
+    await expect(page).toHaveURL('/login?redirectTo=%2F');
+
+    // Then
+    await expect(page.locator('#terms-of-service')).not.toBeVisible();
+  });
+  test('Terms link displays close button', async ({ page }) => {
+    // Given
+    await mockHTMLBodySuccess(page, Psama.Latest, mockTerms);
+    await page.goto('/login');
+
+    // When
+    await page.getByTestId('app-footer-terms-trigger').click();
+
+    // Then
+    await expect(page.locator('#terms-of-service')).toBeVisible();
+    await expect(page.getByTestId('ui-modal-close')).toBeVisible();
+  });
+  test('Terms link opens dismissable modal', async ({ page }) => {
+    // Given
+    await mockHTMLBodySuccess(page, Psama.Latest, mockTerms);
+    await page.goto('/login');
+    await page.getByTestId('app-footer-terms-trigger').click();
+    await expect(page.locator('#terms-of-service')).toBeVisible();
+
+    // The dialog starts listening for Escape a frame after it opens, and moves focus inside
+    // only after that; an earlier press is ignored.
+    await expect(page.locator('[role="dialog"]:focus-within')).toBeVisible();
+
+    // When
+    await page.keyboard.press('Escape');
+
+    // Then
+    await expect(page.locator('#terms-of-service')).not.toBeVisible();
+  });
+});
+
+test.describe('Logged in', () => {
+  let tosLatestRequest = false;
+  let tosAcceptRequest = false;
+  let tosUpdateRequest = false;
+  let meRequest = false;
+  let logoutRequest = false;
+
+  test.beforeEach(async ({ page }) => {
+    await mockHTMLBodySuccess(page, Psama.Latest, mockTerms);
+    page.on('request', (request) => {
+      if (request.url().includes('/psama/tos/latest')) {
+        tosLatestRequest = true;
+      } else if (request.url().includes('/psama/tos/accept')) {
+        tosAcceptRequest = true;
+      } else if (request.url().includes('/psama/tos') && request.method() === 'POST') {
+        tosUpdateRequest = true;
+      } else if (request.url().includes('/psama/user/me')) {
+        meRequest = true;
+      } else if (request.url().includes('/psama/logout')) {
+        logoutRequest = true;
+      }
+    });
+  });
+
+  test.afterEach(() => {
+    tosLatestRequest = false;
+    tosAcceptRequest = false;
+    tosUpdateRequest = false;
+    meRequest = false;
+    logoutRequest = false;
+  });
+
+  test.describe('Terms prompt', () => {
+    test.use({ storageState: 'tests/end-to-end/.auth/noTOS.json' });
+
+    test('The TOS modal opens and requests terms html data', async ({ page }) => {
+      // When
+      await page.goto('/');
+
+      // Then
+      await expect(page.locator('#terms-of-service')).toBeVisible();
+      expect(tosLatestRequest).toBeTruthy();
+    });
+    test('Modal does not allow user to dismiss it', async ({ page }) => {
+      // Given
+      await page.goto('/');
+
+      // When
+      await expect(page.locator('#terms-of-service')).toBeVisible();
+      await page.keyboard.press('Escape');
+
+      // Then
+      await expect(page.locator('#terms-of-service')).toBeVisible();
+      await expect(page.getByTestId('ui-modal-close')).not.toBeVisible();
+    });
+    test('Clicking the accept sends request', async ({ page }) => {
+      // Given
+      await mockApiSuccess(page, Psama.Me, picsureUser);
+      await mockApiSuccess(page, Psama.Consents, { consents: picsureUser.consents });
+      await mockApiSuccess(page, Psama.Accept, '');
+      await page.goto('/');
+
+      // When
+      await page.getByTestId('terms-accept').click();
+
+      // Then
+      await expect(page.locator('#terms-of-service')).not.toBeVisible({ timeout: 10000 });
+      expect(tosAcceptRequest).toBeTruthy();
+      expect(meRequest).toBeTruthy();
+    });
+    test('Clicking the reject redirects the user', async ({ page }) => {
+      // Given
+      await mockApiSuccess(page, Psama.Logout, {});
+      await mockHTMLBodySuccess(
+        page,
+        branding.termsOfService.rejectionUrl,
+        '<h1>Some Rejection Information Page</h1>',
+      );
+      await page.goto('/');
+
+      // When
+      await page.getByTestId('terms-reject').click();
+
+      // Then
+      const rejectionUrl = RegExp('^' + branding.termsOfService.rejectionUrl);
+      await expect(page).toHaveURL(rejectionUrl);
+      expect(logoutRequest).toBeTruthy();
+    });
+    test('TOS modal has close button after acceptance', async ({ page }) => {
+      // Given
+      await mockApiSuccess(page, Psama.Me, picsureUser);
+      await mockApiSuccess(page, Psama.Consents, { consents: picsureUser.consents });
+      await mockApiSuccess(page, Psama.Accept, '');
+      await page.goto('/');
+      await page.getByTestId('terms-accept').click();
+
+      // When
+      await userIsLoggedIn(page);
+      await page.getByTestId('app-footer-terms-trigger').click();
+
+      // Then
+      await expect(page.locator('#terms-of-service')).toBeVisible();
+      await expect(page.getByTestId('ui-modal-close')).toBeVisible();
+    });
+    test('TOS modal is dismissable after acceptance', async ({ page }) => {
+      // Given
+      await mockApiSuccess(page, Psama.Me, picsureUser);
+      await mockApiSuccess(page, Psama.Consents, { consents: picsureUser.consents });
+      await mockApiSuccess(page, Psama.Accept, '');
+      await page.goto('/');
+      await page.getByTestId('terms-accept').click();
+      await expect(page.locator('#terms-of-service')).not.toBeVisible({ timeout: 10000 });
+      await userIsLoggedIn(page);
+      await page.getByTestId('app-footer-terms-trigger').click();
+      await expect(page.locator('#terms-of-service')).toBeVisible();
+      await expect(page.getByTestId('ui-modal-close')).toBeVisible();
+
+      // When
+      await page.getByTestId('ui-modal-close').click();
+
+      // Then
+      await expect(page.locator('#terms-of-service')).not.toBeVisible();
+    });
+    test('Displays an error box when api fails', async ({ page }) => {
+      // Given
+      await mockApiFail(page, Psama.Latest, 'failed');
+
+      // When
+      await page.goto('/');
+
+      // Then
+      await expect(page.getByTestId('terms-api-error')).toBeVisible();
+      await expect(page.getByTestId('terms-close')).toBeVisible();
+    });
+  });
+
+  test.describe('Terms edit', () => {
+    test.use({ storageState: 'tests/end-to-end/.auth/superUser.json' });
+    test.beforeEach(async ({ page }) => {
+      await Promise.all([
+        mockApiSuccess(page, '*/**/psama/role', mockRoles),
+        mockApiSuccess(page, '*/**/psama/privilege', mockPrivileges),
+        mockApiSuccess(page, '*/**/psama/application', mockApps),
+        mockApiSuccess(page, '*/**/psama/connection', mockConnections),
+      ]);
+    });
+
+    test('Admin can navigate to terms of service configuration page', async ({ page }) => {
+      // When
+      await page.goto('/admin/configuration');
+      await userIsLoggedIn(page);
+      await clickTab(page, 'Terms of Service');
+
+      // Then
+      await expect(page.getByTestId('admin-terms-publish-trigger')).toBeVisible();
+    });
+    test('Commit button is disabled when no changes are made', async ({ page }) => {
+      // When
+      await gotoTermsEditor(page);
+
+      // Then
+      await expect(page.getByTestId('admin-terms-publish-trigger')).toBeDisabled();
+    });
+    test('Commit button is enabeld on content change', async ({ page }) => {
+      // Given
+      await gotoTermsEditor(page);
+
+      // When
+      await page.locator('#editor div.ql-editor').fill('Some new text');
+
+      // Then
+      await expect(page.getByTestId('admin-terms-publish-trigger')).toBeEnabled();
+    });
+    test('Confirmation modal appears on commit', async ({ page }) => {
+      // Given
+      await gotoTermsEditor(page);
+      await page.locator('#editor div.ql-editor').fill('Some new text');
+
+      // When
+      await page.getByTestId('admin-terms-publish-trigger').click();
+
+      // Then
+      await expect(page.getByTestId('admin-terms-publish')).toBeVisible();
+    });
+    test('Cancel button does not submit update', async ({ page }) => {
+      // Given
+      await gotoTermsEditor(page);
+      await page.locator('#editor div.ql-editor').fill('Some new text');
+      await page.getByTestId('admin-terms-publish-trigger').click();
+
+      // When
+      await page.getByText('Cancel', { exact: true }).click();
+
+      // Then
+      await expect(page.getByTestId('admin-terms-publish')).not.toBeVisible();
+      expect(tosUpdateRequest).toBeFalsy();
+    });
+    test('Confirm button submits updated terms, redirects, and success', async ({ page }) => {
+      // Given
+      await mockHTMLBodySuccess(page, Psama.Update, '');
+      await gotoTermsEditor(page);
+      await page.locator('#editor div.ql-editor').fill('Some new text');
+      await page.getByTestId('admin-terms-publish-trigger').click();
+
+      // When
+      await page.getByText('Confirm', { exact: true }).click();
+
+      // Then
+      const toast = page.getByTestId('toast-root');
+      await expect(toast).toBeVisible();
+      await expect(toast).toHaveAttribute('data-type', 'success');
+      expect(tosUpdateRequest).toBeTruthy();
+      await expect(page.getByTestId('admin-terms-publish')).not.toBeVisible();
+      await expect(page).toHaveURL(RegExp('/admin/configuration\\?tab=terms$'));
+    });
+    test('Confirm button with api failure gives error and stays on page', async ({ page }) => {
+      // Given
+      await mockApiFail(page, Psama.Update, 'failed');
+      await gotoTermsEditor(page);
+      await page.locator('#editor div.ql-editor').fill('Some new text');
+      await page.getByTestId('admin-terms-publish-trigger').click();
+
+      // When
+      await page.getByText('Confirm', { exact: true }).click();
+
+      // Then
+      const toast = page.getByTestId('toast-root');
+      await expect(toast).toBeVisible();
+      await expect(toast).toHaveAttribute('data-type', 'error');
+      expect(tosUpdateRequest).toBeTruthy();
+      await expect(page.getByTestId('admin-terms-publish')).not.toBeVisible();
+      await expect(page).toHaveURL(RegExp('/admin/configuration\\?tab=terms$'));
+    });
+  });
+
+  test.describe('Non-SuperAdmin Users', () => {
+    test.use({ storageState: 'tests/end-to-end/.auth/adminUser.json' });
+
+    test.beforeEach(async ({ page }) => {
+      await Promise.all([
+        mockApiSuccess(page, '*/**/psama/role', mockRoles),
+        mockApiSuccess(page, '*/**/psama/privilege', mockPrivileges),
+        mockApiSuccess(page, '*/**/psama/application', mockApps),
+        mockApiSuccess(page, '*/**/psama/connection', mockConnections),
+      ]);
+    });
+
+    test('Admin can edit and publish terms', async ({ page }) => {
+      // Given
+      await mockHTMLBodySuccess(page, Psama.Update, '');
+      await gotoTermsEditor(page);
+      await expect(page.getByTestId('admin-top-admin-required')).toHaveCount(0);
+
+      // When
+      await page.locator('#editor div.ql-editor').fill('Some new text');
+      await page.getByTestId('admin-terms-publish-trigger').click();
+      await page.getByText('Confirm', { exact: true }).click();
+
+      // Then
+      await expect(page.getByTestId('toast-root')).toHaveAttribute('data-type', 'success');
+      expect(tosUpdateRequest).toBeTruthy();
+    });
+  });
+});

@@ -1,4 +1,4 @@
-import { picsureUser, mockToken, userTypes } from './mock-data';
+import { picsureUser, mockToken, userTypes } from '../support/mock-data';
 import { test, mockApiSuccess, mockApiConfig } from './custom-context';
 
 // Creates authenticated user contexts for tests using method noted at

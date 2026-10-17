@@ -1,8 +1,8 @@
 import type { Handle, HandleServerError, ServerInit } from '@sveltejs/kit/hooks';
-import { registerProviderData } from './lib/AuthProviderRegistry';
-import type { AuthData } from './lib/models/AuthProvider';
-import { getConfig } from './lib/server/configCache';
-import { runWithConfig } from './lib/server/configuration';
+import { registerProviderData } from './lib/auth/providerRegistry';
+import type { AuthData } from './lib/auth/providers/AuthProvider';
+import { getConfig } from './lib/config/server/cache';
+import { runWithConfig } from './lib/config/server/scope';
 import { findStyleNonceProblem, withStyleNonce } from './lib/server/csp';
 
 const PROVIDER_PREFIX = 'VITE_AUTH_PROVIDER_MODULE_';

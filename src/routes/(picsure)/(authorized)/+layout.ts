@@ -1,11 +1,11 @@
 import type { LayoutLoad } from './$types';
 import { browser } from '$app/env';
 import { redirect } from '@sveltejs/kit';
-import { clearSession, hydrateUserFromToken, isTokenExpired, user } from '#lib/stores/User.ts';
-import { loginRedirectPath } from '#lib/utilities/LoginRedirect.ts';
-import { BDCPrivileges, PicsurePrivileges } from '#lib/models/Privilege.ts';
+import { clearSession, hydrateUserFromToken, isTokenExpired, user } from '#lib/auth/User.ts';
+import { loginRedirectPath } from '#lib/auth/loginRedirect.ts';
+import { BDCPrivileges, PicsurePrivileges } from '#lib/auth/model/privilege.ts';
 import { get } from 'svelte/store';
-import { log, createLog } from '#lib/logger.ts';
+import { log, createLog } from '#lib/telemetry/logger.ts';
 
 export const prerender = false;
 

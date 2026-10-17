@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { config } from '#lib/configuration.svelte.ts';
-  import Content from '#lib/components/Content.svelte';
-  import Explorer from '#lib/components/explorer/Explorer.svelte';
-  import { resolveTour } from '#lib/utilities/Tour.ts';
+  import { config } from '#lib/config/config.svelte.ts';
+  import Content from '#lib/shell/Content.svelte';
+  import Explorer from '#lib/explorer/components/Explorer.svelte';
+  import { resolveTour } from '#lib/explorer/components/tour/tour.ts';
 
   let authTour = $derived(resolveTour(config.settings.tour.auth, 'NHANES-Auth'));
 </script>

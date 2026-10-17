@@ -1,7 +1,7 @@
 <script lang="ts">
-  import Content from '#lib/components/Content.svelte';
-  import Visualizations from '#lib/components/explorer/Visualizations.svelte';
-  import { config } from '#lib/configuration.svelte.ts';
+  import Content from '#lib/shell/Content.svelte';
+  import Visualizations from '#lib/explorer/visualizations/Visualizations.svelte';
+  import { config } from '#lib/config/config.svelte.ts';
 </script>
 
 <svelte:head>

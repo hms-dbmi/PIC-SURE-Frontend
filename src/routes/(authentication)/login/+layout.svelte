@@ -2,14 +2,14 @@
   import { resolve } from '$app/paths';
   import { onMount } from 'svelte';
   import { Toaster } from '@skeletonlabs/skeleton-svelte';
-  import { toaster } from '#lib/toaster.ts';
+  import { toaster } from '#lib/ui/toaster.ts';
 
-  import { user } from '#lib/stores/User.ts';
+  import { user } from '#lib/auth/User.ts';
   import { goto } from '$app/navigation';
 
-  import Footer from '#lib/components/Footer.svelte';
-  import Dots from '#lib/components/Dots.svelte';
-  import SiteBannerRegion from '#lib/components/banner/SiteBannerRegion.svelte';
+  import Footer from '#lib/shell/Footer.svelte';
+  import Dots from './Dots.svelte';
+  import SiteBannerRegion from '#lib/banners/components/SiteBannerRegion.svelte';
 
   interface Props {
     children?: import('svelte').Snippet;

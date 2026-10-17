@@ -1,7 +1,7 @@
-import { getConfig } from '#lib/server/configCache.ts';
-import { Psama, joinUrl } from '#lib/paths.ts';
-import { PicsurePrivileges } from '#lib/models/Privilege.ts';
-import type { User } from '#lib/models/User.ts';
+import { getConfig } from '#lib/config/server/cache.ts';
+import { Psama, joinUrl } from '#lib/api/paths.ts';
+import { PicsurePrivileges } from '#lib/auth/model/privilege.ts';
+import type { User } from '#lib/auth/model/user.ts';
 import type { RequestHandler } from './$types';
 
 const ORIGIN = import.meta.env?.VITE_ORIGIN;

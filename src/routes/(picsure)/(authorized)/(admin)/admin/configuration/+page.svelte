@@ -3,33 +3,33 @@
   import { resolve } from '$app/paths';
   import { afterNavigate, beforeNavigate, goto, replaceState } from '$app/navigation';
   import { page } from '$app/state';
-  import { appPath } from '#lib/paths.ts';
+  import { appPath } from '#lib/api/paths.ts';
   import { Tabs } from '@skeletonlabs/skeleton-svelte';
 
-  import type { Indexable } from '#lib/types.ts';
-  import { config } from '#lib/configuration.svelte.ts';
+  import type { Indexable } from '#lib/config/types.ts';
+  import { config } from '#lib/config/config.svelte.ts';
 
-  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
-  import Content from '#lib/components/Content.svelte';
-  import Datatable from '#lib/components/datatable/StaticTable.svelte';
-  import TabItem from '#lib/components/TabItem.svelte';
-  import TermsEditor from '#lib/components/admin/configuration/TermsEditor.svelte';
-  import RoleActions from '#lib/components/admin/configuration/cell/RoleActions.svelte';
-  import PrivilegeActions from '#lib/components/admin/configuration/cell/PrivilegeActions.svelte';
-  import ConnectionActions from '#lib/components/admin/configuration/cell/ConnectionActions.svelte';
-  import Application from '#lib/components/admin/configuration/cell/Application.svelte';
-  import RequiredFields from '#lib/components/admin/configuration/cell/RequiredFields.svelte';
-  import ConfigKindTab from '#lib/components/admin/configuration/ConfigKindTab.svelte';
-  import BannerManagementView from '#lib/components/admin/configuration/BannerManagementView.svelte';
-  import ApiKeysPanel from '#lib/components/admin/api-key/ApiKeysPanel.svelte';
+  import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
+  import Content from '#lib/shell/Content.svelte';
+  import Datatable from '#lib/ui/datatable/StaticTable.svelte';
+  import TabItem from '#lib/ui/TabItem.svelte';
+  import TermsEditor from '#lib/admin/terms/TermsEditor.svelte';
+  import RoleActions from '#lib/admin/access/cell/RoleActions.svelte';
+  import PrivilegeActions from '#lib/admin/access/cell/PrivilegeActions.svelte';
+  import ConnectionActions from '#lib/admin/access/cell/ConnectionActions.svelte';
+  import Application from '#lib/admin/access/cell/Application.svelte';
+  import RequiredFields from '#lib/admin/access/cell/RequiredFields.svelte';
+  import ConfigKindTab from '#lib/admin/settings/ConfigKindTab.svelte';
+  import BannerManagementView from '#lib/banners/components/admin/BannerManagementView.svelte';
+  import ApiKeysPanel from '#lib/admin/apiKeys/ApiKeysPanel.svelte';
 
-  import { privileges, loadPrivileges } from '#lib/stores/Privileges.ts';
-  import { roles, loadRoles } from '#lib/stores/Roles.ts';
-  import { loadApplications } from '#lib/stores/Application.ts';
-  import { connections, loadConnections } from '#lib/stores/Connections.ts';
-  import { isTopAdmin } from '#lib/stores/User.ts';
+  import { privileges, loadPrivileges } from '#lib/admin/access/Privileges.ts';
+  import { roles, loadRoles } from '#lib/admin/access/Roles.ts';
+  import { loadApplications } from '#lib/admin/access/Application.ts';
+  import { connections, loadConnections } from '#lib/admin/access/Connections.ts';
+  import { isTopAdmin } from '#lib/auth/User.ts';
 
-  import Loading from '#lib/components/Loading.svelte';
+  import Loading from '#lib/ui/Loading.svelte';
 
   // Tab label -> its ?tab= value, so links (e.g. the old /admin/api-keys route) can open a tab.
   const TAB_PARAMS: Record<string, string> = {

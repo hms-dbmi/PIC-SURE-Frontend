@@ -6,17 +6,17 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
 
-  import { config, PROJECT_HOSTNAME } from '#lib/configuration.svelte.ts';
-  import { getApiConnectionResource } from '#lib/stores/Resources.ts';
-  import { tokenStatus } from '#lib/stores/User.ts';
-  import { log, createLog } from '#lib/logger.ts';
+  import { config, PROJECT_HOSTNAME } from '#lib/config/config.svelte.ts';
+  import { getApiConnectionResource } from '#lib/explorer/Resources.ts';
+  import { tokenStatus } from '#lib/auth/User.ts';
+  import { log, createLog } from '#lib/telemetry/logger.ts';
 
-  import ApiDocumentation from '#lib/components/ApiDocumentation.svelte';
-  import UserToken from '#lib/components/UserToken.svelte';
-  import PublicAccessKey from '#lib/components/PublicAccessKey.svelte';
-  import CodeBlock from '#lib/components/CodeBlock.svelte';
-  import TocLayout from '#lib/components/toc/TocLayout.svelte';
-  import TocSection from '#lib/components/toc/TocSection.svelte';
+  import ApiDocumentation from './ApiDocumentation.svelte';
+  import UserToken from '#lib/auth/components/UserToken.svelte';
+  import PublicAccessKey from './PublicAccessKey.svelte';
+  import CodeBlock from '#lib/ui/CodeBlock.svelte';
+  import TocLayout from '#lib/ui/toc/TocLayout.svelte';
+  import TocSection from '#lib/ui/toc/TocSection.svelte';
 
   let mounted = $state(false);
   let loggedIn = $derived(mounted && $tokenStatus);

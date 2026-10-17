@@ -1,15 +1,15 @@
 <script lang="ts">
   import { page } from '$app/state';
 
-  import { config } from '#lib/configuration.svelte.ts';
-  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
-  import Content from '#lib/components/Content.svelte';
-  import RoleForm from '#lib/components/admin/configuration/RoleForm.svelte';
+  import { config } from '#lib/config/config.svelte.ts';
+  import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
+  import Content from '#lib/shell/Content.svelte';
+  import RoleForm from '#lib/admin/access/RoleForm.svelte';
 
-  import type { Role } from '#lib/models/Role.ts';
-  import { getRole } from '#lib/stores/Roles.ts';
-  import { privilegeList, loadPrivileges } from '#lib/stores/Privileges.ts';
-  import Loading from '#lib/components/Loading.svelte';
+  import type { Role } from '#lib/auth/model/role.ts';
+  import { getRole } from '#lib/admin/access/Roles.ts';
+  import { privilegeList, loadPrivileges } from '#lib/admin/access/Privileges.ts';
+  import Loading from '#lib/ui/Loading.svelte';
 
   let role: Role = $state({
     name: '',

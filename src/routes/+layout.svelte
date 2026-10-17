@@ -5,11 +5,11 @@
   import type { AssetPath } from '$app/types';
   import '@fortawesome/fontawesome-free/css/all.min.css';
   import '../styles/app.css';
-  import { config } from '#lib/configuration.svelte.ts';
-  import GoogleTracking from '#lib/components/tracking/GoogleTracking.svelte';
-  import ExternalLinkWarning from '#lib/components/ExternalLinkWarning.svelte';
-  import { log, createLog } from '#lib/logger.ts';
-  import { resumeAfterWafCaptcha } from '#lib/wafCaptcha.ts';
+  import { config } from '#lib/config/config.svelte.ts';
+  import GoogleTracking from '#lib/shell/GoogleTracking.svelte';
+  import ExternalLinkWarning from '#lib/shell/ExternalLinkWarning.svelte';
+  import { log, createLog } from '#lib/telemetry/logger.ts';
+  import { resumeAfterWafCaptcha } from '#lib/api/wafCaptcha.ts';
 
   let { children }: { children?: Snippet } = $props();
 

@@ -11,7 +11,7 @@
  * replicating backend business logic (search relevance, filter math, real query execution).
  */
 import { createServer } from 'node:http';
-import { Picsure, Psama } from '../../../src/lib/paths';
+import { Picsure, Psama } from '../../../src/lib/api/paths';
 import {
   datasetDetails,
   searchResults,
@@ -30,10 +30,10 @@ import {
   variantDataFull,
   newDatasetResponse,
   availableDatasetResponse,
-} from '../mock-data';
+} from '../../support/mock-data';
 import { on, json, text, noContent, dispatch } from './router';
 import { state, nextId } from './state';
-import type { Indexable } from '../../../src/lib/types';
+import type { Indexable } from '../../../src/lib/config/types';
 
 const PORT = Number(process.env.MOCK_API_PORT ?? 9000);
 

@@ -2,22 +2,22 @@
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
 
-  import type { Indexable } from '#lib/types.ts';
-  import { config } from '#lib/configuration.svelte.ts';
+  import type { Indexable } from '#lib/config/types.ts';
+  import { config } from '#lib/config/config.svelte.ts';
   import {
     active,
     archived,
     loadDatasets,
     getShowArchived,
     toggleShowArchived,
-  } from '#lib/stores/Dataset.svelte.ts';
+  } from '#lib/datasets/datasets.svelte.ts';
 
-  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
-  import Content from '#lib/components/Content.svelte';
-  import Datatable from '#lib/components/datatable/StaticTable.svelte';
-  import CopyButtonCell from '#lib/components/dataset/cell/CopyButtonCell.svelte';
-  import Actions from '#lib/components/dataset/cell/Actions.svelte';
-  import Loading from '#lib/components/Loading.svelte';
+  import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
+  import Content from '#lib/shell/Content.svelte';
+  import Datatable from '#lib/ui/datatable/StaticTable.svelte';
+  import CopyButtonCell from '#lib/datasets/components/cells/CopyButtonCell.svelte';
+  import Actions from '#lib/datasets/components/cells/Actions.svelte';
+  import Loading from '#lib/ui/Loading.svelte';
 
   const columns = [
     { dataElement: 'name', label: 'Dataset ID Name' },

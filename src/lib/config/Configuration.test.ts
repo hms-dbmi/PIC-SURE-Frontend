@@ -1,0 +1,445 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
+import {
+  mapFeatures,
+  mapSettings,
+  resolveConfigMap,
+  getConfigMode,
+  parsers,
+  type ConfigObject,
+  type ConfigMap,
+  mapBranding,
+  CONFIG_FIELD_SCHEMA,
+  parsersFor,
+  deprecatedApiRows,
+  groupedConfigFieldSchema,
+  type ConfigFieldSchema,
+} from '#lib/config/Configuration.ts';
+import configJson from '#lib/assets/configuration.json' with { type: 'json' };
+
+const TOUCHED_ENV_KEYS = [
+  'VITE_CONFIG_MODE',
+  'VITE_ANALYZE_ANALYSIS',
+  'VITE_EXPLORE_TOUR_SEARCH_TERM',
+  'VITE_MAX_DATA_POINTS_FOR_EXPORT',
+  'VITE_LOGO_ALT',
+];
+
+const savedEnv: Record<string, string | undefined> = {};
+beforeEach(() => {
+  vi.spyOn(console, 'error').mockImplementation(() => {});
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
+  for (const key of TOUCHED_ENV_KEYS) {
+    savedEnv[key] = import.meta.env[key];
+    delete import.meta.env[key];
+  }
+});
+
+afterEach(() => {
+  for (const key of TOUCHED_ENV_KEYS) {
+    if (savedEnv[key] === undefined) {
+      delete import.meta.env[key];
+    } else {
+      import.meta.env[key] = savedEnv[key];
+    }
+  }
+  vi.mocked(console.error).mockRestore();
+  vi.mocked(console.warn).mockRestore();
+});
+
+function apiRow(name: string, value: string): ConfigObject {
+  return { name, value };
+}
+
+describe('parsers', () => {
+  const map: ConfigMap = {
+    BOOL_TRUE: apiRow('BOOL_TRUE', 'true'),
+    BOOL_OTHER: apiRow('BOOL_OTHER', 'yes'),
+    BOOL_BLANK: apiRow('BOOL_BLANK', ''),
+    BOOL_WHITESPACE: apiRow('BOOL_WHITESPACE', '   '),
+    INT_VALID: apiRow('INT_VALID', '42'),
+    INT_INVALID: apiRow('INT_INVALID', 'not-a-number'),
+    INT_BLANK: apiRow('INT_BLANK', ''),
+    INT_WHITESPACE: apiRow('INT_WHITESPACE', '   '),
+    JSON_VALID: apiRow('JSON_VALID', '{"a":1}'),
+    JSON_INVALID: apiRow('JSON_INVALID', '{not json}'),
+    JSON_EMPTY_LIST: apiRow('JSON_EMPTY_LIST', '[]'),
+    JSON_BLANK: apiRow('JSON_BLANK', ''),
+    JSON_WHITESPACE: apiRow('JSON_WHITESPACE', '   '),
+    STRING_SET: apiRow('STRING_SET', 'hello'),
+    STRING_EMPTY: apiRow('STRING_EMPTY', ''),
+  };
+  const parse = parsers(map);
+
+  describe('asBoolean', () => {
+    it('returns the default when the key is absent', () => {
+      expect(parse.asBoolean('MISSING', true)).toBe(true);
+      expect(parse.asBoolean('MISSING', false)).toBe(false);
+    });
+
+    it('returns true only for the exact string "true"', () => {
+      expect(parse.asBoolean('BOOL_TRUE', false)).toBe(true);
+    });
+
+    it('returns false for any other string value, ignoring the default', () => {
+      expect(parse.asBoolean('BOOL_OTHER', true)).toBe(false);
+    });
+
+    it('returns the default when the value is blank, rather than coercing to false', () => {
+      expect(parse.asBoolean('BOOL_BLANK', true)).toBe(true);
+    });
+
+    it('returns the default when the value is whitespace-only, rather than coercing to false', () => {
+      expect(parse.asBoolean('BOOL_WHITESPACE', true)).toBe(true);
+    });
+  });
+
+  describe('asInt', () => {
+    it('returns the default when the key is absent', () => {
+      expect(parse.asInt('MISSING', 7)).toBe(7);
+    });
+
+    it('parses a numeric string', () => {
+      expect(parse.asInt('INT_VALID', 0)).toBe(42);
+    });
+
+    it('returns the default when the value is present but not numeric, rather than NaN', () => {
+      expect(parse.asInt('INT_INVALID', 7)).toBe(7);
+    });
+
+    it('returns the default when the value is blank, rather than NaN', () => {
+      expect(parse.asInt('INT_BLANK', 7)).toBe(7);
+    });
+
+    it('returns the default when the value is whitespace-only, rather than NaN', () => {
+      expect(parse.asInt('INT_WHITESPACE', 7)).toBe(7);
+    });
+  });
+
+  describe('asJson', () => {
+    it('returns the default when the key is absent', () => {
+      const fallback = { foo: 'bar' };
+      expect(parse.asJson('MISSING', fallback)).toBe(fallback);
+    });
+
+    it('parses valid JSON', () => {
+      expect(parse.asJson('JSON_VALID', {})).toEqual({ a: 1 });
+    });
+
+    it('returns the default when the value is present but not valid JSON, rather than throwing', () => {
+      const fallback = { foo: 'bar' };
+      expect(parse.asJson('JSON_INVALID', fallback)).toBe(fallback);
+    });
+
+    it('returns the default when the value is blank, rather than throwing', () => {
+      const fallback = ['default'];
+      expect(parse.asJson('JSON_BLANK', fallback)).toBe(fallback);
+    });
+
+    it('returns the default when the value is whitespace-only, rather than throwing', () => {
+      const fallback = ['default'];
+      expect(parse.asJson('JSON_WHITESPACE', fallback)).toBe(fallback);
+    });
+
+    it('respects a deliberately empty list, distinct from a blank value', () => {
+      expect(parse.asJson('JSON_EMPTY_LIST', ['default'])).toEqual([]);
+    });
+  });
+
+  describe('asString', () => {
+    it('returns the default when the key is absent', () => {
+      expect(parse.asString('MISSING', 'default')).toBe('default');
+    });
+
+    it('returns the value when present', () => {
+      expect(parse.asString('STRING_SET', 'default')).toBe('hello');
+    });
+
+    it('returns an explicit empty string rather than the default (presence, not truthiness)', () => {
+      expect(parse.asString('STRING_EMPTY', 'default')).toBe('');
+    });
+  });
+});
+
+describe('getConfigMode', () => {
+  it('defaults to seed when unset', () => {
+    expect(getConfigMode()).toBe('seed');
+  });
+
+  it('defaults to seed for invalid values', () => {
+    import.meta.env.VITE_CONFIG_MODE = 'Override';
+    expect(getConfigMode()).toBe('seed');
+
+    import.meta.env.VITE_CONFIG_MODE = 'foo';
+    expect(getConfigMode()).toBe('seed');
+
+    import.meta.env.VITE_CONFIG_MODE = '';
+    expect(getConfigMode()).toBe('seed');
+  });
+
+  it('is override only for the exact string "override"', () => {
+    import.meta.env.VITE_CONFIG_MODE = 'override';
+    expect(getConfigMode()).toBe('override');
+  });
+});
+
+describe('mapFeatures / mapSettings / mapBranding - regression baseline', () => {
+  it('matches defaults when no API rows and no env vars are set', () => {
+    expect(mapFeatures([]).discover).toBe(false);
+    expect(mapFeatures([]).wafCaptchaRecovery).toBe(false);
+    expect(mapSettings([]).maxDataPointsForExport).toBe(1000000);
+    expect(mapBranding('', []).login.logoHeight).toBe(7.5);
+  });
+});
+
+describe('resolveConfigMap - layering', () => {
+  // assumes default: ANALYZE_ANALYSIS = true
+  //assumes default: EXPLORE_TOUR_SEARCH_TERM = age
+
+  it('env-only (seed mode): env value is used when API has nothing', () => {
+    import.meta.env.VITE_ANALYZE_ANALYSIS = 'false';
+    const map = resolveConfigMap([]);
+    expect(map.ANALYZE_ANALYSIS.value).toBe('false');
+  });
+
+  it('API-only: API value is used regardless of mode, env layer is a no-op when absent', () => {
+    const map = resolveConfigMap([apiRow('ANALYZE_ANALYSIS', 'false')]);
+    expect(map.ANALYZE_ANALYSIS.value).toBe('false');
+  });
+
+  it('seed mode (default): API wins over env when both are set', () => {
+    import.meta.env.VITE_EXPLORE_TOUR_SEARCH_TERM = 'cats';
+    const map = resolveConfigMap([apiRow('EXPLORE_TOUR_SEARCH_TERM', 'dogs')]);
+    expect(map.EXPLORE_TOUR_SEARCH_TERM.value).toBe('dogs');
+  });
+
+  it('override mode: env wins over API when both are set', () => {
+    import.meta.env.VITE_CONFIG_MODE = 'override';
+    import.meta.env.VITE_EXPLORE_TOUR_SEARCH_TERM = 'cats';
+    const map = resolveConfigMap([apiRow('EXPLORE_TOUR_SEARCH_TERM', 'dogs')]);
+    expect(map.EXPLORE_TOUR_SEARCH_TERM.value).toBe('cats');
+  });
+
+  it('presence, not truthiness: an explicit empty-string env override wins in override mode', () => {
+    import.meta.env.VITE_CONFIG_MODE = 'override';
+    import.meta.env.VITE_EXPLORE_TOUR_SEARCH_TERM = '';
+    const map = resolveConfigMap([apiRow('EXPLORE_TOUR_SEARCH_TERM', 'dogs')]);
+    expect(map.EXPLORE_TOUR_SEARCH_TERM.value).toBe('');
+  });
+});
+
+describe('CONFIG_FIELD_SCHEMA - derived from CONFIG_FIELDS', () => {
+  it('has no duplicate names per kind (e.g. OPEN, parsed twice by mapFeatures, appears once)', () => {
+    for (const kind of ['features', 'settings', 'branding'] as const) {
+      const names = CONFIG_FIELD_SCHEMA[kind].map((f) => f.name);
+      expect(new Set(names).size).toBe(names.length);
+    }
+    expect(CONFIG_FIELD_SCHEMA.features.filter((f) => f.name === 'OPEN')).toHaveLength(1);
+  });
+
+  it('has the right type/default for a representative field per kind', () => {
+    const byName = (kind: 'features' | 'settings' | 'branding', name: string) =>
+      CONFIG_FIELD_SCHEMA[kind].find((f) => f.name === name);
+
+    expect(byName('features', 'ANALYZE_API')).toMatchObject({ type: 'boolean', default: true });
+    expect(byName('settings', 'MAX_DATA_POINTS_FOR_EXPORT')).toMatchObject({
+      type: 'int',
+      default: 1000000,
+    });
+    expect(byName('branding', 'DOTS_COLORS_CLASS')).toMatchObject({ type: 'json' });
+    expect(byName('branding', 'LOGO_ALT')).toMatchObject({ type: 'string', default: '' });
+  });
+
+  it("mapFeatures actually uses CONFIG_FIELDS' declared default (not a second, hidden one)", () => {
+    // If mapFeatures ever hardcoded its own default again instead of reading
+    // CONFIG_FIELDS, this would catch the two silently diverging.
+    expect(mapFeatures([]).analyzeApi).toBe(
+      CONFIG_FIELD_SCHEMA.features.find((f) => f.name === 'ANALYZE_API')?.default,
+    );
+  });
+
+  it('every field declares a non-empty group, for the admin UI section headers', () => {
+    for (const kind of ['features', 'settings', 'branding'] as const) {
+      for (const field of CONFIG_FIELD_SCHEMA[kind]) {
+        expect(field.group, `${kind}.${field.name} is missing a group`).toBeTruthy();
+      }
+    }
+  });
+});
+
+describe('groupedConfigFieldSchema', () => {
+  const field = (name: string, group: string): ConfigFieldSchema => ({
+    name,
+    group,
+    type: 'boolean',
+    default: false,
+    description: '',
+  });
+
+  it('buckets fields by group, in order of each group’s first appearance', () => {
+    const schema = [field('A', 'Group 1'), field('B', 'Group 2'), field('C', 'Group 1')];
+
+    expect(groupedConfigFieldSchema(schema)).toEqual([
+      { group: 'Group 1', fields: [schema[0], schema[2]] },
+      { group: 'Group 2', fields: [schema[1]] },
+    ]);
+  });
+
+  it('reflects CONFIG_FIELD_SCHEMA grouping - Google settings land in one group together', () => {
+    const groups = groupedConfigFieldSchema(CONFIG_FIELD_SCHEMA.settings);
+    const google = groups.find((g) => g.group === 'Google');
+    expect(google?.fields.map((f) => f.name)).toEqual(
+      expect.arrayContaining(['GOOGLE_ANALYTICS_ID', 'GOOGLE_TAG_MANAGER_ID']),
+    );
+  });
+
+  it('returns an empty array for an empty schema', () => {
+    expect(groupedConfigFieldSchema([])).toEqual([]);
+  });
+});
+
+describe('deprecatedApiRows', () => {
+  it('returns rows whose name is not registered in CONFIG_FIELDS for that kind', () => {
+    const rows = [apiRow('ANALYZE_API', 'true'), apiRow('REMOVED_OLD_FLAG', 'true')];
+    expect(deprecatedApiRows('features', rows)).toEqual([apiRow('REMOVED_OLD_FLAG', 'true')]);
+  });
+
+  it('returns an empty array when every row is still registered', () => {
+    const rows = [apiRow('ANALYZE_API', 'true'), apiRow('DISCOVER', 'false')];
+    expect(deprecatedApiRows('features', rows)).toEqual([]);
+  });
+
+  it('returns an empty array for no rows', () => {
+    expect(deprecatedApiRows('branding', [])).toEqual([]);
+  });
+});
+
+describe('parsersFor', () => {
+  it('throws for a name that is not registered in CONFIG_FIELDS for that kind', () => {
+    expect(() => parsersFor('features', {}).asBoolean('NOT_A_REAL_FIELD')).toThrow(
+      /not registered/,
+    );
+  });
+
+  it('resolves a registered field using its declared default when unset', () => {
+    expect(parsersFor('features', {}).asBoolean('ANALYZE_API')).toBe(true);
+  });
+});
+
+describe('mapBranding', () => {
+  it('replaces hostname when encountered', () => {
+    import.meta.env.VITE_CONFIG_MODE = 'override';
+    import.meta.env.VITE_MAX_DATA_POINTS_FOR_EXPORT = '42';
+    const branding = mapBranding('', []);
+    expect(branding.explorePage.codeBlocks.PythonAPI).not.toContain('{{PICSURE_NETWORK_URL}}');
+  });
+  it('gives Python blocks the deployment root and R blocks the /picsure URL', () => {
+    const { codeBlocks } = mapBranding('https://picsure.example.org/picsure', []).explorePage;
+    for (const key of ['PythonAPI', 'PythonAPIOpen', 'PythonExport']) {
+      expect(codeBlocks[key]).toContain('platform="https://picsure.example.org"');
+      expect(codeBlocks[key]).not.toContain('{{PICSURE_ORIGIN}}');
+    }
+    expect(codeBlocks.RAPI).toContain('platform="https://picsure.example.org/picsure"');
+  });
+  it('fills every placeholder in a code block, not just the first', () => {
+    const { codeBlocks } = configJson.explorePage;
+    const original = codeBlocks.CurlAPI;
+    codeBlocks.CurlAPI =
+      '{{PICSURE_NETWORK_URL}} {{PICSURE_NETWORK_URL}} {{PICSURE_ORIGIN}} {{PICSURE_ORIGIN}}';
+    try {
+      const branding = mapBranding('https://picsure.example.org/picsure', []);
+      expect(branding.explorePage.codeBlocks.CurlAPI).toBe(
+        'https://picsure.example.org/picsure https://picsure.example.org/picsure https://picsure.example.org https://picsure.example.org',
+      );
+    } finally {
+      codeBlocks.CurlAPI = original;
+    }
+  });
+  it('falls back to the application name when no logo alt is configured', () => {
+    const branding = mapBranding('', []);
+    expect(branding.logo.alt).toBe(branding.applicationName);
+  });
+  it('env overrides config json', () => {
+    import.meta.env.VITE_LOGO_ALT = 'SOME ALT VALUE';
+    const branding = mapBranding('', []);
+    expect(branding.logo.alt).toBe('SOME ALT VALUE');
+  });
+  it('api overrides config json', () => {
+    const branding = mapBranding('', [apiRow('LOGO_ALT', 'SOME ALT VALUE')]);
+    expect(branding.logo.alt).toBe('SOME ALT VALUE');
+  });
+  it('seed mode (default): API wins over env when both are set', () => {
+    import.meta.env.VITE_LOGO_ALT = 'cats';
+    const branding = mapBranding('', [apiRow('LOGO_ALT', 'dogs')]);
+    expect(branding.logo.alt).toBe('dogs');
+  });
+  it('override mode: env wins over API when both are set', () => {
+    import.meta.env.VITE_CONFIG_MODE = 'override';
+    import.meta.env.VITE_LOGO_ALT = 'cats';
+    const branding = mapBranding('', [apiRow('LOGO_ALT', 'dogs')]);
+    expect(branding.logo.alt).toBe('cats');
+  });
+});
+
+describe('mapSettings - exportSystemFields', () => {
+  it('parses comma-separated fields into concept paths with slash wrappers', () => {
+    const settings = mapSettings([
+      apiRow(
+        'EXPORT_SYSTEM_FIELDS',
+        '_consents,_Parent Study Accession with Subject ID,_Topmed Study Accession with Subject ID',
+      ),
+    ]);
+    expect(settings.exportSystemFields).toEqual([
+      '\\_consents\\',
+      '\\_Parent Study Accession with Subject ID\\',
+      '\\_Topmed Study Accession with Subject ID\\',
+    ]);
+  });
+
+  it('returns empty array when no API row or env var is set', () => {
+    expect(mapSettings([]).exportSystemFields).toEqual([]);
+  });
+
+  it('returns empty array for an explicit empty string', () => {
+    expect(mapSettings([apiRow('EXPORT_SYSTEM_FIELDS', '')]).exportSystemFields).toEqual([]);
+  });
+
+  it('trims whitespace from field names', () => {
+    const settings = mapSettings([apiRow('EXPORT_SYSTEM_FIELDS', ' patient_id , _consents ')]);
+    expect(settings.exportSystemFields).toEqual(['\\patient_id\\', '\\_consents\\']);
+  });
+
+  it('filters out empty entries from trailing commas', () => {
+    const settings = mapSettings([apiRow('EXPORT_SYSTEM_FIELDS', 'patient_id,,_consents,')]);
+    expect(settings.exportSystemFields).toEqual(['\\patient_id\\', '\\_consents\\']);
+  });
+
+  it('handles a single field', () => {
+    const settings = mapSettings([apiRow('EXPORT_SYSTEM_FIELDS', 'patient_id')]);
+    expect(settings.exportSystemFields).toEqual(['\\patient_id\\']);
+  });
+});
+
+describe('mapSettings - dataset.bypassConceptLookup', () => {
+  it('parses comma-separated fields into concept paths with slash wrappers', () => {
+    const settings = mapSettings([apiRow('DATASET_BYPASS_CONCEPT_LOOKUP', '_consents,patient_id')]);
+    expect(settings.dataset.bypassConceptLookup).toEqual(['\\_consents\\', '\\patient_id\\']);
+  });
+
+  it('returns empty array when no API row or env var is set', () => {
+    expect(mapSettings([]).dataset.bypassConceptLookup).toEqual([]);
+  });
+
+  it('returns empty array for an explicit empty string', () => {
+    expect(
+      mapSettings([apiRow('DATASET_BYPASS_CONCEPT_LOOKUP', '')]).dataset.bypassConceptLookup,
+    ).toEqual([]);
+  });
+
+  it('trims whitespace from field names', () => {
+    const settings = mapSettings([
+      apiRow('DATASET_BYPASS_CONCEPT_LOOKUP', ' patient_id , _consents '),
+    ]);
+    expect(settings.dataset.bypassConceptLookup).toEqual(['\\patient_id\\', '\\_consents\\']);
+  });
+});

@@ -6,7 +6,7 @@ import {
   privileges as privilegesSeed,
   applications as applicationsSeed,
   users as usersSeed,
-} from '../mock-data';
+} from '../../support/mock-data';
 
 // Loosely typed on purpose: handlers build partial rows (a create request plus a
 // generated uuid) that don't match the full fixture shape, and this is a mock, not a

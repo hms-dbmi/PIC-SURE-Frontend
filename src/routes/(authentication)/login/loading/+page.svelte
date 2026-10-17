@@ -1,18 +1,18 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
-  import { appPath } from '#lib/paths.ts';
+  import { appPath } from '#lib/api/paths.ts';
   import { page } from '$app/state';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { config } from '#lib/configuration.svelte.ts';
-  import { findLoginProvider } from '#lib/models/AuthProvider.ts';
-  import { createInstance } from '#lib/AuthProviderRegistry.ts';
+  import { config } from '#lib/config/config.svelte.ts';
+  import { findLoginProvider } from '#lib/auth/providers/AuthProvider.ts';
+  import { createInstance } from '#lib/auth/providerRegistry.ts';
   import { browser } from '$app/env';
-  import { panelOpen } from '#lib/stores/SidePanel.ts';
-  import Loading from '#lib/components/Loading.svelte';
-  import type { User } from '#lib/models/User.ts';
-  import { login, setToken } from '#lib/stores/User.ts';
-  import { log, createLog } from '#lib/logger.ts';
+  import { panelOpen } from '#lib/explorer/panel.ts';
+  import Loading from '#lib/ui/Loading.svelte';
+  import type { User } from '#lib/auth/model/user.ts';
+  import { login, setToken } from '#lib/auth/User.ts';
+  import { log, createLog } from '#lib/telemetry/logger.ts';
 
   async function attemptUserLogin() {
     let redirectTo = '/';

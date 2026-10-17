@@ -5,16 +5,16 @@
   import { page } from '$app/state';
   import { browser } from '$app/env';
 
-  import { config } from '#lib/configuration.svelte.ts';
-  import type { AuthData } from '#lib/models/AuthProvider.ts';
-  import { toaster } from '#lib/toaster.ts';
+  import { config } from '#lib/config/config.svelte.ts';
+  import type { AuthData } from '#lib/auth/providers/AuthProvider.ts';
+  import { toaster } from '#lib/ui/toaster.ts';
 
-  import { log, createLog } from '#lib/logger.ts';
+  import { log, createLog } from '#lib/telemetry/logger.ts';
 
-  import LoginButton from '#lib/components/buttons/LoginButton.svelte';
-  import Logo from '#lib/components/Logo.svelte';
-  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
-  import Loading from '#lib/components/Loading.svelte';
+  import LoginButton from './LoginButton.svelte';
+  import Logo from '#lib/shell/Logo.svelte';
+  import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
+  import Loading from '#lib/ui/Loading.svelte';
 
   const redirectTo = page.url.searchParams.get('redirectTo') || '/';
   const siteName = $derived(config.branding.applicationName);

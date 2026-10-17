@@ -1,0 +1,40 @@
+import type { Indexable } from '#lib/config/types.ts';
+
+export type Facet = Indexable & {
+  name: string;
+  display: string;
+  description: string | null;
+  count: number;
+  children?: Facet[];
+  category: string;
+  categoryRef?: ShallowFacetCategory;
+  parentRef?: ShallowFacetCategory;
+};
+
+export type PreviousCategoriesForPlaceholder = {
+  numFacets: number;
+  showSearchAndButton?: boolean;
+};
+
+export type ShallowFacetCategory = Pick<Facet, 'name' | 'display' | 'description'>;
+
+export type SearchResult = Indexable & {
+  conceptPath: string;
+  dataset: string;
+  name: string;
+  display: string;
+  studyAcronym: string;
+  description: string | null;
+  values?: string[];
+  min?: number;
+  max?: number;
+  meta?: Record<string, unknown> | null;
+  table?: SearchResult | null;
+  study?: SearchResult | null;
+  fullName?: string;
+  ref?: string;
+  abbreviation?: string;
+  type: 'Categorical' | 'Continuous' | 'AnyRecordOf';
+  allowFiltering: boolean;
+  children?: SearchResult[] | null;
+};

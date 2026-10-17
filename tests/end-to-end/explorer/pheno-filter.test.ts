@@ -1,0 +1,827 @@
+import { expect, type Route } from '@playwright/test';
+import { test, mockApiSuccess, mockApiConfig } from '../custom-context';
+
+import {
+  conceptTreePath,
+  conceptsDetailPath,
+  detailResponseCat,
+  facetResultPath,
+  facetsResponse,
+  searchResults as mockData,
+  searchResultPath,
+  detailResForAge,
+  detailResForAge2,
+  mockDataWithChildren,
+  hierarchyResponse,
+} from '../../support/mock-data';
+import {
+  expectAnimationsFinished,
+  getOption,
+  clickNthFilterIcon,
+  optionsHaveLoaded,
+  userIsLoggedIn,
+} from '../utils';
+import { createCategoricalFilter, createNumericFilter } from '../../../src/lib/query/filter.svelte';
+import type { SearchResult } from '../../../src/lib/explorer/types';
+
+const countResultPath = '*/**/picsure/hpds/auth/query/sync';
+
+test.beforeEach(async ({ page }) => {
+  await mockApiConfig(page, {
+    features: [
+      { name: 'ENABLE_HIERARCHY', value: 'true' },
+      { name: 'ALLOW_EXPORT', value: 'true' },
+      { name: 'DIST_EXPLORER', value: 'true' },
+    ],
+  });
+  await mockApiSuccess(page, searchResultPath, mockData);
+  await mockApiSuccess(page, facetResultPath, facetsResponse);
+  // Adding a filter looks up the concept's details in the background; answer with the
+  // matching search result. Tests that need richer details register their own route.
+  await page.route(`${conceptsDetailPath}/*`, (route: Route) =>
+    route.fulfill({
+      json: mockData.content.find(({ conceptPath }) => conceptPath === route.request().postData()),
+    }),
+  );
+});
+
+test.describe('Add Filters', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
+  test('Add button is disabled when nothing is selected', async ({ page }) => {
+    // Given
+    await mockApiSuccess(page, countResultPath, '9999');
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+
+    // When
+    await clickNthFilterIcon(page);
+
+    // Then
+    await expect(page.getByTestId('filter-add')).toBeVisible();
+    await expect(page.getByTestId('filter-add')).toBeDisabled();
+  });
+  test('Add button is enabled when something is selected', async ({ page }) => {
+    // Given
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+      detailResponseCat,
+    );
+    await mockApiSuccess(page, countResultPath, '9999');
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+
+    // When
+    await clickNthFilterIcon(page);
+    const firstItem = await getOption(page);
+    await firstItem.click();
+    // Then
+    await expect(page.getByTestId('filter-add')).toBeEnabled();
+  });
+  test('Clicking the add butoon options the results panel', async ({ page }) => {
+    // Given
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+      detailResponseCat,
+    );
+    await mockApiSuccess(page, countResultPath, '9999');
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+
+    // When
+    await clickNthFilterIcon(page);
+    const firstItem = await getOption(page);
+    await firstItem.click();
+    const addFilterButton = page.getByTestId('filter-add');
+    await addFilterButton.click();
+
+    // Then
+    await expect(page.locator('#results-panel')).toBeVisible();
+  });
+  test('Clicking the add button adds the filter to the results panel', async ({ page }) => {
+    // Given
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+      detailResponseCat,
+    );
+    await mockApiSuccess(page, countResultPath, '9999');
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+
+    // When
+    await clickNthFilterIcon(page);
+    const firstItem = await getOption(page);
+    await firstItem.click();
+    const addFilterButton = page.getByTestId('filter-add');
+    await addFilterButton.click();
+    const searchResult: SearchResult = {
+      conceptPath: '\\SOMEDATA\\questionnaire\\disease\\Any family with heart attack?\\',
+      name: 'heart_test',
+      display: 'Any family with heart attack?',
+      dataset: 'test_data_set',
+      studyAcronym: 'TDS',
+      description: 'Do you have a history of heart attack? Including extended family?',
+      values: ['Yes', 'No', "Don't know"],
+      children: null,
+      meta: null,
+      type: 'Categorical',
+      allowFiltering: true,
+    };
+    const firstAddedFilter = page.getByTestId(`results-filter-item-${searchResult.conceptPath}`);
+
+    // Then
+    await expect(page.locator('#results-panel')).toBeVisible();
+    await expect(firstAddedFilter).toBeVisible();
+  });
+  test('Added Filter has expected buttons', async ({ page }) => {
+    // Given
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+      detailResponseCat,
+    );
+    await mockApiSuccess(page, countResultPath, '9999');
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+
+    // When
+    await clickNthFilterIcon(page);
+    const firstItem = await getOption(page);
+    await firstItem.click();
+    const addFilterButton = page.getByTestId('filter-add');
+    await addFilterButton.click();
+    const searchResult = mockData.content[0];
+    const firstAddedFilter = page.getByTestId(`results-filter-item-${searchResult.conceptPath}`);
+    const buttons = firstAddedFilter.locator('button');
+    const editbutton = buttons.first();
+    const removeButton = buttons.nth(1);
+    const openButton = buttons.last();
+
+    // Then
+    await expect(firstAddedFilter).toBeVisible();
+    await expect(editbutton).toBeVisible();
+    await expect(editbutton).toBeEnabled();
+
+    await expect(removeButton).toBeVisible();
+    await expect(removeButton).toBeEnabled();
+
+    await expect(openButton).toBeVisible();
+    await expect(openButton).toBeEnabled();
+  });
+  test('Clicking added filter opens more info', async ({ page }) => {
+    // Given
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+      detailResponseCat,
+    );
+    await mockApiSuccess(page, countResultPath, '9999');
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+
+    // When
+    await clickNthFilterIcon(page);
+    const firstItem = await getOption(page);
+    await firstItem.click();
+    const addFilterButton = page.getByTestId('filter-add');
+    await addFilterButton.click();
+    const searchResult = mockData.content[0];
+    const firstAddedFilter = page.getByTestId(`results-filter-item-${searchResult.conceptPath}`);
+    const openButton = firstAddedFilter.locator('button').last();
+    await openButton.click();
+
+    // Then
+    const infoSection = firstAddedFilter.locator('section');
+    await expect(infoSection).toBeVisible();
+  });
+  test('Clicking open filter closes the more info section', async ({ page }) => {
+    // Given
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+      detailResponseCat,
+    );
+    await mockApiSuccess(page, countResultPath, '9999');
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+
+    // When
+    await clickNthFilterIcon(page);
+    const firstItem = await getOption(page);
+    await firstItem.click();
+    const addFilterButton = page.getByTestId('filter-add');
+    await addFilterButton.click();
+    const searchResult = mockData.content[0];
+    const firstAddedFilter = page.getByTestId(`results-filter-item-${searchResult.conceptPath}`);
+    const openButton = firstAddedFilter.locator('button').last();
+    await openButton.click();
+
+    // Then
+    const infoSection = firstAddedFilter.locator('section');
+    await expect(infoSection).toBeVisible();
+    await openButton.click();
+    await expect(infoSection).not.toBeVisible();
+  });
+  test('Fitlers with selected values list values and count', async ({ page }) => {
+    // Given
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+      detailResponseCat,
+    );
+    await mockApiSuccess(page, countResultPath, '9999');
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+
+    // When
+    const filter = createCategoricalFilter(
+      mockData.content[0] as SearchResult,
+      mockData.content[0]?.values?.slice(0, 1) || [],
+    );
+    await clickNthFilterIcon(page);
+    const firstItem = await getOption(page);
+    await firstItem.click();
+    const addFilterButton = page.getByTestId('filter-add');
+    await addFilterButton.click();
+    const searchResult = mockData.content[0];
+    const firstAddedFilter = page.getByTestId(`results-filter-item-${searchResult.conceptPath}`);
+    const openButton = firstAddedFilter.locator('button').last();
+    await openButton.click();
+
+    // Then
+    const infoSection = firstAddedFilter.locator('section');
+    await expect(infoSection).toBeVisible();
+    await expect(infoSection).toContainText('Restricting to 1 value.');
+    await expect(infoSection).toContainText(`Values: ${filter.categoryValues.join(', ')}`);
+  });
+  test('Fitlers with all values selected list count and correct text', async ({ page }) => {
+    // Given
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+      detailResponseCat,
+    );
+    await mockApiSuccess(page, countResultPath, '9999');
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+
+    // When
+    await clickNthFilterIcon(page);
+    const component = page.getByTestId('ui-options-selection-list');
+    await optionsHaveLoaded(page);
+    const selectAllButton = component.getByTestId('ui-options-selection-list-select-all');
+    await selectAllButton.click();
+
+    const addFilterButton = page.getByTestId('filter-add');
+    await addFilterButton.click();
+    const searchResult = mockData.content[0];
+    const firstAddedFilter = page.getByTestId(`results-filter-item-${searchResult.conceptPath}`);
+    const openButton = firstAddedFilter.locator('button').last();
+    await openButton.click();
+
+    // Then
+    const infoSection = firstAddedFilter.locator('section');
+    await expect(infoSection).toBeVisible();
+    await expect(infoSection).toContainText('Restricting to any value.');
+  });
+  test('Fitlers with the same name but different id are both added', async ({ page }) => {
+    // Given
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${mockData.content[5].dataset}`,
+      detailResForAge,
+    );
+    await mockApiSuccess(page, countResultPath, '9999');
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+
+    // When
+    await clickNthFilterIcon(page, 5);
+    const selectAllButton = page.getByTestId('ui-options-selection-list-select-all');
+    await selectAllButton.click();
+
+    const addFilterButton = page.getByTestId('filter-add');
+    await addFilterButton.click();
+
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${mockData.content[5].dataset}`,
+      detailResForAge2,
+    );
+
+    await clickNthFilterIcon(page, 6);
+    const selectAllButton2 = page.getByTestId('ui-options-selection-list-select-all');
+    await selectAllButton2.click();
+
+    const addFilterButton2 = page.getByTestId('filter-add');
+    await addFilterButton2.click();
+
+    const searchResult1 = mockData.content[5];
+    const searchResult2 = mockData.content[6];
+    const firstAddedFilter = page.getByTestId(`results-filter-item-${searchResult1.conceptPath}`);
+    const secondAddedFilter = page.getByTestId(`results-filter-item-${searchResult2.conceptPath}`);
+
+    // Then
+    await expect(firstAddedFilter).toBeVisible();
+    await expect(secondAddedFilter).toBeVisible();
+  });
+  test('Fitlers with min and max display in the info panel', async ({ page }) => {
+    // Given
+    await mockApiSuccess(page, countResultPath, '9999');
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+
+    // When
+    const filter = createNumericFilter(
+      mockData.content[2] as SearchResult,
+      mockData.content[2]?.min?.toString(),
+      mockData.content[2]?.max?.toString(),
+    );
+    await clickNthFilterIcon(page, 3);
+    await page.getByTestId('filter-numerical-min').fill(filter.min + '');
+    await page.getByTestId('filter-numerical-max').fill(filter.max + '');
+    const addFilterButton = page.getByTestId('filter-add');
+    await addFilterButton.click();
+    const searchResult = mockData.content[3];
+    const firstAddedFilter = page.getByTestId(`results-filter-item-${searchResult.conceptPath}`);
+    const openButton = firstAddedFilter.locator('button').last();
+    await openButton.click();
+
+    // Then
+    const infoSection = firstAddedFilter.locator('section');
+    await expect(infoSection).toBeVisible();
+    await expect(infoSection).toContainText(
+      `Restricting to between ${filter.min} and ${filter.max}.`,
+    );
+  });
+  test('Fitlers with no min display less than text', async ({ page }) => {
+    // Given
+    await mockApiSuccess(page, countResultPath, '9999');
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+
+    // When
+    const filter = createNumericFilter(
+      mockData.content[2] as SearchResult,
+      mockData.content[2]?.min?.toString(),
+      mockData.content[2]?.max?.toString(),
+    );
+    await clickNthFilterIcon(page, 3);
+    await page.getByTestId('filter-numerical-max').fill(filter.max + '');
+    const addFilterButton = page.getByTestId('filter-add');
+    await addFilterButton.click();
+    const searchResult = mockData.content[3];
+    const firstAddedFilter = page.getByTestId(`results-filter-item-${searchResult.conceptPath}`);
+    const openButton = firstAddedFilter.locator('button').last();
+    await openButton.click();
+
+    // Then
+    const infoSection = firstAddedFilter.locator('section');
+    await expect(infoSection).toBeVisible();
+    await expect(infoSection).toContainText(`Restricting to less than ${filter.max}.`);
+  });
+  test('Fitlers with no max display greater than text', async ({ page }) => {
+    // Given
+    await mockApiSuccess(page, countResultPath, '9999');
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+
+    // When
+    const filter = createNumericFilter(
+      mockData.content[2] as SearchResult,
+      mockData.content[2].min?.toString(),
+      mockData.content[2].max?.toString(),
+    );
+    await clickNthFilterIcon(page, 3);
+    await page.getByTestId('filter-numerical-min').fill(filter.min + '');
+    const addFilterButton = page.getByTestId('filter-add');
+    await addFilterButton.click();
+    const searchResult = mockData.content[3];
+    const firstAddedFilter = page.getByTestId(`results-filter-item-${searchResult.conceptPath}`);
+    const openButton = firstAddedFilter.locator('button').last();
+    await openButton.click();
+
+    // Then
+    const infoSection = firstAddedFilter.locator('section');
+    await expect(infoSection).toBeVisible();
+    await expect(infoSection).toContainText(`Restricting to greater than ${filter.min}.`);
+  });
+  test('Fitlers where the min and max were left blank show the correct text', async ({ page }) => {
+    // Given
+    await mockApiSuccess(page, countResultPath, '9999');
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+
+    // When
+    await clickNthFilterIcon(page, 3);
+    const addFilterButton = page.getByTestId('filter-add');
+    await addFilterButton.click();
+    const searchResult = mockData.content[3];
+    const firstAddedFilter = page.getByTestId(`results-filter-item-${searchResult.conceptPath}`);
+    const openButton = firstAddedFilter.locator('button').last();
+    await openButton.click();
+
+    // Then
+    const infoSection = firstAddedFilter.locator('section');
+    await expect(infoSection).toBeVisible();
+    await expect(infoSection).toContainText(`Restricting to any value.`);
+  });
+  test('Added Fitlers contain study acronym and dataset', async ({ page }) => {
+    // Given
+    await mockApiSuccess(page, countResultPath, '9999');
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+
+    // When
+    await clickNthFilterIcon(page, 3);
+    const addFilterButton = page.getByTestId('filter-add');
+    await addFilterButton.click();
+    const searchResult = mockData.content[3];
+    const firstAddedFilter = page.getByTestId(`results-filter-item-${searchResult.conceptPath}`);
+    const openButton = firstAddedFilter.locator('button').last();
+    await openButton.click();
+
+    // Then
+    const infoSection = firstAddedFilter.locator('section');
+    await expect(infoSection).toBeVisible();
+    await expect(infoSection).toContainText(
+      `${searchResult.studyAcronym} (${searchResult.dataset})`,
+    );
+  });
+  test('Clicking the remove button removes the filter from the results panel', async ({ page }) => {
+    // Given
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+      detailResponseCat,
+    );
+    await mockApiSuccess(page, countResultPath, '9999');
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+
+    // When
+    await clickNthFilterIcon(page);
+    const firstItem = await getOption(page);
+    await firstItem.click();
+    const addFilterButton = page.getByTestId('filter-add');
+    await addFilterButton.click();
+    const searchResult = mockData.content[0];
+    const firstAddedFilter = page.getByTestId(`results-filter-item-${searchResult.conceptPath}`);
+    await expect(page.locator('#results-panel')).toBeVisible();
+    await expect(firstAddedFilter).toBeVisible();
+
+    // Then
+    const removeButton = firstAddedFilter.locator('button').nth(1);
+    await removeButton.click();
+    await expect(firstAddedFilter).not.toBeVisible();
+  });
+  test('Clicking the edit button for a categorical filter opens the edit modal', async ({
+    page,
+  }) => {
+    // Given
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+      detailResponseCat,
+    );
+    await mockApiSuccess(page, countResultPath, '9999');
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+
+    // When
+    await clickNthFilterIcon(page);
+    const firstItem = await getOption(page);
+    await firstItem.click();
+    const addFilterButton = page.getByTestId('filter-add');
+    await addFilterButton.click();
+    const searchResult = mockData.content[0];
+    const firstAddedFilter = page.getByTestId(`results-filter-item-${searchResult.conceptPath}`);
+    await expect(firstAddedFilter).toBeVisible();
+    const edit = firstAddedFilter.locator('button').first();
+    await edit.click();
+
+    // Then
+    const modal = page.getByRole('dialog');
+    await expect(modal).toBeVisible();
+    await expect(modal.getByTestId('ui-modal-header')).toContainText('Edit Filter');
+  });
+  test('Edit modal maintains selected items', async ({ page }) => {
+    // Given
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+      detailResponseCat,
+    );
+    await mockApiSuccess(page, countResultPath, '9999');
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+
+    // When
+    await clickNthFilterIcon(page);
+    const firstItem = await getOption(page);
+    const firstValue: string | null = await firstItem.textContent();
+    expect(firstValue).not.toBeNull();
+    await firstItem.click();
+    const addFilterButton = page.getByTestId('filter-add');
+    await addFilterButton.click();
+    const searchResult = mockData.content[0];
+    const firstAddedFilter = page.getByTestId(`results-filter-item-${searchResult.conceptPath}`);
+    await expect(firstAddedFilter).toBeVisible();
+    const edit = firstAddedFilter.locator('button').first();
+    await edit.click();
+    const modal = page.getByRole('dialog');
+    const selectedOptionContainer = modal.getByTestId('ui-options-selection-list-selected');
+    const selectedOptions = await selectedOptionContainer.getByRole('listitem').all();
+    const firstSelectedOption = selectedOptions[0];
+
+    // Then
+    await expect(firstSelectedOption).toBeVisible();
+    await expect(firstSelectedOption).toHaveText(firstValue || 'NULL');
+  });
+  test('Edit modal maintains info on the top', async ({ page }) => {
+    // Given
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+      detailResponseCat,
+    );
+    await mockApiSuccess(page, countResultPath, '9999');
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+
+    // When
+    await clickNthFilterIcon(page);
+    const firstItem = await getOption(page);
+    await firstItem.click();
+    const addFilterButton = page.getByTestId('filter-add');
+    await addFilterButton.click();
+    const searchResult = mockData.content[0];
+    const firstAddedFilter = page.getByTestId(`results-filter-item-${searchResult.conceptPath}`);
+    await expect(firstAddedFilter).toBeVisible();
+    const edit = firstAddedFilter.locator('button').first();
+    await edit.click();
+    const modal = page.getByRole('dialog');
+    const variableInfo = modal.locator('.variable-info');
+
+    // Then
+    await expect(variableInfo).toBeVisible();
+    await expect(variableInfo).toContainText(`${searchResult.display}`);
+    await expect(variableInfo).toContainText(`${searchResult.description}`);
+    await expect(variableInfo).toContainText(
+      `${searchResult.studyAcronym} (${searchResult.dataset})`,
+    );
+  });
+  test('Edit modal changes the filter', async ({ page }) => {
+    // Given
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+      detailResponseCat,
+    );
+    await mockApiSuccess(page, countResultPath, '9999');
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+
+    // When
+    await clickNthFilterIcon(page);
+    const firstItem = await getOption(page);
+    await firstItem.click();
+    const addFilterButton = page.getByTestId('filter-add');
+    await addFilterButton.click();
+    const searchResult = mockData.content[0];
+    const firstAddedFilter = page.getByTestId(`results-filter-item-${searchResult.conceptPath}`);
+    await expect(firstAddedFilter).toBeVisible();
+    await firstAddedFilter.click();
+    const section = firstAddedFilter.locator('section');
+    await expect(section).toBeVisible();
+    const firstValueString = await section.innerText();
+    const edit = firstAddedFilter.locator('button').first();
+    await edit.click();
+    const modal = page.getByRole('dialog');
+    await expect(modal).toBeVisible();
+    const selectedOptionContainer = modal.getByTestId('ui-options-selection-list-selected');
+    const firstUnslectedOption = await getOption(modal);
+    await firstUnslectedOption.click();
+    const selectedOptions = await selectedOptionContainer.getByRole('listitem').all();
+    let valueString = '';
+    for (const option of selectedOptions) {
+      const comma = option !== selectedOptions[selectedOptions.length - 1] ? ', ' : '';
+      valueString += `${await option.innerText()}${comma}`;
+    }
+    const addFilterButtoEdit = modal.getByTestId('filter-add');
+    await addFilterButtoEdit.click();
+    const openButton = firstAddedFilter.locator('button').last();
+    await openButton.click();
+
+    // Then
+    const infoSection = firstAddedFilter.locator('section');
+    await expect(infoSection).toBeVisible();
+    await expect(infoSection).toContainText(`Restricting to ${selectedOptions.length} values.`);
+    await expect(infoSection).toContainText(`Values:${valueString}`);
+    await expect(infoSection).not.toContainText(firstValueString);
+  });
+});
+test.describe('Any record of filter', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
+  test.beforeEach(async ({ page }) => {
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+    await mockApiSuccess(page, searchResultPath, mockData);
+    await mockApiSuccess(page, countResultPath, '9999');
+    await mockApiSuccess(
+      page,
+      `${conceptTreePath}/${mockData.content[0].dataset}?depth=100`,
+      mockDataWithChildren,
+    );
+    await page.route(
+      '*/**/picsure/dictionary/concepts/hierarchy/test_data_set',
+      async (route: Route) => route.fulfill({ json: hierarchyResponse }),
+    );
+
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+
+    const tableBody = page.locator('tbody');
+    await expect(tableBody).toBeVisible();
+
+    const firstRow = tableBody.locator('tr').nth(0);
+    const hierarchyButton = firstRow.locator('td').last().locator('button').nth(2);
+    await hierarchyButton.click();
+    await expect(page.getByTestId('explorer-hierarchy')).toBeVisible();
+    // The row clips its content while it slides open. Playwright scrolls a click target into
+    // view inside it, and that scroll resets when the slide ends, moving the Add Filter button.
+    await expectAnimationsFinished(page.locator('tr.expandable-row'));
+    const secondItem = page.getByTestId('ui-tree-radio-Disease (disease)');
+    await secondItem.click();
+    const addFilterButton = page.getByTestId('filter-add');
+    await addFilterButton.click();
+    await expect(page.getByRole('dialog')).not.toBeVisible();
+    await expect(page.getByTestId(/^results-filter-any-record-of-.*-trigger$/)).toBeVisible();
+  });
+  test('Adding an any record of filter adds the filter to the results panel', async ({ page }) => {
+    await expect(page.locator('#results-panel')).toBeVisible();
+    await expect(page.getByTestId(/^results-filter-any-record-of-.*$/)).toBeVisible();
+  });
+  test('Adding an any record of filter adds the correct number of variables to the filter', async ({
+    page,
+  }) => {
+    await expect(page.locator('#results-panel')).toBeVisible();
+    await expect(page.getByTestId(/^results-filter-any-record-of-.*$/)).toHaveText(
+      `${mockDataWithChildren.children.length} variable(s) in disease category`,
+    );
+  });
+  test('Clicking the Any Record of filter button opens the modal', async ({ page }) => {
+    const addedFilter = page.getByTestId(/^results-filter-any-record-of-.*-trigger$/);
+    await addedFilter.click();
+    await expect(page.getByTestId('results-any-record-of-view')).toBeVisible();
+  });
+  test('Clicking the Any Record of filter modal has the correct number of variables', async ({
+    page,
+  }) => {
+    const addedFilter = page.getByTestId(/^results-filter-any-record-of-.*-trigger$/);
+    await expect(addedFilter).toBeVisible({ timeout: 5000 });
+    await addedFilter.click();
+    await expect(page.getByTestId('results-any-record-of-view')).toBeVisible();
+    const h1 = page.getByTestId('results-any-record-of-view').locator('header').locator('h1');
+    await expect(h1).toBeVisible();
+    await expect(h1).toHaveText(
+      `${mockDataWithChildren.children.length} variable(s) in disease category`,
+    );
+  });
+  test('Clicking the Any Record of filter modal has the correct variables', async ({ page }) => {
+    const addedFilter = page.getByTestId(/^results-filter-any-record-of-.*-trigger$/);
+    await addedFilter.click();
+    await expect(page.getByTestId('results-any-record-of-view')).toBeVisible();
+    const variablesLocator = page.getByTestId('results-any-record-of-view').locator('div');
+    await expect(variablesLocator).toHaveCount(mockDataWithChildren.children.length);
+    await expect(variablesLocator.first()).toHaveText(mockDataWithChildren.children[0].conceptPath);
+  });
+  test('Clicking the close button closes the modal', async ({ page }) => {
+    const addedFilter = page.getByTestId(/^results-filter-any-record-of-.*-trigger$/);
+    await expect(addedFilter).toBeVisible();
+    await addedFilter.click();
+    const modal = page.getByTestId('results-any-record-of-view');
+    await expect(modal).toBeVisible();
+    await page.getByRole('dialog').filter({ has: modal }).getByTestId('ui-modal-close').click();
+    await expect(modal).not.toBeVisible();
+  });
+  test('If there is only Any Record of filter, the distributions button is hidden', async ({
+    page,
+  }) => {
+    await expect(page.getByTestId('results-distributions-open')).not.toBeVisible();
+  });
+});
+test.describe('User with no query scopes can add filters without error', () => {
+  const outOfScopeStudy = 7;
+  test.use({ storageState: 'tests/end-to-end/.auth/noScopeUser.json' });
+
+  test('User can prepare data for analysis', async ({ page }) => {
+    // Given
+    await mockApiSuccess(page, countResultPath, '9999');
+
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+
+    // When
+    await clickNthFilterIcon(page, outOfScopeStudy);
+    await page.getByTestId('filter-add').click();
+    await page.locator('#results-export-open').click();
+
+    // Then
+    await expect(page.locator('#discover-error-container')).not.toBeVisible();
+  });
+  test('User can view variable distirubtions', async ({ page }) => {
+    // Given
+    await mockApiSuccess(page, countResultPath, '9999');
+    await mockApiSuccess(page, '*/**/picsure/visualization/auth/distributions', {
+      categoricalData: [],
+      continuousData: [],
+    });
+
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+
+    // When
+    await clickNthFilterIcon(page, outOfScopeStudy);
+    await page.getByTestId('filter-add').click();
+    await page.getByTestId('results-distributions-open').click();
+
+    // Then
+    await expect(page.locator('#discover-error-container')).not.toBeVisible();
+  });
+});
+test.describe('Query V3 OR features', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/noScopeUser.json' });
+  let querySyncRequest: string[] = [];
+
+  test.beforeEach(({ page }) => {
+    page.on('request', (request) => {
+      if (request.url().includes('/picsure/hpds/auth/query/sync')) {
+        const data = request.postData();
+        if (data !== null) {
+          querySyncRequest.push(data);
+        }
+      }
+    });
+  });
+
+  test.afterEach(() => {
+    querySyncRequest = [];
+  });
+  test('sends request with QueryV3 structure', async ({ page }) => {
+    // Given
+    await mockApiSuccess(page, countResultPath, '9999');
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+      detailResponseCat,
+    );
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+
+    // When
+    await clickNthFilterIcon(page);
+    const firstItem = await getOption(page);
+    await firstItem.click();
+    const addFilterButton = page.getByTestId('filter-add');
+    await addFilterButton.click();
+
+    // Then
+    await expect.poll(() => querySyncRequest.length).toBe(1);
+    expect(querySyncRequest[0]).toContain('phenotypicClauses');
+  });
+  test('shows AND label between filters on explorer', async ({ page }) => {
+    // Given
+    await mockApiSuccess(page, countResultPath, '9999');
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+
+    // When
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${mockData.content[5].dataset}`,
+      detailResForAge,
+    );
+    await clickNthFilterIcon(page, 5);
+    const selectAllButton = page.getByTestId('ui-options-selection-list-select-all');
+    await selectAllButton.click();
+    const addFilterButton = page.getByTestId('filter-add');
+    await addFilterButton.click();
+
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${mockData.content[5].dataset}`,
+      detailResForAge2,
+    );
+    await clickNthFilterIcon(page, 6);
+    const selectAllButton2 = page.getByTestId('ui-options-selection-list-select-all');
+    await selectAllButton2.click();
+    const addFilterButton2 = page.getByTestId('filter-add');
+    await addFilterButton2.click();
+
+    // Then
+    await expect(page.getByTestId('results-filter-operator')).toHaveCount(1);
+    await expect(page.getByTestId('results-filter-operator').first()).toHaveText('AND');
+  });
+});

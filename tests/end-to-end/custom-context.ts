@@ -1,10 +1,10 @@
 import { test as base, expect, type Route, type BrowserContext, type Page } from '@playwright/test';
 import type { TestInfo } from '@playwright/test';
-import type { ConfigCache } from '../../src/lib/models/Configuration';
-import type { ExpectedResultType } from '../../src/lib/models/query/Query';
-import { TEST_CONFIG_COOKIE } from '../../src/lib/testConfig';
-import * as mockData from './mock-data';
-import { configurationPath } from './mock-data';
+import type { ConfigCache } from '../../src/lib/config/Configuration';
+import type { ExpectedResultType } from '../../src/lib/query/query';
+import { TEST_CONFIG_COOKIE } from '../../src/lib/config/testOverride';
+import * as mockData from '../support/mock-data';
+import { configurationPath } from '../support/mock-data';
 
 // Fixtures are shared by every test in a worker, so a test that mutates one silently changes
 // what later tests see. Freeze them so a mutation throws where it happens instead; spread a

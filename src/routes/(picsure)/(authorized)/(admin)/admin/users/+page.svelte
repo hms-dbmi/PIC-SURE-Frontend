@@ -4,18 +4,18 @@
 
   import { goto } from '$app/navigation';
 
-  import type { Indexable } from '#lib/types.ts';
-  import { config } from '#lib/configuration.svelte.ts';
-  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
-  import Content from '#lib/components/Content.svelte';
-  import Datatable from '#lib/components/datatable/StaticTable.svelte';
-  import Actions from '#lib/components/admin/user/cell/Actions.svelte';
-  import Status from '#lib/components/admin/user/cell/Status.svelte';
+  import type { Indexable } from '#lib/config/types.ts';
+  import { config } from '#lib/config/config.svelte.ts';
+  import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
+  import Content from '#lib/shell/Content.svelte';
+  import Datatable from '#lib/ui/datatable/StaticTable.svelte';
+  import Actions from '#lib/admin/users/cell/Actions.svelte';
+  import Status from '#lib/admin/users/cell/Status.svelte';
 
-  import UsersStore from '#lib/stores/Users.ts';
-  import RolesStore from '#lib/stores/Roles.ts';
-  import ConnectionStore from '#lib/stores/Connections.ts';
-  import Loading from '#lib/components/Loading.svelte';
+  import UsersStore from '#lib/admin/users/Users.ts';
+  import RolesStore from '#lib/admin/access/Roles.ts';
+  import ConnectionStore from '#lib/admin/access/Connections.ts';
+  import Loading from '#lib/ui/Loading.svelte';
 
   let { users, loadUsers } = UsersStore;
   let { connections, loadConnections } = ConnectionStore;

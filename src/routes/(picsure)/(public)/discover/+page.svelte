@@ -1,8 +1,8 @@
 <script lang="ts">
-  import Content from '#lib/components/Content.svelte';
-  import { config } from '#lib/configuration.svelte.ts';
-  import Explorer from '#lib/components/explorer/Explorer.svelte';
-  import { resolveTour } from '#lib/utilities/Tour.ts';
+  import Content from '#lib/shell/Content.svelte';
+  import { config } from '#lib/config/config.svelte.ts';
+  import Explorer from '#lib/explorer/components/Explorer.svelte';
+  import { resolveTour } from '#lib/explorer/components/tour/tour.ts';
 
   let openTour = $derived(resolveTour(config.settings.tour.open, 'BDC-Open'));
 </script>

@@ -1,0 +1,59 @@
+import type { AuthData } from '#lib/auth/providers/AuthProvider.ts';
+import AuthProvider from '#lib/auth/providers/AuthProvider.ts';
+import { browser } from '$app/env';
+import type { User } from '#lib/auth/model/user.ts';
+import * as api from '#lib/api/client.ts';
+import auth0 from 'auth0-js';
+import { auth } from '#lib/config/config.svelte.ts';
+import { Psama } from '#lib/api/paths.ts';
+
+interface Auth0Data extends AuthData {
+  clientid: string;
+  connection: string;
+}
+
+class Auth0 extends AuthProvider implements Auth0Data {
+  clientid: string;
+  connection: string;
+
+  constructor(data: Auth0Data) {
+    super(data);
+    this.clientid = data.clientid;
+    this.connection = data.connection;
+  }
+
+  authenticate = async (hashParts: string[]): Promise<User | undefined> => {
+    const responseMap = this.getResponseMap(hashParts);
+    const token = responseMap.get('#access_token');
+    if (browser && token) {
+      const redirectURI = this.getRedirectURI();
+      return api.post(`${Psama.Auth}/auth0`, {
+        access_token: token,
+        redirectURI: redirectURI,
+      });
+    }
+    return undefined;
+  };
+
+  login = async (redirectTo: string, type: string): Promise<void> => {
+    const redirectUrl = this.getRedirectURI();
+    this.saveState(redirectTo, type);
+    const webAuth = new auth0.WebAuth({
+      domain: auth.auth0Tenant + '.auth0.com',
+      clientID: this.clientid || '',
+      redirectUri: redirectUrl,
+      responseType: 'token',
+    });
+    return webAuth.authorize({
+      responseType: 'token',
+      connection: this.connection,
+    });
+  };
+
+  logout = async (): Promise<void> => {
+    throw new Error('Method not implemented.');
+  };
+}
+
+export default Auth0;
+export type { Auth0Data as AuthType };

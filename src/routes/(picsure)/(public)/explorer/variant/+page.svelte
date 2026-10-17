@@ -3,16 +3,16 @@
   import { onDestroy, onMount } from 'svelte';
 
   import { goto } from '$app/navigation';
-  import { config } from '#lib/configuration.svelte.ts';
-  import { isToastShowing, toaster } from '#lib/toaster.ts';
+  import { config } from '#lib/config/config.svelte.ts';
+  import { isToastShowing, toaster } from '#lib/ui/toaster.ts';
 
-  import type { QueryRequestInterfaceV3 } from '#lib/models/api/Request.ts';
-  import { panelOpen } from '#lib/stores/SidePanel.ts';
+  import type { QueryRequestInterfaceV3 } from '#lib/api/picsure/query.types.ts';
+  import { panelOpen } from '#lib/explorer/panel.ts';
 
-  import Content from '#lib/components/Content.svelte';
-  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
-  import VariantExplorer from '#lib/components/explorer/variant/VariantExplorer.svelte';
-  import { getQueryRequestV3 } from '#lib/utilities/QueryBuilder.ts';
+  import Content from '#lib/shell/Content.svelte';
+  import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
+  import VariantExplorer from '#lib/explorer/variant/VariantExplorer.svelte';
+  import { getQueryRequestV3 } from '#lib/query/build.ts';
 
   onMount(() => {
     const request: QueryRequestInterfaceV3 = getQueryRequestV3();
