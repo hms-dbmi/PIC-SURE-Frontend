@@ -221,12 +221,18 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
     await expect(filterNameEls).toHaveText(afPage.filterNames);
 
     const handle = afPage.getFilterCard(filterA).locator('.fa-grip-vertical').first();
-    const { startX } = await afPage.startDrag(handle, 'down', 30);
-    await expect(afPage.getDropPreviews().first()).toBeVisible();
-    // Picking A up changes the layout, so B is measured only once the drag has started
+    const { startX } = await afPage.pickUp(handle);
+    // Picking A up changes the layout, so B is measured only once the drag has started. Once the
+    // pointer enters B, A takes B's place, and B's old center lies inside A's new slot.
     const target = await afPage.getFilterCard(filterB).boundingBox();
     expect(target).not.toBeNull();
-    await page.mouse.move(startX, target!.y + target!.height - 10, { steps: 20 });
+    await page.mouse.move(startX, target!.y + target!.height / 2, { steps: 20 });
+    // Release only once the drop preview shows the new order, as a user would
+    await expect(afPage.modal.getByTestId('filter-root').getByTestId('filter-name')).toHaveText([
+      filterB,
+      filterA,
+      ...rest,
+    ]);
     await page.mouse.up();
 
     await expect(filterNameEls).toHaveText([filterB, filterA, ...rest]);
