@@ -90,6 +90,10 @@ test.describe('Not logged in', () => {
     await page.getByTestId('app-footer-terms-trigger').click();
     await expect(page.locator('#terms-of-service')).toBeVisible();
 
+    // The dialog starts listening for Escape a frame after it opens, and moves focus inside
+    // only after that; an earlier press is ignored.
+    await expect(page.locator('[role="dialog"]:focus-within')).toBeVisible();
+
     // When
     await page.keyboard.press('Escape');
 
