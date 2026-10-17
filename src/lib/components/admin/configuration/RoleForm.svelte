@@ -59,7 +59,7 @@
     } catch (error) {
       console.error(error);
       toaster.error({
-        title: `An error occured while saving ${role ? '' : 'new '}role '${name}'`,
+        title: `An error occurred while saving ${role ? '' : 'new '}role '${name}'`,
       });
     }
   }

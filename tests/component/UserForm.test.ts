@@ -23,8 +23,8 @@ describe('UserForm', () => {
   it('marks email and connection required for a new user', () => {
     render(UserForm, { connections, roleList });
 
-    expect(fieldLabel('Email:')).toHaveClass('label', 'required', { exact: true });
-    expect(fieldLabel('Connection:')).toHaveClass('label', 'required', { exact: true });
+    expect(fieldLabel('Email:')).toHaveClass('label required', { exact: true });
+    expect(fieldLabel('Connection:')).toHaveClass('label required', { exact: true });
   });
 
   it('keeps the email out of the label classes when editing', () => {

@@ -2,10 +2,9 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
-import { get } from 'svelte/store';
 
 import Actions from '#lib/components/explorer/cell/Actions.svelte';
-import { exports, addExport, clearExports, mapSearchResultAsExport } from '#lib/stores/Export.ts';
+import { addExport, clearExports, mapSearchResultAsExport } from '#lib/stores/Export.ts';
 import type { SearchResult } from '#lib/models/Search.ts';
 
 vi.mock('#lib/logger.ts', async (importOriginal) => ({
@@ -31,10 +30,10 @@ describe('search result row actions', () => {
 
   it('removes an export that was added somewhere else', async () => {
     addExport(mapSearchResultAsExport({ ...row }));
-    render(Actions, { data: { row } as unknown as SearchResult });
+    render(Actions, { data: { row } });
 
     await fireEvent.click(screen.getByRole('button', { name: 'Remove from Analysis (e)' }));
 
-    expect(get(exports)).toEqual([]);
+    expect(screen.getByRole('button', { name: 'Add for Analysis (e)' })).toBeVisible();
   });
 });

@@ -32,6 +32,7 @@
     {/if}
     <input
       id="{uid}-radio"
+      aria-labelledby="{uid}-label"
       data-testid="ui-tree-radio-{node.name}"
       class="radio tree-item-radio self-center {isRoot ? 'ml-[28px]' : ''}"
       type="radio"
@@ -41,7 +42,10 @@
       checked={node.selected}
       onclick={() => node.select()}
     />
-    <label for="{uid}-radio" class="w-full">{node.name}</label>
+    <!-- A parent's name toggles its children (the summary's default), so only leaves forward clicks to the radio -->
+    <label id="{uid}-label" for={node.isLeaf ? `${uid}-radio` : undefined} class="w-full"
+      >{node.name}</label
+    >
   </summary>
   <div class="tree-item-children ml-4" data-testid="ui-tree-children-{node.name}" role="group">
     {#if !node.isLeaf}

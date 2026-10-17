@@ -7,7 +7,11 @@
   import { isOpenAccess } from '#lib/AccessState.ts';
   import { log, createLog, getPageContext } from '#lib/logger.ts';
 
-  let { data = {} as SearchResult } = $props();
+  interface Props {
+    data: { row: SearchResult; tableName?: string };
+  }
+
+  let { data }: Props = $props();
   let exportItem = $derived(mapSearchResultAsExport(data.row));
 
   function updateActiveRow(componentName: string) {

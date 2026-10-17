@@ -1,7 +1,7 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
   import { appPath } from '#lib/paths.ts';
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount, onDestroy, tick } from 'svelte';
 
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
@@ -72,7 +72,7 @@
 
   let releaseHandler: (() => void) | undefined;
 
-  onMount(() => {
+  onMount(async () => {
     releaseHandler = initHandler();
     if (searchInput && searchInput !== $searchTerm) {
       searchTerm.set(searchInput);
@@ -81,6 +81,9 @@
       handler.invalidate();
     }
     if (page.url.searchParams.get('startTour') === 'true') {
+      // A search earlier in the session hides the tour button
+      tour.set(true);
+      await tick();
       const tourBtn = document.querySelector('#explorer-tour-start');
       if (tourBtn) {
         (tourBtn as HTMLElement).click();

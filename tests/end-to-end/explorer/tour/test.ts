@@ -96,6 +96,27 @@ test('startTour=true opens the tour instructions on load', async ({ page }) => {
   // Then
   await expect(page.getByRole('dialog').getByRole('button', { name: 'Start Tour' })).toBeVisible();
 });
+test('Learn How opens the tour instructions after a search hid the tour button', async ({
+  page,
+}) => {
+  // Given
+  await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+  await page.goto('/explorer?search=somedata');
+  await userIsLoggedIn(page);
+  await expect(page.getByTestId('explorer-tour-start')).toBeHidden();
+  // Client-side navigation keeps the search state, as following an in-app link would
+  await page.evaluate(() => {
+    const link = Object.assign(document.createElement('a'), { href: '/explorer/export' });
+    document.body.append(link);
+    link.click();
+  });
+
+  // When
+  await page.getByRole('button', { name: 'Learn How' }).click();
+
+  // Then
+  await expect(page.getByRole('dialog').getByRole('button', { name: 'Start Tour' })).toBeVisible();
+});
 test('Tour Finishes', async ({ page }) => {
   // Given
   await mockApiConfig(page, { features: HIERARCHY_AND_EXPORT_FEATURES });

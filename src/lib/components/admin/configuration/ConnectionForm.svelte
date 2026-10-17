@@ -50,7 +50,7 @@
     } catch (error) {
       console.error(error);
       toaster.error({
-        title: `An error occured while saving ${connection ? '' : 'new '}connection '${label}'`,
+        title: `An error occurred while saving ${connection ? '' : 'new '}connection '${label}'`,
       });
     }
   }

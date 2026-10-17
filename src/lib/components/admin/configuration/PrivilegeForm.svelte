@@ -42,7 +42,7 @@
     } catch (error) {
       console.error(error);
       toaster.error({
-        title: `An error occured while saving ${privilege ? '' : 'new '}privilege '${name}'`,
+        title: `An error occurred while saving ${privilege ? '' : 'new '}privilege '${name}'`,
       });
     }
   }

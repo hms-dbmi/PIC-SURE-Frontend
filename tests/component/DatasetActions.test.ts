@@ -18,7 +18,9 @@ describe('dataset row actions', () => {
 
   it('keeps the button disabled until the archive request settles', async () => {
     let finish!: () => void;
-    vi.mocked(toggleArchived).mockReturnValue(new Promise<void>((resolve) => (finish = resolve)));
+    vi.mocked(toggleArchived).mockReturnValue(
+      new Promise((resolve) => (finish = () => resolve(undefined))),
+    );
     render(Actions, { data });
     const button = screen.getByTestId('dataset-action-archive-ds-1');
 
