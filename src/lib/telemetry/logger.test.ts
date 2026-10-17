@@ -28,6 +28,7 @@ describe('logger URL sanitization', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    registerSignedInUser(() => undefined);
   });
 
   describe('sanitizeLocation', () => {
@@ -94,6 +95,5 @@ describe('logger URL sanitization', () => {
       user_email: 'researcher@example.org',
       roles: ['SUPER_ADMIN'],
     });
-    registerSignedInUser(() => undefined);
   });
 });

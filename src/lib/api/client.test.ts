@@ -256,6 +256,15 @@ describe('request', () => {
       expect(sent().headers['Authorization']).toBeUndefined();
     });
 
+    it('auth anonymous sends the open-access session even when signed in', async () => {
+      token = 'my-token';
+      mockOpenSessionToken.mockResolvedValue(SESSION);
+      await request('picsure/query/sync', { auth: 'anonymous' });
+
+      expect(sent().headers['Authorization']).toBe(`Bearer ${SESSION}`);
+      expect(sent().headers['request-source']).toBe('Open');
+    });
+
     it('auth none sends neither the token nor a session', async () => {
       token = 'my-token';
       mockOpenSessionToken.mockResolvedValue(SESSION);
@@ -275,16 +284,6 @@ describe('request', () => {
       expect(sent().headers['request-source']).toBeUndefined();
       expect(sent().headers['X-Session-Id']).toBeUndefined();
       expect(mockGetSessionId).not.toHaveBeenCalled();
-    });
-
-    it('requests a root-relative URL outside the browser, where window is missing', async () => {
-      mockBrowser = false;
-      vi.stubGlobal('window', undefined);
-      const kitFetch = vi.fn().mockResolvedValue(mockFetchResponse({}));
-
-      await request('picsure/test', { query: { a: 1 }, fetch: kitFetch });
-
-      expect(kitFetch).toHaveBeenCalledWith('/picsure/test?a=1', expect.any(Object));
     });
   });
 
@@ -385,6 +384,17 @@ describe('request', () => {
       fetchMock.mockResolvedValue(mockFetchResponse({ ok: false, status: 401, body: 'nope' }));
 
       const e = await rejection(request('picsure/query/sync', { auth: 'open' }));
+
+      expect(e).toMatchObject({ status: 401, code: 'http' });
+      expect(onUnauthorized).not.toHaveBeenCalled();
+    });
+
+    it('leaves a signed-in user signed in on a 401 for an anonymous request', async () => {
+      token = 'my-token';
+      mockOpenSessionToken.mockResolvedValue(SESSION);
+      fetchMock.mockResolvedValue(mockFetchResponse({ ok: false, status: 401, body: 'nope' }));
+
+      const e = await rejection(request('picsure/query/sync', { auth: 'anonymous' }));
 
       expect(e).toMatchObject({ status: 401, code: 'http' });
       expect(onUnauthorized).not.toHaveBeenCalled();
@@ -748,6 +758,18 @@ describe('the legacy helpers', () => {
 
     expect(sent().headers['Authorization']).toBe(`Bearer ${SESSION}`);
     expect(sent().headers['request-source']).toBe('Open');
+  });
+
+  it('leaves a signed-in user signed in on a 401 for an authenticate=false picsure request', async () => {
+    token = 'my-token';
+    mockOpenSessionToken.mockResolvedValue(SESSION);
+    fetchMock.mockResolvedValue(mockFetchResponse({ ok: false, status: 401, body: 'nope' }));
+
+    await expect(
+      rejection(post('picsure/query/sync', {}, undefined, false)),
+    ).resolves.toMatchObject({ status: 401, code: 'http' });
+
+    expect(onUnauthorized).not.toHaveBeenCalled();
   });
 
   it('sends no credentials elsewhere with authenticate=false', async () => {

@@ -19,22 +19,14 @@ const BEARER = 'Bearer ';
  * Which credentials a request carries:
  * - `user`: the signed-in user's token; without one the request goes keyless.
  * - `open`: for PIC-SURE data that anonymous visitors may read: the user's token when signed in,
- *   otherwise this browser's open-access session. A 401 on the anonymous request ends nothing.
+ *   otherwise this browser's open-access session.
+ * - `anonymous`: the open-access session even when signed in, for PIC-SURE's open variant (the
+ *   discover pages).
  * - `none`: no credentials, even when signed in.
+ *
+ * A 401 on a request that went without the user's token under `open` or `anonymous` ends nothing.
  */
-export type Auth = 'user' | 'open' | 'none';
-
-// whether a request may carry the user's token, and whether it falls back to the open-access session
-interface Credentials {
-  token: boolean;
-  session: boolean;
-}
-
-const CREDENTIALS: Record<Auth, Credentials> = {
-  user: { token: true, session: false },
-  open: { token: true, session: true },
-  none: { token: false, session: false },
-};
+export type Auth = 'user' | 'open' | 'anonymous' | 'none';
 
 export interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -52,8 +44,8 @@ export interface RequestOptions {
    */
   softFail?: boolean;
   /**
-   * SvelteKit's fetch, when called from a load. Off the browser the URL is root-relative, which
-   * only SvelteKit's fetch can resolve.
+   * SvelteKit's fetch, when called from a load running in the browser. Requests need the browser:
+   * the credentials live in its storage, and the backend is reached through the page's origin.
    */
   fetch?: typeof fetch;
 }
@@ -63,13 +55,13 @@ export function isAbortError(e: unknown): boolean {
 }
 
 /**
- * Resolves with the parsed body (JSON, else text; an `ArrayBuffer` for octet-stream), or rejects
- * with an `ApiError`.
+ * Resolves with the parsed body (JSON, else text; an `ArrayBuffer` for octet-stream). An HTTP
+ * failure rejects with an `ApiError`; a network failure or an abort rejects as fetch did.
  */
 export function request<T>(path: string, opts?: RequestOptions & { softFail?: false }): Promise<T>;
 export function request<T>(path: string, opts: RequestOptions): Promise<T | undefined>;
 export function request<T>(path: string, opts: RequestOptions = {}): Promise<T | undefined> {
-  const sent = send(path, opts, CREDENTIALS[opts.auth ?? 'user'], false) as Promise<T>;
+  const sent = send(path, opts, false) as Promise<T>;
   if (!opts.softFail) return sent;
   return sent.catch((e: unknown) => {
     if (isAbortError(e)) throw e;
@@ -81,7 +73,7 @@ type LegacyOptions = Pick<RequestOptions, 'signal'>;
 
 // The helpers callers used before request(), kept until they move to the resource modules. Their
 // contract differs: a 422 resolves with its body, a 401 that ends the session resolves undefined,
-// `authenticate` decides the token, and any picsure/ path falls back to the open-access session.
+// `authenticate` decides the token, and a picsure/ path without it carries the open-access session.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function legacyRequest(
   method: NonNullable<RequestOptions['method']>,
@@ -91,10 +83,11 @@ function legacyRequest(
   authenticate = true,
   options?: LegacyOptions,
 ): Promise<any> {
+  const picsure = path.startsWith('picsure/');
+  const auth: Auth = authenticate ? (picsure ? 'open' : 'user') : picsure ? 'anonymous' : 'none';
   return send(
     path,
-    { method, body: data || undefined, headers, signal: options?.signal },
-    { token: authenticate, session: path.startsWith('picsure/') },
+    { method, body: data || undefined, headers, auth, signal: options?.signal },
     true,
   );
 }
@@ -132,13 +125,8 @@ export function patch(path: string, data: any, headers?: any, authenticate?: boo
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
-async function send(
-  path: string,
-  opts: RequestOptions,
-  credentials: Credentials,
-  legacy: boolean,
-): Promise<unknown> {
-  const { method = 'GET', body, signal, softFail = false } = opts;
+async function send(path: string, opts: RequestOptions, legacy: boolean): Promise<unknown> {
+  const { method = 'GET', body, auth = 'user', signal, softFail = false } = opts;
   const doFetch = opts.fetch ?? fetch;
   const init: RequestInit = { method };
   const headers: Record<string, string> =
@@ -152,13 +140,13 @@ async function send(
   let openRequest = false;
   let sessionToken: string | null = null;
   if (browser) {
-    const token = credentials.token ? sessionHooks().getToken() : null;
+    const token = auth === 'user' || auth === 'open' ? sessionHooks().getToken() : null;
     if (token) {
       headers['Authorization'] = `${BEARER}${token}`;
       headers['request-source'] = 'Authorized';
     } else {
       headers['request-source'] = 'Open';
-      if (credentials.session) {
+      if (auth === 'open' || auth === 'anonymous') {
         openRequest = true;
         sessionToken = await unlessAborted(openSessionToken(), signal);
         if (sessionToken) {
@@ -173,7 +161,7 @@ async function send(
   init.headers = headers;
   if (signal) init.signal = signal;
 
-  const url = joinUrl(browser ? window.location.origin : '', withQuery(path, opts.query));
+  const url = joinUrl(window.location.origin, withQuery(path, opts.query));
   let res = await doFetch(url, init);
   if (openRequest) {
     acceptSessionRefresh(res);
