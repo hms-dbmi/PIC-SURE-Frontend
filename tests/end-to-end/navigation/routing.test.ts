@@ -67,7 +67,6 @@ test.describe('Routing', () => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
-    // Code chunks under /_app/ may preload on hover; nothing else should.
     const requests: string[] = [];
     page.on('request', (request) => {
       const url = new URL(request.url());
@@ -79,10 +78,30 @@ test.describe('Routing', () => {
     const links = page.locator('#app-nav a[href^="/"]');
     expect(await links.count()).toBeGreaterThan(1);
     for (const link of await links.all()) {
+      // Hover preloads the route's code, which also shows the preload has run.
+      const codePreloaded = page.waitForRequest((request) =>
+        request.url().includes('/_app/immutable/nodes/'),
+      );
       await link.hover();
+      await codePreloaded;
     }
-    await page.waitForLoadState('networkidle');
 
     expect(requests).toEqual([]);
+  });
+});
+
+test.describe('Routing on a closed deployment', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
+
+  test('A logged-out visitor sees the 404 page without the app shell', async ({ page }) => {
+    await mockApiConfig(page, { features: [{ name: 'OPEN', value: 'false' }] });
+
+    // Paths under /login are exempt from the forced login redirect.
+    const response = await page.goto('/login/no-such-page');
+
+    expect(response?.status()).toBe(404);
+    await expect(page.getByTestId('app-error-status')).toHaveText('404');
+    await expect(page.getByTestId('app-error-home')).toBeVisible();
+    await expect(page.locator('#app-nav')).toBeHidden();
   });
 });

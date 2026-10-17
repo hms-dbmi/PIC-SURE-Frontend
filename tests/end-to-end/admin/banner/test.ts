@@ -1073,10 +1073,9 @@ test.describe('Admins schedule banners through their lifecycle', () => {
     await expect(row).toContainText('Expired');
     showFeedSynchronizationBanner = true;
     await page.goto('/help');
-    // The root layout's hydration-time fetch of the current pathname redirects to '/' when it
-    // is aborted (src/routes/+layout.ts). Waiting for the signed-in shell proves hydration
-    // finished before the internal navigation below can abort it. The visible feed marker then
-    // proves SiteBannerRegion consumed a response before the test asks it to consume an empty one.
+    // Waiting for the signed-in shell proves hydration finished before the internal navigation
+    // below. The visible feed marker then proves SiteBannerRegion consumed a response before the
+    // test asks it to consume an empty one.
     await userIsLoggedIn(page);
     await expect(page.getByTestId('banner-item')).toContainText('Feed synchronization marker');
     await expect(page.getByTestId('banner-item')).not.toContainText('Minute-boundary maintenance');

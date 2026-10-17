@@ -2,12 +2,15 @@
   import { resolve } from '$app/paths';
   import { page } from '$app/state';
   import { config } from '#lib/configuration.svelte.ts';
+  import { isUserLoggedIn } from '#lib/stores/User.ts';
   import Shell from '#lib/components/Shell.svelte';
   import Navigation from '#lib/components/Navigation.svelte';
   import SiteBannerRegion from '#lib/components/banner/SiteBannerRegion.svelte';
   import Footer from '#lib/components/Footer.svelte';
 
-  // Only the root layout wraps this page, so it brings the app shell itself.
+  // Only the root layout wraps this page, so it brings the app shell itself. Shell renders
+  // nothing for a logged-out visitor on a closed deployment, who still needs the error.
+  let showShell = $derived(config.features.login.open || isUserLoggedIn());
   let notFound = $derived(page.status === 404);
   let title = $derived(notFound ? 'Page not found' : 'Something went wrong');
 </script>
@@ -16,11 +19,7 @@
   <title>{config.branding.applicationName} | {title}</title>
 </svelte:head>
 
-<Shell>
-  {#snippet header()}
-    <SiteBannerRegion />
-    <Navigation />
-  {/snippet}
+{#snippet error()}
   <section id="app-error" class="flex flex-col items-center text-center gap-4 mt-16 px-4">
     <p data-testid="app-error-status" class="text-6xl font-bold text-primary-500">
       {page.status}
@@ -35,7 +34,19 @@
       >Go to the home page</a
     >
   </section>
-  {#snippet pageFooter()}
-    <Footer />
-  {/snippet}
-</Shell>
+{/snippet}
+
+{#if showShell}
+  <Shell>
+    {#snippet header()}
+      <SiteBannerRegion />
+      <Navigation />
+    {/snippet}
+    {@render error()}
+    {#snippet pageFooter()}
+      <Footer />
+    {/snippet}
+  </Shell>
+{:else}
+  {@render error()}
+{/if}
