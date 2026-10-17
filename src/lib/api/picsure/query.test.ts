@@ -20,7 +20,7 @@ beforeEach(() => respond.mockReset());
 describe('runSyncQuery', () => {
   it('sends open-access queries to the aggregate endpoint', async () => {
     respond.mockResolvedValue(1);
-    await runSyncQuery(query, { openAccess: true });
+    await runSyncQuery(query, { openEndpoint: true });
     await runSyncQuery(query);
     expect(respond.mock.calls.map(([path]) => path)).toEqual([
       'picsure/hpds/open/query/sync',

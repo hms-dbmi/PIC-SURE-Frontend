@@ -280,7 +280,7 @@ describe('SiteBannerRegion', () => {
       'ERROR',
       'banner.feed_failed',
       undefined,
-      expect.objectContaining({ error: { message: 'Banner feed request failed' } }),
+      expect.objectContaining({ error: { message: 'offline' } }),
     );
     expect(log).toHaveBeenCalledOnce();
 
@@ -300,7 +300,7 @@ describe('SiteBannerRegion', () => {
       'ERROR',
       'banner.feed_failed',
       undefined,
-      expect.objectContaining({ error: { message: 'Banner feed request failed' } }),
+      expect.objectContaining({ error: { message: 'Banner feed returned HTTP 404' } }),
     );
     expect(log).toHaveBeenCalledOnce();
   });

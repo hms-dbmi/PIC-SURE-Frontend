@@ -86,7 +86,7 @@ async function getConceptCount({ isOpenAccess }: RequestMapOptions): Promise<Pat
 
 function blank({ addFilters, isOpenAccess }: RequestMapOptions): Promise<PatientCount> {
   const request = addFilters ? getQueryRequestV3('COUNT') : getBlankQueryRequestV3('COUNT');
-  return runSyncQuery(request, { openAccess: useOpenAccess(isOpenAccess) }).then(
+  return runSyncQuery(request, { openEndpoint: useOpenAccess(isOpenAccess) }).then(
     rejectIfQueryError,
   );
 }
@@ -135,7 +135,7 @@ async function getOpenPatientCount({ addFilters }: RequestMapOptions): Promise<P
       expectedResultType: request.query.expectedResultType,
     }),
   );
-  return runSyncQuery(request, { openAccess: true })
+  return runSyncQuery(request, { openEndpoint: true })
     .then(rejectIfQueryError)
     .then((counts) => countResult([counts['\\_studies_consents\\'] || 0]));
 }
@@ -172,7 +172,7 @@ function getCrossCounts(field: string, type: ExpectedResultType) {
         crossCountFieldCount: fields.length,
       }),
     );
-    return runSyncQuery(request, { openAccess: useOpenAccess(isOpenAccess) }).then(
+    return runSyncQuery(request, { openEndpoint: useOpenAccess(isOpenAccess) }).then(
       rejectIfQueryError,
     );
   };
@@ -195,7 +195,7 @@ function getConsentCount(type: ExpectedResultType) {
     const request = addFilters
       ? getQueryRequestV3(type, mapper)
       : getBlankQueryRequestV3(type, mapper);
-    return runSyncQuery(request, { openAccess: useOpenAccess(isOpenAccess) }).then(
+    return runSyncQuery(request, { openEndpoint: useOpenAccess(isOpenAccess) }).then(
       rejectIfQueryError,
     );
   };

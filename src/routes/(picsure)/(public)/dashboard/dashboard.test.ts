@@ -2,7 +2,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const mockApi = vi.hoisted(() => ({ request: vi.fn() }));
+const mockApi = vi.hoisted(() => ({ getDashboard: vi.fn() }));
 
 vi.mock('$app/env', () => ({ browser: true }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost') } }));
@@ -13,7 +13,7 @@ vi.mock('$app/paths', () => ({
 vi.mock('#lib/config/config.svelte.ts', () => ({
   config: { features: { explorer: { open: false }, login: { open: false } } },
 }));
-vi.mock('#lib/api/client.ts', () => mockApi);
+vi.mock('#lib/api/picsure/dictionary.ts', () => mockApi);
 
 import { get } from 'svelte/store';
 import { loadDashboardData, rows } from './dashboard.ts';
@@ -33,7 +33,7 @@ const accessOf = () => Object.fromEntries(get(rows).map((r) => [r.abbreviation, 
 
 describe('loadDashboardData Access column', () => {
   beforeEach(() => {
-    mockApi.request.mockReset().mockResolvedValue(structuredClone(dashboardResp));
+    mockApi.getDashboard.mockReset().mockResolvedValue(structuredClone(dashboardResp));
     setToken('a-token');
   });
 

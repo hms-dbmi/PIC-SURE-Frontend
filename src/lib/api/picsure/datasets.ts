@@ -32,7 +32,7 @@ export async function updateDataset(uuid: string, update: DatasetUpdate): Promis
   );
 }
 
-export async function createDatasetName(queryId: string, name: string): Promise<DataSet> {
+export async function createDatasetName(queryId: string, name: string): Promise<void> {
   if (name.trim() === '') {
     throw 'Please input a Dataset ID name';
   }
@@ -45,5 +45,5 @@ export async function createDatasetName(queryId: string, name: string): Promise<
     queryId,
     name,
   };
-  return await request(Picsure.NamedDataSet, { method: 'POST', body, auth: 'open' });
+  await request(Picsure.NamedDataSet, { method: 'POST', body, auth: 'open' });
 }

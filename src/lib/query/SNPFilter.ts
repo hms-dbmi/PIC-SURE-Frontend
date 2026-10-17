@@ -22,14 +22,16 @@ export function clearSnpFilters() {
   selectedSNPs.set([]);
 }
 
-function snpRequest(snp: SNP): Promise<number | undefined> {
+async function snpRequest(snp: SNP): Promise<number> {
   const filter: GenomicFilterInterfacev3 = {
     key: snp.search,
     values: [Genotype.Heterozygous, Genotype.Homozygous],
   };
   const searchRequest: QueryRequestInterfaceV3 = getBlankQueryRequestV3();
   searchRequest.query.genomicFilters.push(filter);
-  return runSyncQuery(searchRequest);
+  const count = await runSyncQuery(searchRequest);
+  if (typeof count !== 'number') throw new Error('Invalid SNP count response');
+  return count;
 }
 
 export async function getSNPCounts(check: SNP): Promise<{ count: number; errors: number }> {

@@ -14,18 +14,14 @@ export type CountValue = PatientCount | PatientCountMap;
 export interface CountProvider {
   id: string;
   /** Whether the descriptor's counts come from the open-access (aggregate) endpoint. */
-  openAccess(descriptor: QueryDescriptor): boolean;
+  openEndpoint(descriptor: QueryDescriptor): boolean;
   buildRequest(descriptor: QueryDescriptor): QueryRequestInterfaceV3;
   parse(raw: unknown): CountValue;
 }
 
-function usesOpenEndpoint(descriptor: QueryDescriptor): boolean {
-  return useOpenAccess(descriptor.isOpenAccess);
-}
-
 const patientCount: CountProvider = {
   id: 'query:patientCount',
-  openAccess: usesOpenEndpoint,
+  openEndpoint: (descriptor) => useOpenAccess(descriptor.isOpenAccess),
   buildRequest(descriptor) {
     const resultType = descriptor.isOpenAccess ? 'CROSS_COUNT' : 'COUNT';
     return buildQueryRequestV3FromDescriptor(descriptor, resultType);

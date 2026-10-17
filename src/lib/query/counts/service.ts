@@ -10,7 +10,7 @@ import { PicsurePaths } from '#lib/api/paths.ts';
 
 export type CountTransport = (
   request: QueryRequestInterfaceV3,
-  openAccess: boolean,
+  openEndpoint: boolean,
 ) => Promise<unknown>;
 
 export interface QueryCountServiceOptions {
@@ -58,16 +58,16 @@ export function createQueryCountService(options: QueryCountServiceOptions): Quer
   ): Promise<CellOutcome> {
     try {
       const request = provider.buildRequest(descriptor);
-      const openAccess = provider.openAccess(descriptor);
+      const openEndpoint = provider.openEndpoint(descriptor);
       log(
         createLog('QUERY', 'query.execute', {
           providerId: provider.id,
           resourceUuid: resource.uuid,
-          path: PicsurePaths.syncQuery(openAccess),
+          path: PicsurePaths.syncQuery(openEndpoint),
           expectedResultType: request.query.expectedResultType,
         }),
       );
-      const raw = await transport(request, openAccess);
+      const raw = await transport(request, openEndpoint);
       if (isApiErrorEnvelope(raw)) {
         log(
           createLog('QUERY', 'query.cell_failed', {

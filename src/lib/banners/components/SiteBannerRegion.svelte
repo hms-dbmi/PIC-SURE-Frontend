@@ -149,7 +149,6 @@
     try {
       const feed = await getActiveBanners();
       if (revision !== refreshRevision) return;
-      if (feed === undefined) throw new Error('Banner feed request failed');
       if (!Array.isArray(feed)) throw new Error('Banner feed returned an invalid response');
 
       const validRecords = feed.map(normalizeBannerFeedRecord).filter((record) => record !== null);

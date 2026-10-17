@@ -49,11 +49,11 @@ describe('query:patientCount provider', () => {
     expect(provider.parse({ '\\_studies_consents\\': null as never })).toBe(0);
   });
 
-  it('openAccess() is false for an authed descriptor (default features)', () => {
-    expect(provider.openAccess(descriptor)).toBe(false);
+  it('openEndpoint() is false for an authed descriptor (default features)', () => {
+    expect(provider.openEndpoint(descriptor)).toBe(false);
   });
 
-  it('openAccess() picks the aggregate endpoint for an open-access descriptor', () => {
-    expect(provider.openAccess({ ...descriptor, isOpenAccess: true })).toBe(true);
+  it('openEndpoint() picks the aggregate endpoint for an open-access descriptor', () => {
+    expect(provider.openEndpoint({ ...descriptor, isOpenAccess: true })).toBe(true);
   });
 });

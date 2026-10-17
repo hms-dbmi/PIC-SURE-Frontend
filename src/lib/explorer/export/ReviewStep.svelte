@@ -14,7 +14,7 @@
   import type { ExportRowInterface } from '#lib/explorer/export/ExportRow.ts';
   import { searchDictionary } from '#lib/explorer/Dictionary.ts';
   import { QueryV3 } from '#lib/query/query.ts';
-  import { runSyncQuery } from '#lib/api/picsure/query.ts';
+  import { getCrossCounts } from '#lib/api/picsure/query.ts';
   import { toaster } from '#lib/ui/toaster.ts';
 
   import Summary from './Summary.svelte';
@@ -106,9 +106,7 @@
     const crossCountFields = concepts.content.map((concept) => concept.conceptPath);
     crossCountQuery.select = crossCountFields;
 
-    const crossCountResponse = await runSyncQuery<Record<string, number>>({
-      query: crossCountQuery,
-    });
+    const crossCountResponse = await getCrossCounts({ query: crossCountQuery });
 
     // Filter and return only concepts with counts > 0
     return concepts.content.filter((concept) => crossCountResponse[concept.conceptPath] > 0);

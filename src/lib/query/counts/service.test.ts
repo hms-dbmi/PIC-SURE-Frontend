@@ -22,7 +22,7 @@ const resource = { name: 'hpds', uuid: 'a-uuid' };
 function makeProvider(parse: (raw: unknown) => number = (raw) => raw as number): CountProvider {
   return {
     id: 'query:patientCount',
-    openAccess: () => false,
+    openEndpoint: () => false,
     buildRequest: () => ({
       query: { expectedResultType: 'COUNT' } as never,
     }),
@@ -184,7 +184,7 @@ describe('QueryCountService transport dispatch', () => {
     }));
     const provider: CountProvider = {
       id: 'query:patientCount',
-      openAccess: (d) => d.isOpenAccess,
+      openEndpoint: (d) => d.isOpenAccess,
       buildRequest,
       parse: (raw) => raw as number,
     };

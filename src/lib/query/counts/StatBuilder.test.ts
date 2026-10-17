@@ -146,7 +146,7 @@ describe('StatBuilder request map', () => {
     {
       name: 'dict:concepts returns totalElements',
       key: 'dict:concepts',
-      response: { totalElements: 42 },
+      response: { content: [], totalElements: 42 },
       call: ['picsure/dictionary/concepts?page_number=1&page_size=1', consents, 'open'],
       value: 42,
     },
@@ -155,7 +155,7 @@ describe('StatBuilder request map', () => {
       name: 'dict:concepts rejects a total of 0',
       key: 'dict:concepts',
       open: true,
-      response: { totalElements: 0 },
+      response: { content: [], totalElements: 0 },
       call: ['picsure/dictionary/concepts?page_number=1&page_size=1', noConsents, 'anonymous'],
       value: { rejected: 'total not found' },
     },

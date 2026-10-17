@@ -4,7 +4,6 @@
   import { goto } from '$app/navigation';
   import { config } from '#lib/config/config.svelte.ts';
   import type { ExportRowInterface } from '#lib/explorer/export/ExportRow.ts';
-  import type { DataSet } from '#lib/datasets/dataset.ts';
   import { exports } from '#lib/explorer/export/Export.ts';
   import { filters } from '#lib/query/filters.ts';
   import { resultCountsState } from '#lib/query/counts/resultCounts.svelte.ts';
@@ -44,7 +43,7 @@
 
   let statusPromise: Promise<unknown> = $state(Promise.resolve());
   let preparePromise: Promise<void> = $state(Promise.resolve());
-  let saveDatasetPromise: Promise<void | DataSet> = $state(Promise.resolve());
+  let saveDatasetPromise: Promise<void> = $state(Promise.resolve());
 
   const showTabbedAnalysisStep = $derived(
     getQueryRequest().query.expectedResultType === 'DATAFRAME' ||
@@ -79,9 +78,8 @@
         saveDatasetPromise = createDatasetName(
           getDatasetId() ?? '',
           getDatasetNameInput() ?? '',
-        ).then((data: DataSet) => {
+        ).then(() => {
           statusPromise = checkExportStatus(getDatasetId());
-          return data;
         });
       } else {
         throw new Error('No dataset ID provided');

@@ -9,7 +9,7 @@ export interface QueryRequestInterfaceV3 {
   resourceCredentials?: Record<string, string>;
 }
 
-/** An asynchronous query's id and state (`QUEUED`, `RUNNING`, `AVAILABLE`, `SUCCESS`, `ERROR`). */
+/** An asynchronous query's id and state; exports wait for `AVAILABLE` or `SUCCESS`. */
 export interface QueryStatus {
   picsureResultId?: string;
   status?: string;

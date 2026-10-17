@@ -1,21 +1,36 @@
 import { request } from '#lib/api/client.ts';
 import { Picsure, PicsurePaths } from '#lib/api/paths.ts';
 import type { QueryRequestBody, QueryStatus } from '#lib/api/picsure/query.types.ts';
+import { isRecord } from '#lib/api/picsure/guards.ts';
 
 /**
  * Runs a query and resolves with HPDS's answer, whose shape depends on the expected result
  * type. HPDS reports some failures as a 200 with an `errorType`; callers check for those.
  */
-export function runSyncQuery<T = unknown>(
+export function runSyncQuery(
   query: QueryRequestBody,
-  { openAccess = false, signal }: { openAccess?: boolean; signal?: AbortSignal } = {},
-): Promise<T> {
-  return request(PicsurePaths.syncQuery(openAccess), {
+  { openEndpoint = false, signal }: { openEndpoint?: boolean; signal?: AbortSignal } = {},
+): Promise<unknown> {
+  return request(PicsurePaths.syncQuery(openEndpoint), {
     method: 'POST',
     body: query,
     auth: 'open',
     signal,
   });
+}
+
+/**
+ * A cross-count query's counts by concept path. Entries that aren't numbers are left out, so an
+ * HPDS error answer reads as no counts.
+ */
+export async function getCrossCounts(query: QueryRequestBody): Promise<Record<string, number>> {
+  const response = await runSyncQuery(query);
+  if (!isRecord(response)) throw new Error('Invalid cross count response');
+  return Object.fromEntries(
+    Object.entries(response).filter(
+      (entry): entry is [string, number] => typeof entry[1] === 'number',
+    ),
+  );
 }
 
 export async function countVariants(query: QueryRequestBody): Promise<number> {
@@ -72,8 +87,4 @@ function toQueryStatus(response: unknown): QueryStatus {
     picsureResultId: typeof picsureResultId === 'string' ? picsureResultId : undefined,
     status: typeof status === 'string' ? status : undefined,
   };
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

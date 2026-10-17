@@ -187,6 +187,6 @@ export class ResultCounts {
 // singleton, and the load paths read filter stores via `get()`.
 export const resultCountsState = new ResultCounts(
   createQueryCountService({
-    transport: (request, openAccess) => runSyncQuery(request, { openAccess }),
+    transport: (request, openEndpoint) => runSyncQuery(request, { openEndpoint }),
   }),
 );

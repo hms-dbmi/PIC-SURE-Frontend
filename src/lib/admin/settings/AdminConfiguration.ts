@@ -1,10 +1,5 @@
 import { get, writable, type Writable } from 'svelte/store';
-import {
-  CONFIG_API_KIND,
-  type ConfigCache,
-  type ConfigKind,
-  type ConfigObject,
-} from '#lib/config/resolve.ts';
+import { CONFIG_API_KIND, type ConfigKind, type ConfigObject } from '#lib/config/resolve.ts';
 import * as api from '#lib/api/picsure/configuration.ts';
 
 export type AdminConfigKind = ConfigKind;
@@ -81,6 +76,6 @@ export async function deleteConfigRow(kind: AdminConfigKind, uuid: string): Prom
 // every session, see config/server/cache.ts) to refetch immediately, instead of waiting for its
 // routine up-to-4-hour expiry. Distinct from loadAdminConfig's `force`, which only
 // re-reads this admin UI's own view of the rows.
-export function invalidateConfigCache(): Promise<ConfigCache> {
+export function invalidateConfigCache(): Promise<void> {
   return api.refreshServerConfigCache();
 }
