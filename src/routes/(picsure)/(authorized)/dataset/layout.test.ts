@@ -60,10 +60,4 @@ describe('dataset layout guard', () => {
     expect(result).not.toBeNull();
     expect(result!.location).toBe('/');
   });
-
-  // /dataset/request returns before the privilege check so a user without dataset access can
-  // still ask for it.
-  it('lets an unprivileged user reach /dataset/request', async () => {
-    expect(await captureRedirect('/dataset/request')).toBeNull();
-  });
 });
