@@ -45,13 +45,13 @@ async function mockDocuments(page: Page) {
   );
 }
 
-async function collectDocumentHeaders(page: Page) {
+async function collectDocumentHeaders(page: Page, baseURL: string | undefined) {
   await page
     .context()
     .addCookies([
       { name: 'api-doc-cookie-probe', value: 'present', domain: 'localhost', path: '/' },
     ]);
-  expect(await page.context().cookies('http://localhost:4173')).toEqual(
+  expect(await page.context().cookies(baseURL)).toEqual(
     expect.arrayContaining([
       expect.objectContaining({ name: 'api-doc-cookie-probe', value: 'present' }),
     ]),
@@ -72,8 +72,9 @@ test.describe('API documentation for public visitors', () => {
 
   test('renders real read-only Swagger for both services without credentials or external fetches', async ({
     page,
+    baseURL,
   }) => {
-    const documentHeaders = await collectDocumentHeaders(page);
+    const documentHeaders = await collectDocumentHeaders(page, baseURL);
     const requests: string[] = [];
     page.on('request', (request) => {
       requests.push(request.url());
@@ -340,11 +341,11 @@ test.describe('API documentation for public visitors', () => {
 
 test.describe('API documentation for signed-in visitors', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
-  test('shows docs without the public notice or request execution', async ({ page }) => {
+  test('shows docs without the public notice or request execution', async ({ page, baseURL }) => {
     await mockDocuments(page);
     // The app may refresh the signed-in user; answer with nothing new so it keeps the stored one
     await mockApiSuccess(page, '*/**/psama/user/me?hasToken', {});
-    const documentHeaders = await collectDocumentHeaders(page);
+    const documentHeaders = await collectDocumentHeaders(page, baseURL);
     const response = await page.goto('/api#api-access');
     expect(await response?.text()).not.toContain('data-testid="api-public-notice"');
     const viewer = page.getByTestId('api-documentation');

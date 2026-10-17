@@ -21,3 +21,5 @@ httpd-vhosts.conf
 *.iml
 supervisord.log
 supervisord.pid
+# Written by the e2e setup project on every run, with the origin of that run's E2E_PORT
+/tests/end-to-end/.auth

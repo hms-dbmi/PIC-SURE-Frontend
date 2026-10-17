@@ -165,6 +165,9 @@ If this is your first time running integration tests, install Playwright browser
 pnpx playwright install
 ```
 
+Playwright serves the app on port 4173. Set `E2E_PORT` to use another port, e.g. when two checkouts run e2e at
+the same time: Playwright reuses any server already on its port, so the second run would test the first one's build.
+
 ## Contributing
 
 Please refer to [CONTRIBUTING](https://github.com/hms-dbmi/pic-sure/blob/main/CONTRIBUTING.md) for guidelines on how to contribute, submit issues, and propose improvements.
