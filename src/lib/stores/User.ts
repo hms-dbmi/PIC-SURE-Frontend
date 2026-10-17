@@ -124,6 +124,7 @@ export function removeToken() {
 export function clearSession() {
   discardPendingConsents();
   removeToken();
+  localStorage.removeItem('oktaIdToken');
   sessionStorage.removeItem('user');
   user.set({});
 }
@@ -135,6 +136,7 @@ function restoreUser() {
   if (token && isTokenExpired(token)) {
     console.log('Clearing expired token from storage.');
     removeToken();
+    localStorage.removeItem('oktaIdToken');
     sessionStorage.removeItem('user');
     log(createLog('AUTH', 'session.expired'));
     return {};
@@ -349,6 +351,8 @@ async function endSession(authProvider: AuthProvider | undefined, redirect: bool
   } else {
     handleLogout(redirect);
   }
+  // Only after the provider's logout: the Okta providers read it for id_token_hint.
+  if (browser) localStorage.removeItem('oktaIdToken');
 }
 
 function handleLogout(redirect: boolean) {
