@@ -102,8 +102,8 @@ export const scrollIntoViewAtRest = async (page: Page, target: Locator) => {
     .toBe(0);
 };
 
-// Accordion panels slide open and shut as Web Animations, moving everything below
-// them; a click that starts mid-slide can land its mouseup on another element.
+// Slide transitions run as Web Animations and move or clip what they contain; a click
+// that starts mid-slide can land its mouseup on another element.
 export const expectAnimationsFinished = async (locator: Locator) => {
   await expect
     .poll(() => locator.evaluate((element) => element.getAnimations({ subtree: true }).length))
