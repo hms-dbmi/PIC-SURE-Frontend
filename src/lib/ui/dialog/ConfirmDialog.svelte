@@ -33,14 +33,16 @@
     danger: 'btn preset-filled-error-500',
   };
 
+  // The handler runs before the dialog closes: a caller that binds open to state its handler
+  // reads (an unsaved-changes guard's pending transition) would otherwise see it cleared.
   function cancel() {
-    open = false;
     oncancel?.();
+    open = false;
   }
 
   function confirm() {
-    open = false;
     onconfirm();
+    open = false;
   }
 </script>
 

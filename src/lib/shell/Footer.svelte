@@ -74,6 +74,7 @@
         <Dialog
           bind:open={modalOpen}
           data-testid="app-footer-terms"
+          aria-label="Terms of Service"
           size="page"
           triggerClass="hover:underline text-[0.74rem]"
           ontrigger={() => log(createLog('NAVIGATION', 'footer.tos_click'))}

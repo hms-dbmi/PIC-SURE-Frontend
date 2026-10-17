@@ -1,11 +1,9 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  import Dialog, { type DialogSize } from '#lib/ui/dialog/Dialog.svelte';
+  import Dialog, { type DialogName, type DialogSize } from '#lib/ui/dialog/Dialog.svelte';
 
-  interface Props {
+  type Props = DialogName & {
     open?: boolean;
-    title?: string;
-    'aria-label'?: string;
     acknowledgeLabel?: string;
     closeable?: boolean;
     size?: DialogSize;
@@ -14,7 +12,7 @@
     /** Replaces the single acknowledge button. */
     actions?: Snippet;
     children: Snippet;
-  }
+  };
 
   let {
     open = $bindable(false),
@@ -26,8 +24,8 @@
   }: Props = $props();
 
   function acknowledge() {
-    open = false;
     onclose?.();
+    open = false;
   }
 </script>
 

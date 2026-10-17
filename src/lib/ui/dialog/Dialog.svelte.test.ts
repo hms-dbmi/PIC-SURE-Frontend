@@ -60,6 +60,8 @@ describe('Dialog', () => {
 
     await fireEvent.click(screen.getByTestId('thing-trigger'));
     await pressEscape();
+    // longer than the 200 ms outro, so a closing dialog would be gone by now
+    await new Promise((r) => setTimeout(r, 400));
 
     expect(screen.queryByRole('button', { name: 'Close' })).toBeNull();
     expect(screen.getByText('Body')).toBeTruthy();

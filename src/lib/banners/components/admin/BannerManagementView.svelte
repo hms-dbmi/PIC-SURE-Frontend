@@ -381,7 +381,7 @@
 </script>
 
 <ConfirmDialog
-  open={orderGuard.open}
+  bind:open={orderGuard.open}
   title="Unsaved Changes"
   closeable={false}
   cancelLabel="Keep ordering"

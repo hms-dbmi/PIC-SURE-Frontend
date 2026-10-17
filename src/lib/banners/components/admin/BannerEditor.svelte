@@ -439,7 +439,7 @@
 </script>
 
 <ConfirmDialog
-  open={guard.open}
+  bind:open={guard.open}
   title="Unsaved Changes"
   closeable={false}
   cancelLabel="Keep editing"

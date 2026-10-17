@@ -1,4 +1,6 @@
 <script lang="ts" module>
+  import type { Snippet } from 'svelte';
+
   export type DialogSize = 'auto' | 'form' | 'third' | 'half' | 'page';
 
   export interface DialogTriggerProps {
@@ -12,32 +14,33 @@
     ontrigger?: () => void;
   }
 
-  import type { Snippet } from 'svelte';
+  /** Every dialog needs an accessible name: a visible title, or an aria-label without one. */
+  export type DialogName =
+    | { title: string; 'aria-label'?: undefined }
+    | { title?: undefined; 'aria-label': string };
 </script>
 
 <script lang="ts">
   import { Modal } from '@skeletonlabs/skeleton-svelte';
 
-  interface Props extends DialogTriggerProps {
-    open?: boolean;
-    title?: string;
-    /** Accessible name when there's no visible title. */
-    'aria-label'?: string;
-    role?: 'dialog' | 'alertdialog';
-    /** Whether Escape, a backdrop click and the × button close the dialog. */
-    closeable?: boolean;
-    size?: DialogSize;
-    'data-testid'?: string;
-    /** Runs whenever the dialog dismisses itself: Escape, a backdrop click or the × button. */
-    onclose?: () => void;
-    footer?: Snippet;
-    children: Snippet;
-  }
+  type Props = DialogTriggerProps &
+    DialogName & {
+      open?: boolean;
+      role?: 'dialog' | 'alertdialog';
+      /** Whether Escape, a backdrop click and the × button close the dialog. */
+      closeable?: boolean;
+      size?: DialogSize;
+      'data-testid'?: string;
+      /** Runs whenever the dialog dismisses itself: Escape, a backdrop click or the × button. */
+      onclose?: () => void;
+      footer?: Snippet;
+      children: Snippet;
+    };
 
   let {
     open = $bindable(false),
     title,
-    'aria-label': ariaLabel,
+    'aria-label': ariaLabel = undefined,
     role = 'dialog',
     closeable = true,
     size = 'auto',
@@ -63,9 +66,10 @@
 
   const titleId = $props.id();
 
+  // onclose runs before open changes, like ConfirmDialog's handlers
   function dismiss() {
-    open = false;
     onclose?.();
+    open = false;
   }
 </script>
 
@@ -91,7 +95,8 @@
   <Modal
     {open}
     onOpenChange={(e) => {
-      // Escape or a backdrop click. The dialog's own buttons set open first, so they never land here.
+      // Escape or a backdrop click. The dialog's own buttons close it first, so a late callback for
+      // them falls through to the else branch and doesn't run onclose twice.
       if (open && !e.open) dismiss();
       else open = e.open;
     }}

@@ -72,6 +72,27 @@ test.describe('External link warning', () => {
     await expect(page.getByTestId('app-external-link-warning')).not.toBeVisible();
   });
 
+  test('Clicking outside the warning cancels it and logs the cancellation', async ({ page }) => {
+    // Given
+    const logged = collectExternalLinkLogs(page);
+    await page.goto('/');
+    await userIsLoggedIn(page);
+    await page.locator('#app-footer').getByRole('link', { name: externalLink.title }).click();
+    const dialog = page.getByRole('dialog', { name: expectedTitle });
+    await expect(dialog).toBeVisible();
+    // The dialog starts listening for outside clicks a frame after it opens, and moves focus
+    // inside only after that
+    await expect(dialog.locator(':focus')).toHaveCount(1);
+    // When
+    await page.mouse.click(5, 5);
+    // Then
+    await expect(dialog).not.toBeVisible();
+    await expect(page).toHaveURL('/');
+    await expect
+      .poll(() => logged)
+      .toEqual(['external_link.warning_shown', 'external_link.cancelled']);
+  });
+
   // Confirming used to log external_link.confirmed and then external_link.cancelled in
   // Firefox, whose window.open() spins the event loop mid-navigation (ALS-12908).
   test('OK logs a single confirmation and no cancellation', async ({ page }) => {
