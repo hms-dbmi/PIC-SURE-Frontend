@@ -10,7 +10,7 @@
     "mock-api": "tsx tests/end-to-end/mock-server/index.ts",
     "build": "vite build",
     "preview": "vite preview",
-    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json && node tests/support/check-mock-specifiers.ts",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "clean": "pnpm -s format && pnpm -s lint",
     "lint": "prettier --check . && eslint .",

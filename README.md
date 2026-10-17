@@ -134,15 +134,15 @@ src/lib/
 | `pnpm run dev`                   | Start dev server with hot reload                                                  |
 | `pnpm run build`                 | Production build                                                                  |
 | `pnpm run preview`               | Preview the production build locally                                              |
-| `pnpm run check`                 | Svelte and TypeScript checks                                                      |
-| `pnpm run check:watch`           | `check`, re-run on file changes                                                   |
+| `pnpm run check`                 | Svelte and TypeScript checks, plus a check that every `vi.mock` path resolves     |
+| `pnpm run check:watch`           | `svelte-check`, re-run on file changes                                            |
 | `pnpm run format`                | Format code with Prettier                                                         |
 | `pnpm run lint`                  | Lint with Prettier + ESLint                                                       |
 | `pnpm run clean`                 | `format` + `lint`                                                                 |
 | `pnpm run test`                  | Run all tests (`test:vitest` + `test:integration`)                                |
 | `pnpm run test:vitest`           | Run unit + component tests (Vitest)                                               |
-| `pnpm run test:unit`             | Run unit tests only                                                               |
-| `pnpm run test:component`        | Run component tests only                                                          |
+| `pnpm run test:unit`             | Run the Vitest `node` project (`*.test.ts`)                                       |
+| `pnpm run test:component`        | Run the Vitest `client` project (`*.svelte.test.ts`, `tests/component`)           |
 | `pnpm run test:integration`      | Run integration/e2e tests (Playwright, all browsers)                              |
 | `pnpm run test:integration:slim` | Playwright, Chromium only, minimal reporter, `--retries=1` — faster local/CI runs |
 | `pnpm run playwright`            | Open Playwright's UI mode against the built app                                   |
