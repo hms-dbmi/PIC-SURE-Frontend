@@ -17,7 +17,7 @@
   import { panelOpen } from '#lib/explorer/panel.ts';
   import Loading from '#lib/ui/Loading.svelte';
   import { toaster } from '#lib/ui/toaster.ts';
-  import Modal from '#lib/ui/dialog/Modal.svelte';
+  import AlertDialog from '#lib/ui/dialog/AlertDialog.svelte';
   import { page } from '$app/state';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import { sortHierarchyDeepestFirst } from '#lib/utils/hierarchy.ts';
@@ -134,24 +134,20 @@
   }
 </script>
 
-<Modal
+<AlertDialog
   bind:open={modalOpen}
   data-testid="explorer-hierarchy-error-modal"
   title="Data tree selection too large"
-  closeable={true}
-  width="w-1/2"
+  acknowledgeLabel="Okay"
+  size="half"
 >
   <div data-testid="explorer-hierarchy-error-content">
     <p class="m-0">
       The level of the data tree you selected exceeds 9,500 variables. This was not added as a
       filter to your query. Please make a selection lower in the data tree and try again.
     </p>
-    <div class="flex justify-center mt-4">
-      <button class="btn preset-filled-primary-500" onclick={() => (modalOpen = false)}>Okay</button
-      >
-    </div>
   </div>
-</Modal>
+</AlertDialog>
 <div
   data-testid="explorer-hierarchy"
   class="flex flex-row justify-between bg-surface-100 p-4 rounded-container"

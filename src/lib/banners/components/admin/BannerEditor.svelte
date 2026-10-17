@@ -4,7 +4,7 @@
   import BannerScheduleFields from '#lib/banners/components/admin/fields/ScheduleFields.svelte';
   import SiteBanner from '#lib/banners/components/SiteBanner.svelte';
   import Editor from '#lib/ui/Editor.svelte';
-  import UnsavedChangesModal from '#lib/ui/dialog/UnsavedChangesModal.svelte';
+  import ConfirmDialog from '#lib/ui/dialog/ConfirmDialog.svelte';
   import type {
     BannerAppearance,
     BannerAudience,
@@ -438,19 +438,22 @@
   }
 </script>
 
-<UnsavedChangesModal
+<ConfirmDialog
   open={guard.open}
-  keepLabel="Keep editing"
-  discardLabel="Discard changes"
-  onkeep={keepEditing}
-  ondiscard={discardChanges}
+  title="Unsaved Changes"
+  closeable={false}
+  cancelLabel="Keep editing"
+  confirmLabel="Discard changes"
+  tone="danger"
+  oncancel={keepEditing}
+  onconfirm={discardChanges}
 >
   {#if pendingTabDestination}
     You have unsaved banner changes. Discard them to open {pendingTabDestination}, or keep editing.
   {:else}
     You have unsaved banner changes. Discard them or keep editing.
   {/if}
-</UnsavedChangesModal>
+</ConfirmDialog>
 
 <section class="mx-auto max-w-5xl" aria-labelledby="banner-editor-title">
   <header class="mb-6">

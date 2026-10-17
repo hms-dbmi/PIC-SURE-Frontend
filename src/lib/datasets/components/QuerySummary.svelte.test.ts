@@ -162,7 +162,7 @@ describe('QuerySummary', () => {
 
     await screen.findByTestId('dataset-filters-container');
 
-    // Modal trigger is replaced by the disabled Popover button
+    // Dialog trigger is replaced by the disabled Popover button
     expect(screen.queryByTestId('dataset-restore-filters-trigger')).not.toBeInTheDocument();
     expect(screen.getByTestId('dataset-restore-popover-trigger')).toBeDisabled();
     expect(screen.getByTestId('ui-error-alert')).toBeInTheDocument();

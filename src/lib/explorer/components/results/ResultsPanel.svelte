@@ -17,7 +17,7 @@
   import Filters from '#lib/explorer/components/results/Filters.svelte';
   import ExportedVariable from '#lib/explorer/components/results/ExportedVariable.svelte';
   import CardButton from '#lib/ui/CardButton.svelte';
-  import Modal from '#lib/ui/dialog/Modal.svelte';
+  import ConfirmDialog from '#lib/ui/dialog/ConfirmDialog.svelte';
   import Counts from '#lib/explorer/components/results/Counts.svelte';
   import { log, createLog } from '#lib/telemetry/logger.ts';
 
@@ -91,19 +91,18 @@
   });
 </script>
 
-<Modal
+<ConfirmDialog
   bind:open={modalOpen}
   title="Clear All Filters"
-  withDefault
-  confirmText="Yes"
-  cancelText="No"
+  confirmLabel="Yes"
+  cancelLabel="No"
   onconfirm={() => {
     clearFilters();
     clearExports();
   }}
 >
   Are you sure you want to clear all filters?
-</Modal>
+</ConfirmDialog>
 <section
   id="results-panel"
   class="flex flex-col items-center pt-8 pr-10 w-64"

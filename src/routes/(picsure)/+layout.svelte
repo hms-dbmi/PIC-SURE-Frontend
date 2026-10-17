@@ -18,8 +18,6 @@
   import SiteBannerRegion from '#lib/banners/components/SiteBannerRegion.svelte';
   import SidePanel from '#lib/explorer/components/results/SidePanel.svelte';
   import Footer from '#lib/shell/Footer.svelte';
-  import Drawer from '#lib/ui/dialog/Drawer.svelte';
-  import DashboardDrawer from './(public)/dashboard/DashboardDrawer.svelte';
   import FilterWarning from '#lib/explorer/components/FilterWarning.svelte';
 
   let { children }: { children?: Snippet } = $props();
@@ -55,9 +53,6 @@
 
 <Toaster {toaster} />
 <FilterWarning bind:open={filterWarningModal} />
-<Drawer position="right" width="w-1/2">
-  <DashboardDrawer />
-</Drawer>
 <Shell>
   {#snippet header()}
     <SiteBannerRegion />

@@ -4,7 +4,7 @@
   import BannerManagementRow from '#lib/banners/components/admin/BannerRow.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import Loading from '#lib/ui/Loading.svelte';
-  import UnsavedChangesModal from '#lib/ui/dialog/UnsavedChangesModal.svelte';
+  import ConfirmDialog from '#lib/ui/dialog/ConfirmDialog.svelte';
   import type { ManagedBanner, ManagementRecord } from '#lib/banners/model/banner.ts';
   import {
     archiveBanner,
@@ -380,15 +380,18 @@
   }
 </script>
 
-<UnsavedChangesModal
+<ConfirmDialog
   open={orderGuard.open}
-  keepLabel="Keep ordering"
-  discardLabel="Discard order changes"
-  onkeep={keepOrdering}
-  ondiscard={discardOrderChanges}
+  title="Unsaved Changes"
+  closeable={false}
+  cancelLabel="Keep ordering"
+  confirmLabel="Discard order changes"
+  tone="danger"
+  oncancel={keepOrdering}
+  onconfirm={discardOrderChanges}
 >
   You have unsaved banner ordering. Discard it or keep ordering.
-</UnsavedChangesModal>
+</ConfirmDialog>
 
 {#if mode !== 'list'}
   <BannerEditor

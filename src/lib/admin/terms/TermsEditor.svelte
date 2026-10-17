@@ -5,7 +5,7 @@
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import Loading from '#lib/ui/Loading.svelte';
   import Editor from '#lib/ui/Editor.svelte';
-  import Modal from '#lib/ui/dialog/Modal.svelte';
+  import ConfirmDialog from '#lib/ui/dialog/ConfirmDialog.svelte';
 
   let terms: string = $state('');
   let original: string = $state('');
@@ -39,15 +39,13 @@
        layout already limits this page to those users. -->
   <Editor fontOptions bind:content={terms} />
   <div class="flex justify-end">
-    <Modal
+    <ConfirmDialog
       title="Publish"
-      width="w-1/3"
+      size="third"
       data-testid="admin-terms-publish"
-      triggerBase="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500 mt-3"
+      triggerClass="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500 mt-3"
       disabled={!dirty}
-      withDefault={true}
       onconfirm={onCommit}
-      cancelClass="border preset-tonal-error hover:preset-filled-error-500"
     >
       {#snippet trigger()}Publish{/snippet}
       <div>
@@ -55,7 +53,7 @@
         their next login.
       </div>
       <div class="mt-3">Do you wish to continue?</div>
-    </Modal>
+    </ConfirmDialog>
   </div>
 {:catch}
   <ErrorAlert title="API Error">

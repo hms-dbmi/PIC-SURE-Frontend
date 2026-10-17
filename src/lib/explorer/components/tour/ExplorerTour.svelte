@@ -15,7 +15,7 @@
   import type { TourDataType } from '#lib/explorer/components/tour/types.ts';
   import { log, createLog, getPageContext } from '#lib/telemetry/logger.ts';
 
-  import Modal from '#lib/ui/dialog/Modal.svelte';
+  import Dialog from '#lib/ui/dialog/Dialog.svelte';
   import Loading from '#lib/ui/Loading.svelte';
 
   let { tourConfig }: { tourConfig: TourDataType } = $props();
@@ -264,13 +264,21 @@
   }
 </script>
 
-<Modal
+{#snippet tourActions()}
+  <button
+    type="button"
+    class="btn border preset-tonal-primary hover:preset-filled-primary-500"
+    onclick={() => (openModal = false)}>Cancel</button
+  >
+  <button type="button" class="btn preset-filled-primary-500" onclick={startTour}>Start Tour</button
+  >
+{/snippet}
+
+<Dialog
   bind:open={openModal}
   title={tourConfig.title}
-  confirmText="Start Tour"
-  onconfirm={startTour}
-  withDefault={false}
-  width="w-1/3"
+  size="third"
+  footer={started ? undefined : tourActions}
 >
   {#if started}
     <Loading ring size="large" />
@@ -279,18 +287,8 @@
       <!-- eslint-disable-next-line svelte/no-at-html-tags -->
       {@html sanitizeHTML(tourConfig.description)}
     </p>
-    <footer class="modal-footer flex justify-end space-x-2 mt-6">
-      <button
-        type="button"
-        class="btn border preset-tonal-primary hover:preset-filled-primary-500"
-        onclick={() => (openModal = false)}>Cancel</button
-      >
-      <button type="button" class="btn preset-filled-primary-500" onclick={startTour}
-        >Start Tour</button
-      >
-    </footer>
   {/if}
-</Modal>
+</Dialog>
 <button
   type="button"
   data-testid="explorer-tour-start"

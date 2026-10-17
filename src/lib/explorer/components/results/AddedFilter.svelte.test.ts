@@ -82,7 +82,7 @@ describe('AddedFilter', () => {
   beforeEach(() => vi.mocked(log).mockClear());
 
   // Regression guard for ALS-12904: the edit control for phenotypic filters is
-  // Modal's trigger button, which is a different code path from the genomic
+  // Dialog's trigger button, which is a different code path from the genomic
   // button below and previously logged nothing.
   it('logs filter.edit_click when a phenotypic filter is edited', async () => {
     render(AddedFilter, { filter: categoricalFilter });

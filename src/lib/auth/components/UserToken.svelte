@@ -3,7 +3,7 @@
   import { debounce } from '#lib/utils/debounce.ts';
   import CopyButton from '#lib/ui/CopyButton.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
-  import Modal from '#lib/ui/dialog/Modal.svelte';
+  import ConfirmDialog from '#lib/ui/dialog/ConfirmDialog.svelte';
   import {
     user,
     getUser,
@@ -120,14 +120,12 @@
           logAction="token.copy"
           class="preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
         />
-        <Modal
+        <ConfirmDialog
           data-testid="user-token-refresh"
           title="Please Confirm"
           onconfirm={refreshToken}
           disabled={refreshButtonDisabled}
-          triggerBase="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-          footerButtons
-          withDefault
+          triggerClass="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
         >
           {#snippet trigger()}
             {#await refreshPromise}
@@ -137,7 +135,7 @@
             {/await}
           {/snippet}
           Are you sure you wish to invalidate your old token and create a new one?
-        </Modal>
+        </ConfirmDialog>
         <button
           data-testid="user-token-reveal"
           class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"

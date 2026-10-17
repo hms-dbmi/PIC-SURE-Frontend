@@ -1,6 +1,5 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
-  import { Modal } from '@skeletonlabs/skeleton-svelte';
 
   import { goto } from '$app/navigation';
 
@@ -12,6 +11,7 @@
     filterWarning,
   } from '#lib/query/filters.ts';
 
+  import AlertDialog from '#lib/ui/dialog/AlertDialog.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
 
   let { open = $bindable(false) }: { open: boolean } = $props();
@@ -74,30 +74,25 @@
   }
 </script>
 
-<Modal
-  {open}
-  onOpenChange={(e) => (open = e.open)}
-  contentBase="overflow-auto max-w-screen w-1/2 max-h-screen"
-  backdropClasses="backdrop-blur-sm"
->
-  {#snippet content()}
-    <ErrorAlert data-testid="explorer-filter-warning" color="warning">
-      <p>{warning.message}</p>
-      <p>Would you like to remove the invalid filters or go back to {warning.backTo}?</p>
-      <div>
-        <button
-          class="btn preset-outlined-warning-500 hover:preset-filled-warning-500"
-          onclick={reset}
-        >
-          Remove Invalid Filters
-        </button>
-        <button
-          class="btn preset-outlined-warning-500 hover:preset-filled-warning-500"
-          onclick={goBack}
-        >
-          Back to {warning.backTo}
-        </button>
-      </div>
-    </ErrorAlert>
+<AlertDialog bind:open aria-label="Filter warning" size="half">
+  <ErrorAlert data-testid="explorer-filter-warning" color="warning">
+    <p>{warning.message}</p>
+    <p>Would you like to remove the invalid filters or go back to {warning.backTo}?</p>
+  </ErrorAlert>
+  {#snippet actions()}
+    <button
+      type="button"
+      class="btn preset-outlined-warning-500 hover:preset-filled-warning-500"
+      onclick={reset}
+    >
+      Remove Invalid Filters
+    </button>
+    <button
+      type="button"
+      class="btn preset-outlined-warning-500 hover:preset-filled-warning-500"
+      onclick={goBack}
+    >
+      Back to {warning.backTo}
+    </button>
   {/snippet}
-</Modal>
+</AlertDialog>

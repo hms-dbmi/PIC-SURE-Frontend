@@ -1,6 +1,6 @@
 <script lang="ts">
   import { slide } from 'svelte/transition';
-  import Modal from '#lib/ui/dialog/Modal.svelte';
+  import ConfirmDialog from '#lib/ui/dialog/ConfirmDialog.svelte';
   import {
     BANNER_APPEARANCE_DETAILS,
     BANNER_AUDIENCE_LABELS,
@@ -204,22 +204,21 @@
               </button>
             {/if}
             {#if disableable}
-              <Modal
+              <ConfirmDialog
                 data-testid="banner-disable-{banner.uuid}"
                 title="Disable banner?"
-                confirmText="Yes"
-                cancelText="No"
+                confirmLabel="Yes"
+                cancelLabel="No"
                 onconfirm={ondisable}
-                triggerBase="btn preset-outlined-error-500 text-error-700 hover:preset-filled-error-500 hover:text-white"
+                triggerClass="btn preset-outlined-error-500 text-error-700 hover:preset-filled-error-500 hover:text-white"
                 disabled={busy || disableDisabled}
-                withDefault
               >
                 {#snippet trigger()}
                   Disable banner {@render bannerContext()}
                 {/snippet}
                 Are you sure you want to disable this banner? It stops appearing to visitors immediately
                 and moves to Saved &amp; disabled. Its content and history are kept.
-              </Modal>
+              </ConfirmDialog>
             {/if}
             {#if restorable}
               <button
@@ -232,15 +231,14 @@
               </button>
             {/if}
             {#if archiveable}
-              <Modal
+              <ConfirmDialog
                 data-testid="banner-archive-{banner.uuid}"
                 title="Archive banner?"
-                confirmText="Yes"
-                cancelText="No"
+                confirmLabel="Yes"
+                cancelLabel="No"
                 onconfirm={onarchive}
-                triggerBase="btn preset-outlined-error-500 text-error-700 hover:preset-filled-error-500 hover:text-white"
+                triggerClass="btn preset-outlined-error-500 text-error-700 hover:preset-filled-error-500 hover:text-white"
                 disabled={busy || archiveDisabled}
-                withDefault
               >
                 {#snippet trigger()}
                   Archive banner {@render bannerContext()}
@@ -248,7 +246,7 @@
                 Are you sure you want to archive this banner? It leaves normal management and can no longer
                 be edited, published, or reordered here. Its content and version history are retained
                 in the database for records purposes.
-              </Modal>
+              </ConfirmDialog>
             {/if}
           </div>
         {/if}

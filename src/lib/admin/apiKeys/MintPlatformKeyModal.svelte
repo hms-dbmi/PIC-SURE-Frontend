@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Modal from '#lib/ui/dialog/Modal.svelte';
+  import Dialog from '#lib/ui/dialog/Dialog.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import CopyButton from '#lib/ui/CopyButton.svelte';
 
@@ -21,8 +21,8 @@
   let expiryDate = $state('');
   let mintError = $state('');
   let isSubmitting = $state(false);
-  // once set, the same modal swaps from the form to the see-once reveal; keeping it a single
-  // Modal instance avoids a second dialog whose layer collides with the closing form dialog
+  // once set, the same dialog swaps from the form to the see-once reveal; keeping it a single
+  // Dialog instance avoids a second dialog whose layer collides with the closing form dialog
   let minted: MintedPlatformKey | null = $state(null);
   let mintedPrefix = $derived.by(() =>
     minted ? formatKeyPrefix(minted.keyType, minted.displayPrefix) : '',
@@ -39,12 +39,6 @@
     mintError = '';
     minted = null;
   }
-
-  // Done/Cancel close explicitly and clear here; this backstop covers escape and click-outside
-  // (which don't route through those buttons) so the plaintext key never lingers after any close
-  $effect(() => {
-    if (!open) clearState();
-  });
 
   function close() {
     open = false;
@@ -69,14 +63,15 @@
   }
 </script>
 
-<Modal
+<Dialog
   bind:open
   data-testid="admin-api-key-mint"
   title={minted ? 'Platform API Key Created' : 'Mint Platform API Key'}
-  width="w-full max-w-xl"
+  size="form"
   disabled={!$isTopAdmin}
   closeable={!minted && !isSubmitting}
-  triggerBase="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
+  onclose={clearState}
+  triggerClass="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
 >
   {#snippet trigger()}+ Mint Platform Key{/snippet}
   {#if minted}
@@ -181,4 +176,4 @@
       </footer>
     </form>
   {/if}
-</Modal>
+</Dialog>

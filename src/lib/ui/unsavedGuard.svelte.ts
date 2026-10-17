@@ -12,7 +12,7 @@ export interface NavigationTransition {
 export type GuardedTransition<T> = T | NavigationTransition;
 
 export interface UnsavedGuard<T> {
-  /** Whether a transition is pending confirmation. Settable to false so a Modal can bind to it. */
+  /** Whether a transition is pending confirmation. Settable to false so a Dialog can bind to it. */
   open: boolean;
   readonly pending: GuardedTransition<T> | null;
   /**

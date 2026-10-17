@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Modal from '#lib/ui/dialog/Modal.svelte';
+  import ConfirmDialog from '#lib/ui/dialog/ConfirmDialog.svelte';
   import { config } from '#lib/config/config.svelte.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
 
@@ -50,7 +50,6 @@
   function proceed() {
     const url = pendingUrl;
     if (!url) return;
-    // Firefox's window.open() spins the event loop, which flushes the cancellation.
     pendingUrl = null;
     log(
       createLog('NAVIGATION', 'external_link.confirmed', {
@@ -66,26 +65,25 @@
     }
   }
 
-  $effect(() => {
-    if (!open && pendingUrl) {
-      log(createLog('NAVIGATION', 'external_link.cancelled', { url: pendingUrl }));
-      pendingUrl = null;
-    }
-  });
+  function cancel() {
+    if (!pendingUrl) return;
+    log(createLog('NAVIGATION', 'external_link.cancelled', { url: pendingUrl }));
+    pendingUrl = null;
+  }
 </script>
 
 <svelte:window onclickcapture={intercept} onauxclickcapture={intercept} />
 
-<Modal
+<ConfirmDialog
   bind:open
-  withDefault
   {title}
-  cancelText={cfg.cancelText || 'Cancel'}
-  confirmText={cfg.okText || 'OK'}
+  cancelLabel={cfg.cancelText || 'Cancel'}
+  confirmLabel={cfg.okText || 'OK'}
   onconfirm={proceed}
+  oncancel={cancel}
   data-testid="app-external-link-warning"
 >
   <p>
     {message}{#if openInNewTab}&nbsp;{newTabMessage}{/if}
   </p>
-</Modal>
+</ConfirmDialog>

@@ -5,7 +5,7 @@
   import { isTopAdmin } from '#lib/auth/User.ts';
   import { toaster } from '#lib/ui/toaster.ts';
   import { deletePrivilege } from '#lib/admin/access/Privileges.ts';
-  import Modal from '#lib/ui/dialog/Modal.svelte';
+  import ConfirmDialog from '#lib/ui/dialog/ConfirmDialog.svelte';
 
   const { data = { cell: '', row: { name: '' } } } = $props();
 
@@ -49,22 +49,21 @@
     <i class="fa-solid fa-pen-to-square fa-xl"></i>
     <span class="sr-only">Edit (e)</span>
   </button>
-  <Modal
+  <ConfirmDialog
     data-testid="admin-privilege-delete-{data.cell}"
     title="Delete Privilege?"
     triggerTitle="Delete (d)"
-    data-key="d"
-    confirmText="Yes"
-    cancelText="No"
+    triggerKey="d"
+    confirmLabel="Yes"
+    cancelLabel="No"
     disabled={!$isTopAdmin}
     onconfirm={deleteRow}
-    triggerBase="btn-icon-color"
-    withDefault
+    triggerClass="btn-icon-color"
   >
     {#snippet trigger()}
       <i class="fa-solid fa-trash fa-xl"></i>
       <span class="sr-only">Delete (d)</span>
     {/snippet}
     Are you sure you want to delete privilege '{data.row.name}'?
-  </Modal>
+  </ConfirmDialog>
 </div>

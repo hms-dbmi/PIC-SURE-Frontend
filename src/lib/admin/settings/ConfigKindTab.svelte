@@ -24,7 +24,7 @@
   import ConfigFieldRow from './ConfigFieldRow.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import Loading from '#lib/ui/Loading.svelte';
-  import Modal from '#lib/ui/dialog/Modal.svelte';
+  import ConfirmDialog from '#lib/ui/dialog/ConfirmDialog.svelte';
   import FilterSearch from '../../ui/FilterSearch.svelte';
   import { toaster } from '#lib/ui/toaster.ts';
   import { humanizeKey } from '#lib/utils/strings.ts';
@@ -198,15 +198,14 @@
       </span>
     {/if}
     <div class="flex-1"></div>
-    <Modal
-      width="w-1/3"
+    <ConfirmDialog
+      size="third"
       data-testid={`admin-config-invalidate-cache-${testIdBase}`}
       title="Invalidate Cache?"
-      confirmText="Yes"
-      cancelText="No"
+      confirmLabel="Yes"
+      cancelLabel="No"
       onconfirm={invalidateCache}
-      triggerBase="btn preset-tonal-surface border border-surface-500 hover:preset-filled-surface-500"
-      withDefault
+      triggerClass="btn preset-tonal-surface border border-surface-500 hover:preset-filled-surface-500"
     >
       {#snippet trigger()}
         Invalidate Cache & Refresh
@@ -215,7 +214,7 @@
       to refetch all cached values from the backend, instead of waiting for the routine refresh (up to
       4 hours). Individual users will still need to refresh their browsers in order to see the changed
       values.
-    </Modal>
+    </ConfirmDialog>
   </div>
   <div data-testid={`admin-config-tab-${testIdBase}`}>
     {#each filteredGroups as group (group.group)}

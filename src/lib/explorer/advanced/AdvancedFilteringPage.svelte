@@ -2,7 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import { config } from '#lib/config/config.svelte.ts';
   import Content from '#lib/shell/Content.svelte';
-  import Modal from '#lib/ui/dialog/Modal.svelte';
+  import Dialog from '#lib/ui/dialog/Dialog.svelte';
   import AdvancedFiltering from '#lib/explorer/advanced/AdvancedFiltering.svelte';
   import { panelOpen } from '#lib/explorer/panel.ts';
   import { createUnsavedGuard } from '#lib/ui/unsavedGuard.svelte.ts';
@@ -48,19 +48,22 @@
   <title>{config.branding.applicationName} | Advanced Query Builder</title>
 </svelte:head>
 
-<Modal bind:open={guard.open} title="Unsaved Changes" closeable={true} onclose={handleCancel}>
-  <p class="mb-6">You have unsaved changes to your filters. What would you like to do?</p>
-  <footer class="flex justify-end gap-2">
-    <button class="btn border preset-tonal-error" onclick={handleDiscard}>Discard Changes</button>
+<Dialog bind:open={guard.open} title="Unsaved Changes" onclose={handleCancel}>
+  <p>You have unsaved changes to your filters. What would you like to do?</p>
+  {#snippet footer()}
+    <button type="button" class="btn border preset-tonal-error" onclick={handleDiscard}>
+      Discard Changes
+    </button>
     <button
+      type="button"
       class="btn preset-filled-primary-500"
       title="Save changes to query"
       onclick={handleModalApply}
     >
       Apply Changes
     </button>
-  </footer>
-</Modal>
+  {/snippet}
+</Dialog>
 
 <Content {backUrl} {backTitle} title="Advanced Query Builder">
   <p class="text-center w-[70%] m-auto mb-4">

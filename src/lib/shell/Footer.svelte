@@ -3,7 +3,7 @@
   import { config } from '#lib/config/config.svelte.ts';
   import { user, isUserLoggedIn } from '#lib/auth/User.ts';
   import Terms from '#lib/shell/Terms.svelte';
-  import Modal from '#lib/ui/dialog/Modal.svelte';
+  import Dialog from '#lib/ui/dialog/Dialog.svelte';
   import { log, createLog } from '#lib/telemetry/logger.ts';
 
   let { showSitemap: showSitemapProp }: { showSitemap?: boolean } = $props();
@@ -71,26 +71,17 @@
   <ul>
     {#if config.features.termsOfService}
       <li>
-        <span
-          role="button"
-          tabindex="-1"
-          onclick={() => log(createLog('NAVIGATION', 'footer.tos_click'))}
-          onkeydown={(e) => e.key === 'Enter' && log(createLog('NAVIGATION', 'footer.tos_click'))}
+        <Dialog
+          bind:open={modalOpen}
+          data-testid="app-footer-terms"
+          size="page"
+          triggerClass="hover:underline text-[0.74rem]"
+          ontrigger={() => log(createLog('NAVIGATION', 'footer.tos_click'))}
+          closeable={modalClosable}
         >
-          <Modal
-            bind:open={modalOpen}
-            data-testid="app-footer-terms"
-            width="w-3/4"
-            height="h-full"
-            triggerBase="hover:underline text-[0.74rem]"
-            withDefault={false}
-            footerButtons={false}
-            closeable={modalClosable}
-          >
-            {#snippet trigger()}Terms of Service{/snippet}
-            <Terms bind:modalOpen />
-          </Modal>
-        </span>
+          {#snippet trigger()}Terms of Service{/snippet}
+          <Terms bind:modalOpen />
+        </Dialog>
       </li>
     {/if}
     {#each config.branding.footer.links as link}

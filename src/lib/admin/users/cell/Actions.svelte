@@ -8,7 +8,7 @@
   import { getRole } from '#lib/admin/access/Roles.ts';
   import { getPrivilege } from '#lib/admin/access/Privileges.ts';
 
-  import Modal from '#lib/ui/dialog/Modal.svelte';
+  import ConfirmDialog from '#lib/ui/dialog/ConfirmDialog.svelte';
 
   let { data = { cell: '', row: { status: '', email: '' } } } = $props();
   const active = $derived(data.row.status === 'Active');
@@ -62,19 +62,18 @@
     <i class="fa-solid fa-pen-to-square fa-xl"></i>
   </button>
 {/if}
-<Modal
+<ConfirmDialog
   data-testid="admin-user-{active ? 'deactivate' : 'reactivate'}-{data.cell}"
   title="{active ? 'D' : 'R'}eactivate User?"
-  confirmText="{active ? 'D' : 'R'}eactivate"
+  confirmLabel="{active ? 'D' : 'R'}eactivate"
   triggerTitle={active ? 'Deactivate user (d)' : 'Reactivate user (r)'}
-  data-key={active ? 'd' : 'r'}
-  triggerBase="btn-icon-color"
+  triggerKey={active ? 'd' : 'r'}
+  triggerClass="btn-icon-color"
   onconfirm={() => toggleActivate(!active)}
-  withDefault
 >
   {#snippet trigger()}
     <i class="fa-solid fa-trash{active ? '' : '-arrow-up'} fa-xl"></i>
     <span class="sr-only">{active ? 'Deactivate user (d)' : 'Reactivate user (r)'}</span>
   {/snippet}
   Are you sure you want to {active ? 'd' : 'r'}eactiveate user '{data.row.email}'?
-</Modal>
+</ConfirmDialog>

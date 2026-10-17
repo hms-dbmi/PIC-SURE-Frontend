@@ -5,7 +5,7 @@
   import { isTopAdmin } from '#lib/auth/User.ts';
   import { toaster } from '#lib/ui/toaster.ts';
   import { deleteConnection } from '#lib/admin/access/Connections.ts';
-  import Modal from '#lib/ui/dialog/Modal.svelte';
+  import ConfirmDialog from '#lib/ui/dialog/ConfirmDialog.svelte';
 
   const { data = { cell: '', row: { label: '' } } } = $props();
 
@@ -50,22 +50,21 @@
     <i class="fa-solid fa-pen-to-square fa-xl"></i>
     <span class="sr-only">Edit (e)</span>
   </button>
-  <Modal
+  <ConfirmDialog
     data-testid="admin-connection-delete-{data.cell}"
     title="Delete Connection?"
     triggerTitle="Delete (d)"
-    data-key="d"
-    confirmText="Yes"
-    cancelText="No"
+    triggerKey="d"
+    confirmLabel="Yes"
+    cancelLabel="No"
     disabled={!$isTopAdmin}
     onconfirm={deleteRow}
-    triggerBase="btn-icon-color"
-    withDefault
+    triggerClass="btn-icon-color"
   >
     {#snippet trigger()}
       <i class="fa-solid fa-trash fa-xl"></i>
       <span class="sr-only">Delete (d)</span>
     {/snippet}
     Are you sure you want to delete connection '{data.row.label}'?
-  </Modal>
+  </ConfirmDialog>
 </div>
