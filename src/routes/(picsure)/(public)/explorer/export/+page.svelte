@@ -3,7 +3,6 @@
   import ExportStepper from '#lib/explorer/export/ExportStepper.svelte';
   import { allFilters } from '#lib/query/filters.ts';
   import { exports } from '#lib/explorer/export/Export.ts';
-  import { stepperState } from '#lib/ui/stepper/stepperState.ts';
   import type { ExportRowInterface } from '#lib/explorer/export/ExportRow.ts';
   import Content from '#lib/shell/Content.svelte';
   import { config } from '#lib/config/config.svelte.ts';
@@ -44,17 +43,9 @@
     description: 'Patient identifier.',
     type: 'Categorical',
   };
-  stepperState.set({ ...$stepperState, current: 0, total: 0 });
 </script>
 
-<Content
-  backUrl="/explorer"
-  backTitle="Back to Explore"
-  backAction={() => {
-    $stepperState.current = 0;
-  }}
-  title="Export Data for Research Analysis"
->
+<Content backUrl="/explorer" backTitle="Back to Explore" title="Export Data for Research Analysis">
   {#if !isUserLoggedIn()}
     <div class="flex flex-col items-center justify-center m-8">
       <p>You are not logged in. To export the data for your selected cohort, please log in.</p>

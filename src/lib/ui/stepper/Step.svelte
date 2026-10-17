@@ -1,9 +1,8 @@
 <script lang="ts">
-  import { getContext, onDestroy, type Snippet } from 'svelte';
+  import { onDestroy, untrack, type Snippet } from 'svelte';
   import { fade } from 'svelte/transition';
-  import type { Writable } from 'svelte/store';
 
-  import type { StepperState } from '#lib/ui/stepper/types.ts';
+  import { getStepper } from '#lib/ui/stepper/stepper.svelte.ts';
   import AngleButton from '#lib/ui/AngleButton.svelte';
 
   interface Props {
@@ -16,31 +15,22 @@
 
   const { name, locked = false, header, children, navigation }: Props = $props();
 
-  const buttonCompleteLabel: string = getContext('buttonCompleteLabel');
-  const stepperState: Writable<StepperState> = getContext('StepperState');
-  const onNext: (locked: boolean) => void = getContext('onNext');
-  const onBack: () => void = getContext('onBack');
-  const onComplete: (stepIndex: number, locked: boolean) => void = getContext('onComplete');
+  const stepper = getStepper();
+  const stepperState = stepper.state;
 
-  // Register step on init (keep these paired)
-  const stepIndex = $stepperState.total;
-  // svelte-ignore state_referenced_locally
-  $stepperState.stepMap = [...$stepperState.stepMap, name];
-  $stepperState.total++;
-
-  onDestroy(() => {
-    $stepperState.total--;
-    $stepperState.stepMap = $stepperState.stepMap.filter((item) => item !== name);
-  });
+  // A step keeps the name and index it registered with; renaming a mounted step isn't supported.
+  const stepName = untrack(() => name);
+  const stepIndex = stepperState.register(stepName);
+  onDestroy(() => stepperState.unregister(stepName));
 </script>
 
-{#if stepIndex === $stepperState.current}
+{#if stepIndex === stepperState.current}
   <div class="step space-y-4" data-testid="ui-stepper-step-{stepIndex + 1}">
     {#if header}<header class="step-header text-2xl font-bold">{@render header()}</header>{/if}
     <div class="step-content space-y-4 px-2">
       {#if children}{@render children()}{:else}(Step {stepIndex + 1} Content){/if}
     </div>
-    {#if $stepperState.total > 1}
+    {#if stepperState.total > 1}
       <div
         class="step-navigation flex justify-between gap-4"
         in:fade={{ duration: 100 }}
@@ -53,19 +43,19 @@
         {:else if stepIndex !== 0}
           <AngleButton
             data-testid="ui-stepper-back"
-            onclick={onBack}
-            disabled={$stepperState.current === 0}>Back</AngleButton
+            onclick={stepper.back}
+            disabled={stepperState.current === 0}>Back</AngleButton
           >
         {:else}
           <div></div>
         {/if}
-        {#if stepIndex < $stepperState.total - 1}
+        {#if stepIndex < stepperState.total - 1}
           <AngleButton
             data-testid="ui-stepper-next"
             angle="right"
             variant="filled"
             disabled={locked}
-            onclick={() => onNext(locked)}>Next</AngleButton
+            onclick={() => stepper.next(locked)}>Next</AngleButton
           >
         {:else}
           <AngleButton
@@ -73,8 +63,8 @@
             angle="right"
             variant="filled"
             disabled={locked}
-            onclick={() => onComplete(stepIndex, locked)}
-            >{buttonCompleteLabel || 'Complete'}</AngleButton
+            onclick={() => stepper.complete(stepIndex, locked)}
+            >{stepper.buttonCompleteLabel || 'Complete'}</AngleButton
           >
         {/if}
       </div>

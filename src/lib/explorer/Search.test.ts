@@ -28,7 +28,7 @@ vi.mock('#lib/explorer/Dictionary.ts', () => ({
   resetFacetState: mockState.resetFacetStateSpy,
 }));
 
-vi.mock('#lib/ui/datatable/stores.ts', () => ({
+vi.mock('#lib/ui/datatable/rowsPerPage.ts', () => ({
   getDefaultRows: () => 10,
 }));
 

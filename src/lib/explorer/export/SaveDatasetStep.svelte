@@ -5,7 +5,7 @@
   import Loading from '#lib/ui/Loading.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import { submitQuery as startQuery } from '#lib/api/picsure/query.ts';
-  import { stepperState } from '#lib/ui/stepper/stepperState.ts';
+  import { getStepper } from '#lib/ui/stepper/stepper.svelte.ts';
   import { exports } from '#lib/explorer/export/Export.ts';
   import {
     getActiveType,
@@ -20,6 +20,7 @@
   import { config } from '#lib/config/config.svelte.ts';
 
   const PROMISE_WAIT_INTERVAL = 7;
+  const stepper = getStepper();
   let processingMessage: string = $state('');
   let datasetIdPromise: Promise<void> = $state(Promise.resolve());
   let preparePromise: Promise<void> = $state(Promise.resolve());
@@ -76,7 +77,7 @@
       });
       await datasetIdPromise;
     } catch (error) {
-      $stepperState.current--;
+      stepper.state.current--;
       console.error('Error in submitQuery', error);
       throw error;
     }

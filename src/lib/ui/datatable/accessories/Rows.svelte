@@ -2,7 +2,7 @@
   import { TableHandler } from '@vincjo/datatables';
   import { TableHandler as RemoteTableHandler } from '@vincjo/datatables/server';
 
-  import { setDefaultRows } from '../stores';
+  import { setDefaultRows } from '../rowsPerPage';
   import { log, createLog } from '#lib/telemetry/logger.ts';
 
   interface Props {
