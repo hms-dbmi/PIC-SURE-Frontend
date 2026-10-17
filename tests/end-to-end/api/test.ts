@@ -8,12 +8,19 @@ const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
 
 const capabilities = branding?.apiPage?.capabilities || [];
 
+// Aligned and at rest: a smooth scroll's last few pixels still move the page, and
+// a click that Playwright retries then scrolls (smoothly) again and can miss.
 async function expectSectionAligned(page: Page, id: string) {
   await expect
     .poll(() =>
-      page.evaluate((sectionId) => {
+      page.evaluate(async (sectionId) => {
         const scroller = document.getElementById('app-page')!;
         const section = document.getElementById(sectionId)!;
+        const start = scroller.scrollTop;
+        for (let frame = 0; frame < 5; frame++) {
+          await new Promise(requestAnimationFrame);
+        }
+        if (scroller.scrollTop !== start) return Infinity;
         const sectionTop =
           section.getBoundingClientRect().top -
           scroller.getBoundingClientRect().top +
@@ -231,6 +238,8 @@ test.describe('API page', () => {
     await expect(codeBlock).toContainText('Authorization: Bearer $TOKEN');
     await expect(codeBlock.getByTestId('ui-code-block-copy-trigger')).toBeVisible();
     await expect(panel).not.toContainText('Looking for example notebooks?');
+    // The panel slides open; a click while it grows can land its mouseup above the link.
+    await expect.poll(() => panel.evaluate((element) => element.getAnimations().length)).toBe(0);
 
     // When
     await panel.getByRole('link', { name: 'API reference' }).click();
@@ -746,6 +755,8 @@ test.describe('API page logged out', () => {
     await toc.getByRole('link', { name: 'Authentication', exact: true }).click();
     await expect(page).toHaveURL(/\/api\?source=docs&filter=a%20b#authentication$/);
     await expect(page.locator('#authentication h2')).toBeFocused();
+    // The rail only sticks once this scroll lands; until then the next link moves under the pointer.
+    await expectSectionAligned(page, 'authentication');
 
     await toc.getByRole('link', { name: 'Choose Your Workflow', exact: true }).click();
     await expect(page).toHaveURL(/\/api\?source=docs&filter=a%20b#choose-your-workflow$/);

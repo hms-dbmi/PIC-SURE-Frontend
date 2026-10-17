@@ -15,20 +15,20 @@ import { getOption, nthFilterIcon, clickNthFilterIcon } from '../utils';
 
 test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
 
+const discoverFeatures = [
+  { name: 'OPEN', value: 'true' },
+  { name: 'DISCOVER', value: 'true' },
+  { name: 'ENABLE_GENE_QUERY', value: 'true' },
+  { name: 'ENABLE_HIERARCHY', value: 'true' },
+  { name: 'ENABLE_SNP_QUERY', value: 'true' },
+  // Required so useOpenAccess() routes counts through the open-access
+  // sync endpoint (picsure/hpds/open/query/sync) instead of query/sync.
+  { name: 'OPEN_EXPLORER', value: 'false' },
+];
+
 test.describe('Discover for unauthenticated users', () => {
   test.beforeEach(async ({ page }) => {
-    await mockApiConfig(page, {
-      features: [
-        { name: 'OPEN', value: 'true' },
-        { name: 'DISCOVER', value: 'true' },
-        { name: 'ENABLE_GENE_QUERY', value: 'true' },
-        { name: 'ENABLE_HIERARCHY', value: 'true' },
-        { name: 'ENABLE_SNP_QUERY', value: 'true' },
-        // Required so useOpenAccess() routes counts through the open-access
-        // sync endpoint (picsure/hpds/open/query/sync) instead of query/sync.
-        { name: 'OPEN_EXPLORER', value: 'false' },
-      ],
-    });
+    await mockApiConfig(page, { features: discoverFeatures });
     await mockApiSuccess(page, searchResultPath, mockData);
     await mockApiSuccess(page, facetResultPath, facetsResponse);
   });
@@ -113,8 +113,32 @@ test.describe('Discover for unauthenticated users', () => {
       await expect(radios.nth(i)).toBeDisabled();
     }
   });
-  test('Cohort details button and variant explorer button are not visible', async ({ page }) => {
+  test('Results panel hides the variant explorer button even with a genomic filter', async ({
+    page,
+  }) => {
     // Given
+    await mockApiConfig(page, {
+      features: [...discoverFeatures, { name: 'VARIANT_EXPLORER', value: 'true' }],
+    });
+    // A genomic filter carried over from Explore; Discover can't add one itself.
+    await page.addInitScript(() => {
+      sessionStorage.setItem(
+        'genomicFilters',
+        JSON.stringify([
+          {
+            uuid: 'carried-genomic-filter',
+            id: 'genomic',
+            filterType: 'genomic',
+            displayType: 'any',
+            variableName: 'Genomic Filter',
+            description: 'Gene with variant: BRCA1',
+            allowFiltering: true,
+            dataset: '',
+            Gene_with_variant: ['BRCA1'],
+          },
+        ]),
+      );
+    });
     await mockApiSuccess(
       page,
       `${conceptsDetailPath}/${detailResponseCat.dataset}`,
@@ -129,14 +153,11 @@ test.describe('Discover for unauthenticated users', () => {
     await clickNthFilterIcon(page);
     const firstItem = await getOption(page);
     await firstItem.click();
-    const addFilterButton = page.getByTestId('filter-add');
-    await addFilterButton.click();
-    const cohortDetailsButton = page.getByTestId('cohort-details-btn');
+    await page.getByTestId('filter-add').click();
 
     // Then
     await expect(page.locator('#results-panel')).toBeVisible();
-    await expect(cohortDetailsButton).not.toBeVisible();
-    await expect(page.locator('#variant-explorer-btn')).not.toBeVisible();
+    await expect(page.getByTestId('results-variant-explorer-open')).toHaveCount(0);
   });
 });
 
