@@ -202,10 +202,19 @@ export const userRoutes: Readable<Route[]> = derived([user], ([$user]) => {
   return allowedRoutes(featured);
 });
 
+// A 401 has already started a logout, which navigates to /login. Callers that retried, toasted
+// or navigated on top of it would race that logout.
+const sessionEndedBy = (error: unknown) =>
+  error instanceof ApiError && error.code === 'unauthorized';
+
 export async function getUser(force?: boolean, hasToken = false) {
   if (force || !get(user)?.privileges || !get(user)?.token) {
-    const res = await psamaUser.me({ hasToken });
-    user.set({ ...get(user), ...res });
+    try {
+      const res = await psamaUser.me({ hasToken });
+      user.set({ ...get(user), ...res });
+    } catch (error) {
+      if (!sessionEndedBy(error)) throw error;
+    }
   }
 }
 
@@ -227,9 +236,6 @@ export const ACCESS_UNAVAILABLE_MESSAGE =
 /** Delay before each attempt. Retry once straight away, then back off for a real outage. */
 const CONSENTS_RETRY_DELAYS_MS = [0, 0, 3_000];
 
-// A 401 has already logged the user out: another attempt would only start a second logout.
-const endedSession = (error: unknown) => error instanceof ApiError && error.code === 'unauthorized';
-
 /**
  * Requires PSAMA to answer 200 with an empty map when a user has no consents; its 500 is
  * indistinguishable from a transient failure. Throws once attempts are exhausted rather than
@@ -242,7 +248,8 @@ export async function getConsents(): Promise<ConsentsMap> {
       const res = await psamaUser.consents();
       return res?.consents || {};
     } catch (error) {
-      if (attempt === CONSENTS_RETRY_DELAYS_MS.length - 1 || endedSession(error)) {
+      if (sessionEndedBy(error)) throw error;
+      if (attempt === CONSENTS_RETRY_DELAYS_MS.length - 1) {
         console.error(`Error fetching user consents after ${attempt + 1} attempts: ` + error);
         throw error;
       }
@@ -268,7 +275,7 @@ export function loadConsents(): Promise<void> {
       if (consentsRequest === request) user.set({ ...get(user), consents });
     })
     .catch((error: unknown) => {
-      if (consentsRequest === request && !endedSession(error)) showAccessUnavailable();
+      if (consentsRequest === request && !sessionEndedBy(error)) showAccessUnavailable();
     });
   consentsRequest = request;
   return request;

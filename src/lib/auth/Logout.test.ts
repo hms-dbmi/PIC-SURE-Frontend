@@ -17,7 +17,7 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
   registerSignedInUser: vi.fn(),
 }));
 
-import { clearSession, logout } from '#lib/auth/User.ts';
+import { clearSession, hydrateUserFromToken, logout } from '#lib/auth/User.ts';
 import { request } from '#lib/api/client.ts';
 import type AuthProvider from '#lib/auth/providers/AuthProvider.ts';
 
@@ -154,6 +154,15 @@ describe('logout', () => {
       expect(sessionStorage.getItem('logout-reason')).toBe(
         'Your session has timed out. Please log in.',
       );
+    });
+
+    it('leaves a 401 on the profile request to the logout, so hydration callers stay put', async () => {
+      respondFirstWith(new Response('expired', { status: 401 }));
+
+      await expect(hydrateUserFromToken()).resolves.toBeUndefined();
+
+      await vi.waitFor(() => expect(goto).toHaveBeenCalledOnce());
+      expect(goto).toHaveBeenCalledWith('/login?redirectTo=%2Fexplorer');
     });
 
     it('logs out to login and drops any earlier reason on a 403', async () => {

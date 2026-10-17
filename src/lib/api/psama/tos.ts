@@ -9,12 +9,10 @@ export function latest({ auth = 'user' }: { auth?: 'user' | 'none' } = {}): Prom
   return request<string>(`${Psama.TOS}/latest`, { auth });
 }
 
-/** Records that the signed-in user accepted the current terms. */
 export function accept(): Promise<unknown> {
   return request<unknown>(`${Psama.TOS}/accept`, { method: 'POST', body: {} });
 }
 
-/** Publishes new terms; every user is asked to accept them at their next login. */
 export function update(html: string): Promise<unknown> {
   return request<unknown>(`${Psama.TOS}/update`, {
     method: 'POST',
