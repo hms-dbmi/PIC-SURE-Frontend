@@ -105,7 +105,7 @@
       .map((g) => ({
         ...g,
         fields: g.fields.filter((field) =>
-          `${humanizeKey(field.name)} ${field.name} ${field.description} ${g.label}`
+          `${humanizeKey(field.name)} ${field.name} ${field.description} ${g.groupLabel}`
             .toLowerCase()
             .includes(normalizedQuery),
         ),
@@ -224,7 +224,7 @@
           <div
             class="text-[13px] font-bold uppercase tracking-wide opacity-70 border-b border-surface-200-800 pb-2 mb-3.5"
           >
-            {group.label}
+            {group.groupLabel}
           </div>
         {/if}
         <div class="flex flex-col gap-2.5">

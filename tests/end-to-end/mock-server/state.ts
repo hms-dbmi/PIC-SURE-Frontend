@@ -25,7 +25,7 @@ export const state = {
   users: structuredClone(usersSeed) as Row[],
   // Keyed by the raw `kind` string the app sends (e.g. "ui:featureFlag", from
   // VITE_API_CONFIG_FEATURES) rather than 'features'/'settings'/'branding' - that mapping
-  // lives in Configuration.ts behind `import.meta.env`, which only Vite resolves, not this
+  // lives in config/resolve.ts behind `import.meta.env`, which only Vite resolves, not this
   // plain Node process. Matching the wire string directly sidesteps needing it here.
   configRows: [] as {
     uuid: string;

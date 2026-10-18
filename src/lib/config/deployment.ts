@@ -9,8 +9,7 @@ export const PROJECT_HOSTNAME =
 
 export const AUTH0_TENANT: string = import.meta.env?.VITE_AUTH0_TENANT || 'avillachlab';
 
-// Cloudflare Turnstile site key for the public API key form; empty disables the widget.
-// A function rather than a constant so tests can stub the env var per case.
+// Read per call, not at import, so tests can stub VITE_TURNSTILE_SITE_KEY per case.
 export function turnstileSiteKey(): string {
   return import.meta.env?.VITE_TURNSTILE_SITE_KEY || '';
 }

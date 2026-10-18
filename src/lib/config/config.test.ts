@@ -281,15 +281,15 @@ describe('groupedConfigFieldSchema', () => {
     const schema = [field('A', 'group1'), field('B', 'group2'), field('C', 'group1')];
 
     expect(groupedConfigFieldSchema(schema)).toEqual([
-      { group: 'group1', label: 'Label group1', fields: [schema[0], schema[2]] },
-      { group: 'group2', label: 'Label group2', fields: [schema[1]] },
+      { group: 'group1', groupLabel: 'Label group1', fields: [schema[0], schema[2]] },
+      { group: 'group2', groupLabel: 'Label group2', fields: [schema[1]] },
     ]);
   });
 
   it('reflects CONFIG_FIELD_SCHEMA grouping - Google settings land in one group together', () => {
     const groups = groupedConfigFieldSchema(CONFIG_FIELD_SCHEMA.settings);
     const google = groups.find((g) => g.group === 'google');
-    expect(google?.label).toBe('Google');
+    expect(google?.groupLabel).toBe('Google');
     expect(google?.fields.map((f) => f.name)).toEqual(
       expect.arrayContaining(['GOOGLE_ANALYTICS_ID', 'GOOGLE_TAG_MANAGER_ID']),
     );

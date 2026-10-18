@@ -15,7 +15,7 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
 
 // Actions.svelte gates the hierarchy/export buttons behind these flags. The
 // deployments that ship these tours (see TourConfiguration.json) run with
-// both enabled - see ENABLE_HIERARCHY/ALLOW_EXPORT_ENABLED in Configuration.ts.
+// both enabled - see ENABLE_HIERARCHY/ALLOW_EXPORT_ENABLED in config/schema.ts.
 vi.mock('#lib/config/config.svelte.ts', () => ({
   config: {
     features: {

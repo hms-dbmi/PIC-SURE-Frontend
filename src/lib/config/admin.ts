@@ -101,7 +101,7 @@ type Grouped = { group: string; groupLabel: string };
 
 export interface ConfigFieldGroup<T extends Grouped = ConfigFieldSchema> {
   group: string;
-  label: string;
+  groupLabel: string;
   fields: T[];
 }
 
@@ -116,12 +116,12 @@ export interface ConfigFieldGroup<T extends Grouped = ConfigFieldSchema> {
 // from) - grouping only ever needs each item's group id and label, nothing kind-specific.
 export function groupedConfigFieldSchema<T extends Grouped>(schema: T[]): ConfigFieldGroup<T>[] {
   const groups: ConfigFieldGroup<T>[] = [];
-  const byName = new Map<string, ConfigFieldGroup<T>>();
+  const byId = new Map<string, ConfigFieldGroup<T>>();
   for (const field of schema) {
-    let bucket = byName.get(field.group);
+    let bucket = byId.get(field.group);
     if (!bucket) {
-      bucket = { group: field.group, label: field.groupLabel, fields: [] };
-      byName.set(field.group, bucket);
+      bucket = { group: field.group, groupLabel: field.groupLabel, fields: [] };
+      byId.set(field.group, bucket);
       groups.push(bucket);
     }
     bucket.fields.push(field);

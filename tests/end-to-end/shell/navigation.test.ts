@@ -188,7 +188,7 @@ test.describe('Access control', () => {
   test('/discover redirects to /explorer when DISCOVER is off', async ({ page }) => {
     // Given — OPEN on so the root layout's login guard doesn't fire first; OPEN_EXPLORER
     // also on since config.features.explorer.open is OPEN_EXPLORER && OPEN (both default
-    // false, see Configuration.ts) and landing on /explorer while it's off would bounce
+    // false, see config/schema.ts) and landing on /explorer while it's off would bounce
     // an unauthenticated user straight to /login, masking the redirect under test.
     await mockApiConfig(page, {
       features: [
