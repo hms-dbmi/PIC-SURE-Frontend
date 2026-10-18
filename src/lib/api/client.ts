@@ -25,13 +25,11 @@ const BEARER = 'Bearer ';
  * - `user`: the signed-in user's token; without one the request goes keyless.
  * - `open`: for PIC-SURE data that anonymous visitors may read: the user's token when signed in,
  *   otherwise this browser's open-access session.
- * - `anonymous`: the open-access session even when signed in, for PIC-SURE's open variant (the
- *   discover pages).
  * - `none`: no credentials, even when signed in.
  *
- * A 401 on a request that went without the user's token under `open` or `anonymous` ends nothing.
+ * A 401 on an `open` request that went without the user's token ends nothing.
  */
-export type Auth = 'user' | 'open' | 'anonymous' | 'none';
+export type Auth = 'user' | 'open' | 'none';
 
 export interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -91,7 +89,7 @@ async function send(path: string, opts: RequestOptions): Promise<unknown> {
       headers['request-source'] = 'Authorized';
     } else {
       headers['request-source'] = 'Open';
-      if (auth === 'open' || auth === 'anonymous') {
+      if (auth === 'open') {
         openRequest = true;
         sessionToken = await unlessAborted(openSessionToken(), signal);
         if (sessionToken) {

@@ -12,21 +12,21 @@ const query = { expectedResultType: 'COUNT' } as QueryInterfaceV3;
 beforeEach(() => respond.mockReset());
 
 describe('getDistributions', () => {
-  it('picks the endpoint and the credentials separately', async () => {
+  it.each([
+    [false, 'picsure/visualization/auth/distributions'],
+    [true, 'picsure/visualization/open/distributions'],
+  ])('with openEndpoint %s posts to %s with open credentials', async (openEndpoint, path) => {
     respond.mockResolvedValue({});
-    await getDistributions(query, { openEndpoint: false, anonymous: true });
+    await getDistributions(query, { openEndpoint });
 
-    expect(respond).toHaveBeenCalledWith('picsure/visualization/auth/distributions', {
-      method: 'POST',
-      body: { query },
-      auth: 'anonymous',
-    });
+    expect(respond).toHaveBeenCalledWith(path, { method: 'POST', body: { query }, auth: 'open' });
   });
 
   it('reads a response without plot lists as no plots', async () => {
     respond.mockResolvedValue({ categoricalData: null });
-    await expect(
-      getDistributions(query, { openEndpoint: true, anonymous: false }),
-    ).resolves.toEqual({ categoricalData: [], continuousData: [] });
+    await expect(getDistributions(query, { openEndpoint: true })).resolves.toEqual({
+      categoricalData: [],
+      continuousData: [],
+    });
   });
 });

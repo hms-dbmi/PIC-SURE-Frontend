@@ -57,7 +57,7 @@ function dictionaryRequest(isOpenAccess: boolean = false): Promise<DictionarySea
 function getFacetCategoryCount(category: string) {
   return async function ({ isOpenAccess }: RequestMapOptions): Promise<PatientCount> {
     const request: DictionarySearchRequest = await dictionaryRequest(isOpenAccess);
-    return searchFacets(request, { auth: isOpenAccess ? 'anonymous' : 'open' })
+    return searchFacets(request)
       .then((res) => {
         const facetCat = res.find((facetCat) => facetCat.name === category);
         if (!facetCat) {
@@ -75,11 +75,7 @@ function getFacetCategoryCount(category: string) {
 
 async function getConceptCount({ isOpenAccess }: RequestMapOptions): Promise<PatientCount> {
   const request: DictionarySearchRequest = await dictionaryRequest(isOpenAccess);
-  return searchConcepts(
-    request,
-    { pageNumber: 1, pageSize: 1 },
-    { auth: isOpenAccess ? 'anonymous' : 'open' },
-  ).then((res) => {
+  return searchConcepts(request, { pageNumber: 1, pageSize: 1 }).then((res) => {
     return res.totalElements || Promise.reject('total not found');
   });
 }

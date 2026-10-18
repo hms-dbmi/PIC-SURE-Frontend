@@ -21,7 +21,7 @@
   import { toaster } from '#lib/ui/toaster.ts';
   import Loading from '#lib/ui/Loading.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
-  import { isOpenAccess, useOpenAccess } from '#lib/explorer/mode.ts';
+  import { useOpenAccess } from '#lib/explorer/mode.ts';
   import LogicTreeSummary from '#lib/explorer/advanced/LogicTreeSummary.svelte';
   import { filters, filterTree, genomicFilters } from '#lib/query/filters.ts';
   import { type Filter, type FilterGroupInterface } from '#lib/query/filter.svelte.ts';
@@ -65,12 +65,8 @@
     });
 
     const query = getQueryRequestV3();
-    const openAccess = isOpenAccess();
 
-    await getDistributions(query.query, {
-      openEndpoint: useOpenAccess(openAccess),
-      anonymous: openAccess,
-    })
+    await getDistributions(query.query, { openEndpoint: useOpenAccess() })
       .then((resp) => {
         const categoricalData = resp.categoricalData.filter((data) =>
           categoricalHasData(data, minimumCount),

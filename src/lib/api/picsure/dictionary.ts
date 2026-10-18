@@ -1,4 +1,4 @@
-import { request, type Auth } from '#lib/api/client.ts';
+import { request } from '#lib/api/client.ts';
 import { Picsure, PicsurePaths } from '#lib/api/paths.ts';
 import type { SearchResult } from '#lib/explorer/types.ts';
 import type {
@@ -14,14 +14,12 @@ import { expectArray, expectRecord, isRecord } from '#lib/api/picsure/guards.ts'
 
 interface Options {
   signal?: AbortSignal;
-  /** `anonymous` for the open variant's counts on the discover pages. */
-  auth?: Extract<Auth, 'open' | 'anonymous'>;
 }
 
 export async function searchConcepts(
   search: DictionarySearchRequest,
   page: Pick<Pageable, 'pageNumber' | 'pageSize'>,
-  { signal, auth = 'open' }: Options = {},
+  { signal }: Options = {},
 ): Promise<DictionaryConceptResult> {
   // callers read a missing content list as an empty page
   const response = expectRecord(
@@ -29,7 +27,7 @@ export async function searchConcepts(
       method: 'POST',
       query: { page_number: page.pageNumber, page_size: page.pageSize },
       body: search,
-      auth,
+      auth: 'open',
       signal,
     }),
     'concept search',
@@ -39,10 +37,10 @@ export async function searchConcepts(
 
 export async function searchFacets(
   search: DictionarySearchRequest,
-  { signal, auth = 'open' }: Options = {},
+  { signal }: Options = {},
 ): Promise<DictionaryFacetResult[]> {
   const categories = expectArray(
-    await request<unknown>(Picsure.Facets, { method: 'POST', body: search, auth, signal }),
+    await request<unknown>(Picsure.Facets, { method: 'POST', body: search, auth: 'open', signal }),
     'facet',
   );
   if (!categories.every((category) => isRecord(category) && Array.isArray(category.facets))) {

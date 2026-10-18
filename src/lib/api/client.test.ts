@@ -257,15 +257,6 @@ describe('request', () => {
       expect(sent().headers['Authorization']).toBeUndefined();
     });
 
-    it('auth anonymous sends the open-access session even when signed in', async () => {
-      token = 'my-token';
-      mockOpenSessionToken.mockResolvedValue(SESSION);
-      await request('picsure/query/sync', { auth: 'anonymous' });
-
-      expect(sent().headers['Authorization']).toBe(`Bearer ${SESSION}`);
-      expect(sent().headers['request-source']).toBe('Open');
-    });
-
     it('auth none sends neither the token nor a session', async () => {
       token = 'my-token';
       mockOpenSessionToken.mockResolvedValue(SESSION);
@@ -348,18 +339,21 @@ describe('request', () => {
       expect(e).toMatchObject({ status: 422, code: 'http', body: { errors: ['invalid'] } });
     });
 
-    it('ends the session on a 401 for a signed-in request', async () => {
-      token = 'my-token';
-      fetchMock.mockResolvedValue(mockFetchResponse({ ok: false, status: 401, body: 'expired' }));
+    it.each(['user', 'open'] as const)(
+      'ends the session on a 401 for a signed-in request with auth %s',
+      async (auth) => {
+        token = 'my-token';
+        fetchMock.mockResolvedValue(mockFetchResponse({ ok: false, status: 401, body: 'expired' }));
 
-      const e = await rejection(request('picsure/test'));
+        const e = await rejection(request('picsure/test', { auth }));
 
-      expect(e).toMatchObject({ status: 401, code: 'unauthorized', message: 'expired' });
-      expect(onUnauthorized).toHaveBeenCalledTimes(1);
-      expect(mockCreateLog).toHaveBeenCalledWith('AUTH', 'session.unauthorized', undefined, {
-        status: 401,
-      });
-    });
+        expect(e).toMatchObject({ status: 401, code: 'unauthorized', message: 'expired' });
+        expect(onUnauthorized).toHaveBeenCalledTimes(1);
+        expect(mockCreateLog).toHaveBeenCalledWith('AUTH', 'session.unauthorized', undefined, {
+          status: 401,
+        });
+      },
+    );
 
     it('ends the session on a 401 even when its body cannot be read', async () => {
       token = 'my-token';
@@ -385,17 +379,6 @@ describe('request', () => {
       fetchMock.mockResolvedValue(mockFetchResponse({ ok: false, status: 401, body: 'nope' }));
 
       const e = await rejection(request('picsure/query/sync', { auth: 'open' }));
-
-      expect(e).toMatchObject({ status: 401, code: 'http' });
-      expect(onUnauthorized).not.toHaveBeenCalled();
-    });
-
-    it('leaves a signed-in user signed in on a 401 for an anonymous request', async () => {
-      token = 'my-token';
-      mockOpenSessionToken.mockResolvedValue(SESSION);
-      fetchMock.mockResolvedValue(mockFetchResponse({ ok: false, status: 401, body: 'nope' }));
-
-      const e = await rejection(request('picsure/query/sync', { auth: 'anonymous' }));
 
       expect(e).toMatchObject({ status: 401, code: 'http' });
       expect(onUnauthorized).not.toHaveBeenCalled();

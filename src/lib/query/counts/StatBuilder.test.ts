@@ -133,7 +133,7 @@ describe('StatBuilder request map', () => {
       key: 'dict:facets:dataset_id',
       open: true,
       response: [{ name: 'dataset_id', facets: [{ count: 3 }, { count: 0 }] }],
-      call: ['picsure/dictionary/facets', noConsents, 'anonymous'],
+      call: ['picsure/dictionary/facets', noConsents, 'open'],
       value: 2,
     },
     {
@@ -156,7 +156,7 @@ describe('StatBuilder request map', () => {
       key: 'dict:concepts',
       open: true,
       response: { totalElements: 0 },
-      call: ['picsure/dictionary/concepts?page_number=1&page_size=1', noConsents, 'anonymous'],
+      call: ['picsure/dictionary/concepts?page_number=1&page_size=1', noConsents, 'open'],
       value: { rejected: 'total not found' },
     },
     {

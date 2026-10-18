@@ -13,17 +13,15 @@ export interface Distributions {
 
 /**
  * Plot data for each variable the query filters on. `openEndpoint` asks the open variant's
- * obfuscated distributions; `anonymous` sends the open-access session even when someone is signed
- * in. They differ when the deployment explores without login: open pages then use the full
- * endpoint, still anonymously.
+ * obfuscated distributions.
  */
 export async function getDistributions(
   query: QueryInterfaceV3,
-  { openEndpoint, anonymous }: { openEndpoint: boolean; anonymous: boolean },
+  { openEndpoint }: { openEndpoint: boolean },
 ): Promise<Distributions> {
   const response = await request<unknown>(
     openEndpoint ? Picsure.Visualization.DistributionsOpen : Picsure.Visualization.Distributions,
-    { method: 'POST', body: { query }, auth: anonymous ? 'anonymous' : 'open' },
+    { method: 'POST', body: { query }, auth: 'open' },
   );
   const { categoricalData, continuousData } =
     typeof response === 'object' && response !== null ? (response as Record<string, unknown>) : {};
