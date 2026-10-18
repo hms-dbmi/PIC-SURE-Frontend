@@ -1,20 +1,20 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import {
-  mapFeatures,
-  mapSettings,
+  CONFIG_FIELD_SCHEMA,
+  deprecatedApiRows,
+  groupedConfigFieldSchema,
+  type ConfigFieldSchema,
+} from '#lib/config/admin.ts';
+import { mapBranding } from '#lib/config/branding.ts';
+import {
   resolveConfigMap,
   getConfigMode,
   parsers,
   type ConfigObject,
   type ConfigMap,
-  mapBranding,
-  CONFIG_FIELD_SCHEMA,
-  parsersFor,
-  deprecatedApiRows,
-  groupedConfigFieldSchema,
-  type ConfigFieldSchema,
-} from '#lib/config/Configuration.ts';
+} from '#lib/config/resolve.ts';
+import { mapFeatures, mapSettings, parsersFor } from '#lib/config/schema.ts';
 import configJson from '#lib/assets/configuration.json' with { type: 'json' };
 
 const TOUCHED_ENV_KEYS = [
@@ -271,23 +271,25 @@ describe('groupedConfigFieldSchema', () => {
   const field = (name: string, group: string): ConfigFieldSchema => ({
     name,
     group,
+    groupLabel: `Label ${group}`,
     type: 'boolean',
     default: false,
     description: '',
   });
 
   it('buckets fields by group, in order of each group’s first appearance', () => {
-    const schema = [field('A', 'Group 1'), field('B', 'Group 2'), field('C', 'Group 1')];
+    const schema = [field('A', 'group1'), field('B', 'group2'), field('C', 'group1')];
 
     expect(groupedConfigFieldSchema(schema)).toEqual([
-      { group: 'Group 1', fields: [schema[0], schema[2]] },
-      { group: 'Group 2', fields: [schema[1]] },
+      { group: 'group1', label: 'Label group1', fields: [schema[0], schema[2]] },
+      { group: 'group2', label: 'Label group2', fields: [schema[1]] },
     ]);
   });
 
   it('reflects CONFIG_FIELD_SCHEMA grouping - Google settings land in one group together', () => {
     const groups = groupedConfigFieldSchema(CONFIG_FIELD_SCHEMA.settings);
-    const google = groups.find((g) => g.group === 'Google');
+    const google = groups.find((g) => g.group === 'google');
+    expect(google?.label).toBe('Google');
     expect(google?.fields.map((f) => f.name)).toEqual(
       expect.arrayContaining(['GOOGLE_ANALYTICS_ID', 'GOOGLE_TAG_MANAGER_ID']),
     );
@@ -335,7 +337,7 @@ describe('mapBranding', () => {
   });
   it('gives Python blocks the deployment root and R blocks the /picsure URL', () => {
     const { codeBlocks } = mapBranding('https://picsure.example.org/picsure', []).explorePage;
-    for (const key of ['PythonAPI', 'PythonAPIOpen', 'PythonExport']) {
+    for (const key of ['PythonAPI', 'PythonAPIOpen', 'PythonExport'] as const) {
       expect(codeBlocks[key]).toContain('platform="https://picsure.example.org"');
       expect(codeBlocks[key]).not.toContain('{{PICSURE_ORIGIN}}');
     }

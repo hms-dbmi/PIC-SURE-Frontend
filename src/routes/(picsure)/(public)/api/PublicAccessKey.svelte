@@ -1,6 +1,7 @@
 <script lang="ts">
   import { post } from '#lib/api/client.ts';
   import { Psama } from '#lib/api/paths.ts';
+  import { turnstileSiteKey } from '#lib/config/deployment.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
   import CopyButton from '#lib/ui/CopyButton.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
@@ -22,7 +23,7 @@
 
   // when a Turnstile sitekey is configured the widget gates submission; empty keeps the
   // ungated flow (valid against a PSAMA running captcha.provider=disabled)
-  const turnstileSiteKey: string = import.meta.env?.VITE_TURNSTILE_SITE_KEY || '';
+  const siteKey = turnstileSiteKey();
 
   let view: View = $state('idle');
   let name = $state('');
@@ -168,10 +169,10 @@
           Only used to contact you if there is a problem with your key. No account is created.
         </span>
       </div>
-      {#if turnstileSiteKey}
+      {#if siteKey}
         <div class="mx-auto">
           <Turnstile
-            sitekey={turnstileSiteKey}
+            sitekey={siteKey}
             onToken={(token) => (captchaToken = token)}
             onError={() => (captchaFailed = true)}
           />
@@ -195,8 +196,8 @@
         <button
           type="submit"
           class="btn preset-filled-primary-500"
-          disabled={submitting || (!!turnstileSiteKey && !captchaToken)}
-          aria-describedby={turnstileSiteKey && !captchaToken && !captchaFailed
+          disabled={submitting || (!!siteKey && !captchaToken)}
+          aria-describedby={siteKey && !captchaToken && !captchaFailed
             ? 'api-public-key-captcha-hint'
             : undefined}
         >

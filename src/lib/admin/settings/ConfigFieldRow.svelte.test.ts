@@ -4,18 +4,19 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 
 import ConfigFieldRow from '#lib/admin/settings/ConfigFieldRow.svelte';
-import { describeConfigField } from '#lib/config/resolve.ts';
+import { describeConfigField } from '#lib/config/admin.ts';
 import {
   addConfigRow,
   updateConfigRow,
   deleteConfigRow,
 } from '#lib/admin/settings/AdminConfiguration.ts';
-import type { ConfigFieldSchema, ConfigMap, ConfigObject } from '#lib/config/Configuration.ts';
-import type { FieldOrigin } from '#lib/config/resolve.ts';
+import type { ConfigFieldSchema, FieldOrigin } from '#lib/config/admin.ts';
+import type { ConfigMap, ConfigObject } from '#lib/config/resolve.ts';
 
 vi.mock('#lib/ui/toaster.ts', () => ({ toaster: { success: vi.fn(), error: vi.fn() } }));
 
-vi.mock('#lib/config/resolve.ts', () => ({
+vi.mock('#lib/config/admin.ts', async () => ({
+  ...(await vi.importActual<typeof import('#lib/config/admin.ts')>('#lib/config/admin.ts')),
   describeConfigField: vi.fn(),
 }));
 
@@ -41,7 +42,8 @@ const booleanSchema: ConfigFieldSchema = {
   type: 'boolean',
   default: false,
   description: 'Enables foo.',
-  group: 'Test Group',
+  group: 'test',
+  groupLabel: 'Test Group',
 };
 
 const stringSchema: ConfigFieldSchema = {
@@ -49,7 +51,8 @@ const stringSchema: ConfigFieldSchema = {
   type: 'string',
   default: 'PIC-SURE',
   description: 'The application name.',
-  group: 'Test Group',
+  group: 'test',
+  groupLabel: 'Test Group',
 };
 
 function baseProps(schema: ConfigFieldSchema, apiMap: ConfigMap = {}) {
@@ -233,7 +236,8 @@ describe('ConfigFieldRow', () => {
       type: 'int',
       default: 10,
       description: 'Max items.',
-      group: 'Test Group',
+      group: 'test',
+      groupLabel: 'Test Group',
     };
 
     render(ConfigFieldRow, baseProps(intSchema));
@@ -252,7 +256,8 @@ describe('ConfigFieldRow', () => {
       type: 'json',
       default: [],
       description: 'Some JSON list.',
-      group: 'Test Group',
+      group: 'test',
+      groupLabel: 'Test Group',
     };
 
     render(ConfigFieldRow, baseProps(jsonSchema));
@@ -271,7 +276,8 @@ describe('ConfigFieldRow', () => {
       type: 'json',
       default: [],
       description: 'Some JSON list.',
-      group: 'Test Group',
+      group: 'test',
+      groupLabel: 'Test Group',
     };
 
     render(ConfigFieldRow, baseProps(jsonSchema));

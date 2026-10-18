@@ -1,6 +1,10 @@
 import { error } from '@sveltejs/kit';
-import type { ConfigObject, ConfigCache, ConfigKind } from '#lib/config/Configuration.ts';
-import { CONFIG_API_KIND } from '#lib/config/Configuration.ts';
+import {
+  CONFIG_API_KIND,
+  type ConfigObject,
+  type ConfigCache,
+  type ConfigKind,
+} from '#lib/config/resolve.ts';
 import { Picsure, joinUrl } from '#lib/api/paths.ts';
 import { withBackoff } from '#lib/utils/backoff.ts';
 

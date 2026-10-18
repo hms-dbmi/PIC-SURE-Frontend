@@ -1,6 +1,10 @@
 import { get, writable, type Writable } from 'svelte/store';
-import type { ConfigObject, ConfigKind } from '#lib/config/Configuration.ts';
-import { CONFIG_API_KIND, type ConfigCache } from '#lib/config/Configuration.ts';
+import {
+  CONFIG_API_KIND,
+  type ConfigCache,
+  type ConfigKind,
+  type ConfigObject,
+} from '#lib/config/resolve.ts';
 import * as api from '#lib/api/client.ts';
 import { Picsure, LocalServer } from '#lib/api/paths.ts';
 

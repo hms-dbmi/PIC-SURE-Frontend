@@ -2,7 +2,7 @@ import type { LayoutServerLoad } from './$types';
 import { getAllProviderData } from '#lib/auth/providerRegistry.ts';
 import { getConfig } from '#lib/config/server/cache.ts';
 import { TEST_CONFIG_COOKIE } from '#lib/config/testOverride.ts';
-import type { ConfigCache } from '#lib/config/Configuration.ts';
+import type { ConfigCache } from '#lib/config/resolve.ts';
 
 export const load: LayoutServerLoad = async ({ cookies }) => {
   const providers = getAllProviderData();

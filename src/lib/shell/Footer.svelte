@@ -20,7 +20,7 @@
       show:
         (!section.privilege ||
           ($user.privileges && $user.privileges.includes(section.privilege))) &&
-        (!section.feature || config.features[section.feature as keyof typeof config.features]),
+        (!section.feature || config.features[section.feature]),
     })),
   );
 

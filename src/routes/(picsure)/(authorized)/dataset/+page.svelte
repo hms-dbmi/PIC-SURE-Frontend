@@ -2,7 +2,7 @@
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
 
-  import type { Indexable } from '#lib/config/types.ts';
+  import type { Indexable } from '#lib/utils/objects.ts';
   import { config } from '#lib/config/config.svelte.ts';
   import {
     active,

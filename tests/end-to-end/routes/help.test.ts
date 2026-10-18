@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test';
 import { test, mockApiConfig } from '../custom-context';
-import type { Branding } from '../../../src/lib/config/Configuration';
+import type { Branding } from '../../../src/lib/config/branding';
 import brandingJson from '../../../src/lib/assets/configuration.json' with { type: 'json' };
 const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
 

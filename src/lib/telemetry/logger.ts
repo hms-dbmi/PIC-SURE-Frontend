@@ -6,7 +6,7 @@ import { get } from 'svelte/store';
 import { v4 as uuidv4 } from 'uuid';
 import { BDCPrivileges, PicsurePrivileges } from '../auth/model/privilege';
 import type { User } from '../auth/model/user';
-import { routes } from '#lib/config/config.svelte.ts';
+import { routes } from '#lib/auth/nav.ts';
 
 // Registered lazily by query/filters.ts to avoid circular dependency: Filter → logger → Filter
 let _associatedStudies: import('svelte/store').Readable<string[]> | undefined;

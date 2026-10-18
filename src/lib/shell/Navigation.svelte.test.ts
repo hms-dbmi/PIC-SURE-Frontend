@@ -12,8 +12,7 @@ vi.mock('$app/paths', () => ({
   resolve: (path: string) => (path.startsWith('/') ? path : `/${path}`),
 }));
 vi.mock('#lib/telemetry/logger.ts', () => ({ log: vi.fn(), createLog: vi.fn(() => ({})) }));
-vi.mock('#lib/config/config.svelte.ts', async () => ({
-  routes: (await import('#lib/auth/nav.ts')).routes,
+vi.mock('#lib/config/config.svelte.ts', () => ({
   config: {
     features: {
       dashboard: true,

@@ -1,4 +1,4 @@
-import type { Indexable } from '#lib/config/types.ts';
+import type { Indexable } from '#lib/utils/objects.ts';
 import { QueryV3 } from '#lib/query/query.ts';
 import { parseQueryV2, type QueryV2 } from '#lib/query/v2.ts';
 

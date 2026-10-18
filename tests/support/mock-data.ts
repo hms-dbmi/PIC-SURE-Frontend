@@ -1,7 +1,7 @@
 import type { ConsentsMap, User } from '../../src/lib/auth/model/user';
 import { PicsurePrivileges, BDCPrivileges } from '../../src/lib/auth/model/privilege';
 import type { DashboardResp } from '../../src/routes/(picsure)/(public)/dashboard/dashboard.ts';
-import type { Indexable } from '#lib/config/types.ts';
+import type { Indexable } from '#lib/utils/objects.ts';
 
 export const HPDS = process.env.VITE_RESOURCE_HPDS;
 

@@ -8,11 +8,10 @@ import type {
   DictionaryFacetResult,
   DictionarySearchRequest,
 } from '#lib/api/picsure/dictionary.types.ts';
+import type { StatConfig, StatField } from '#lib/config/index.ts';
 import type {
-  StatConfig,
   StatResult,
   StatValue,
-  StatField,
   PatientCount,
   PatientCountMap,
   RequestMapOptions,

@@ -1,4 +1,4 @@
-import type { Indexable } from '#lib/config/types.ts';
+import type { Indexable } from '#lib/utils/objects.ts';
 
 export interface Column {
   dataElement: string;

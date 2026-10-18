@@ -12,7 +12,6 @@ vi.mock('$app/paths', () => ({
 }));
 vi.mock('#lib/config/config.svelte.ts', () => ({
   config: { features: { explorer: { open: false }, login: { open: false } } },
-  routes: [],
 }));
 vi.mock('#lib/api/client.ts', () => mockApi);
 

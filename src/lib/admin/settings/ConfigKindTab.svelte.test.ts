@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 
 import ConfigKindTab from '#lib/admin/settings/ConfigKindTab.svelte';
-import { describeConfigField } from '#lib/config/resolve.ts';
+import { describeConfigField } from '#lib/config/admin.ts';
 import {
   loadAdminConfig,
   isApiAvailable,
@@ -13,14 +13,10 @@ import {
   addConfigRow,
   invalidateConfigCache,
 } from '#lib/admin/settings/AdminConfiguration.ts';
-import type { ConfigFieldSchema, ConfigObject } from '#lib/config/Configuration.ts';
-import type { FieldOrigin } from '#lib/config/resolve.ts';
+import type { ConfigFieldSchema, FieldOrigin } from '#lib/config/admin.ts';
+import type { ConfigObject } from '#lib/config/resolve.ts';
 
 vi.mock('#lib/ui/toaster.ts', () => ({ toaster: { success: vi.fn(), error: vi.fn() } }));
-
-vi.mock('#lib/config/resolve.ts', () => ({
-  describeConfigField: vi.fn(),
-}));
 
 const {
   enabledFooSchema,
@@ -36,37 +32,42 @@ const {
     type: 'boolean',
     default: false,
     description: 'Enables foo.',
-    group: 'Group One',
+    group: 'groupOne',
+    groupLabel: 'Group One',
   } satisfies ConfigFieldSchema,
   enabledBarSchema: {
     name: 'ENABLE_BAR',
     type: 'boolean',
     default: false,
     description: 'Enables bar.',
-    group: 'Group Two',
+    group: 'groupTwo',
+    groupLabel: 'Group Two',
   } satisfies ConfigFieldSchema,
   soloSchema: {
     name: 'SOLO_FIELD',
     type: 'boolean',
     default: false,
     description: 'The only field in its kind.',
-    group: 'Solo Group',
+    group: 'solo',
+    groupLabel: 'Solo Group',
   } satisfies ConfigFieldSchema,
-  // Same group name on purpose, one per kind - exercises the merged tab bucketing a
+  // Same group on purpose, one per kind - exercises the merged tab bucketing a
   // feature and a setting into the same relation-based section.
   featureExportSchema: {
     name: 'FEATURE_EXPORT_THING',
     type: 'boolean',
     default: false,
     description: 'A feature related to export.',
-    group: 'Export',
+    group: 'export',
+    groupLabel: 'Export',
   } satisfies ConfigFieldSchema,
   settingExportSchema: {
     name: 'SETTING_EXPORT_THING',
     type: 'string',
     default: '',
     description: 'A setting related to export.',
-    group: 'Export',
+    group: 'export',
+    groupLabel: 'Export',
   } satisfies ConfigFieldSchema,
   // Its own kind (branding) so it stays the only field/group there - settings now has
   // two groups (Solo Group, Export) to exercise cross-kind merging above.
@@ -75,7 +76,8 @@ const {
     type: 'string',
     default: '',
     description: 'The only field in its kind.',
-    group: 'Only Group',
+    group: 'only',
+    groupLabel: 'Only Group',
   } satisfies ConfigFieldSchema,
   // ConfigKindTab only renders the search box once a tab has more than
   // SEARCH_BOX_MIN_LENGTH (10) fields - pad "features" past that so the
@@ -88,17 +90,18 @@ const {
         type: 'boolean',
         default: false,
         description: `Filler field ${i}.`,
-        group: 'Filler',
+        group: 'filler',
+        groupLabel: 'Filler',
       }) satisfies ConfigFieldSchema,
   ),
 }));
 
-vi.mock('#lib/config/Configuration.ts', async () => {
-  const actual = await vi.importActual<typeof import('#lib/config/Configuration.ts')>(
-    '#lib/config/Configuration.ts',
-  );
+vi.mock('#lib/config/admin.ts', async () => {
+  const actual =
+    await vi.importActual<typeof import('#lib/config/admin.ts')>('#lib/config/admin.ts');
   return {
     ...actual,
+    describeConfigField: vi.fn(),
     CONFIG_FIELD_SCHEMA: {
       features: [enabledFooSchema, enabledBarSchema, featureExportSchema, ...fillerSchemas],
       settings: [soloSchema, settingExportSchema],
@@ -128,9 +131,7 @@ const mockIsApiAvailable = vi.mocked(isApiAvailable);
 const mockDeleteConfigRow = vi.mocked(deleteConfigRow);
 const mockAddConfigRow = vi.mocked(addConfigRow);
 const mockInvalidateConfigCache = vi.mocked(invalidateConfigCache);
-const mockDeprecatedApiRows = vi.mocked(
-  (await import('#lib/config/Configuration.ts')).deprecatedApiRows,
-);
+const mockDeprecatedApiRows = vi.mocked((await import('#lib/config/admin.ts')).deprecatedApiRows);
 
 describe('ConfigKindTab (single kind)', () => {
   beforeEach(() => {
@@ -293,7 +294,7 @@ describe('ConfigKindTab merged kinds (Settings & Features)', () => {
   it('buckets a feature and a setting sharing a group name into one section', async () => {
     render(ConfigKindTab, { kinds: ['features', 'settings'], title: 'Settings & Features' });
 
-    const group = await screen.findByTestId('admin-config-group-features-settings-Export');
+    const group = await screen.findByTestId('admin-config-group-features-settings-export');
     expect(group).toHaveTextContent('Export');
 
     const featureRow = screen.getByTestId('admin-config-field-row-FEATURE_EXPORT_THING');

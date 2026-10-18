@@ -1,7 +1,7 @@
 <script lang="ts">
   import { config } from '#lib/config/config.svelte.ts';
 
-  import { ExportType } from '#lib/explorer/variant/Variant.ts';
+  import { ExportType } from '#lib/config/index.ts';
   import type { VariantData } from '#lib/explorer/variant/Variant.ts';
 
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';

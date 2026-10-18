@@ -1,5 +1,5 @@
 import { browser } from '$app/env';
-import type { Indexable } from '#lib/config/types.ts';
+import type { Indexable } from '#lib/utils/objects.ts';
 import type { User, OktaUser } from '#lib/auth/model/user.ts';
 
 export interface AuthData extends Indexable {

@@ -33,7 +33,7 @@ import {
 } from '../../support/mock-data';
 import { on, json, text, noContent, dispatch } from './router';
 import { state, nextId } from './state';
-import type { Indexable } from '../../../src/lib/config/types';
+import type { Indexable } from '../../../src/lib/utils/objects';
 
 const PORT = Number(process.env.MOCK_API_PORT ?? 9000);
 

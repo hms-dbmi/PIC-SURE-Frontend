@@ -2,9 +2,14 @@ import { genericUUID, objectUUID } from '#lib/utils/uuid.ts';
 import type { SearchResult } from '#lib/explorer/types.ts';
 import { GenotypeMap, type SNP } from '#lib/query/genomic.ts';
 import { type OperatorType, Operator } from '#lib/query/query.ts';
-import { AnyRecordOfFilterError } from '#lib/config/types.ts';
 
 import type { LogicNode, LogicGroup } from '#lib/query/logicTree.svelte.ts';
+
+export class AnyRecordOfFilterError extends Error {
+  constructor(message: string) {
+    super(message);
+  }
+}
 
 export type FilterType =
   | 'Categorical'

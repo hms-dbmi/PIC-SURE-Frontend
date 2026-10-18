@@ -7,7 +7,7 @@ vi.mock('#lib/auth/User.ts', () => ({
   isUserLoggedIn: () => false,
 }));
 
-vi.mock('#lib/config/config.svelte.ts', () => ({ routes: [] }));
+vi.mock('#lib/auth/nav.ts', () => ({ routes: [] }));
 
 import { sanitizeLocation, createLog } from '#lib/telemetry/logger.ts';
 

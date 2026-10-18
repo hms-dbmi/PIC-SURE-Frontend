@@ -1,26 +1,15 @@
 import { browser } from '$app/env';
 
-import type { ConfigCache } from './Configuration';
-import { mapFeatures, mapSettings, mapBranding } from './Configuration';
+import { mapBranding } from './branding.ts';
+import { PROJECT_HOSTNAME } from './deployment.ts';
+import type { ConfigCache } from './resolve.ts';
+import { mapFeatures, mapSettings } from './schema.ts';
 
 // node:async_hooks can't be statically imported here - this module is bundled for
 // both environments, and static imports are evaluated before any browser check runs.
 // import.meta.env.SSR is a build-time constant, so this branch is tree-shaken out
 // of the browser bundle entirely.
-const serverConfig = import.meta.env.SSR ? await import('./server/scope') : null;
-
-export { routes } from '../auth/nav';
-
-export const PROJECT_HOSTNAME =
-  typeof window !== 'undefined'
-    ? `${window.location.origin}/picsure`
-    : import.meta.env?.VITE_PROJECT_HOSTNAME
-      ? `https://${import.meta.env?.VITE_PROJECT_HOSTNAME}/picsure`
-      : 'https://nhanes.hms.harvard.edu/picsure';
-
-export const auth = {
-  auth0Tenant: import.meta.env?.VITE_AUTH0_TENANT || 'avillachlab',
-};
+const serverConfig = import.meta.env.SSR ? await import('./server/scope.ts') : null;
 
 // Stable reactive state for the single browser session.
 let clientFeatures = $state(mapFeatures([]));

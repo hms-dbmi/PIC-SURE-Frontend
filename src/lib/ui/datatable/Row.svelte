@@ -1,7 +1,7 @@
 <script lang="ts">
   import { slide } from 'svelte/transition';
   import type { Column } from '#lib/ui/datatable/types.ts';
-  import type { Indexable } from '#lib/config/types.ts';
+  import type { Indexable } from '#lib/utils/objects.ts';
   import {
     activeTable,
     activeRow,

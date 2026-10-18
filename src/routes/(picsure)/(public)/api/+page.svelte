@@ -6,7 +6,8 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
 
-  import { config, PROJECT_HOSTNAME } from '#lib/config/config.svelte.ts';
+  import { config } from '#lib/config/config.svelte.ts';
+  import { PROJECT_HOSTNAME } from '#lib/config/deployment.ts';
   import { getApiConnectionResource } from '#lib/explorer/Resources.ts';
   import { tokenStatus } from '#lib/auth/User.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';

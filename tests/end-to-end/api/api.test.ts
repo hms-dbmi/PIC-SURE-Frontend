@@ -7,7 +7,7 @@ import {
   mockToken,
 } from '../../support/mock-data';
 import { expectAnimationsFinished, expectSectionAligned, userIsLoggedIn } from '../utils';
-import type { Branding } from '../../../src/lib/config/Configuration';
+import type { Branding } from '../../../src/lib/config/branding';
 import brandingJson from '../../../src/lib/assets/configuration.json' with { type: 'json' };
 const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
 

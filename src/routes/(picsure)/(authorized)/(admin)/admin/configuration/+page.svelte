@@ -6,7 +6,7 @@
   import { appPath } from '#lib/api/paths.ts';
   import { Tabs } from '@skeletonlabs/skeleton-svelte';
 
-  import type { Indexable } from '#lib/config/types.ts';
+  import type { Indexable } from '#lib/utils/objects.ts';
   import { config } from '#lib/config/config.svelte.ts';
 
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';

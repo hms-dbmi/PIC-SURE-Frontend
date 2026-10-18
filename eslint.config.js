@@ -18,12 +18,10 @@ const boundaryExceptions = [
   'src/lib/ui/datatable/accessories/Pagination.svelte',
   'src/lib/ui/datatable/accessories/Rows.svelte',
   'src/lib/ui/datatable/accessories/Search.svelte',
-  'src/lib/ui/datatable/types.ts',
   'src/lib/ui/stepper/Stepper.svelte',
   'src/lib/ui/tree/RemoteTree.svelte',
   'src/lib/ui/unsavedGuard.svelte.ts',
   'src/lib/utils/hierarchy.ts',
-  'src/lib/utils/objects.ts',
 ];
 
 // `folder` (under src/lib/) may import only from `allowed` folders and packages: no `#lib/` or
@@ -142,6 +140,7 @@ export default [
   },
   ...importBoundary('ui', ['ui', 'utils']),
   ...importBoundary('utils', ['utils']),
+  ...importBoundary('config', ['config', 'api', 'assets', 'ui', 'utils']),
   ...svelte.configs['flat/prettier'],
   {
     files: ['**/*.svelte.js', '**/*.svelte.ts'],

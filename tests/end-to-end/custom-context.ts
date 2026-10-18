@@ -1,6 +1,6 @@
 import { test as base, expect, type Route, type BrowserContext, type Page } from '@playwright/test';
 import type { TestInfo } from '@playwright/test';
-import type { ConfigCache } from '../../src/lib/config/Configuration';
+import type { ConfigCache } from '../../src/lib/config/resolve';
 import type { ExpectedResultType } from '../../src/lib/query/query';
 import { TEST_CONFIG_COOKIE } from '../../src/lib/config/testOverride';
 import * as mockData from '../support/mock-data';

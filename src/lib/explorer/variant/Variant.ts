@@ -1,11 +1,7 @@
-import type { Indexable } from '#lib/config/types.ts';
+import type { ExportType } from '#lib/config/index.ts';
 import type { QueryRequestInterfaceV3 } from '#lib/api/picsure/query.types.ts';
 import type { Column } from '#lib/ui/datatable/types.ts';
-
-export enum ExportType {
-  Full = 'full',
-  Aggregate = 'aggregate',
-}
+import type { Indexable } from '#lib/utils/objects.ts';
 
 export interface VariantData {
   columns: Column[];

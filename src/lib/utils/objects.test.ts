@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
 import { isIndexable, flatIndex, deepMerge } from '#lib/utils/objects.ts';
-import type { Indexable } from '#lib/config/types.ts';
+import type { Indexable } from '#lib/utils/objects.ts';
 
 describe('Object utilities', () => {
   describe('isIndexable', () => {

@@ -8,7 +8,7 @@ import {
   facetResultPath,
 } from '../../../support/mock-data';
 import { userIsLoggedIn, chooseGenomicFilterType } from '../../utils';
-import type { Branding } from '#lib/config/Configuration.ts';
+import type { Branding } from '#lib/config/branding.ts';
 import brandingJson from '../../../../src/lib/assets/configuration.json' with { type: 'json' };
 const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
 

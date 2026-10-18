@@ -1,16 +1,18 @@
 <script lang="ts">
   import {
     CONFIG_FIELD_SCHEMA,
-    apiConfigMap,
-    envConfigMap,
     deprecatedApiRows,
     groupedConfigFieldSchema,
-    getConfigMode,
     type ConfigFieldSchema,
+  } from '#lib/config/admin.ts';
+  import {
+    apiConfigMap,
+    envConfigMap,
+    getConfigMode,
     type ConfigMap,
     type ConfigObject,
     type ConfigMode,
-  } from '#lib/config/Configuration.ts';
+  } from '#lib/config/resolve.ts';
   import {
     adminConfigRows,
     deleteConfigRow,
@@ -101,9 +103,9 @@
     if (!normalizedQuery) return groups;
     return groups
       .map((g) => ({
-        group: g.group,
+        ...g,
         fields: g.fields.filter((field) =>
-          `${humanizeKey(field.name)} ${field.name} ${field.description} ${g.group}`
+          `${humanizeKey(field.name)} ${field.name} ${field.description} ${g.label}`
             .toLowerCase()
             .includes(normalizedQuery),
         ),
@@ -222,7 +224,7 @@
           <div
             class="text-[13px] font-bold uppercase tracking-wide opacity-70 border-b border-surface-200-800 pb-2 mb-3.5"
           >
-            {group.group}
+            {group.label}
           </div>
         {/if}
         <div class="flex flex-col gap-2.5">

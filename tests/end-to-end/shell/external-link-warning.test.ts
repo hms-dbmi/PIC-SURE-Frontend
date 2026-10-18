@@ -1,7 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 import { test, mockApiConfig } from '../custom-context';
 import { userIsLoggedIn } from '../utils';
-import type { Branding } from '../../../src/lib/config/Configuration';
+import type { Branding } from '../../../src/lib/config/branding';
 import { Internal } from '../../../src/lib/api/paths';
 import * as config from '../../../src/lib/assets/configuration.json' with { type: 'json' };
 

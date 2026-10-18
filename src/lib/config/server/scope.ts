@@ -1,6 +1,8 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 
-import type { ConfigCache, Features, Settings, Branding } from '#lib/config/Configuration.ts';
+import type { Branding } from '#lib/config/branding.ts';
+import type { ConfigCache } from '#lib/config/resolve.ts';
+import type { Features, Settings } from '#lib/config/schema.ts';
 
 export type RequestStore = {
   cache: ConfigCache;

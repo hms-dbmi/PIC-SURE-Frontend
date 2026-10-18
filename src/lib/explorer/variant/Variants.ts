@@ -1,10 +1,11 @@
 import * as api from '#lib/api/client.ts';
 import { Picsure } from '#lib/api/paths.ts';
 import { config } from '#lib/config/config.svelte.ts';
-import type { Indexable } from '#lib/config/types.ts';
+import type { Indexable } from '#lib/utils/objects.ts';
 
 import type { QueryRequestInterfaceV3 } from '#lib/api/picsure/query.types.ts';
-import { ExportType, type VariantData } from '#lib/explorer/variant/Variant.ts';
+import { ExportType } from '#lib/config/index.ts';
+import type { VariantData } from '#lib/explorer/variant/Variant.ts';
 
 import type { Column } from '#lib/ui/datatable/types.ts';
 

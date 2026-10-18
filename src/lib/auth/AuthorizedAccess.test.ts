@@ -13,20 +13,16 @@ vi.mock('$app/paths', () => ({
 vi.mock('#lib/api/client.ts', () => mockApi);
 vi.mock('#lib/ui/toaster.ts', () => ({ toaster: { error: vi.fn() }, isToastShowing: () => false }));
 vi.mock('#lib/telemetry/logger.ts', () => ({ log: vi.fn(), createLog: vi.fn(() => ({})) }));
-vi.mock('#lib/config/config.svelte.ts', async () => {
-  const { routes } = await import('#lib/auth/nav.ts');
-  return {
-    routes,
-    config: {
-      features: {
-        dashboard: true,
-        discover: true,
-        analyzeApi: true,
-        login: { open: false },
-      },
+vi.mock('#lib/config/config.svelte.ts', () => ({
+  config: {
+    features: {
+      dashboard: true,
+      discover: true,
+      analyzeApi: true,
+      login: { open: false },
     },
-  };
-});
+  },
+}));
 
 import { getUser, user, userRoutes } from '#lib/auth/User.ts';
 

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { ConfigFieldSchema, ConfigMap, ConfigObject } from '#lib/config/Configuration.ts';
-  import { describeConfigField } from '#lib/config/resolve.ts';
+  import { describeConfigField, type ConfigFieldSchema } from '#lib/config/admin.ts';
+  import type { ConfigMap, ConfigObject } from '#lib/config/resolve.ts';
   import {
     addConfigRow,
     updateConfigRow,

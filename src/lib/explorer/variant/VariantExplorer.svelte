@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
 
-  import { ExportType, type VariantResult } from '#lib/explorer/variant/Variant.ts';
+  import { ExportType } from '#lib/config/index.ts';
+  import type { VariantResult } from '#lib/explorer/variant/Variant.ts';
   import { getCountResource } from '#lib/explorer/Resources.ts';
   import { getVariantCount, getVariantData } from '#lib/explorer/variant/Variants.ts';
   import { getQueryRequestV3 } from '#lib/query/build.ts';

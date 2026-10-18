@@ -1,7 +1,11 @@
 <script lang="ts">
   import type { SearchResult } from '#lib/explorer/types.ts';
   import type { NodeInterface } from '#lib/ui/tree/types.ts';
-  import { type Filter, createAnyRecordOfFilter } from '#lib/query/filter.svelte.ts';
+  import {
+    type Filter,
+    AnyRecordOfFilterError,
+    createAnyRecordOfFilter,
+  } from '#lib/query/filter.svelte.ts';
   import { activeRow } from '#lib/explorer/ExpandableRow.ts';
   import { addFilter } from '#lib/query/filters.ts';
   import RadioTree from '#lib/ui/tree/RadioTree.svelte';
@@ -13,7 +17,6 @@
   import { panelOpen } from '#lib/explorer/panel.ts';
   import Loading from '#lib/ui/Loading.svelte';
   import { toaster } from '#lib/ui/toaster.ts';
-  import { AnyRecordOfFilterError } from '#lib/config/types.ts';
   import Modal from '#lib/ui/dialog/Modal.svelte';
   import { page } from '$app/state';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
