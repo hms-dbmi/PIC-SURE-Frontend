@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { buttonVariants } from '#lib/ui/button.ts';
   import Button from '#lib/ui/Button.svelte';
   import { ApiError } from '#lib/api/errors.ts';
   import * as apiKeys from '#lib/api/psama/apiKeys.ts';
@@ -219,10 +220,7 @@
       <code data-testid="api-public-key-value" class="font-mono text-sm break-all grow"
         >{publicKey.apiKey}</code
       >
-      <CopyButton
-        itemToCopy={publicKey.apiKey}
-        class="preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-      />
+      <CopyButton itemToCopy={publicKey.apiKey} class={buttonVariants.tonal} />
     </div>
     <div class="mt-4">
       <span class="font-bold">Expires:</span>

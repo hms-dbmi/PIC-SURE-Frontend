@@ -22,14 +22,16 @@
     ...rest
   }: Props = $props();
 
+  // soft already has a border; filled gets one in its text colour, like soft's.
   const variants = { tonal: 'soft', filled: 'filled' } as const;
+  const borders = { tonal: '', filled: 'border' };
 </script>
 
 <Button
   {...rest}
   variant={variants[variant]}
   size="sm"
-  class="h-fit border disabled:opacity-75 {className}"
+  class="h-fit {borders[variant]} disabled:opacity-75 {className}"
 >
   {#if angle === 'left'}<i class="fa-solid fa-arrow-left mr-3"></i>{/if}
   {@render children?.()}

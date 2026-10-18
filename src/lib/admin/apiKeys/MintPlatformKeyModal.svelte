@@ -1,5 +1,6 @@
 <script lang="ts">
   import Button from '#lib/ui/Button.svelte';
+  import { buttonClass } from '#lib/ui/button.ts';
   import Dialog from '#lib/ui/dialog/Dialog.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import CopyButton from '#lib/ui/CopyButton.svelte';
@@ -72,7 +73,7 @@
   disabled={!$isTopAdmin}
   closeable={!minted && !isSubmitting}
   onclose={clearState}
-  triggerClass="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
+  triggerClass={buttonClass('tonal')}
 >
   {#snippet trigger()}+ Mint Platform Key{/snippet}
   {#if minted}

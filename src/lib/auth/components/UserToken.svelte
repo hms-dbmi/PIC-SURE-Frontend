@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { buttonClass } from '#lib/ui/button.ts';
+  import { buttonClass, buttonVariants } from '#lib/ui/button.ts';
   import Button from '#lib/ui/Button.svelte';
   import { toaster } from '#lib/ui/toaster.ts';
   import { debounce } from '#lib/utils/debounce.ts';
@@ -120,7 +120,7 @@
         <CopyButton
           itemToCopy={$user.token || ''}
           oncopy={() => log(createLog('ACTION', 'token.copy'))}
-          class="preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
+          class={buttonVariants.tonal}
         />
         <ConfirmDialog
           data-testid="user-token-refresh"

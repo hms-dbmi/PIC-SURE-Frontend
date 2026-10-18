@@ -1,6 +1,5 @@
 // Every button style the app uses, as complete class strings so Tailwind generates them (no
-// `preset-${tone}` assembly). Each entry renders exactly the classes its call sites used before.
-// Primary is the default tone; other tones are named after it.
+// `preset-${tone}` assembly). Names without a tone suffix are primary.
 export const buttonVariants = {
   none: '',
   filled: 'preset-filled-primary-500',
@@ -37,8 +36,8 @@ export function buttonClass(variant: ButtonVariant = 'filled', size: ButtonSize 
   return `${buttonSizes[size]} ${buttonVariants[variant]}`.trim();
 }
 
-// An href with a scheme (https:, mailto:) or a protocol-relative one leaves the app. Paths from
-// resolve(), absolute or relative, stay in it.
+// resolve() output always starts with '/' or '.' (relative during SSR); anything else, including
+// a configured 'guide.pdf', is treated as leaving the app, as config links always were.
 export function isExternalHref(href: string): boolean {
-  return /^([a-z][a-z\d+.-]*:|\/\/)/i.test(href);
+  return !/^[./]/.test(href) || href.startsWith('//');
 }

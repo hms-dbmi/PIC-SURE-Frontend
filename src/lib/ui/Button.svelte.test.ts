@@ -7,6 +7,7 @@ import { fireEvent, render, screen } from '@testing-library/svelte';
 import Button from '#lib/ui/Button.svelte';
 import IconButton from '#lib/ui/IconButton.svelte';
 import ConfirmButton from '#lib/ui/ConfirmButton.svelte';
+import CardButton from '#lib/ui/CardButton.svelte';
 
 const text = (value: string) => createRawSnippet(() => ({ render: () => `<span>${value}</span>` }));
 
@@ -34,6 +35,18 @@ describe('Button', () => {
 
     expect(screen.queryByRole('link')).toBeNull();
     expect(screen.getByRole('button', { name: 'Explore' })).toBeDisabled();
+  });
+});
+
+describe('CardButton', () => {
+  it('opens external links in a new tab and app links in place', () => {
+    render(CardButton, { title: 'Docs', href: 'https://example.org/docs' });
+    render(CardButton, { title: 'Guide', href: 'guide.pdf' });
+    render(CardButton, { title: 'Explore', href: '/explorer' });
+
+    expect(screen.getByRole('link', { name: 'Docs' })).toHaveAttribute('target', '_blank');
+    expect(screen.getByRole('link', { name: 'Guide' })).toHaveAttribute('target', '_blank');
+    expect(screen.getByRole('link', { name: 'Explore' })).not.toHaveAttribute('target');
   });
 });
 

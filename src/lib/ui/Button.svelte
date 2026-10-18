@@ -11,7 +11,7 @@
   interface Props extends Omit<HTMLAttributes<HTMLElement>, 'class' | 'children'> {
     variant?: ButtonVariant;
     size?: ButtonSize;
-    /** Renders a link. Resolve internal paths first; an href with a scheme gets rel="external". */
+    /** Renders a link. Resolve internal paths first. */
     href?: string;
     target?: string;
     rel?: string;
@@ -38,7 +38,7 @@
   const classes = $derived(`${buttonClass(variant, size)} ${className}`);
 </script>
 
-<!-- A disabled link can't be disabled, so it renders as a disabled button instead. -->
+<!-- <a> has no disabled state, so a disabled link renders as a disabled button. -->
 {#if href && !disabled}
   <a
     {...rest}

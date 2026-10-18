@@ -116,15 +116,14 @@
             >Genomic Filtering</Button
           >
         {/if}
-        <button
-          type="button"
-          class="btn preset-tonal-error border border-error-500 hover:preset-filled-error-500"
+        <Button
+          variant="tonal-error"
           aria-label="You are on the reset button"
           disabled={!searchInput && $selectedFacets.length === 0}
           onclick={reset}
         >
           Reset
-        </button>
+        </Button>
       </div>
     </div>
     {#if $error}

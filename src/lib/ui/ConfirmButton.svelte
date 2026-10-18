@@ -14,6 +14,7 @@
     /** Font Awesome classes; renders an icon-only trigger like IconButton. */
     icon?: string;
     variant?: ButtonVariant;
+    /** The trigger's Button size; `size` is the dialog's. */
     buttonSize?: ButtonSize;
     /** Keyboard shortcut a table row listens for (data-key). */
     shortcut?: string;
