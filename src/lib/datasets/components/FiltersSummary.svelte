@@ -7,16 +7,17 @@
     type FilterInterface,
     type FilterGroupInterface,
   } from '#lib/query/filter.svelte.ts';
-  import { LogicTree } from '#lib/query/logicTree.svelte.ts';
+  import type { LogicTree } from '#lib/query/logicTree.svelte.ts';
   import { cardClass } from '#lib/ui/surface.ts';
+  import type { OperatorType } from '#lib/query/query.ts';
+  import FilterTreeView from '#lib/query/components/FilterTreeView.svelte';
 
-  let {
-    filterTree,
-    genomicFilters,
-  }: {
+  interface Props {
     filterTree: LogicTree<FilterInterface>;
     genomicFilters: Filter[];
-  } = $props();
+  }
+
+  let { filterTree, genomicFilters }: Props = $props();
 
   let length = $derived(filterTree.length + genomicFilters.length);
 </script>
@@ -40,7 +41,7 @@
   </div>
 {/snippet}
 
-{#snippet operatorDivider(operator: string)}
+{#snippet operatorDivider(operator: OperatorType)}
   <div class="flex items-center gap-2 px-0 my-0.5" data-testid="dataset-operator-divider">
     <div class="h-px flex-1 {operator === 'OR' ? 'bg-secondary-300' : 'bg-primary-300'}"></div>
     <OperatorBadge {operator} />
@@ -48,37 +49,26 @@
   </div>
 {/snippet}
 
-{#snippet filterNode(node: FilterInterface)}
-  {#if node.filterType === 'FilterGroup'}
-    {@const group = node as FilterGroupInterface}
-    <div
-      data-testid="dataset-filter-node"
-      class="border-l-2 px-0 ml-2 flex flex-col gap-1 {group.operator === 'OR'
-        ? 'border-secondary-400'
-        : 'border-primary-300'}"
-    >
-      {#each group.children as child, i}
-        {#if i > 0}
-          {@render operatorDivider(group.operator)}
-        {/if}
-        {@render filterNode(child as FilterInterface)}
-      {/each}
-    </div>
-  {:else}
-    {@render filterCard(node as Filter)}
-  {/if}
-{/snippet}
-
 {#if length === 0}
   <p class="text-sm text-surface-400 text-center py-2">No filters applied</p>
 {:else}
   <div class="flex flex-col gap-1">
-    {#each filterTree.root.children as child, i}
-      {#if i > 0}
-        {@render operatorDivider((filterTree.root as FilterGroupInterface).operator)}
-      {/if}
-      {@render filterNode(child as FilterInterface)}
-    {/each}
+    <FilterTreeView
+      group={filterTree.root as FilterGroupInterface}
+      filter={filterCard}
+      separator={operatorDivider}
+    >
+      {#snippet subgroup({ group, children })}
+        <div
+          data-testid="dataset-filter-node"
+          class="border-l-2 px-0 ml-2 flex flex-col gap-1 {group.operator === 'OR'
+            ? 'border-secondary-400'
+            : 'border-primary-300'}"
+        >
+          {@render children()}
+        </div>
+      {/snippet}
+    </FilterTreeView>
     {#if genomicFilters.length > 0}
       {#if filterTree.length > 0}
         {@render operatorDivider('AND')}

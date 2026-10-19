@@ -6,7 +6,7 @@
   import { exports } from '#lib/explorer/export/Export.ts';
 
   import FilterComponent from '#lib/explorer/components/results/AddedFilter.svelte';
-  import ResultsFilterGroup from '#lib/explorer/components/results/ResultsFilterGroup.svelte';
+  import FilterTreeView from '#lib/query/components/FilterTreeView.svelte';
   import Popover from '#lib/ui/popover/Popover.svelte';
   import Button from '#lib/ui/Button.svelte';
 
@@ -61,7 +61,23 @@
       </div>
     {/if}
     <section class="py-1">
-      <ResultsFilterGroup group={filterState.tree.root as FilterGroupInterface} />
+      <div class="flex flex-col">
+        <FilterTreeView group={filterState.tree.root as FilterGroupInterface}>
+          {#snippet filter(filter)}
+            <FilterComponent {filter} />
+          {/snippet}
+          {#snippet separator(operator)}
+            <span class="font-semibold text-xs py-0.5" data-testid="results-filter-operator"
+              >{operator}</span
+            >
+          {/snippet}
+          {#snippet subgroup({ children })}
+            <div class="flex flex-col border-l-3 border-gray-400 pl-2 ml-1">
+              {@render children()}
+            </div>
+          {/snippet}
+        </FilterTreeView>
+      </div>
       {#if filterState.genomic.length > 0 && filterState.phenotypic.length > 0}
         <span class="font-semibold text-xs py-0.5">AND</span>
       {/if}
