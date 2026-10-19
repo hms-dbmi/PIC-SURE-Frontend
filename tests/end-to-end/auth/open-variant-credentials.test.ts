@@ -1,13 +1,12 @@
 import { expect, type Page } from '@playwright/test';
-import { test, mockApiConfig, mockApiSuccess } from '../../custom-context';
+import { test, mockApiConfig, mockApiSuccess } from '../custom-context';
 import {
   crossCountSyncResponseInital,
   facetResultPath,
   facetsResponse,
   mockToken,
-  searchResultPath,
   searchResults,
-} from '../../../support/mock-data';
+} from '../../support/mock-data';
 
 // The open variant's data requests, the landing page's public stats and /discover's
 // distributions, carry a signed-in user's login token so the backend's access log can tell who
@@ -25,7 +24,7 @@ const SESSION = `picsure_s_${b64url({ alg: 'HS256' })}.${b64url({
 interface Sent {
   path: string;
   bearer?: string;
-  // the dictionary body's consents; the public stats send none
+  // the dictionary body's consents: the public stats send none, a signed-in user's own stats theirs
   consents?: unknown;
 }
 
@@ -44,6 +43,7 @@ function recordRequests(page: Page, prefix: string): Sent[] {
 }
 
 const isPublicStat = ({ consents }: Sent) => Array.isArray(consents) && consents.length === 0;
+const statKind = (sent: Sent) => (isPublicStat(sent) ? 'public' : 'auth');
 
 async function mockBackend(page: Page) {
   await page.route('*/**/psama/open/session', (route) =>
@@ -56,7 +56,6 @@ async function mockBackend(page: Page) {
   await mockApiSuccess(page, '*/**/picsure/hpds/open/query/sync', '88');
   await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
   await mockApiSuccess(page, '*/**/picsure/dictionary/concepts?*', searchResults);
-  await mockApiSuccess(page, searchResultPath, searchResults);
   await mockApiSuccess(page, facetResultPath, facetsResponse);
   await mockApiSuccess(page, '*/**/picsure/visualization/*/distributions', {
     categoricalData: [],
@@ -86,9 +85,13 @@ test.describe('Open variant credentials', () => {
       await page.goto('/');
 
       await expect
-        .poll(() => sent.filter(isPublicStat).map(({ path, bearer }) => [path, bearer]))
-        .toEqual(expect.arrayContaining(DICTIONARY.map((path) => [path, mockToken])));
-      expect(sent.filter(({ bearer }) => bearer !== mockToken)).toEqual([]);
+        .poll(() => sent.map((r) => [r.path, statKind(r), r.bearer]).sort())
+        .toEqual(
+          DICTIONARY.flatMap((path) => [
+            [path, 'auth', mockToken],
+            [path, 'public', mockToken],
+          ]),
+        );
     });
 
     test('/discover distributions send the login token', async ({ page }) => {
