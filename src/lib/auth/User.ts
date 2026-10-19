@@ -29,7 +29,8 @@ function bridge<T>(read: () => T, write?: (value: T) => void): Readable<T> | Wri
   const subscribe: Readable<T>['subscribe'] = (run, invalidate) =>
     untrack(() => toStore(read).subscribe(run, invalidate));
   if (!write) return { subscribe };
-  return { subscribe, set: write, update: (updater: Updater<T>) => write(updater(read())) };
+  const update = (updater: Updater<T>) => untrack(() => write(updater(read())));
+  return { subscribe, set: write, update };
 }
 
 export const tokenStatus: Readable<boolean> = bridge(() => session.isLoggedIn);

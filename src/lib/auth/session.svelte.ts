@@ -88,7 +88,8 @@ export class Session {
   #validity = $derived(tokenValidity(this.#token));
   #shell: SessionShell = disconnected;
   #consentsRequest: Promise<void> = Promise.resolve();
-  // Bumped when the session ends, so profile responses requested before then are dropped.
+  // Bumped when the session ends, so profile and long-term token responses requested before
+  // then are dropped.
   #generation = 0;
   // A 401 or 403 from PSAMA's logout call makes the API client start another logout, which would
   // navigate to /login a second time, so later calls share the logout already running.
@@ -272,6 +273,12 @@ export class Session {
     }
   }
 
+  /** Takes a refreshed token for the signed-in user. One that arrives after a logout is ignored. */
+  refresh(token: string): Promise<void> {
+    if (!untrack(() => this.isLoggedIn)) return Promise.resolve();
+    return this.login(token);
+  }
+
   logout(authProvider?: AuthProvider, redirect = false): Promise<void> {
     this.#pendingLogout ??= untrack(() => this.#endSession(authProvider, redirect)).finally(() => {
       this.#pendingLogout = undefined;
@@ -341,7 +348,7 @@ registerSessionHooks({
   },
   onTokenRefreshed: (token) => {
     // The API client doesn't wait for this, so a failure here would be an unhandled rejection.
-    session.login(token).catch((error: unknown) => {
+    session.refresh(token).catch((error: unknown) => {
       console.error('Error reloading the user after a token refresh: ' + error);
     });
   },
