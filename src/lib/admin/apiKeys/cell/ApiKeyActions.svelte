@@ -2,7 +2,7 @@
   import ConfirmButton from '#lib/ui/ConfirmButton.svelte';
   import { isTopAdmin } from '#lib/auth/User.ts';
   import { toaster } from '#lib/ui/toaster.ts';
-  import { revokeApiKey } from '#lib/admin/apiKeys/ApiKeys.ts';
+  import { apiKeys } from '#lib/admin/apiKeys/apiKeys.svelte.ts';
   import { extractApiError } from '#lib/admin/apiKeys/model.ts';
 
   const { data = { cell: '', row: { prefix: '', status: '' } } } = $props();
@@ -11,7 +11,7 @@
     // defense-in-depth beyond the disabled trigger
     if (!$isTopAdmin) return;
     try {
-      await revokeApiKey(data.cell);
+      await apiKeys.revoke(data.cell);
       toaster.success({
         title: `Successfully revoked API key '${data.row.prefix}'`,
       });

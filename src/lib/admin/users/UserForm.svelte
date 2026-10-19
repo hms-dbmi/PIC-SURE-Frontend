@@ -7,10 +7,7 @@
   import type { ExtendedUser, UserRequest } from '#lib/auth/model/user.ts';
   import type { Connection } from '#lib/auth/model/connection.ts';
 
-  import { addUser, updateUser, getUserByEmailAndConnection } from '#lib/admin/users/Users.ts';
-  import { getConnection } from '#lib/admin/access/Connections.ts';
-  import { getRole } from '#lib/admin/access/Roles.ts';
-  import { getPrivilege } from '#lib/admin/access/Privileges.ts';
+  import * as admin from '#lib/admin/resources.ts';
   import { toaster } from '#lib/ui/toaster.ts';
 
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
@@ -18,7 +15,7 @@
   interface Props {
     user?: ExtendedUser | undefined;
     roleList: string[][];
-    connections: Connection[];
+    connections: readonly Connection[];
   }
 
   let { user = undefined, roleList, connections }: Props = $props();
@@ -54,23 +51,16 @@
 
     let newUser: UserRequest = {
       email,
-      connection: await getConnection(connection),
+      connection: await admin.connections.get(connection),
       generalMetadata: JSON.stringify(generalMetadata),
       active,
-      roles: await Promise.all(
-        selectedRoles.map((role) =>
-          getRole(role.uuid).then((role) => ({
-            ...role,
-            privileges: role.privileges.map((uuid: string) => getPrivilege(uuid)),
-          })),
-        ),
-      ),
+      roles: await admin.rolesForSave(selectedRoles.map((role) => role.uuid)),
     };
     try {
       if (user) {
-        await updateUser({ ...newUser, uuid: user.uuid });
+        await admin.users.update({ ...newUser, uuid: user.uuid });
       } else {
-        const findUser = await getUserByEmailAndConnection(email, connection);
+        const findUser = await admin.findUserByEmailAndConnection(email, connection);
         if (findUser) {
           toaster.error({
             title: 'Cannot add a user and connection pair that already exists.',
@@ -78,7 +68,7 @@
           return;
         }
 
-        await addUser(newUser);
+        await admin.users.add(newUser);
       }
 
       toaster.success({

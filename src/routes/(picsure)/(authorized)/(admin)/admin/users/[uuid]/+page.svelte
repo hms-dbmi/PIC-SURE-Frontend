@@ -8,14 +8,8 @@
   import type { Role } from '#lib/auth/model/role.ts';
   import type { Connection } from '#lib/auth/model/connection.ts';
 
-  import UsersStore from '#lib/admin/users/Users.ts';
-  import RolesStore from '#lib/admin/access/Roles.ts';
-  import ConnectionStore from '#lib/admin/access/Connections.ts';
+  import * as admin from '#lib/admin/resources.ts';
   import Loading from '#lib/ui/Loading.svelte';
-
-  const { loadUsers, getUser } = UsersStore;
-  const { getRole } = RolesStore;
-  const { getConnection } = ConnectionStore;
 
   let user: ExtendedUser = $state({
     connection: '',
@@ -27,11 +21,11 @@
   let connection: Connection | string = $state('');
 
   async function load() {
-    await loadUsers();
+    await admin.users.load();
     if (page.params?.uuid) {
-      user = await getUser(page.params.uuid);
-      connection = (await getConnection(user.connection)) || '';
-      roles = await Promise.all(user.roles.map(getRole));
+      user = await admin.users.get(page.params.uuid);
+      connection = (await admin.connections.get(user.connection)) || '';
+      roles = await Promise.all(user.roles.map((uuid) => admin.roles.get(uuid)));
     }
   }
 </script>

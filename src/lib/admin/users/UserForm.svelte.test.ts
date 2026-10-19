@@ -7,10 +7,7 @@ import UserForm from '#lib/admin/users/UserForm.svelte';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('#lib/ui/toaster.ts', () => ({ toaster: { success: vi.fn(), error: vi.fn() } }));
-vi.mock('#lib/admin/users/Users.ts', () => ({}));
-vi.mock('#lib/admin/access/Connections.ts', () => ({}));
-vi.mock('#lib/admin/access/Roles.ts', () => ({}));
-vi.mock('#lib/admin/access/Privileges.ts', () => ({}));
+vi.mock('#lib/admin/resources.ts', () => ({}));
 
 const connections = [{ uuid: 'c-1', id: 'okta', label: 'Okta', subPrefix: '', requiredFields: '' }];
 const roleList = [['Researcher', 'r-1']];

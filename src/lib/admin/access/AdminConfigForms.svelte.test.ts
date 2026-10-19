@@ -14,15 +14,10 @@ vi.mock('#lib/auth/User.ts', async () => {
   const { readable } = await import('svelte/store');
   return { isTopAdmin: readable(true) };
 });
-vi.mock('#lib/admin/access/Connections.ts', () => ({
-  addConnection: vi.fn(),
-  updateConnection: vi.fn(),
-}));
-vi.mock('#lib/admin/access/Privileges.ts', () => ({
-  addPrivilege: vi.fn(),
-  updatePrivilege: vi.fn(),
-}));
-vi.mock('#lib/admin/access/Roles.ts', () => ({ addRole: vi.fn(), updateRole: vi.fn() }));
+vi.mock('#lib/admin/resources.ts', () => {
+  const saves = () => ({ add: vi.fn(), update: vi.fn() });
+  return { connections: saves(), privileges: saves(), roles: saves() };
+});
 
 const connection = {
   uuid: 'c-1',

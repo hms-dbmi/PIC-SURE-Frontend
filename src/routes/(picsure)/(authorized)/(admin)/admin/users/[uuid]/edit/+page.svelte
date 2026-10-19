@@ -7,14 +7,8 @@
   import UserForm from '#lib/admin/users/UserForm.svelte';
 
   import type { ExtendedUser } from '#lib/auth/model/user.ts';
-  import UsersStore from '#lib/admin/users/Users.ts';
-  import RoleStore from '#lib/admin/access/Roles.ts';
-  import ConnectionsStore from '#lib/admin/access/Connections.ts';
+  import * as admin from '#lib/admin/resources.ts';
   import Loading from '#lib/ui/Loading.svelte';
-
-  const { getUser, loadUsers } = UsersStore;
-  const { roleList, loadRoles } = RoleStore;
-  const { connections, loadConnections } = ConnectionsStore;
 
   let user: ExtendedUser = $state({
     connection: '',
@@ -24,12 +18,12 @@
   });
 
   async function load() {
-    await loadUsers();
+    await admin.users.load();
     if (page.params?.uuid) {
-      user = await getUser(page.params.uuid);
+      user = await admin.users.get(page.params.uuid);
     }
-    await loadRoles();
-    await loadConnections();
+    await admin.roles.load();
+    await admin.connections.load();
   }
 </script>
 
@@ -42,7 +36,7 @@
     <Loading />
   {:then}
     <section id="admin-user-edit">
-      <UserForm connections={$connections} roleList={$roleList} {user} />
+      <UserForm connections={admin.connections.items} roleList={admin.roles.options} {user} />
     </section>
   {:catch}
     <ErrorAlert title="API Error">

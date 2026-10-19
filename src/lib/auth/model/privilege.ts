@@ -21,13 +21,3 @@ export enum BDCPrivileges {
   NAMED_DATASET = 'MANUAL_PRIV_NAMED_DATASET',
   DICTIONARY = 'MANAGED_PRIV_DICTIONARY',
 }
-
-// TODO: Replace any type
-/* eslint-disable @typescript-eslint/no-explicit-any */
-export function mapPrivilege(data: any) {
-  return {
-    ...data,
-    application: data.application?.uuid || '',
-  };
-}
-/* eslint-enable @typescript-eslint/no-explicit-any */

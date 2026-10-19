@@ -5,11 +5,7 @@ import { fireEvent, render, screen } from '@testing-library/svelte';
 
 import ConfigFieldRow from '#lib/admin/settings/ConfigFieldRow.svelte';
 import { describeConfigField } from '#lib/config/admin.ts';
-import {
-  addConfigRow,
-  updateConfigRow,
-  deleteConfigRow,
-} from '#lib/admin/settings/AdminConfiguration.ts';
+import { adminConfig } from '#lib/admin/settings/adminConfig.svelte.ts';
 import type { ConfigFieldSchema, FieldOrigin } from '#lib/config/admin.ts';
 import type { ConfigMap, ConfigObject } from '#lib/config/resolve.ts';
 
@@ -20,22 +16,10 @@ vi.mock('#lib/config/admin.ts', async () => ({
   describeConfigField: vi.fn(),
 }));
 
-vi.mock('#lib/admin/settings/AdminConfiguration.ts', async () => {
-  const actual = await vi.importActual<typeof import('#lib/admin/settings/AdminConfiguration.ts')>(
-    '#lib/admin/settings/AdminConfiguration.ts',
-  );
-  return {
-    ...actual,
-    addConfigRow: vi.fn(),
-    updateConfigRow: vi.fn(),
-    deleteConfigRow: vi.fn(),
-  };
-});
-
 const mockDescribeConfigField = vi.mocked(describeConfigField);
-const mockAddConfigRow = vi.mocked(addConfigRow);
-const mockUpdateConfigRow = vi.mocked(updateConfigRow);
-const mockDeleteConfigRow = vi.mocked(deleteConfigRow);
+const mockAddConfigRow = vi.spyOn(adminConfig, 'add');
+const mockUpdateConfigRow = vi.spyOn(adminConfig, 'update');
+const mockDeleteConfigRow = vi.spyOn(adminConfig, 'remove');
 
 const booleanSchema: ConfigFieldSchema = {
   name: 'ENABLE_FOO',

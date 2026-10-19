@@ -23,10 +23,7 @@
   import BannerManagementView from '#lib/banners/components/admin/BannerManagementView.svelte';
   import ApiKeysPanel from '#lib/admin/apiKeys/ApiKeysPanel.svelte';
 
-  import { privileges, loadPrivileges } from '#lib/admin/access/Privileges.ts';
-  import { roles, loadRoles } from '#lib/admin/access/Roles.ts';
-  import { loadApplications } from '#lib/admin/access/Application.ts';
-  import { connections, loadConnections } from '#lib/admin/access/Connections.ts';
+  import * as admin from '#lib/admin/resources.ts';
   import { isTopAdmin } from '#lib/auth/User.ts';
 
   import Loading from '#lib/ui/Loading.svelte';
@@ -148,8 +145,8 @@
   };
 
   async function loadAppsAndPriv() {
-    await loadPrivileges();
-    await loadApplications();
+    await admin.privileges.load();
+    await admin.applications.load();
   }
 
   const rowClickHandler = (path: string) => (row: Indexable) => {
@@ -193,7 +190,7 @@
       {#if tab === 'Access Control'}
         <div id="admin-role-section" class="mb-10">
           <h2>Roles Management</h2>
-          {#await loadRoles()}
+          {#await admin.roles.load()}
             <Loading />
           {:then}
             <div class="flex gap-4 my-6">
@@ -211,7 +208,7 @@
               tableName="Roles"
               data-testid="admin-role-table"
               id="admin-role-table"
-              data={$roles}
+              data={admin.roles.items}
               columns={roleTable.columns}
               cellOverides={roleTable.overrides}
               rowClickHandler={roleRowCLick}
@@ -243,7 +240,7 @@
               tableName="Privileges"
               data-testid="admin-privilege-table"
               id="admin-privilege-table"
-              data={$privileges}
+              data={admin.privileges.items}
               columns={privilegesTable.columns}
               cellOverides={privilegesTable.overrides}
               rowClickHandler={privilegeRowClick}
@@ -257,7 +254,7 @@
         </div>
         <div id="admin-connection-section" class="mb-10">
           <h2>Connections Management</h2>
-          {#await loadConnections()}
+          {#await admin.connections.load()}
             <Loading />
           {:then}
             <div class="flex gap-4 my-6">
@@ -275,7 +272,7 @@
               tableName="Connections"
               data-testid="admin-connection-table"
               id="admin-connection-table"
-              data={$connections}
+              data={admin.connections.items}
               columns={connectionTable.columns}
               cellOverides={connectionTable.overrides}
               rowClickHandler={connectionRowClick}

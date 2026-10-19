@@ -4,10 +4,8 @@
   import Content from '#lib/shell/Content.svelte';
   import PrivilegeForm from '#lib/admin/access/PrivilegeForm.svelte';
 
-  import ApplicationStore from '#lib/admin/access/Application.ts';
+  import * as admin from '#lib/admin/resources.ts';
   import Loading from '#lib/ui/Loading.svelte';
-
-  const { applicationList, loadApplications } = ApplicationStore;
 </script>
 
 <svelte:head>
@@ -15,11 +13,11 @@
 </svelte:head>
 
 <Content title="New Privilege" backUrl="/admin/configuration" backTitle="Back to Configuration">
-  {#await loadApplications()}
+  {#await admin.applications.load()}
     <Loading />
   {:then}
     <section id="admin-privilege-new">
-      <PrivilegeForm applicationList={$applicationList} />
+      <PrivilegeForm applicationList={admin.applications.options} />
     </section>
   {:catch}
     <ErrorAlert title="API Error">Something went wrong when sending your request.</ErrorAlert>

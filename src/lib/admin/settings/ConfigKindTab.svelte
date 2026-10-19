@@ -15,13 +15,10 @@
     type ConfigMode,
   } from '#lib/config/resolve.ts';
   import {
-    adminConfigRows,
-    deleteConfigRow,
-    invalidateConfigCache,
+    adminConfig,
     isApiAvailable,
-    loadAdminConfig,
     type AdminConfigKind,
-  } from '#lib/admin/settings/AdminConfiguration.ts';
+  } from '#lib/admin/settings/adminConfig.svelte.ts';
   import ConfigFieldRow from './ConfigFieldRow.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import Loading from '#lib/ui/Loading.svelte';
@@ -61,22 +58,9 @@
   let availableAPIKinds: AdminConfigKind[] = $derived(kinds.filter((kind) => isApiAvailable(kind)));
   let activeConfigMode: ConfigMode = $derived(getConfigMode());
 
-  // Empty (not pre-seeded per kind) so this never reads `kinds` inside a $state
-  // initializer - every read below falls back to `?? []` for a kind not loaded yet.
-  let rowsByKind: Partial<Record<AdminConfigKind, ConfigObject[]>> = $state({});
-  $effect(() => {
-    // Accumulate into a plain local object, not `rowsByKind` itself - reading
-    // `rowsByKind` inside this effect (e.g. via `{ ...rowsByKind }`) would make the
-    // effect depend on the very state it writes, looping forever.
-    const collected: Partial<Record<AdminConfigKind, ConfigObject[]>> = {};
-    const unsubscribes = kinds.map((kind) =>
-      adminConfigRows[kind].subscribe((r) => {
-        collected[kind] = r;
-        rowsByKind = { ...collected };
-      }),
-    );
-    return () => unsubscribes.forEach((unsubscribe) => unsubscribe());
-  });
+  let rowsByKind: Partial<Record<AdminConfigKind, readonly ConfigObject[]>> = $derived(
+    Object.fromEntries(kinds.map((kind) => [kind, adminConfig.rows(kind)])),
+  );
 
   // Built once per kind here (not once per field in ConfigFieldRow) and handed down,
   // since every field row in a kind resolves its origin against the same two maps.
@@ -122,7 +106,7 @@
   async function deleteDeprecated(entry: { kind: AdminConfigKind; row: ConfigObject }) {
     if (!entry.row.uuid) return;
     try {
-      await deleteConfigRow(entry.kind, entry.row.uuid);
+      await adminConfig.remove(entry.kind, entry.row.uuid);
       toaster.success({ title: `Deleted ${entry.row.name}` });
     } catch (e) {
       console.error(e);
@@ -132,7 +116,7 @@
 
   async function invalidateCache() {
     try {
-      await invalidateConfigCache();
+      await adminConfig.invalidateServerCache();
       toaster.success({ title: 'Server-side config cache invalidated' });
       // Give the toast a moment to render before the reload tears down the page.
       setTimeout(() => window.location.reload(), 750);
@@ -156,7 +140,7 @@
   }
 </script>
 
-{#await Promise.all(kinds.map((kind) => loadAdminConfig(kind)))}
+{#await Promise.all(kinds.map((kind) => adminConfig.load(kind)))}
   <Loading />
 {:then}
   {#if availableAPIKinds.length != kinds.length || activeConfigMode === 'override'}

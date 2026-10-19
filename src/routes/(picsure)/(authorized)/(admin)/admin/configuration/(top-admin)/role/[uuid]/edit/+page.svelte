@@ -7,8 +7,7 @@
   import RoleForm from '#lib/admin/access/RoleForm.svelte';
 
   import type { Role } from '#lib/auth/model/role.ts';
-  import { getRole } from '#lib/admin/access/Roles.ts';
-  import { privilegeList, loadPrivileges } from '#lib/admin/access/Privileges.ts';
+  import * as admin from '#lib/admin/resources.ts';
   import Loading from '#lib/ui/Loading.svelte';
 
   let role: Role = $state({
@@ -19,9 +18,9 @@
 
   async function load() {
     if (page.params?.uuid) {
-      role = await getRole(page.params.uuid);
+      role = await admin.roles.get(page.params.uuid);
     }
-    await loadPrivileges();
+    await admin.privileges.load();
   }
 </script>
 
@@ -34,7 +33,7 @@
     <Loading />
   {:then}
     <section id="admin-role-edit">
-      <RoleForm privilegeList={$privilegeList} {role} />
+      <RoleForm privilegeList={admin.privileges.options} {role} />
     </section>
   {:catch}
     <ErrorAlert title="API Error">

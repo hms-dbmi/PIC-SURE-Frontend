@@ -5,7 +5,7 @@
 
   import { isTopAdmin } from '#lib/auth/User.ts';
   import { toaster } from '#lib/ui/toaster.ts';
-  import { deleteConnection } from '#lib/admin/access/Connections.ts';
+  import * as admin from '#lib/admin/resources.ts';
   import ConfirmButton from '#lib/ui/ConfirmButton.svelte';
 
   const { data = { cell: '', row: { label: '' } } } = $props();
@@ -19,7 +19,7 @@
     if (!$isTopAdmin) return;
     const label = data.row.label;
     try {
-      await deleteConnection(data.cell);
+      await admin.connections.remove(data.cell);
       toaster.success({
         title: `Successfully deleted connection '${label}'`,
       });

@@ -104,6 +104,7 @@ export class Session {
   // A 401 or 403 from PSAMA's logout call makes the API client start another logout, which would
   // navigate to /login a second time, so later calls share the logout already running.
   #pendingLogout: Promise<void> | undefined;
+  #endListeners: (() => void)[] = [];
 
   constructor() {
     if (!browser) return;
@@ -127,6 +128,17 @@ export class Session {
       this.#token = stored;
       if (stored) this.bootstrap();
     });
+  }
+
+  /**
+   * Runs `listener` each time the session ends, so caches of what the user could see (the admin
+   * lists) are dropped before someone else signs in. Returns the unsubscribe.
+   */
+  onEnd(listener: () => void): () => void {
+    this.#endListeners.push(listener);
+    return () => {
+      this.#endListeners = this.#endListeners.filter((l) => l !== listener);
+    };
   }
 
   connect(shell: SessionShell) {
@@ -291,6 +303,7 @@ export class Session {
   #forgetPendingRequests() {
     this.#generation++;
     this.#consentsRequest = Promise.resolve();
+    for (const listener of this.#endListeners) listener();
   }
 
   /**

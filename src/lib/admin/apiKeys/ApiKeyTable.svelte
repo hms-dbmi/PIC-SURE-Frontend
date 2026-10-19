@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy, onMount, untrack } from 'svelte';
+  import { untrack } from 'svelte';
   import { TableHandler, type State } from '@vincjo/datatables/server';
 
   import RemoteTable from '#lib/ui/datatable/RemoteTable.svelte';
@@ -7,7 +7,7 @@
   import ApiKeyStatus from '#lib/admin/apiKeys/cell/ApiKeyStatus.svelte';
   import ApiKeyActions from '#lib/admin/apiKeys/cell/ApiKeyActions.svelte';
 
-  import { loadApiKeys, listVersion } from '#lib/admin/apiKeys/ApiKeys.ts';
+  import { apiKeys } from '#lib/admin/apiKeys/apiKeys.svelte.ts';
   import {
     getApiKeyStatus,
     formatInstant,
@@ -16,7 +16,6 @@
     type ApiKeyType,
   } from '#lib/admin/apiKeys/model.ts';
   import { getDefaultRows } from '#lib/ui/datatable/rowsPerPage.ts';
-  import { subscribeOnChange } from '#lib/utils/subscribers.ts';
 
   interface ApiKeyRow {
     uuid: string;
@@ -62,7 +61,7 @@
   handler.load(async (state: State) => {
     try {
       loadError = '';
-      const page = await loadApiKeys(state.currentPage - 1, state.rowsPerPage, keyType);
+      const page = await apiKeys.list(state.currentPage - 1, state.rowsPerPage, keyType);
       state.setTotalRows(page.totalCount);
       return page.keys.map(
         (key): ApiKeyRow => ({
@@ -83,11 +82,12 @@
     }
   });
 
-  onMount(() => {
-    handler.invalidate();
+  // The table handler fetches pages itself: load the first one, and the current one again
+  // after every mutation.
+  $effect(() => {
+    void apiKeys.version;
+    untrack(() => handler.invalidate());
   });
-  const unsubscribe = subscribeOnChange(listVersion, () => handler.invalidate());
-  onDestroy(unsubscribe);
 </script>
 
 {#if loadError}

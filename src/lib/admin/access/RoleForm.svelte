@@ -4,7 +4,7 @@
   import { goto } from '$app/navigation';
 
   import { type Role } from '#lib/auth/model/role.ts';
-  import { addRole, updateRole } from '#lib/admin/access/Roles.ts';
+  import * as admin from '#lib/admin/resources.ts';
   import { isTopAdmin } from '#lib/auth/User.ts';
   import { toaster } from '#lib/ui/toaster.ts';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
@@ -49,9 +49,9 @@
     try {
       if (role) {
         newRole = { ...newRole, uuid: role.uuid };
-        await updateRole(newRole);
+        await admin.roles.update(newRole);
       } else {
-        await addRole(newRole);
+        await admin.roles.add(newRole);
       }
       toaster.success({
         title: `Successfully saved ${role ? '' : 'new '}role '${name}'`,

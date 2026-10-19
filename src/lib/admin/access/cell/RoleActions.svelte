@@ -5,7 +5,7 @@
 
   import { isTopAdmin } from '#lib/auth/User.ts';
   import { toaster } from '#lib/ui/toaster.ts';
-  import { deleteRole } from '#lib/admin/access/Roles.ts';
+  import * as admin from '#lib/admin/resources.ts';
   import ConfirmButton from '#lib/ui/ConfirmButton.svelte';
 
   const { data = { cell: '', row: { name: '' } } } = $props();
@@ -18,7 +18,7 @@
   async function deleteRow() {
     if (!$isTopAdmin) return;
     try {
-      await deleteRole(data.cell);
+      await admin.roles.remove(data.cell);
       toaster.success({
         title: `Successfully deleted role '${data.row.name}'`,
       });

@@ -7,8 +7,7 @@
   import PrivilegeForm from '#lib/admin/access/PrivilegeForm.svelte';
 
   import type { Privilege } from '#lib/auth/model/privilege.ts';
-  import { getPrivilege } from '#lib/admin/access/Privileges.ts';
-  import { applicationList, loadApplications } from '#lib/admin/access/Application.ts';
+  import * as admin from '#lib/admin/resources.ts';
   import Loading from '#lib/ui/Loading.svelte';
 
   let privilege: Privilege = $state({
@@ -19,9 +18,9 @@
 
   async function load() {
     if (page.params?.uuid) {
-      privilege = await getPrivilege(page.params.uuid);
+      privilege = await admin.privileges.get(page.params.uuid);
     }
-    await loadApplications();
+    await admin.applications.load();
   }
 </script>
 
@@ -34,7 +33,7 @@
     <Loading />
   {:then}
     <section id="admin-privilege-edit">
-      <PrivilegeForm applicationList={$applicationList} {privilege} />
+      <PrivilegeForm applicationList={admin.applications.options} {privilege} />
     </section>
   {:catch}
     <ErrorAlert title="API Error">

@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { get as read } from 'svelte/store';
 
 const client = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), patch: vi.fn(), del: vi.fn() }));
 
@@ -15,6 +14,8 @@ vi.mock('#lib/api/client.ts', () => ({
   },
 }));
 
+vi.mock('#lib/auth/session.svelte.ts', () => ({ session: { onEnd: vi.fn() } }));
+
 import type { RequestOptions } from '#lib/api/client.ts';
 import type { Connection } from '#lib/auth/model/connection.ts';
 import type { UserRequest } from '#lib/auth/model/user.ts';
@@ -26,16 +27,10 @@ const calls = () => ({
   del: client.del.mock.calls,
 });
 
-// Each store keeps a module-level "loaded" flag, so every test gets fresh modules.
+// Each resource keeps a module-level "loaded" flag, so every test gets fresh modules.
 async function stores() {
   vi.resetModules();
-  return {
-    connections: await import('#lib/admin/access/Connections.ts'),
-    privileges: await import('#lib/admin/access/Privileges.ts'),
-    roles: await import('#lib/admin/access/Roles.ts'),
-    users: await import('#lib/admin/users/Users.ts'),
-    applications: await import('#lib/admin/access/Application.ts'),
-  };
+  return await import('#lib/admin/resources.ts');
 }
 
 beforeEach(() => {
@@ -62,38 +57,38 @@ describe('Connections store', () => {
     const { connections: s } = await stores();
     client.get.mockResolvedValue([a, b]);
 
-    await s.loadConnections();
-    await s.loadConnections();
+    await s.load();
+    await s.load();
 
     expect(calls().get).toEqual([['psama/connection']]);
-    expect(read(s.connections)).toEqual([a, b]);
+    expect(s.items).toEqual([a, b]);
   });
 
   it('gets by uuid, loading the list first when it is empty', async () => {
     const { connections: s } = await stores();
     client.get.mockResolvedValue([a, b]);
 
-    expect(await s.getConnection('c-2')).toEqual(b);
-    await expect(s.getConnection('missing')).rejects.toThrow('Connection not found.');
+    expect(await s.get('c-2')).toEqual(b);
+    await expect(s.get('missing')).rejects.toThrow('Connection not found.');
     expect(calls().get).toEqual([['psama/connection']]);
   });
 
   it('adds, updates and deletes against the list', async () => {
     const { connections: s } = await stores();
     client.get.mockResolvedValue([a]);
-    await s.loadConnections();
+    await s.load();
 
     client.post.mockResolvedValue({ message: 'ok', content: [b] });
-    await s.addConnection({ ...b, uuid: undefined });
-    expect(read(s.connections)).toEqual([a, b]);
+    await s.add({ ...b, uuid: undefined });
+    expect(s.items).toEqual([a, b]);
 
     const renamed = { ...a, label: 'Okta 2' };
     const unknown = { ...a, uuid: 'c-3' };
     client.patch.mockResolvedValueOnce([renamed]).mockResolvedValueOnce([unknown]);
-    await s.updateConnection({ ...a, label: 'sent' });
-    await s.updateConnection(unknown);
+    await s.update({ ...a, label: 'sent' });
+    await s.update(unknown);
 
-    await s.deleteConnection('c-2');
+    await s.remove('c-2');
 
     expect(calls()).toEqual({
       get: [['psama/connection']],
@@ -106,7 +101,7 @@ describe('Connections store', () => {
       del: [['psama/connection/fence']],
     });
     // Updates store the response; an unknown uuid is appended.
-    expect(read(s.connections)).toEqual([renamed, unknown]);
+    expect(s.items).toEqual([renamed, unknown]);
   });
 });
 
@@ -118,15 +113,15 @@ describe('Privileges store', () => {
     const { privileges: s } = await stores();
     client.get.mockResolvedValue([raw, { uuid: 'p-2', name: 'QUERY', description: '' }]);
 
-    await s.loadPrivileges();
-    await s.loadPrivileges();
+    await s.load();
+    await s.load();
 
     expect(calls().get).toEqual([['psama/privilege']]);
-    expect(read(s.privileges)).toEqual([
+    expect(s.items).toEqual([
       mapped,
       { uuid: 'p-2', name: 'QUERY', description: '', application: '' },
     ]);
-    expect(read(s.privilegeList)).toEqual([
+    expect(s.options).toEqual([
       ['ADMIN', 'p-1'],
       ['QUERY', 'p-2'],
     ]);
@@ -135,29 +130,29 @@ describe('Privileges store', () => {
   it('gets from the list, or fetches one by uuid', async () => {
     const { privileges: s } = await stores();
     client.get.mockResolvedValueOnce([raw]).mockResolvedValueOnce({ ...raw, uuid: 'p-9' });
-    await s.loadPrivileges();
+    await s.load();
 
-    expect(await s.getPrivilege('p-1')).toEqual(mapped);
-    expect(await s.getPrivilege('p-9')).toEqual({ ...mapped, uuid: 'p-9' });
+    expect(await s.get('p-1')).toEqual(mapped);
+    expect(await s.get('p-9')).toEqual({ ...mapped, uuid: 'p-9' });
     expect(calls().get).toEqual([['psama/privilege'], ['psama/privilege/p-9']]);
   });
 
   it('adds, updates and deletes against the list', async () => {
     const { privileges: s } = await stores();
     client.get.mockResolvedValue([raw]);
-    await s.loadPrivileges();
+    await s.load();
 
     const added = { uuid: 'p-2', name: 'NEW', description: '', application: { uuid: 'app-2' } };
     client.post.mockResolvedValue([added]);
-    await s.addPrivilege({ name: 'NEW', description: '', application: 'app-2' });
-    expect(read(s.privileges)).toEqual([mapped, { ...added, application: 'app-2' }]);
+    await s.add({ name: 'NEW', description: '', application: 'app-2' });
+    expect(s.items).toEqual([mapped, { ...added, application: 'app-2' }]);
 
     const edited = { ...mapped, description: 'edited' };
     client.patch.mockResolvedValue('ignored');
-    await s.updatePrivilege(edited);
-    await s.updatePrivilege({ ...mapped, uuid: 'p-3' });
+    await s.update(edited);
+    await s.update({ ...mapped, uuid: 'p-3' });
 
-    await s.deletePrivilege('p-2');
+    await s.remove('p-2');
 
     expect(calls()).toEqual({
       get: [['psama/privilege']],
@@ -172,7 +167,7 @@ describe('Privileges store', () => {
       del: [['psama/privilege/p-2']],
     });
     // Updates store what was sent, not the response.
-    expect(read(s.privileges)).toEqual([edited, { ...mapped, uuid: 'p-3' }]);
+    expect(s.items).toEqual([edited, { ...mapped, uuid: 'p-3' }]);
   });
 });
 
@@ -184,15 +179,15 @@ describe('Roles store', () => {
     const { roles: s } = await stores();
     client.get.mockResolvedValue([raw, { uuid: 'r-2', name: 'User', description: '' }]);
 
-    await s.loadRoles();
-    await s.loadRoles();
+    await s.load();
+    await s.load();
 
     expect(calls().get).toEqual([['psama/role']]);
-    expect(read(s.roles)).toEqual([
+    expect(s.items).toEqual([
       mapped,
       { uuid: 'r-2', name: 'User', description: '', privileges: [] },
     ]);
-    expect(read(s.roleList)).toEqual([
+    expect(s.options).toEqual([
       ['Admin', 'r-1'],
       ['User', 'r-2'],
     ]);
@@ -201,28 +196,28 @@ describe('Roles store', () => {
   it('gets from the list, or fetches one by uuid', async () => {
     const { roles: s } = await stores();
     client.get.mockResolvedValueOnce([raw]).mockResolvedValueOnce({ ...raw, uuid: 'r-9' });
-    await s.loadRoles();
+    await s.load();
 
-    expect(await s.getRole('r-1')).toEqual(mapped);
-    expect(await s.getRole('r-9')).toEqual({ ...mapped, uuid: 'r-9' });
+    expect(await s.get('r-1')).toEqual(mapped);
+    expect(await s.get('r-9')).toEqual({ ...mapped, uuid: 'r-9' });
     expect(calls().get).toEqual([['psama/role'], ['psama/role/r-9']]);
   });
 
   it('adds, updates and deletes against the list', async () => {
     const { roles: s } = await stores();
     client.get.mockResolvedValue([raw]);
-    await s.loadRoles();
+    await s.load();
 
     const added = { uuid: 'r-2', name: 'New', description: '', privileges: [{ uuid: 'p-2' }] };
     client.post.mockResolvedValue({ content: [added] });
-    await s.addRole({ name: 'New', description: '', privileges: ['p-2'] });
-    expect(read(s.roles)).toEqual([mapped, { ...added, privileges: ['p-2'] }]);
+    await s.add({ name: 'New', description: '', privileges: ['p-2'] });
+    expect(s.items).toEqual([mapped, { ...added, privileges: ['p-2'] }]);
 
     const updated = { ...raw, description: 'edited' };
     client.patch.mockResolvedValue({ content: [updated] });
-    await s.updateRole({ ...mapped, description: 'sent' });
+    await s.update({ ...mapped, description: 'sent' });
 
-    await s.deleteRole('r-2');
+    await s.remove('r-2');
 
     expect(calls()).toEqual({
       get: [['psama/role']],
@@ -231,7 +226,7 @@ describe('Roles store', () => {
       patch: [['psama/role', [{ ...mapped, description: 'sent' }]]],
       del: [['psama/role/r-2']],
     });
-    expect(read(s.roles)).toEqual([{ ...mapped, description: 'edited' }]);
+    expect(s.items).toEqual([{ ...mapped, description: 'edited' }]);
   });
 });
 
@@ -251,25 +246,25 @@ describe('Users store', () => {
     const { users: s } = await stores();
     client.get.mockResolvedValue([raw, { uuid: 'u-2', email: 'b@example.com' }]);
 
-    await s.loadUsers();
-    await s.loadUsers();
+    await s.load();
+    await s.load();
 
     expect(calls().get).toEqual([['psama/user']]);
-    expect(read(s.users)).toEqual([
+    expect(s.items).toEqual([
       mapped,
       { uuid: 'u-2', email: 'b@example.com', connection: '', roles: [] },
     ]);
   });
 
   it('gets by uuid from the list or the server, and by email and connection', async () => {
-    const { users: s } = await stores();
+    const { users: s, findUserByEmailAndConnection } = await stores();
     client.get.mockResolvedValueOnce({ ...raw, uuid: 'u-9' });
-    expect(await s.getUser('u-9')).toEqual({ ...mapped, uuid: 'u-9' });
+    expect(await s.get('u-9')).toEqual({ ...mapped, uuid: 'u-9' });
 
     client.get.mockResolvedValueOnce([raw]);
-    expect(await s.getUserByEmailAndConnection('a@example.com', 'c-1')).toEqual(mapped);
-    expect(await s.getUserByEmailAndConnection('a@example.com', 'c-2')).toBeUndefined();
-    expect(await s.getUser('u-1')).toEqual(mapped);
+    expect(await findUserByEmailAndConnection('a@example.com', 'c-1')).toEqual(mapped);
+    expect(await findUserByEmailAndConnection('a@example.com', 'c-2')).toBeUndefined();
+    expect(await s.get('u-1')).toEqual(mapped);
 
     expect(calls().get).toEqual([['psama/user/u-9'], ['psama/user']]);
   });
@@ -277,7 +272,7 @@ describe('Users store', () => {
   it('adds and updates against the list', async () => {
     const { users: s } = await stores();
     client.get.mockResolvedValue([raw]);
-    await s.loadUsers();
+    await s.load();
 
     const added = { ...raw, uuid: 'u-2', email: 'new@example.com' };
     client.post.mockResolvedValue([added]);
@@ -294,11 +289,11 @@ describe('Users store', () => {
       },
       roles: [{ uuid: 'r-1', name: 'Admin', description: '', privileges: [] }],
     };
-    await s.addUser(request);
+    await s.add(request);
 
     const updated = { ...raw, active: false };
     client.patch.mockResolvedValue([updated]);
-    await s.updateUser({ ...request, uuid: 'u-1', active: false, privileges: ['dropped'] });
+    await s.update({ ...request, uuid: 'u-1', active: false, privileges: ['dropped'] });
 
     expect(calls()).toEqual({
       get: [['psama/user']],
@@ -306,7 +301,7 @@ describe('Users store', () => {
       patch: [['psama/user', [{ ...request, uuid: 'u-1', active: false }]]],
       del: [],
     });
-    expect(read(s.users)).toEqual([
+    expect(s.items).toEqual([
       { ...mapped, active: false },
       { ...mapped, uuid: 'u-2', email: 'new@example.com' },
     ]);
@@ -320,14 +315,14 @@ describe('Applications store', () => {
     const { applications: s } = await stores();
     client.get.mockResolvedValue([app]);
 
-    expect(s.getApplication('app-1')).toBeUndefined();
-    await s.loadApplications();
-    await s.loadApplications();
+    expect(s.find('app-1')).toBeUndefined();
+    await s.load();
+    await s.load();
 
     expect(calls().get).toEqual([['psama/application']]);
-    expect(read(s.applications)).toEqual([app]);
-    expect(read(s.applicationList)).toEqual([['PICSURE', 'app-1']]);
-    expect(s.getApplication('app-1')).toEqual(app);
-    expect(s.getApplication('missing')).toBeUndefined();
+    expect(s.items).toEqual([app]);
+    expect(s.options).toEqual([['PICSURE', 'app-1']]);
+    expect(s.find('app-1')).toEqual(app);
+    expect(s.find('missing')).toBeUndefined();
   });
 });

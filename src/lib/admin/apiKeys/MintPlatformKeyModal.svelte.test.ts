@@ -15,21 +15,11 @@ vi.mock('#lib/auth/User.ts', async () => {
   return { isTopAdmin: writable(true) };
 });
 
-const storeMocks = vi.hoisted(() => ({
-  mintPlatformKey: vi.fn(),
+const psama = vi.hoisted(() => ({
+  mintPlatform: vi.fn(),
 }));
 
-vi.mock('#lib/admin/apiKeys/ApiKeys.ts', async () => {
-  const { writable } = await import('svelte/store');
-  const listVersion = writable(0);
-  return {
-    listVersion,
-    refreshApiKeys: () => listVersion.update((version) => version + 1),
-    loadApiKeys: vi.fn(),
-    revokeApiKey: vi.fn(),
-    mintPlatformKey: storeMocks.mintPlatformKey,
-  };
-});
+vi.mock('#lib/api/psama/apiKeys.ts', () => ({ ...psama, list: vi.fn(), revoke: vi.fn() }));
 
 import MintPlatformKeyModal from '#lib/admin/apiKeys/MintPlatformKeyModal.svelte';
 import { log, createLog } from '#lib/telemetry/logger.ts';
@@ -61,13 +51,13 @@ beforeEach(() => {
 
 describe('MintPlatformKeyModal', () => {
   it('mints a key and reveals it once with a see-once warning', async () => {
-    storeMocks.mintPlatformKey.mockResolvedValue(mintedFixture);
+    psama.mintPlatform.mockResolvedValue(mintedFixture);
     render(MintPlatformKeyModal);
 
     await openFormAndFill();
     await fireEvent.click(screen.getByRole('button', { name: 'Mint Key' }));
 
-    expect(storeMocks.mintPlatformKey).toHaveBeenCalledWith({
+    expect(psama.mintPlatform).toHaveBeenCalledWith({
       name: 'CI Pipeline',
       email: 'ops@example.org',
     });
@@ -82,7 +72,7 @@ describe('MintPlatformKeyModal', () => {
   });
 
   it('sends the expiry date as a UTC start-of-day instant', async () => {
-    storeMocks.mintPlatformKey.mockResolvedValue(mintedFixture);
+    psama.mintPlatform.mockResolvedValue(mintedFixture);
     render(MintPlatformKeyModal);
 
     await openFormAndFill();
@@ -92,7 +82,7 @@ describe('MintPlatformKeyModal', () => {
     });
     await fireEvent.click(screen.getByRole('button', { name: 'Mint Key' }));
 
-    expect(storeMocks.mintPlatformKey).toHaveBeenCalledWith({
+    expect(psama.mintPlatform).toHaveBeenCalledWith({
       name: 'CI Pipeline',
       email: 'ops@example.org',
       expiresAt: '2099-01-01T00:00:00Z',
@@ -100,14 +90,14 @@ describe('MintPlatformKeyModal', () => {
   });
 
   it('sends neverExpires only when the never option is deliberately selected', async () => {
-    storeMocks.mintPlatformKey.mockResolvedValue(mintedFixture);
+    psama.mintPlatform.mockResolvedValue(mintedFixture);
     render(MintPlatformKeyModal);
 
     await openFormAndFill();
     await fireEvent.click(screen.getByTestId('admin-api-key-expiry-never'));
     await fireEvent.click(screen.getByRole('button', { name: 'Mint Key' }));
 
-    expect(storeMocks.mintPlatformKey).toHaveBeenCalledWith({
+    expect(psama.mintPlatform).toHaveBeenCalledWith({
       name: 'CI Pipeline',
       email: 'ops@example.org',
       neverExpires: true,
@@ -115,7 +105,7 @@ describe('MintPlatformKeyModal', () => {
   });
 
   it('closes the reveal and clears the key from view when done', async () => {
-    storeMocks.mintPlatformKey.mockResolvedValue(mintedFixture);
+    psama.mintPlatform.mockResolvedValue(mintedFixture);
     render(MintPlatformKeyModal);
 
     await openFormAndFill();
@@ -129,7 +119,7 @@ describe('MintPlatformKeyModal', () => {
   });
 
   it('never passes the plaintext key to the logger', async () => {
-    storeMocks.mintPlatformKey.mockResolvedValue(mintedFixture);
+    psama.mintPlatform.mockResolvedValue(mintedFixture);
     render(MintPlatformKeyModal);
 
     await openFormAndFill();
@@ -144,9 +134,7 @@ describe('MintPlatformKeyModal', () => {
 
   it('shows the backend message inline when minting fails', async () => {
     const body = { errorType: 'error', message: 'Expiry must be in the future' };
-    storeMocks.mintPlatformKey.mockRejectedValue(
-      new ApiError(400, 'http', body, JSON.stringify(body)),
-    );
+    psama.mintPlatform.mockRejectedValue(new ApiError(400, 'http', body, JSON.stringify(body)));
     render(MintPlatformKeyModal);
 
     await openFormAndFill();

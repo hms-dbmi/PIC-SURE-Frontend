@@ -6,7 +6,7 @@
   import CopyButton from '#lib/ui/CopyButton.svelte';
 
   import { isTopAdmin } from '#lib/auth/User.ts';
-  import { mintPlatformKey } from '#lib/admin/apiKeys/ApiKeys.ts';
+  import { apiKeys } from '#lib/admin/apiKeys/apiKeys.svelte.ts';
   import {
     extractApiError,
     formatInstant,
@@ -57,7 +57,7 @@
     const expiry: PlatformKeyExpiry =
       expiryMode === 'date' ? { mode: 'date', date: expiryDate } : { mode: expiryMode };
     try {
-      minted = await mintPlatformKey(toPlatformKeyRequest(name, email, expiry));
+      minted = await apiKeys.mintPlatform(toPlatformKeyRequest(name, email, expiry));
     } catch (error) {
       mintError = extractApiError(error);
     } finally {

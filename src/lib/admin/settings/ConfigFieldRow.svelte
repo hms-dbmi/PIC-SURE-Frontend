@@ -2,12 +2,7 @@
   import Button from '#lib/ui/Button.svelte';
   import { describeConfigField, type ConfigFieldSchema } from '#lib/config/admin.ts';
   import type { ConfigMap, ConfigObject } from '#lib/config/resolve.ts';
-  import {
-    addConfigRow,
-    updateConfigRow,
-    deleteConfigRow,
-    type AdminConfigKind,
-  } from '#lib/admin/settings/AdminConfiguration.ts';
+  import { adminConfig, type AdminConfigKind } from '#lib/admin/settings/adminConfig.svelte.ts';
   import { humanizeKey, truncate, visibleLength } from '#lib/utils/strings.ts';
   import { toaster } from '#lib/ui/toaster.ts';
   import { cardClass, tones } from '#lib/ui/surface.ts';
@@ -71,9 +66,9 @@
     try {
       const serialized = serialize();
       if (apiRow?.uuid) {
-        await updateConfigRow(kind, { ...apiRow, value: serialized });
+        await adminConfig.update(kind, { ...apiRow, value: serialized });
       } else {
-        await addConfigRow(kind, schema.name, serialized);
+        await adminConfig.add(kind, schema.name, serialized);
       }
       toaster.success({ title: `Saved ${label}` });
     } catch (e) {
@@ -87,7 +82,7 @@
   async function resetField() {
     if (!apiRow?.uuid) return;
     try {
-      await deleteConfigRow(kind, apiRow.uuid);
+      await adminConfig.remove(kind, apiRow.uuid);
       toaster.success({ title: `Reset ${label} to default` });
     } catch (e) {
       console.error(e);

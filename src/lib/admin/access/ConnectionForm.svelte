@@ -4,7 +4,7 @@
   import { goto } from '$app/navigation';
 
   import type { Connection } from '#lib/auth/model/connection.ts';
-  import { addConnection, updateConnection } from '#lib/admin/access/Connections.ts';
+  import * as admin from '#lib/admin/resources.ts';
   import { isTopAdmin } from '#lib/auth/User.ts';
   import { toaster } from '#lib/ui/toaster.ts';
 
@@ -40,9 +40,9 @@
     try {
       if (connection) {
         newConnection = { ...newConnection, uuid: connection.uuid };
-        await updateConnection(newConnection);
+        await admin.connections.update(newConnection);
       } else {
-        await addConnection(newConnection);
+        await admin.connections.add(newConnection);
       }
       toaster.success({
         title: `Successfully saved ${connection ? '' : 'new '}connection '${label}'`,

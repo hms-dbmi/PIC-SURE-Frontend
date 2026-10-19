@@ -4,7 +4,7 @@
   import { goto } from '$app/navigation';
 
   import type { Privilege } from '#lib/auth/model/privilege.ts';
-  import { addPrivilege, updatePrivilege } from '#lib/admin/access/Privileges.ts';
+  import * as admin from '#lib/admin/resources.ts';
   import { isTopAdmin } from '#lib/auth/User.ts';
   import { toaster } from '#lib/ui/toaster.ts';
 
@@ -32,9 +32,9 @@
     try {
       if (privilege) {
         newPrivilege = { ...newPrivilege, uuid: privilege.uuid };
-        await updatePrivilege(newPrivilege);
+        await admin.privileges.update(newPrivilege);
       } else {
-        await addPrivilege(newPrivilege);
+        await admin.privileges.add(newPrivilege);
       }
       toaster.success({
         title: `Successfully saved ${privilege ? '' : 'new '}privilege '${name}'`,

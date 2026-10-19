@@ -9,7 +9,7 @@ import type { ExtendedUser, UserRequest } from '#lib/auth/model/user.ts';
 // PSAMA nests related records whole, where the admin pages keep only their uuids. Every write
 // takes a list; the admin pages send one record at a time.
 interface Ref {
-  uuid?: string;
+  uuid: string;
 }
 
 export type PrivilegeDto = Omit<Privilege, 'application'> & { application?: Ref | null };
@@ -22,6 +22,24 @@ export type UserUpdate = Pick<
   UserRequest,
   'uuid' | 'email' | 'active' | 'generalMetadata' | 'connection' | 'roles'
 >;
+
+// The admin pages keep the rest of each record as PSAMA sent it: the user actions cell echoes
+// stored users and roles back in its PATCH body.
+export const mapPrivilege = ({ application, ...privilege }: PrivilegeDto): Privilege => ({
+  ...privilege,
+  application: application?.uuid || '',
+});
+
+export const mapRole = ({ privileges, ...role }: RoleDto): Role => ({
+  ...role,
+  privileges: privileges ? privileges.map((p) => p.uuid) : [],
+});
+
+export const mapUser = ({ connection, roles, ...user }: UserDto): ExtendedUser => ({
+  ...user,
+  connection: connection ? connection.uuid : '',
+  roles: roles ? roles.map((r) => r.uuid) : [],
+});
 
 interface Envelope<T> {
   message?: string;

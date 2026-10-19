@@ -38,14 +38,3 @@ export interface UserRequest extends User {
   active: boolean;
   roles?: Role[];
 }
-
-// TODO: Replace metadata and query types
-/* eslint-disable @typescript-eslint/no-explicit-any */
-export function mapExtendedUser(data: any) {
-  return {
-    ...data,
-    connection: data.connection ? data.connection.uuid : '',
-    roles: data.roles ? data.roles.map((r: any) => r.uuid) : [],
-  };
-}
-/* eslint-enable @typescript-eslint/no-explicit-any */

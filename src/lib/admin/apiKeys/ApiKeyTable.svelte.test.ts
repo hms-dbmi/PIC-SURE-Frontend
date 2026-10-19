@@ -31,25 +31,14 @@ vi.mock('#lib/ui/toaster.ts', () => ({
   toaster: { success: vi.fn(), error: vi.fn() },
 }));
 
-const storeMocks = vi.hoisted(() => ({
-  loadApiKeys: vi.fn(),
-  revokeApiKey: vi.fn(),
+const psama = vi.hoisted(() => ({
+  list: vi.fn(),
+  revoke: vi.fn(),
 }));
 
-vi.mock('#lib/admin/apiKeys/ApiKeys.ts', async () => {
-  const { writable } = await import('svelte/store');
-  const listVersion = writable(0);
-  return {
-    listVersion,
-    refreshApiKeys: () => listVersion.update((version) => version + 1),
-    loadApiKeys: storeMocks.loadApiKeys,
-    revokeApiKey: storeMocks.revokeApiKey,
-    mintPlatformKey: vi.fn(),
-  };
-});
+vi.mock('#lib/api/psama/apiKeys.ts', () => ({ ...psama, mintPlatform: vi.fn() }));
 
 import ApiKeyTable from '#lib/admin/apiKeys/ApiKeyTable.svelte';
-import { refreshApiKeys } from '#lib/admin/apiKeys/ApiKeys.ts';
 import type { ApiKeyMetadata } from '#lib/admin/apiKeys/model.ts';
 import { ApiError } from '#lib/api/errors.ts';
 
@@ -90,7 +79,7 @@ const expiredKey: ApiKeyMetadata = {
 };
 
 function mockPage(keys: ApiKeyMetadata[]) {
-  storeMocks.loadApiKeys.mockResolvedValue({
+  psama.list.mockResolvedValue({
     keys,
     totalCount: keys.length,
     page: 0,
@@ -124,7 +113,7 @@ describe('ApiKeyTable', () => {
     render(ApiKeyTable, { props: { keyType: 'PLATFORM', tableName: 'PlatformApiKeys' } });
 
     await screen.findByText('picsure_u_abc12345…');
-    expect(storeMocks.loadApiKeys).toHaveBeenCalledWith(0, expect.any(Number), 'PLATFORM');
+    expect(psama.list).toHaveBeenCalledWith(0, expect.any(Number), 'PLATFORM');
   });
 
   it('only offers revoke on active keys', async () => {
@@ -143,14 +132,13 @@ describe('ApiKeyTable', () => {
 
   it('revokes a key through the confirmation dialog and refreshes the list', async () => {
     mockPage([activeKey]);
-    storeMocks.revokeApiKey.mockImplementation(async () => {
-      storeMocks.loadApiKeys.mockResolvedValue({
+    psama.revoke.mockImplementation(async () => {
+      psama.list.mockResolvedValue({
         keys: [{ ...activeKey, revokedAt: '2026-07-14T00:00:00Z' }],
         totalCount: 1,
         page: 0,
         size: 10,
       });
-      refreshApiKeys();
       return { ...activeKey, revokedAt: '2026-07-14T00:00:00Z' };
     });
     render(ApiKeyTable, { props: { keyType: 'USER', tableName: 'UserApiKeys' } });
@@ -162,7 +150,7 @@ describe('ApiKeyTable', () => {
 
     await fireEvent.click(within(dialog).getByRole('button', { name: 'Revoke' }));
 
-    expect(storeMocks.revokeApiKey).toHaveBeenCalledWith('uuid-active');
+    expect(psama.revoke).toHaveBeenCalledWith('uuid-active');
     expect(await screen.findByText('Revoked')).toBeInTheDocument();
     await waitFor(() =>
       expect(
@@ -173,7 +161,7 @@ describe('ApiKeyTable', () => {
 
   it('shows an inline alert when loading the list fails', async () => {
     const body = { errorType: 'error', message: 'list failed' };
-    storeMocks.loadApiKeys.mockRejectedValue(new ApiError(400, 'http', body, JSON.stringify(body)));
+    psama.list.mockRejectedValue(new ApiError(400, 'http', body, JSON.stringify(body)));
     render(ApiKeyTable, { props: { keyType: 'USER', tableName: 'UserApiKeys' } });
 
     const alert = await screen.findByTestId('admin-api-key-list-error');
