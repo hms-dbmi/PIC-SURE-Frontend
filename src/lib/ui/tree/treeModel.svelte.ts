@@ -115,6 +115,8 @@ export class TreeNode<T> {
         return;
       }
     }
+    // Selecting a parent reaches leaves that are already selected; callers append on onselect.
+    if (this.selected) return;
     this.#model.onselect?.(this.payload);
     this.selected = true;
   }
@@ -129,6 +131,7 @@ export class TreeNode<T> {
         return;
       }
     }
+    if (!this.selected) return;
     this.selected = false;
     this.#model.onunselect?.(this.payload);
   }

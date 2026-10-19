@@ -82,7 +82,6 @@
   // or focus closes with it.
   let openedBy: TriggerType | undefined;
   let reference: HTMLElement | undefined = $state();
-  let arrowElement: SVGSVGElement | undefined = $state();
   let panel: HTMLElement | undefined;
   let hoverTimer: ReturnType<typeof setTimeout> | undefined;
   // Set when the popover closes, so the pointer still on the trigger doesn't reopen what the
@@ -160,6 +159,10 @@
     const anchor = reference;
     panel = element;
 
+    // Read from the DOM, not bound state: autoUpdate's first call runs inside this attachment's
+    // effect, where a state read would tear the attachment down and set it up again.
+    const arrowElement = element.querySelector<SVGSVGElement>(':scope > [data-popover-arrow]');
+
     const stopUpdates = autoUpdate(anchor, element, async () => {
       const middleware = [offset(10), flip(), shift()];
       if (arrowElement) middleware.push(arrow({ element: arrowElement }));
@@ -218,7 +221,7 @@
   >
     {@render children()}
     <svg
-      bind:this={arrowElement}
+      data-popover-arrow
       class="pointer-events-none absolute {tones[color].arrow}"
       width="14"
       height="14"

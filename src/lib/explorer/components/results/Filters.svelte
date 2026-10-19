@@ -32,14 +32,13 @@
         {:else if advancedFilteringDisabled}
           <Popover triggerTypes={['hover', 'focus']} placement="left">
             {#snippet trigger(props)}
-              <!-- aria-disabled keeps the button focusable and hoverable, so the reason shows. -->
               <Button
                 {...props}
                 id="results-advanced-filtering-open"
                 data-testid="results-advanced-filtering-open"
                 variant="tonal-static"
                 size="sm"
-                class="disabled mr-0 ml-auto cursor-not-allowed"
+                class="mr-0 ml-auto"
                 aria-disabled="true"
               >
                 Build Advanced Query

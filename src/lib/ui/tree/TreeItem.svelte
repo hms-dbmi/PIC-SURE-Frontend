@@ -96,7 +96,12 @@
         checked={node.checked === true}
         indeterminate={node.checked === 'mixed'}
         disabled={!node.canSelect}
-        onclick={() => node.toggleSelected()}
+        onclick={async (event) => {
+          const checkbox = event.currentTarget;
+          await node.toggleSelected();
+          // A failed load leaves `checked` as it was, so Svelte won't undo the box the click ticked.
+          checkbox.checked = node.checked === true;
+        }}
       />
     {/if}
     <span id={labelId} class="w-full">{node.label}</span>

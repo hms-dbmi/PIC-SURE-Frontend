@@ -110,13 +110,8 @@
     <div class="float-right">
       <Popover data-testid="dataset-restore-popover" triggerTypes={['hover', 'focus']}>
         {#snippet trigger(props)}
-          <!-- aria-disabled keeps the button focusable and hoverable, so the reason shows. -->
-          <Button
-            {...props}
-            variant="filled-surface"
-            size="sm"
-            class="disabled cursor-not-allowed"
-            aria-disabled="true">Restore Filters</Button
+          <Button {...props} variant="filled-surface" size="sm" aria-disabled="true"
+            >Restore Filters</Button
           >
         {/snippet}
         {#if hasErrors}

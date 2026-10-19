@@ -84,6 +84,26 @@ describe('TreeView', () => {
     expect(onunselect.mock.calls).toEqual([['stop_lost'], ['start_lost']]);
   });
 
+  it('reports only the leaves a parent selection changes', async () => {
+    const onselect = vi.fn();
+    const onunselect = vi.fn();
+    render(TreeView, {
+      nodes: [parent('High', [leaf('stop_lost', { selected: true }), leaf('start_lost')])],
+      label: 'Tree',
+      onselect,
+      onunselect,
+    });
+    const checkbox = screen.getByTestId('ui-tree-checkbox-High-High');
+
+    await fireEvent.click(checkbox);
+    await waitFor(() => expect(item('High')).toHaveAttribute('aria-checked', 'true'));
+    expect(onselect.mock.calls).toEqual([['start_lost']]);
+
+    await fireEvent.click(checkbox);
+    await waitFor(() => expect(item('High')).toHaveAttribute('aria-checked', 'false'));
+    expect(onunselect.mock.calls).toEqual([['stop_lost'], ['start_lost']]);
+  });
+
   it('keeps a single tab stop that follows focus', async () => {
     render(TreeView, { nodes: severities(), label: 'Tree' });
 
@@ -286,6 +306,7 @@ describe('TreeView', () => {
       await waitFor(() => expect(screen.getByTestId('ui-tree-checkbox-study-study')).toBeEnabled());
       expect(onselect).not.toHaveBeenCalled();
       expect(item('study')).toHaveAttribute('aria-checked', 'false');
+      expect(screen.getByTestId('ui-tree-checkbox-study-study')).not.toBeChecked();
     });
 
     it('never loads the children of a disabled node', async () => {

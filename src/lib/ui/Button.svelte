@@ -35,7 +35,11 @@
     ...rest
   }: Props = $props();
 
-  const classes = $derived(`${buttonClass(variant, size)} ${className}`);
+  // aria-disabled looks disabled but stays focusable and hoverable, e.g. to show why in a popover.
+  const ariaDisabled = $derived(rest['aria-disabled'] === true || rest['aria-disabled'] === 'true');
+  const classes = $derived(
+    `${buttonClass(variant, size)} ${ariaDisabled ? 'disabled cursor-not-allowed' : ''} ${className}`,
+  );
 </script>
 
 <!-- <a> has no disabled state, so a disabled link renders as a disabled button. -->

@@ -40,6 +40,18 @@ describe('HelpTip', () => {
     await waitFor(() => expect(screen.queryByRole('tooltip')).toBeNull());
   });
 
+  it('gives focus back to the trigger when Escape closes it from inside', async () => {
+    render(HelpTip, { text: 'See <a href="#help">the guide</a>' });
+    const trigger = screen.getByRole('button', { name: 'More information' });
+
+    await fireEvent.click(trigger);
+    screen.getByRole('link', { name: 'the guide' }).focus();
+    await fireEvent.keyDown(document, { key: 'Escape' });
+
+    await waitFor(() => expect(screen.queryByRole('tooltip')).toBeNull());
+    expect(trigger).toHaveFocus();
+  });
+
   it('opens once the pointer rests on it and closes when the pointer leaves', async () => {
     vi.useFakeTimers();
     const { onopen, trigger } = renderTip();
