@@ -1,10 +1,12 @@
+// @vitest-environment happy-dom
+
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { get } from 'svelte/store';
 
 const mockApi = vi.hoisted(() => ({ request: vi.fn() }));
 const mockToaster = vi.hoisted(() => ({ error: vi.fn() }));
 
-vi.mock('$app/env', () => ({ browser: false }));
+vi.mock('$app/env', () => ({ browser: true }));
 vi.mock('#lib/config/config.svelte.ts', () => ({
   config: { features: { explorer: { open: false }, login: { open: false } } },
 }));
@@ -182,7 +184,6 @@ describe('loadConsents', () => {
   });
 
   it('drops an in-flight response when the session is cleared', async () => {
-    vi.stubGlobal('sessionStorage', { removeItem: vi.fn() });
     let resolveStale!: (value: unknown) => void;
     mockApi.request.mockImplementationOnce(
       () => new Promise((resolve) => (resolveStale = resolve)),
@@ -194,7 +195,6 @@ describe('loadConsents', () => {
     await stale;
 
     expect(get(user).consents).toBeUndefined();
-    vi.unstubAllGlobals();
   });
 });
 

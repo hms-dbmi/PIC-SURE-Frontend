@@ -19,6 +19,7 @@ import {
   writeToken,
 } from '#lib/auth/token.ts';
 import { log, createLog, registerSignedInUser } from '#lib/telemetry/logger.ts';
+import { assertNoSsrWrite } from '#lib/utils/ssrWrite.ts';
 
 /** What the session needs from the app around it. `hooks.client.ts` connects it at startup. */
 export interface SessionShell {
@@ -111,6 +112,7 @@ export class Session {
   }
 
   connect(shell: SessionShell) {
+    assertNoSsrWrite('session');
     this.#shell = shell;
   }
 
@@ -135,6 +137,7 @@ export class Session {
   }
 
   set user(user: User) {
+    assertNoSsrWrite('session');
     this.#user = user;
     if (!browser) return;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -169,16 +172,19 @@ export class Session {
   }
 
   setToken(token: string) {
+    assertNoSsrWrite('session');
     writeToken(token);
     this.#token = token;
   }
 
   removeToken() {
+    assertNoSsrWrite('session');
     clearToken();
     this.#token = '';
   }
 
   clear() {
+    assertNoSsrWrite('session');
     this.#forgetPendingRequests();
     this.removeToken();
     localStorage.removeItem(OKTA_ID_TOKEN_KEY);
