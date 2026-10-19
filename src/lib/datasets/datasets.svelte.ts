@@ -1,52 +1,49 @@
-import { get, writable, derived, type Readable, type Writable } from 'svelte/store';
-
 import type { DataSet } from '#lib/datasets/dataset.ts';
 import * as api from '#lib/api/picsure/datasets.ts';
 import { log, createLog } from '#lib/telemetry/logger.ts';
+import { assertNoSsrWrite } from '#lib/utils/ssrWrite.ts';
 
-export const datasets: Writable<DataSet[]> = writable([]);
-export const active: Readable<DataSet[]> = derived(datasets, ($ds) =>
-  $ds.filter((ds) => !ds.archived).sort((a, b) => b.rawStartTime - a.rawStartTime),
-);
-export const archived: Readable<DataSet[]> = derived(datasets, ($ds) =>
-  $ds.filter((ds) => ds.archived),
-);
+export class Datasets {
+  #list: DataSet[] = $state.raw([]);
+  #showArchived = $state(false);
 
-let showArchived = $state(false);
-export function toggleShowArchived() {
-  showArchived = !showArchived;
-  log(createLog('DATASET', 'dataset.toggle_archived', { showArchived }));
-}
-export function getShowArchived() {
-  return showArchived;
-}
+  readonly active: DataSet[] = $derived(
+    this.#list.filter((ds) => !ds.archived).sort((a, b) => b.rawStartTime - a.rawStartTime),
+  );
+  readonly archived: DataSet[] = $derived(this.#list.filter((ds) => ds.archived));
 
-export async function loadDatasets() {
-  datasets.set(await api.getDatasets());
-}
-
-export async function toggleArchived(uuid: string) {
-  const store: DataSet[] = get(datasets);
-  const datasetIndex: number = store.findIndex((ds) => ds.uuid === uuid);
-  if (datasetIndex === -1) {
-    return Promise.reject('Could not find dataset in store.');
-  }
-  const dataset: DataSet = store[datasetIndex];
-  store[datasetIndex] = await api.updateDataset(uuid, {
-    queryId: dataset.queryId,
-    name: dataset.name,
-    metadata: dataset.metadata,
-    archived: !dataset.archived,
-  });
-  datasets.set(store);
-}
-
-export async function getDataset(uuid: string) {
-  const store: DataSet[] = get(datasets);
-  const datasetIndex: number = store.findIndex((ds) => ds.uuid === uuid);
-  if (datasetIndex > -1) {
-    return store[datasetIndex];
+  get showArchived() {
+    return this.#showArchived;
   }
 
-  return api.getDataset(uuid);
+  toggleShowArchived = () => {
+    assertNoSsrWrite('datasets');
+    this.#showArchived = !this.#showArchived;
+    log(createLog('DATASET', 'dataset.toggle_archived', { showArchived: this.#showArchived }));
+  };
+
+  load = async () => {
+    const list = await api.getDatasets();
+    assertNoSsrWrite('datasets');
+    this.#list = list;
+  };
+
+  toggleArchived = async (uuid: string) => {
+    const dataset = this.#list.find((ds) => ds.uuid === uuid);
+    if (!dataset) return Promise.reject('Could not find dataset in store.');
+
+    const updated = await api.updateDataset(uuid, {
+      queryId: dataset.queryId,
+      name: dataset.name,
+      metadata: dataset.metadata,
+      archived: !dataset.archived,
+    });
+    assertNoSsrWrite('datasets');
+    this.#list = this.#list.map((ds) => (ds.uuid === uuid ? updated : ds));
+  };
+
+  get = async (uuid: string): Promise<DataSet> =>
+    this.#list.find((ds) => ds.uuid === uuid) ?? api.getDataset(uuid);
 }
+
+export const datasets = new Datasets();

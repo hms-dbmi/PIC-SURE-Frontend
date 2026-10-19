@@ -5,7 +5,7 @@
   import { config } from '#lib/config/config.svelte.ts';
 
   import { QueryVersion, type DataSet } from '#lib/datasets/dataset.ts';
-  import { getDataset } from '#lib/datasets/datasets.svelte.ts';
+  import { datasets } from '#lib/datasets/datasets.svelte.ts';
 
   import Content from '#lib/shell/Content.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
@@ -13,8 +13,8 @@
   import Loading from '#lib/ui/Loading.svelte';
   import CopyButton from '#lib/ui/CopyButton.svelte';
 
-  let dataset: DataSet | undefined = $state({
-    version: QueryVersion.UNKNOWN,
+  let dataset: DataSet | undefined = $state.raw({
+    sourceVersion: QueryVersion.UNKNOWN,
     uuid: '',
     user: '',
     name: '',
@@ -29,7 +29,7 @@
 
   async function loadDataset() {
     if (page.params?.uuid) {
-      dataset = await getDataset(page.params.uuid);
+      dataset = await datasets.get(page.params.uuid);
     }
   }
 </script>
@@ -67,7 +67,11 @@
       </section>
     {/if}
     {#if dataset?.query && dataset?.queryId}
-      <QuerySummary query={dataset.query} version={dataset.version} name={dataset.name} />
+      <QuerySummary
+        query={dataset.query}
+        sourceVersion={dataset.sourceVersion}
+        name={dataset.name}
+      />
     {:else}
       <ErrorAlert color="warning">Invalid query object.</ErrorAlert>
     {/if}

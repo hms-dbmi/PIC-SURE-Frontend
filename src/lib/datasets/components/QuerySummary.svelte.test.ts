@@ -8,7 +8,6 @@ import { loadQuerySummaryData } from '#lib/query/restore.ts';
 import { QueryVersion } from '#lib/datasets/dataset.ts';
 import { LogicTree } from '#lib/query/logicTree.svelte.ts';
 import { createQuery } from '#lib/query/query.ts';
-import type { QueryV2 } from '#lib/query/v2.ts';
 import type { FilterInterface, FilterGroupInterface } from '#lib/query/filter.svelte.ts';
 
 const mockBypassPath = 'some_path';
@@ -76,18 +75,7 @@ const baseData = {
   errors: Promise.resolve([]),
 };
 
-const baseProps = { query: createQuery(), version: QueryVersion.V3 };
-const queryV2: QueryV2 = {
-  fields: [],
-  categoryFilters: {},
-  numericFilters: {},
-  requiredFields: [],
-  anyRecordOf: [],
-  anyRecordOfMulti: [],
-  crossCountFields: [],
-  variantInfoFilters: [],
-  expectedResultType: 'COUNT',
-};
+const baseProps = { query: createQuery(), sourceVersion: QueryVersion.V3 };
 
 describe('QuerySummary', () => {
   beforeEach(() => {
@@ -118,7 +106,7 @@ describe('QuerySummary', () => {
     });
     mockLoadQuerySummaryData.mockReturnValue(baseData);
 
-    render(QuerySummary, { query, version: QueryVersion.V3 });
+    render(QuerySummary, { query, sourceVersion: QueryVersion.V3 });
     await screen.findByTestId('dataset-filters-container');
 
     expect(mockLoadQuerySummaryData).toHaveBeenCalledWith(
@@ -143,7 +131,7 @@ describe('QuerySummary', () => {
       await vi.importActual<typeof import('#lib/query/restore.ts')>('#lib/query/restore.ts');
     mockLoadQuerySummaryData.mockImplementation(actual.loadQuerySummaryData);
 
-    render(QuerySummary, { query, version: QueryVersion.V3 });
+    render(QuerySummary, { query, sourceVersion: QueryVersion.V3 });
     await screen.findByTestId('dataset-filters-container');
 
     expect(mockConceptPath).toHaveBeenCalledWith(select[0], 'dataset');
@@ -167,7 +155,7 @@ describe('QuerySummary', () => {
       await vi.importActual<typeof import('#lib/query/restore.ts')>('#lib/query/restore.ts');
     mockLoadQuerySummaryData.mockImplementation(actual.loadQuerySummaryData);
 
-    render(QuerySummary, { query, version: QueryVersion.V3 });
+    render(QuerySummary, { query, sourceVersion: QueryVersion.V3 });
     await screen.findByTestId('dataset-filters-container');
 
     expect(mockConceptTree).toHaveBeenCalledWith('dataset', 100, conceptPath);
@@ -194,7 +182,7 @@ describe('QuerySummary', () => {
 
   it('keeps restoring a saved V2 query disabled when the compatibility flag is off', async () => {
     mockLoadQuerySummaryData.mockReturnValue(baseData);
-    render(QuerySummary, { query: queryV2, version: QueryVersion.V2 });
+    render(QuerySummary, { query: createQuery(), sourceVersion: QueryVersion.V2 });
 
     await screen.findByTestId('dataset-filters-container');
 
@@ -208,7 +196,7 @@ describe('QuerySummary', () => {
   it('enables restoring a saved V2 query when the compatibility flag is on', async () => {
     mockConfig.features.restoreV2queries = true;
     mockLoadQuerySummaryData.mockReturnValue(baseData);
-    render(QuerySummary, { query: queryV2, version: QueryVersion.V2 });
+    render(QuerySummary, { query: createQuery(), sourceVersion: QueryVersion.V2 });
 
     await screen.findByTestId('dataset-filters-container');
 
@@ -218,7 +206,7 @@ describe('QuerySummary', () => {
   it('hides the Restore Filters button for V2 queries when restoreV2queries is false', async () => {
     mockConfig.features.restoreV2queries = false;
     mockLoadQuerySummaryData.mockReturnValue(baseData);
-    render(QuerySummary, { query: queryV2, version: QueryVersion.V2 });
+    render(QuerySummary, { query: createQuery(), sourceVersion: QueryVersion.V2 });
 
     await screen.findByTestId('dataset-filters-container');
 
@@ -231,7 +219,7 @@ describe('QuerySummary', () => {
   it('shows the enabled Restore Filters button for V2 queries when restoreV2queries is true', async () => {
     mockConfig.features.restoreV2queries = true;
     mockLoadQuerySummaryData.mockReturnValue(baseData);
-    render(QuerySummary, { query: queryV2, version: QueryVersion.V2 });
+    render(QuerySummary, { query: createQuery(), sourceVersion: QueryVersion.V2 });
 
     await screen.findByTestId('dataset-filters-container');
 

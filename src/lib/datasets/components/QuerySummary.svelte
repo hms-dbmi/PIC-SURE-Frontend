@@ -11,9 +11,8 @@
     type QueryEstimate,
   } from '#lib/query/restore.ts';
 
-  import { createQuery, type Query } from '#lib/query/query.ts';
+  import type { Query } from '#lib/query/query.ts';
   import { QueryVersion } from '#lib/datasets/dataset.ts';
-  import { queryFromV2, type QueryV2 } from '#lib/query/v2.ts';
   import { ENSURE_MAX_DEPTH, getConceptDetails } from '#lib/explorer/Dictionary.ts';
   import { getConceptTree } from '#lib/api/picsure/dictionary.ts';
 
@@ -30,24 +29,19 @@
   import Button from '#lib/ui/Button.svelte';
   import { buttonSizes } from '#lib/ui/button.ts';
 
-  let {
-    query,
-    version,
-    name,
-  }: {
-    query: QueryV2 | Query;
-    version: string;
+  interface Props {
+    query: Query;
+    sourceVersion: QueryVersion;
     name?: string;
-  } = $props();
+  }
+
+  let { query, sourceVersion, name }: Props = $props();
 
   let modal = $state(false);
   let hasExistingFilters = $derived(filterState.all.length > 0);
-  let currentQuery: Query = $derived(
-    createQuery(version === QueryVersion.V2 ? queryFromV2(query as QueryV2) : (query as Query)),
-  );
-  let estimate: QueryEstimate = $derived(estimateQuery(currentQuery));
+  let estimate: QueryEstimate = $derived(estimateQuery(query));
   let queryData: QuerySummaryData = $derived(
-    loadQuerySummaryData(currentQuery, {
+    loadQuerySummaryData(query, {
       getConceptDetails,
       getConceptTree: (dataset, conceptPath) =>
         getConceptTree(dataset, ENSURE_MAX_DEPTH, conceptPath),
@@ -71,8 +65,8 @@
   }
 
   let restoreQueryButton = $derived(
-    version === QueryVersion.V3 ||
-      (version === QueryVersion.V2 && config.features.restoreV2queries),
+    sourceVersion === QueryVersion.V3 ||
+      (sourceVersion === QueryVersion.V2 && config.features.restoreV2queries),
   );
 </script>
 
@@ -133,7 +127,7 @@
   {/if}
 {/await}
 
-<section data-testid="dataset-filters-container" class={`my-4 query-version-${version}`}>
+<section data-testid="dataset-filters-container" class={`my-4 query-version-${sourceVersion}`}>
   <h2 class="text-left h4 mb-2 mt-6">Filters Applied</h2>
   {#await Promise.all([queryData.filterTree, queryData.genomicFilters])}
     <FilterCardPlaceholder numCards={estimate.filters} />

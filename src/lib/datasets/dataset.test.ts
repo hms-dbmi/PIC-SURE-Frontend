@@ -2,11 +2,26 @@ import { describe, it, expect } from 'vitest';
 
 import { mapDataset, QueryVersion } from '#lib/datasets/dataset.ts';
 import { queryLeaves, type Query } from '#lib/query/query.ts';
-import type { QueryV2 } from '#lib/query/v2.ts';
 
 const V2_INNER_QUERY = {
   categoryFilters: { '\\\\dataset\\\\sex\\\\': ['Male'] },
   fields: ['\\\\dataset\\\\age\\\\'],
+};
+
+const V2_AS_CURRENT: Query = {
+  select: ['\\\\dataset\\\\age\\\\'],
+  authorizationFilters: [],
+  phenotypicClause: {
+    type: 'PhenotypicFilter',
+    phenotypicFilterType: 'FILTER',
+    conceptPath: '\\\\dataset\\\\sex\\\\',
+    values: ['Male'],
+    not: false,
+  },
+  genomicFilters: [],
+  expectedResultType: 'COUNT',
+  picsureId: null,
+  id: null,
 };
 
 const V3_INNER_QUERY = {
@@ -59,10 +74,8 @@ describe('mapDataset', () => {
       const dataset = mapDataset(data);
 
       // Then
-      expect(dataset.version).toBe(QueryVersion.V2);
-      const query = dataset.query as QueryV2;
-      expect(query.categoryFilters).toEqual(V2_INNER_QUERY.categoryFilters);
-      expect(query.fields).toEqual(V2_INNER_QUERY.fields);
+      expect(dataset.sourceVersion).toBe(QueryVersion.V2);
+      expect(dataset.query).toEqual(V2_AS_CURRENT);
     });
 
     it('maps a V3 query', () => {
@@ -73,7 +86,7 @@ describe('mapDataset', () => {
       const dataset = mapDataset(data);
 
       // Then
-      expect(dataset.version).toBe(QueryVersion.V3);
+      expect(dataset.sourceVersion).toBe(QueryVersion.V3);
       const query = dataset.query as Query;
       expect(query.select).toEqual(V3_INNER_QUERY.select);
       expect(query.phenotypicClause).toMatchObject({
@@ -94,10 +107,8 @@ describe('mapDataset', () => {
       const dataset = mapDataset(data);
 
       // Then
-      expect(dataset.version).toBe(QueryVersion.V2);
-      const query = dataset.query as QueryV2;
-      expect(query.categoryFilters).toEqual(V2_INNER_QUERY.categoryFilters);
-      expect(query.fields).toEqual(V2_INNER_QUERY.fields);
+      expect(dataset.sourceVersion).toBe(QueryVersion.V2);
+      expect(dataset.query).toEqual(V2_AS_CURRENT);
     });
 
     it('maps a V3 query', () => {
@@ -108,7 +119,7 @@ describe('mapDataset', () => {
       const dataset = mapDataset(data);
 
       // Then
-      expect(dataset.version).toBe(QueryVersion.V3);
+      expect(dataset.sourceVersion).toBe(QueryVersion.V3);
       const query = dataset.query as Query;
       expect(query.select).toEqual(V3_INNER_QUERY.select);
       expect(query.phenotypicClause).toMatchObject({
@@ -164,7 +175,7 @@ describe('mapDataset', () => {
       const dataset = mapDataset(data);
 
       // Then
-      expect(dataset.version).toBe(QueryVersion.UNKNOWN);
+      expect(dataset.sourceVersion).toBe(QueryVersion.UNKNOWN);
       expect(dataset.query).toBeNull();
     });
 
@@ -176,7 +187,7 @@ describe('mapDataset', () => {
       const dataset = mapDataset(data);
 
       // Then
-      expect(dataset.version).toBe(QueryVersion.UNKNOWN);
+      expect(dataset.sourceVersion).toBe(QueryVersion.UNKNOWN);
       expect(dataset.query).toBeNull();
     });
 
@@ -188,7 +199,7 @@ describe('mapDataset', () => {
       const dataset = mapDataset(data);
 
       // Then
-      expect(dataset.version).toBe(QueryVersion.UNKNOWN);
+      expect(dataset.sourceVersion).toBe(QueryVersion.UNKNOWN);
       expect(dataset.query).toBeNull();
     });
 
@@ -202,10 +213,10 @@ describe('mapDataset', () => {
       const dataset = mapDataset(data);
 
       // Then
-      expect(dataset.version).toBe(QueryVersion.V2);
+      expect(dataset.sourceVersion).toBe(QueryVersion.V2);
       expect(dataset.query).toMatchObject({
-        categoryFilters: {},
-        fields: ['\\\\dataset\\\\age\\\\'],
+        phenotypicClause: null,
+        select: ['\\\\dataset\\\\age\\\\'],
       });
     });
 
@@ -217,7 +228,7 @@ describe('mapDataset', () => {
       const dataset = mapDataset(data);
 
       // Then
-      expect(dataset.version).toBe(QueryVersion.UNKNOWN);
+      expect(dataset.sourceVersion).toBe(QueryVersion.UNKNOWN);
       expect(dataset.query).toBeNull();
     });
 
@@ -276,7 +287,7 @@ describe('mapDataset', () => {
       const dataset = mapDataset(data);
 
       // Then
-      expect(dataset.version).toBe(QueryVersion.UNKNOWN);
+      expect(dataset.sourceVersion).toBe(QueryVersion.UNKNOWN);
       expect(dataset.query).toBeNull();
     });
   });
@@ -309,5 +320,126 @@ describe('mapDataset', () => {
       // Then
       expect(dataset.status).toBe('UNDEFINED');
     });
+  });
+});
+
+// Saved datasets in the shapes the backend returns (from the e2e mocks): the outer query string
+// wraps the request, and saved clauses carry no `type` tags.
+describe('mapDataset with saved datasets', () => {
+  const GENDER = '\\\\demographics\\\\gender\\\\';
+  const HEIGHT = '\\\\demographics\\\\height\\\\';
+  const saved = (innerQuery: object) =>
+    makeData(
+      JSON.stringify({
+        resourceCredentials: { BEARER_TOKEN: null },
+        query: innerQuery,
+        resourceUUID: 'resource-uuid',
+      }),
+    );
+
+  it('maps a current-format dataset as saved', () => {
+    const dataset = mapDataset(
+      saved({
+        select: [GENDER, HEIGHT],
+        authorizationFilters: [],
+        phenotypicClause: {
+          operator: 'AND',
+          phenotypicClauses: [
+            {
+              phenotypicFilterType: 'FILTER',
+              conceptPath: GENDER,
+              not: false,
+              values: ['Undisclosed'],
+            },
+          ],
+          not: false,
+        },
+        genomicFilters: [{ key: 'chr17,35269878,GT,A', values: ['0/1'] }],
+        expectedResultType: 'DATAFRAME',
+        picsureId: null,
+        id: null,
+      }),
+    );
+
+    expect(dataset.sourceVersion).toBe(QueryVersion.V3);
+    expect(dataset.query).toEqual({
+      select: [GENDER, HEIGHT],
+      authorizationFilters: [],
+      phenotypicClause: {
+        type: 'PhenotypicSubquery',
+        operator: 'AND',
+        phenotypicClauses: [
+          {
+            type: 'PhenotypicFilter',
+            phenotypicFilterType: 'FILTER',
+            conceptPath: GENDER,
+            not: false,
+            values: ['Undisclosed'],
+          },
+        ],
+        not: false,
+      },
+      genomicFilters: [{ key: 'chr17,35269878,GT,A', values: ['0/1'] }],
+      expectedResultType: 'DATAFRAME',
+      picsureId: null,
+      id: null,
+    });
+  });
+
+  it('converts a V2 dataset to the current format and remembers it was V2', () => {
+    const dataset = mapDataset(
+      saved({
+        categoryFilters: { [GENDER]: ['Undisclosed'] },
+        numericFilters: { [HEIGHT]: { min: 100 } },
+        requiredFields: [],
+        anyRecordOf: [],
+        anyRecordOfMulti: [],
+        fields: [HEIGHT],
+        crossCountFields: [GENDER],
+        variantInfoFilters: [
+          {
+            categoryVariantInfoFilters: { Gene_with_variant: ['BRCA1'] },
+            numericVariantInfoFilters: {},
+          },
+        ],
+        expectedResultType: 'DATAFRAME',
+      }),
+    );
+
+    expect(dataset.sourceVersion).toBe(QueryVersion.V2);
+    expect(dataset.query).toEqual({
+      select: [HEIGHT, GENDER],
+      authorizationFilters: [],
+      phenotypicClause: {
+        type: 'PhenotypicSubquery',
+        operator: 'AND',
+        phenotypicClauses: [
+          {
+            type: 'PhenotypicFilter',
+            phenotypicFilterType: 'FILTER',
+            conceptPath: GENDER,
+            values: ['Undisclosed'],
+            not: false,
+          },
+          {
+            type: 'PhenotypicFilter',
+            phenotypicFilterType: 'FILTER',
+            conceptPath: HEIGHT,
+            min: 100,
+            max: undefined,
+            not: false,
+          },
+        ],
+        not: false,
+      },
+      genomicFilters: [{ key: 'Gene_with_variant', values: ['BRCA1'] }],
+      expectedResultType: 'DATAFRAME',
+      picsureId: null,
+      id: null,
+    });
+  });
+
+  it('rejects a response that is not a dataset', () => {
+    expect(() => mapDataset({ uuid: 'dataset-uuid' })).toThrow('Invalid dataset response');
   });
 });
