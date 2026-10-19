@@ -4,7 +4,7 @@
   import { consentDeniedMessage } from '#lib/api/errors.ts';
   import { config } from '#lib/config/config.svelte.ts';
 
-  import { QueryVersion, type DataSet } from '#lib/datasets/dataset.ts';
+  import { QueryVersion, type DataSet } from '#lib/api/picsure/datasets.ts';
   import { datasets } from '#lib/datasets/datasets.svelte.ts';
 
   import Content from '#lib/shell/Content.svelte';

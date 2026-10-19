@@ -7,7 +7,7 @@ import { toaster } from '#lib/ui/toaster.ts';
 
 import QuerySummary from '#lib/datasets/components/QuerySummary.svelte';
 import { loadQuerySummaryData } from '#lib/query/restore.ts';
-import { QueryVersion } from '#lib/datasets/dataset.ts';
+import { QueryVersion } from '#lib/api/picsure/datasets.ts';
 import { LogicTree } from '#lib/query/logicTree.svelte.ts';
 import { createQuery } from '#lib/query/query.ts';
 import type { FilterInterface, FilterGroupInterface } from '#lib/query/filter.svelte.ts';

@@ -12,7 +12,7 @@
   } from '#lib/query/restore.ts';
 
   import type { Query } from '#lib/query/query.ts';
-  import { QueryVersion } from '#lib/datasets/dataset.ts';
+  import { QueryVersion } from '#lib/api/picsure/datasets.ts';
   import { ENSURE_MAX_DEPTH, getConceptDetails } from '#lib/explorer/Dictionary.ts';
   import { getConceptTree } from '#lib/api/picsure/dictionary.ts';
 

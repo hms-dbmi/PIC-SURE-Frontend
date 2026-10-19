@@ -1,5 +1,5 @@
-import type { DataSet } from '#lib/datasets/dataset.ts';
 import * as api from '#lib/api/picsure/datasets.ts';
+import type { DataSet } from '#lib/api/picsure/datasets.ts';
 import { log, createLog } from '#lib/telemetry/logger.ts';
 import { assertNoSsrWrite } from '#lib/utils/ssrWrite.ts';
 
