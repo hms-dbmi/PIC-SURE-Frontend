@@ -18,6 +18,19 @@ export const buttonVariants = {
     'preset-outlined-error-500 text-error-700 hover:preset-filled-error-500 hover:text-white',
   'outlined-surface':
     'preset-outlined-surface-500 hover:preset-tonal-primary border border-primary-500',
+  'outlined-warning': 'preset-outlined-warning-500 hover:preset-filled-warning-500',
+  'filled-secondary': 'preset-filled-secondary-500',
+  // Turns tonal when disabled.
+  'filled-bordered':
+    'preset-filled-primary-500 disabled:preset-tonal-primary border border-primary-500',
+  // The `-static` variants and `tint` have no hover colour, as they were before the table existed.
+  'tonal-static': 'preset-tonal-primary border border-primary-500',
+  'soft-static': 'border preset-tonal-primary',
+  'soft-error-static': 'border preset-tonal-error',
+  'outlined-static': 'preset-outlined-primary-500',
+  // Tonal fill only, without a border.
+  tint: 'preset-tonal-primary',
+  'tint-error': 'preset-tonal-error',
 } as const;
 
 export type ButtonVariant = keyof typeof buttonVariants;
@@ -28,6 +41,10 @@ export const buttonSizes = {
   md: 'btn',
   sm: 'btn btn-sm',
   xs: 'btn btn-xs',
+  // Small text and padding without the btn frame.
+  compact: 'btn-sm',
+  icon: 'btn btn-icon',
+  'icon-sm': 'btn-icon btn-icon-sm',
 } as const;
 
 export type ButtonSize = keyof typeof buttonSizes;
