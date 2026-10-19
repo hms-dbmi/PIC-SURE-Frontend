@@ -15,9 +15,8 @@ vi.mock('#lib/config/config.svelte.ts', () => ({
 }));
 vi.mock('#lib/api/picsure/dictionary.ts', () => mockApi);
 
-import { get } from 'svelte/store';
-import { loadDashboardData, rows } from './dashboard.ts';
-import { user, setToken, removeToken } from '#lib/auth/User.ts';
+import { Dashboard } from './dashboard.svelte.ts';
+import { session } from '#lib/auth/session.svelte.ts';
 
 const dashboardResp = {
   columns: [],
@@ -29,18 +28,20 @@ const dashboardResp = {
   ],
 };
 
-const accessOf = () => Object.fromEntries(get(rows).map((r) => [r.abbreviation, r.consentGranted]));
+const dashboard = new Dashboard();
+const accessOf = () =>
+  Object.fromEntries(dashboard.rows.map((r) => [r.abbreviation, r.consentGranted]));
 
 describe('loadDashboardData Access column', () => {
   beforeEach(() => {
     mockApi.getDashboard.mockReset().mockResolvedValue(structuredClone(dashboardResp));
-    setToken('a-token');
+    session.setToken('a-token');
   });
 
   it('grants access for exact and version-normalized accession matches', async () => {
-    user.set({ consents: { '\\_consents\\': ['phs001', 'phs002.c2'] } });
+    session.user = { consents: { '\\_consents\\': ['phs001', 'phs002.c2'] } };
 
-    await loadDashboardData();
+    await dashboard.load();
 
     expect(accessOf()).toEqual({
       GRANTED: true,
@@ -51,18 +52,18 @@ describe('loadDashboardData Access column', () => {
   });
 
   it('denies everything when the user has no consents', async () => {
-    user.set({ consents: {} });
+    session.user = { consents: {} };
 
-    await loadDashboardData();
+    await dashboard.load();
 
     expect(Object.values(accessOf()).every((granted) => granted === false)).toBe(true);
   });
 
   it('denies everything when the token is gone but the user blob lingers', async () => {
-    user.set({ consents: { '\\_consents\\': ['phs001'] } });
-    removeToken();
+    session.user = { consents: { '\\_consents\\': ['phs001'] } };
+    session.removeToken();
 
-    await loadDashboardData();
+    await dashboard.load();
 
     expect(accessOf().GRANTED).toBe(false);
   });
