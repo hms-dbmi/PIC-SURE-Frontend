@@ -19,6 +19,13 @@
     genomicDraft.genes = [];
   }
 
+  // The consequence tree reads the draft only when it's built, so clearing rebuilds it.
+  let clears = $state(0);
+  function clearFilters() {
+    genomicDraft.clearGenes();
+    clears++;
+  }
+
   const helpText = $derived(config.branding.help.popups.genomicFilter);
 </script>
 
@@ -53,7 +60,9 @@
           log(createLog('ACTION', 'genomic.help_click', { section: 'consequence' }))}
       />
     {/snippet}
-    <Consequence />
+    {#key clears}
+      <Consequence />
+    {/key}
   </Panel>
   <Panel data-testid="genomic-frequency-panel" title="Select Variant Frequency">
     {#snippet help()}
@@ -73,7 +82,7 @@
         variant="outlined-surface"
         size="xs"
         data-testid="genomic-gene-clear-filters"
-        onclick={() => genomicDraft.clearGenes()}>Clear</Button
+        onclick={clearFilters}>Clear</Button
       >
     {/snippet}
     <Summary />
