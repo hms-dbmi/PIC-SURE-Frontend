@@ -27,7 +27,8 @@ interface RegisteredGuard {
 /**
  * The unsaved-changes guards inside one part of a page. The component that owns the part (the
  * configuration page around its tabs) creates it and provides it with `setUnsavedChanges`; every
- * guard created below it registers itself, so the owner can ask before switching away.
+ * guard created below it registers itself, so the owner can ask before switching away. A guard's
+ * discard handler must call the `leave` request's `proceed()`, or the switch never happens.
  */
 export class UnsavedChanges {
   #guards: RegisteredGuard[] = [];

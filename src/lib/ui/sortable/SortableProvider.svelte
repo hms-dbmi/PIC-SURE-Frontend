@@ -29,7 +29,8 @@
 
   const sensors = [KeyboardSensor, PointerSensor];
   // dnd-kit positions the drag overlay with a <style> element it injects, which the CSP blocks
-  // without the nonce SvelteKit puts on its own inline styles.
+  // without a nonce. This reuses the page's script nonce, which hooks.server.ts also allows in
+  // style-src (withStyleNonce).
   const nonce = browser
     ? (document.querySelector<HTMLElement>('style[nonce], script[nonce]')?.nonce ?? undefined)
     : undefined;
@@ -45,8 +46,9 @@
     StyleInjector.configure({ nonce }),
   ];
   // Built here rather than by DragDropProvider, which applies plugin options only after the
-  // plugins exist, too late for the announcements. DragDropProvider leaves a manager it was
-  // given alone, so this component destroys it.
+  // plugins exist, too late for the announcements. DragDropProvider still overwrites a given
+  // manager's plugins and sensors with its own props (dnd-kit's defaults when they're missing),
+  // so pass both again; it never destroys a manager it was given, so this component does.
   const manager = new DragDropManager({ plugins, sensors });
   onDestroy(() => manager.destroy());
 </script>
