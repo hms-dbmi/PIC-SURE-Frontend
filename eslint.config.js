@@ -229,6 +229,16 @@ export default [
     'ui',
     'utils',
   ]),
+  ...importBoundary('banners', [
+    'banners',
+    'query',
+    'api',
+    'auth',
+    'config',
+    'telemetry',
+    'ui',
+    'utils',
+  ]),
   ...svelte.configs['flat/prettier'],
   {
     files: ['**/*.svelte.js', '**/*.svelte.ts'],
