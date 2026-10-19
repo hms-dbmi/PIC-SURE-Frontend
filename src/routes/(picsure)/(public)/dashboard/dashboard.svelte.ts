@@ -6,7 +6,6 @@ import { showAccessUnavailable } from '#lib/auth/accessUnavailable.ts';
 
 export type { DashboardRow };
 
-/** The dashboard table, created by the page. */
 export class Dashboard {
   columns = $state.raw<Column[]>([]);
   rows = $state.raw<DashboardRow[]>([]);

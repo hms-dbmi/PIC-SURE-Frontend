@@ -166,6 +166,27 @@ describe('QueryCountService.getCount', () => {
   });
 });
 
+describe('QueryCountService.clear', () => {
+  it('sends a new request instead of joining one started before the clear', async () => {
+    let resolveFirst!: (value: number) => void;
+    const transport = vi
+      .fn()
+      .mockReturnValueOnce(new Promise((resolve) => (resolveFirst = resolve)))
+      .mockResolvedValueOnce(2);
+    const provider = makeProvider();
+    const service = createQueryCountService({ transport });
+
+    const before = service.getCount(descriptor, provider);
+    service.clear();
+    const after = service.getCount(descriptor, provider);
+    resolveFirst(1);
+
+    expect((await before).count).toBe(1);
+    expect((await after).count).toBe(2);
+    expect(transport).toHaveBeenCalledTimes(2);
+  });
+});
+
 describe('QueryCountService transport dispatch', () => {
   it('builds and transports a query request', async () => {
     const transport = vi.fn().mockResolvedValue(0);

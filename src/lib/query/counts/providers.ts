@@ -29,7 +29,6 @@ export function isQueryProvider(provider: CountProvider): provider is QueryCount
   return 'buildRequest' in provider;
 }
 
-/** Open access asks for the studies-consents cross count; signed-in users get a plain count. */
 export function patientCountRequest(descriptor: QueryDescriptor): QueryRequest {
   return buildRequest(descriptor, descriptor.isOpenAccess ? 'CROSS_COUNT' : 'COUNT');
 }

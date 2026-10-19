@@ -1,6 +1,5 @@
 export type PatientCount = string | number | undefined;
 export type PatientCountMap = Record<string, PatientCount>;
-/** One count cell: a single count, or a map of counts (cross counts). */
 export type CountValue = PatientCount | PatientCountMap;
 
 const PLUS_MINUS = '±';

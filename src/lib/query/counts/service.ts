@@ -58,6 +58,7 @@ export function createQueryCountService(options: QueryCountServiceOptions): Quer
       log(
         createLog('QUERY', 'query.execute', {
           providerId: provider.id,
+          isOpenAccess: descriptor.isOpenAccess,
           path: PicsurePaths.syncQuery(openEndpoint),
           expectedResultType: request.query.expectedResultType,
         }),
@@ -108,14 +109,18 @@ export function createQueryCountService(options: QueryCountServiceOptions): Quer
         }
         return snapshot;
       })
-      .finally(() => inflight.delete(key));
+      .finally(() => {
+        if (inflight.get(key) === promise) inflight.delete(key);
+      });
     inflight.set(key, promise);
     return promise;
   }
 
+  // Pending requests are dropped too: their results may belong to whoever was signed in before.
   function clear() {
     generation++;
     cache.clear();
+    inflight.clear();
   }
 
   return { getCount, clear };

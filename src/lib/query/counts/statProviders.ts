@@ -65,7 +65,7 @@ const conceptCount: CountProvider = {
   },
 };
 
-// Builds the request with an `edit` step, or throws when the stat's fields aren't configured.
+// `edit` runs when the request is built, so a stat whose fields aren't configured fails then.
 function queryStat(
   id: string,
   resultType: ExpectedResultType,
@@ -116,7 +116,7 @@ const consentCount = queryStat('query:consent', 'COUNT', () => {
 // Unlike the results panel's count, the landing page's open patient count always asks the
 // open endpoint, even when explore-without-login sends other open requests to the auth one.
 const patientCount: QueryCountProvider = {
-  id: 'query:patientCount',
+  id: 'landing:patientCount',
   openEndpoint: (descriptor: QueryDescriptor) => descriptor.isOpenAccess,
   buildRequest: patientCountRequest,
   parse: parsePatientCount,
@@ -132,7 +132,6 @@ const providers: Record<string, CountProvider> = {
   'query:patientCount': patientCount,
 };
 
-/** The provider for a configured stat, or undefined for an unknown key. */
 export function statProvider(stat: StatConfig): CountProvider | undefined {
   if (stat.key === 'hardcoded') {
     const value = (stat.value as CountValue) || 0;

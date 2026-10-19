@@ -99,7 +99,6 @@ export function statsMatch(open: LandingStat[], auth: LandingStat[]): boolean {
   return true;
 }
 
-// Browser-only: the page loads it on mount.
 export const landingStats = new LandingStats(
   createQueryCountService({
     transport: (request, openEndpoint) => runSyncQuery(request, { openEndpoint }),

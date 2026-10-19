@@ -50,6 +50,23 @@ describe('LandingStats', () => {
     expect(stats.auth.map((stat) => stat.snapshot?.count)).toEqual([10]);
   });
 
+  it("ignores a superseded load's late counts", async () => {
+    const { transport, stats } = setup();
+    let resolveFirst!: (value: number) => void;
+    transport.mockReturnValueOnce(new Promise((resolve) => (resolveFirst = resolve)));
+
+    await stats.load();
+    session.setToken('token');
+    vi.spyOn(session, 'ensureConsentsLoaded').mockResolvedValue({});
+    await stats.load();
+    await counts();
+    resolveFirst(99);
+    await counts();
+
+    expect(stats.auth.map((stat) => stat.snapshot?.count)).toEqual([10]);
+    expect(stats.open.map((stat) => stat.snapshot?.count)).toEqual([10]);
+  });
+
   it('marks a failed stat instead of rejecting', async () => {
     const { transport, stats } = setup();
     transport.mockRejectedValue(new Error('down'));
