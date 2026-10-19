@@ -2,7 +2,7 @@
   import Button from '#lib/ui/Button.svelte';
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
-  import { Switch } from '@skeletonlabs/skeleton-svelte';
+  import Switch from '#lib/ui/Switch.svelte';
 
   import type { ExtendedUser, UserRequest } from '#lib/auth/model/user.ts';
   import type { Connection } from '#lib/auth/model/connection.ts';
@@ -98,10 +98,10 @@
   <fieldset data-testid="admin-user-form" class="grid gap-4 my-3">
     <Switch
       name="Active"
-      controlActive="bg-success-500"
+      tone="success"
       label="Status"
       checked={active}
-      onCheckedChange={() => (active = !active)}
+      onchange={(checked) => (active = checked)}
     >
       {active ? 'Active' : 'Inactive'}
     </Switch>

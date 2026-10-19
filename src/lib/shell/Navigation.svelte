@@ -3,7 +3,6 @@
   import { resolve } from '$app/paths';
   import { appPath } from '#lib/api/paths.ts';
   import { onMount } from 'svelte';
-  import { AppBar, Avatar } from '@skeletonlabs/skeleton-svelte';
 
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
@@ -18,6 +17,8 @@
 
   import Logo from '#lib/shell/Logo.svelte';
   import Popover from '#lib/ui/popover/Popover.svelte';
+  import AppBar from '#lib/ui/AppBar.svelte';
+  import Avatar from '#lib/ui/Avatar.svelte';
 
   let providerInstance: AuthProvider | undefined = $state(undefined);
 
@@ -56,7 +57,7 @@
   });
 </script>
 
-<AppBar padding="py-0 pl-2 pr-5" background="bg-surface-50-950" toolbarClasses="flex-none z-10">
+<AppBar>
   {#snippet lead()}
     <a
       href={resolve('')}
@@ -89,14 +90,7 @@
         <!-- Logout -->
         <Popover data-testid="app-nav-user-menu">
           {#snippet trigger()}
-            <Avatar
-              name={($user.email || 'unknown').toUpperCase()}
-              background="preset-tonal-primary hover:preset-tonal-secondary"
-              border="border hover:border-primary-400"
-              font="text-2xl"
-              size="size-12"
-              classes="m-3"
-            >
+            <Avatar name={($user.email || 'unknown').toUpperCase()} class="m-3">
               {($user.email || '?').toUpperCase().charAt(0)}
             </Avatar>
           {/snippet}

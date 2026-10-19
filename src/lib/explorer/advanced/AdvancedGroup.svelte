@@ -13,9 +13,9 @@
   import EmptyDropZone from './EmptyDropZone.svelte';
   import GroupDropZone from './GroupDropZone.svelte';
   import { Operator, type OperatorType } from '#lib/query/query.ts';
-  import { Segment } from '@skeletonlabs/skeleton-svelte';
+  import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
   import { CollisionPriority } from '@dnd-kit/abstract';
-  import { Switch } from '@skeletonlabs/skeleton-svelte';
+  import Switch from '#lib/ui/Switch.svelte';
 
   interface Props {
     group: FilterGroupInterface;
@@ -96,14 +96,10 @@
   // cleared in clearDragState().
   const showDropPreview = $derived(!isOverlay && activeId === id && isDraggable);
 
-  function handleOperatorChange(details: { value: string | null }) {
-    if (details.value == null) return;
-    onOperatorChange(group, details.value as OperatorType);
-  }
-
-  function handleNotChange(e: { checked: boolean }) {
-    not = e.checked;
-  }
+  const operatorOptions = [
+    { value: Operator.AND, label: Operator.AND },
+    { value: Operator.OR, label: Operator.OR },
+  ];
 </script>
 
 <div class="relative" {@attach ref}>
@@ -137,19 +133,13 @@
         <!-- {#key} forces re-mount because Skeleton's Segment doesn't update its indicator position on prop change -->
         {#key operatorValue}
           <div title="Choose logic for the query">
-            <Segment
-              background="bg-white border-surface-400 border"
-              indicatorBg={operatorValue === Operator.OR ? 'bg-secondary-500' : 'bg-primary-500'}
-              indicatorClasses="scale-[1.04]"
+            <SegmentedControl
               name="operator"
-              padding="0"
-              gap="0"
               value={operatorValue}
-              onValueChange={handleOperatorChange}
-            >
-              <Segment.Item value={Operator.AND}>{Operator.AND}</Segment.Item>
-              <Segment.Item value={Operator.OR}>{Operator.OR}</Segment.Item>
-            </Segment>
+              options={operatorOptions}
+              tone={operatorValue === Operator.OR ? 'secondary' : 'primary'}
+              onchange={(value) => onOperatorChange(group, value as OperatorType)}
+            />
           </div>
         {/key}
         {#if id === 'root'}
@@ -166,8 +156,8 @@
       <!-- TODO: NOT operator support — hidden until backend supports negation -->
       <div class="hidden flex items-center gap-2 ml-auto">
         <span>Not:</span>
-        <Switch name="not" checked={not} onCheckedChange={handleNotChange}>
-          {#snippet activeChild()}!{/snippet}
+        <Switch name="not" checked={not} onchange={(checked) => (not = checked)}>
+          {#snippet checkedIcon()}!{/snippet}
         </Switch>
       </div>
       {#if isDraggable}

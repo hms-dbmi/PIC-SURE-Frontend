@@ -21,6 +21,12 @@ const boundaryExceptions = [
   'src/lib/utils/hierarchy.ts',
 ];
 
+// Only ui/ imports Skeleton, so dropping or upgrading it touches ui/ alone.
+const skeletonOnlyInUi = {
+  group: ['@skeletonlabs/*'],
+  message: 'Only src/lib/ui/ may import Skeleton; use or add a ui/ primitive.',
+};
+
 // `folder` (under src/lib/) may import only from `allowed` folders and packages: no `#lib/` or
 // `$lib/` specifier outside them, and no relative path that climbs out of `folder` (one config per
 // nesting depth, so `../` is allowed exactly as deep as the file sits). Stylesheets are exempt.
@@ -36,6 +42,8 @@ function importBoundary(folder, allowed) {
           patterns: [
             { regex: `^[#$]lib/(?!(${allowed.join('|')})(/|$))`, message },
             { regex: `^(\\.\\./){${depth - 1}}\\.\\.(/|$)(?!.*\\.css$)`, message },
+            // A later config's rule replaces an earlier one's, so repeat the Skeleton rule here.
+            ...(folder === 'ui' ? [] : [skeletonOnlyInUi]),
           ],
         },
       ],
@@ -133,6 +141,13 @@ export default [
           message: 'expect(...) without a matcher asserts nothing.',
         },
       ],
+    },
+  },
+  {
+    files: ['src/**/*.{ts,svelte}', 'tests/**/*.ts'],
+    ignores: ['src/lib/ui/**'],
+    rules: {
+      'no-restricted-imports': ['error', { patterns: [skeletonOnlyInUi] }],
     },
   },
   ...importBoundary('ui', ['ui', 'utils']),

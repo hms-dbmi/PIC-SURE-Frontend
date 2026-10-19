@@ -1,8 +1,7 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
   import { onMount } from 'svelte';
-  import { Toaster } from '@skeletonlabs/skeleton-svelte';
-  import { toaster } from '#lib/ui/toaster.ts';
+  import Toaster from '#lib/ui/Toaster.svelte';
 
   import { user } from '#lib/auth/User.ts';
   import { goto } from '$app/navigation';
@@ -24,7 +23,7 @@
   });
 </script>
 
-<Toaster {toaster} />
+<Toaster />
 <div class="h-full w-full overflow-y-auto flex flex-col">
   <SiteBannerRegion />
   <div class="relative flex-auto pb-14">

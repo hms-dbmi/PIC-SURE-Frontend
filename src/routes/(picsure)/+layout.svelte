@@ -3,8 +3,7 @@
   import { page } from '$app/state';
   import { beforeNavigate } from '$app/navigation';
 
-  import { Toaster } from '@skeletonlabs/skeleton-svelte';
-  import { toaster } from '#lib/ui/toaster.ts';
+  import Toaster from '#lib/ui/Toaster.svelte';
 
   import {
     hasInvalidFilter,
@@ -51,7 +50,7 @@
   });
 </script>
 
-<Toaster {toaster} />
+<Toaster />
 <FilterWarning bind:open={filterWarningModal} />
 <Shell>
   {#snippet header()}

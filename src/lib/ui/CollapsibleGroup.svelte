@@ -10,14 +10,47 @@
     multiple?: boolean;
     /** Lets the last open panel close (always true with `multiple`). */
     collapsible?: boolean;
+    /** Give the panels the same variant. */
+    variant?: keyof typeof variants;
     children: Snippet;
   }
 
-  let { value, onchange, multiple = false, collapsible = false, children }: Props = $props();
+  const variants = {
+    section: {
+      spaceY: undefined,
+      classes: undefined,
+      open: 'fa-solid fa-angle-up',
+      closed: 'fa-solid fa-angle-down',
+    },
+    card: {
+      spaceY: 'space-y-4',
+      classes: 'mt-4',
+      open: 'fa-solid fa-angle-up text-xl',
+      closed: 'fa-solid fa-angle-down text-xl',
+    },
+  };
+
+  let {
+    value,
+    onchange,
+    multiple = false,
+    collapsible = false,
+    variant = 'section',
+    children,
+  }: Props = $props();
+
+  const look = $derived(variants[variant]);
 </script>
 
-<Accordion {value} onValueChange={(e) => onchange(e.value)} {multiple} {collapsible}>
-  {#snippet iconOpen()}<i class="fa-solid fa-angle-up"></i>{/snippet}
-  {#snippet iconClosed()}<i class="fa-solid fa-angle-down"></i>{/snippet}
+<Accordion
+  {value}
+  onValueChange={(e) => onchange(e.value)}
+  {multiple}
+  {collapsible}
+  spaceY={look.spaceY}
+  classes={look.classes}
+>
+  {#snippet iconOpen()}<i class={look.open}></i>{/snippet}
+  {#snippet iconClosed()}<i class={look.closed}></i>{/snippet}
   {@render children()}
 </Accordion>

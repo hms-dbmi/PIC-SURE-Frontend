@@ -1,7 +1,5 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
-  import { Accordion } from '@skeletonlabs/skeleton-svelte';
-
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
@@ -16,6 +14,8 @@
   import UserToken from '#lib/auth/components/UserToken.svelte';
   import PublicAccessKey from './PublicAccessKey.svelte';
   import CodeBlock from '#lib/ui/CodeBlock.svelte';
+  import CollapsibleGroup from '#lib/ui/CollapsibleGroup.svelte';
+  import CollapsiblePanel from '#lib/ui/CollapsiblePanel.svelte';
   import TocLayout from '#lib/ui/toc/TocLayout.svelte';
   import TocSection from '#lib/ui/toc/TocSection.svelte';
 
@@ -253,26 +253,11 @@
     <TocSection id="choose-your-workflow" tinted>
       <h2>Choose Your Workflow</h2>
       <p class="mx-0">Select the access method that fits your project.</p>
-      <Accordion
-        value={openWorkflows}
-        onValueChange={(e) => toggleWorkflow(e.value)}
-        collapsible
-        spaceY="space-y-4"
-        classes="mt-4"
-      >
-        {#snippet iconOpen()}<i class="fa-solid fa-angle-up text-xl"></i>{/snippet}
-        {#snippet iconClosed()}<i class="fa-solid fa-angle-down text-xl"></i>{/snippet}
+      <CollapsibleGroup value={openWorkflows} onchange={toggleWorkflow} collapsible variant="card">
         {#each workflows as workflow}
           <div id="workflow-{workflow.id}" data-testid="api-workflow-{workflow.id}">
-            <Accordion.Item
-              value={workflow.id}
-              base="rounded-container border border-surface-200 bg-white dark:bg-surface-950 data-[state=open]:border-primary-500"
-              controlHover="hover:bg-surface-100-900"
-              controlPadding="p-6"
-              controlRounded="rounded-container"
-              panelPadding="px-6 pb-6"
-            >
-              {#snippet control()}
+            <CollapsiblePanel value={workflow.id} variant="card">
+              {#snippet heading()}
                 <span class="flex flex-wrap items-center gap-3">
                   <span class="text-xl font-bold">{workflow.title}</span>
                   <span
@@ -288,51 +273,44 @@
                   {workflow.requirements}
                 </span>
               {/snippet}
-              {#snippet panel()}
-                <p class="mx-0 mb-4 p-4 rounded-base preset-tonal-primary">
-                  Copy your token above, paste it into a file named <code class="code"
-                    >token.txt</code
-                  >, and save it {workflow.tokenLocation}. Don't share this file or commit it to
-                  GitHub.
-                </p>
-                <CodeBlock lang={workflow.lang} code={clientCode[workflow.id]} />
-                <p
-                  class="mx-0 mt-6 mb-1 text-sm font-bold uppercase tracking-wide text-surface-600-400"
+              <p class="mx-0 mb-4 p-4 rounded-base preset-tonal-primary">
+                Copy your token above, paste it into a file named <code class="code">token.txt</code
+                >, and save it {workflow.tokenLocation}. Don't share this file or commit it to
+                GitHub.
+              </p>
+              <CodeBlock lang={workflow.lang} code={clientCode[workflow.id]} />
+              <p
+                class="mx-0 mt-6 mb-1 text-sm font-bold uppercase tracking-wide text-surface-600-400"
+              >
+                More info
+              </p>
+              {#if workflow.docsSection}
+                {@const section = workflow.docsSection}
+                <a
+                  class="anchor"
+                  href={resolve(`api#${section}`)}
+                  onclick={(event) => void navigateSection(event, section)}>{workflow.docsLabel}</a
                 >
-                  More info
-                </p>
-                {#if workflow.docsSection}
-                  {@const section = workflow.docsSection}
+              {:else}
+                <!-- eslint-disable svelte/no-navigation-without-resolve -- external docs URL -->
+                <a class="anchor" href={workflow.docsUrl} target="_blank" rel="noopener noreferrer"
+                  >{workflow.docsLabel}</a
+                >
+                <!-- eslint-enable svelte/no-navigation-without-resolve -->
+                <p class="mx-0 mt-2">
+                  Looking for example notebooks? Check out the
                   <a
                     class="anchor"
-                    href={resolve(`api#${section}`)}
-                    onclick={(event) => void navigateSection(event, section)}
-                    >{workflow.docsLabel}</a
-                  >
-                {:else}
-                  <!-- eslint-disable svelte/no-navigation-without-resolve -- external docs URL -->
-                  <a
-                    class="anchor"
-                    href={workflow.docsUrl}
+                    href="https://github.com/hms-dbmi/Access-to-Data-using-PIC-SURE-API"
                     target="_blank"
-                    rel="noopener noreferrer">{workflow.docsLabel}</a
-                  >
-                  <!-- eslint-enable svelte/no-navigation-without-resolve -->
-                  <p class="mx-0 mt-2">
-                    Looking for example notebooks? Check out the
-                    <a
-                      class="anchor"
-                      href="https://github.com/hms-dbmi/Access-to-Data-using-PIC-SURE-API"
-                      target="_blank"
-                      rel="noopener noreferrer">public GitHub repository</a
-                    >.
-                  </p>
-                {/if}
-              {/snippet}
-            </Accordion.Item>
+                    rel="noopener noreferrer">public GitHub repository</a
+                  >.
+                </p>
+              {/if}
+            </CollapsiblePanel>
           </div>
         {/each}
-      </Accordion>
+      </CollapsibleGroup>
     </TocSection>
 
     <TocSection id="api-access">
