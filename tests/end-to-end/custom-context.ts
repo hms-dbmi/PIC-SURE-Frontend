@@ -147,10 +147,11 @@ function missingLocalStorage(
   });
 }
 
+const MAX_STORAGE_STATE_REAPPLIES = 3;
+
 /**
  * Under heavy load WebKit sometimes starts a context without the localStorage Playwright restored
  * from `storageState`, so a signed-in test begins with no token and the app sends it to /login.
- * Reads the state back and re-applies it until it's all there.
  */
 export async function ensureStorageState(
   context: BrowserContext,
@@ -166,12 +167,15 @@ export async function ensureStorageState(
   for (let reapplied = 0; ; reapplied++) {
     const missing = missingLocalStorage(expected, actual);
     if (missing.length === 0) return actual;
-    if (reapplied === 3) {
+    if (reapplied === MAX_STORAGE_STATE_REAPPLIES) {
       throw new Error(
-        `storageState localStorage missing after 3 re-applies: ${missing.join(', ')}`,
+        `storageState localStorage missing after ${reapplied} re-applies: ${missing.join(', ')}`,
       );
     }
     testInfo.annotations.push({ type: 'storage-state-reapplied', description: missing.join(', ') });
+    console.warn(
+      `storage-state-reapplied: ${testInfo.titlePath.join(' > ')}: ${missing.join(', ')}`,
+    );
     await context.setStorageState(expected);
     actual = await context.storageState();
   }
