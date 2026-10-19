@@ -6,6 +6,7 @@
 
 @source '../../node_modules/@skeletonlabs/skeleton-svelte/dist';
 
+@import './tokens.css';
 @import './theme.css';
 
 @custom-variant dark (&:is(.dark *));
