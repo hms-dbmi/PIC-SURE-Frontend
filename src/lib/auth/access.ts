@@ -8,7 +8,7 @@ export function isTopAdmin(user: User): boolean {
   return user.privileges?.includes(PicsurePrivileges.SUPER) ?? false;
 }
 
-/** The nav routes `user` may open; `undefined` for a signed-out visitor. */
+/** The nav routes `user` may open. Pass `undefined` for a signed-out visitor. */
 export function routesFor(user: User | undefined, features: Features): Route[] {
   const privileges: string[] = user?.privileges ?? [];
 

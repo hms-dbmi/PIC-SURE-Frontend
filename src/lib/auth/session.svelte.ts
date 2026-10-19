@@ -1,3 +1,4 @@
+import { untrack } from 'svelte';
 import { browser } from '$app/env';
 import { ApiError } from '#lib/api/errors.ts';
 import * as psamaUser from '#lib/api/psama/user.ts';
@@ -87,6 +88,8 @@ export class Session {
   #validity = $derived(tokenValidity(this.#token));
   #shell: SessionShell = disconnected;
   #consentsRequest: Promise<void> = Promise.resolve();
+  // Bumped when the session ends, so profile responses requested before then are dropped.
+  #generation = 0;
   // A 401 or 403 from PSAMA's logout call makes the API client start another logout, which would
   // navigate to /login a second time, so later calls share the logout already running.
   #pendingLogout: Promise<void> | undefined;
@@ -97,15 +100,12 @@ export class Session {
     const token = readToken();
     if (token && isTokenExpired(token)) {
       console.log('Clearing expired token from storage.');
-      clearToken();
-      localStorage.removeItem(OKTA_ID_TOKEN_KEY);
-      sessionStorage.removeItem(USER_KEY);
+      this.clear();
       log(createLog('AUTH', 'session.expired'));
     } else {
       this.#token = token;
-      this.#user = restoreUser();
+      this.user = restoreUser();
     }
-    this.#saveUser();
     onTokenChange((stored) => (this.#token = stored));
   }
 
@@ -128,15 +128,17 @@ export class Session {
   }
 
   // The profile lives in sessionStorage, so each tab has its own and a logout or a privilege
-  // change in one tab can't leave stale admin data in another. The token is in localStorage
-  // because a new tab needs to know the user is already signed in.
+  // change in one tab can't leave stale admin data in another.
   get user() {
     return this.#user;
   }
 
   set user(user: User) {
     this.#user = user;
-    this.#saveUser();
+    if (!browser) return;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { token: _, ...userWithoutToken } = user;
+    sessionStorage.setItem(USER_KEY, JSON.stringify(userWithoutToken));
   }
 
   get privileges(): string[] {
@@ -175,33 +177,40 @@ export class Session {
     this.#token = '';
   }
 
-  /** Clears all client-side session state. */
   clear() {
-    this.#discardPendingConsents();
+    this.#forgetPendingRequests();
     this.removeToken();
     localStorage.removeItem(OKTA_ID_TOKEN_KEY);
     sessionStorage.removeItem(USER_KEY);
     this.user = {};
   }
 
-  /** Fetches the profile unless it's already here; `hasToken` also refreshes the long-term token. */
-  async loadUser(force?: boolean, hasToken = false) {
-    if (force || !this.#user.privileges || !this.#user.token) {
+  // The methods that send requests read state untracked: an effect or {#await} that calls them
+  // must not re-run, and send them again, whenever the session changes.
+
+  /** Fetches the profile when forced, or while it lacks privileges or the long-term token. */
+  loadUser(force?: boolean, hasToken = false): Promise<void> {
+    return untrack(async () => {
+      if (!force && this.#user.privileges && this.#user.token) return;
+      const generation = this.#generation;
       try {
         const res = await psamaUser.me({ hasToken });
-        this.user = { ...this.#user, ...res };
+        if (generation === this.#generation) this.user = { ...this.#user, ...res };
       } catch (error) {
         if (!sessionEndedBy(error)) throw error;
       }
-    }
+    });
   }
 
   async refreshLongTermToken() {
+    const generation = this.#generation;
     const response = await psamaUser.refreshLongTermToken();
     if (!response.userLongTermToken) {
       throw new Error('No user token was returned.');
     }
-    this.user = { ...this.#user, token: response.userLongTermToken };
+    if (generation === this.#generation) {
+      this.user = { ...this.#user, token: response.userLongTermToken };
+    }
     return response.userLongTermToken;
   }
 
@@ -212,30 +221,35 @@ export class Session {
 
   /** Leaves `consents` undefined on failure - see `accessUnavailable`. */
   loadConsents(): Promise<void> {
-    this.user = { ...this.#user, consents: undefined };
-    const request: Promise<void> = getConsents()
-      .then((consents) => {
-        if (this.#consentsRequest === request) this.user = { ...this.#user, consents };
-      })
-      .catch((error: unknown) => {
-        if (this.#consentsRequest === request && !sessionEndedBy(error)) {
-          this.#shell.showAccessUnavailable();
-        }
-      });
-    this.#consentsRequest = request;
-    return request;
+    return untrack(() => {
+      this.user = { ...this.#user, consents: undefined };
+      const request: Promise<void> = getConsents()
+        .then((consents) => {
+          if (this.#consentsRequest === request) this.user = { ...this.#user, consents };
+        })
+        .catch((error: unknown) => {
+          if (this.#consentsRequest === request && !sessionEndedBy(error)) {
+            this.#shell.showAccessUnavailable();
+          }
+        });
+      this.#consentsRequest = request;
+      return request;
+    });
   }
 
   /** Waits for or starts the consent request when access has not been loaded yet. */
-  async ensureConsentsLoaded(): Promise<ConsentsMap | undefined> {
-    if (this.#user.consents !== undefined) return this.#user.consents;
+  ensureConsentsLoaded(): Promise<ConsentsMap | undefined> {
+    return untrack(async () => {
+      if (this.#user.consents !== undefined) return this.#user.consents;
 
-    await this.consentsSettled();
-    if (this.#user.consents === undefined) await this.loadConsents();
-    return this.#user.consents;
+      await this.consentsSettled();
+      if (this.#user.consents === undefined) await this.loadConsents();
+      return this.#user.consents;
+    });
   }
 
-  #discardPendingConsents() {
+  #forgetPendingRequests() {
+    this.#generation++;
     this.#consentsRequest = Promise.resolve();
   }
 
@@ -244,7 +258,9 @@ export class Session {
    * authorized layout when a fresh tab has a valid token but no profile in sessionStorage.
    */
   async hydrate() {
+    const generation = this.#generation;
     await this.loadUser(true, false);
+    if (generation !== this.#generation) return;
     // Not awaited: see loadConsents. Consumers wait on consentsSettled() instead.
     this.loadConsents();
   }
@@ -257,14 +273,14 @@ export class Session {
   }
 
   logout(authProvider?: AuthProvider, redirect = false): Promise<void> {
-    this.#pendingLogout ??= this.#endSession(authProvider, redirect).finally(() => {
+    this.#pendingLogout ??= untrack(() => this.#endSession(authProvider, redirect)).finally(() => {
       this.#pendingLogout = undefined;
     });
     return this.#pendingLogout;
   }
 
   async #endSession(authProvider: AuthProvider | undefined, redirect: boolean) {
-    this.#discardPendingConsents();
+    this.#forgetPendingRequests();
     const logError = (error: unknown) => console.error('Error logging out: ' + error);
     const handleErrors = (error: unknown) => {
       logError(error);
@@ -304,24 +320,19 @@ export class Session {
     log(createLog('AUTH', 'logout.success'));
     this.#shell.navigate(redirect ? loginRedirectPath(this.#shell.currentUrl()) : '/login');
   }
-
-  #saveUser() {
-    if (!browser) return;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { token: _, ...userWithoutToken } = this.#user;
-    sessionStorage.setItem(USER_KEY, JSON.stringify(userWithoutToken));
-  }
 }
 
 export const session = new Session();
 
-registerSignedInUser(() => (session.isLoggedIn ? session.user : undefined));
+// Untracked for the same reason as the methods that send requests: requests and logs read these.
+registerSignedInUser(() => untrack(() => (session.isLoggedIn ? session.user : undefined)));
 
 registerSessionHooks({
-  getToken: () => session.token,
+  getToken: () => untrack(() => session.token),
   onUnauthorized: () => {
-    if (browser)
+    if (browser) {
       sessionStorage.setItem(LOGOUT_REASON_KEY, 'Your session has timed out. Please log in.');
+    }
     session.logout(undefined, true);
   },
   onForbidden: () => {
@@ -329,7 +340,7 @@ registerSessionHooks({
     session.logout(undefined, false);
   },
   onTokenRefreshed: (token) => {
-    // Nobody awaits this: the response that carried the token has already been handled.
+    // The API client doesn't wait for this, so a failure here would be an unhandled rejection.
     session.login(token).catch((error: unknown) => {
       console.error('Error reloading the user after a token refresh: ' + error);
     });

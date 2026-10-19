@@ -12,7 +12,15 @@ vi.mock('#lib/config/config.svelte.ts', () => ({
   config: { features: { dashboard: false, discover: false, login: { open: false } } },
 }));
 
-import { removeToken, setToken, tokenStatus, user, userRoutes } from '#lib/auth/User.ts';
+import {
+  getToken,
+  isUserLoggedIn,
+  removeToken,
+  setToken,
+  tokenStatus,
+  user,
+  userRoutes,
+} from '#lib/auth/User.ts';
 import { PicsurePrivileges } from '#lib/auth/model/privilege.ts';
 import { session } from '#lib/auth/session.svelte.ts';
 
@@ -53,6 +61,27 @@ describe('the stores bridged from the session', () => {
 
     expect(get(user)).toEqual({ email: 'new@example.org' });
     unsubscribe();
+  });
+
+  it('leave an effect that reads them with get() independent of the session, as stores did', () => {
+    let runs = 0;
+    const stop = $effect.root(() => {
+      $effect(() => {
+        runs++;
+        get(user);
+        get(tokenStatus);
+        isUserLoggedIn();
+        getToken();
+      });
+    });
+    flushSync();
+
+    setToken('token');
+    user.set({ email: 'changed@example.org' });
+    flushSync();
+
+    expect(runs).toBe(1);
+    stop();
   });
 
   it('write the session through the writable user store', () => {

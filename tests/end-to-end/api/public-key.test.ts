@@ -103,8 +103,8 @@ test.describe('Public access key generation', () => {
     // When
     await openForm(page);
     // A token appearing in localStorage after load (login in another tab, leftover expired
-    // token) must NOT be attached: api/client.ts reads localStorage at request time and a stale
-    // token 401s this public endpoint server-side. Set it only after the form is open —
+    // token) must NOT be attached: a stale token 401s this public endpoint server-side.
+    // Set it only after the form is open —
     // if hydration sees the token first, the page renders logged-in and the form never exists.
     await page.evaluate(() => localStorage.setItem('token', 'stale.jwt.value'));
     await page.getByLabel('Email (optional)').fill('researcher@example.org');

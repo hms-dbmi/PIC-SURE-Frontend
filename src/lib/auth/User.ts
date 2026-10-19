@@ -3,6 +3,7 @@
  * the importers that haven't moved to it yet. Each feature PR moves its own readers; the last one
  * deletes this module.
  */
+import { untrack } from 'svelte';
 import { toStore, type Readable, type Updater, type Writable } from 'svelte/store';
 import { routesFor } from '#lib/auth/access.ts';
 import type { Route } from '#lib/auth/model/route.ts';
@@ -19,13 +20,14 @@ export { ACCESS_UNAVAILABLE_MESSAGE, showAccessUnavailable } from '#lib/auth/acc
  * A store over session state. Every subscription gets its own `toStore`: a shared one keeps the
  * value from its previous subscription, and a new subscriber would see that stale value if the
  * state had since gone back to what it was when the store was made. Changes reach subscribers
- * when Svelte flushes its effects, not synchronously.
+ * when Svelte flushes its effects, not synchronously. Like the functions below, subscribing
+ * (and so `get()`) doesn't make the calling effect depend on the session, as stores never did.
  */
 function bridge<T>(read: () => T): Readable<T>;
 function bridge<T>(read: () => T, write: (value: T) => void): Writable<T>;
 function bridge<T>(read: () => T, write?: (value: T) => void): Readable<T> | Writable<T> {
   const subscribe: Readable<T>['subscribe'] = (run, invalidate) =>
-    toStore(read).subscribe(run, invalidate);
+    untrack(() => toStore(read).subscribe(run, invalidate));
   if (!write) return { subscribe };
   return { subscribe, set: write, update: (updater: Updater<T>) => write(updater(read())) };
 }
@@ -48,7 +50,7 @@ export function setToken(token: string) {
 }
 
 export function getToken(): string {
-  return session.token;
+  return untrack(() => session.token);
 }
 
 export function removeToken() {
@@ -60,7 +62,7 @@ export function clearSession() {
 }
 
 export function isUserLoggedIn() {
-  return session.isLoggedIn;
+  return untrack(() => session.isLoggedIn);
 }
 
 export function getUser(force?: boolean, hasToken = false) {
