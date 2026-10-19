@@ -1,5 +1,5 @@
 import { expect, type Page } from '@playwright/test';
-import { test, mockApiConfig, mockApiSuccess } from '../custom-context';
+import { test, auth0Callback, mockApiConfig, mockApiSuccess } from '../custom-context';
 import { mockToken, picsureUser } from '../../support/mock-data';
 import { userIsLoggedIn } from '../utils';
 import { PicsurePrivileges } from '#lib/auth/model/privilege.ts';
@@ -134,13 +134,7 @@ test.describe('A closed deployment', () => {
       sessionStorage.setItem('redirect', '/dataset?tab=mine');
       sessionStorage.setItem('type', 'AUTH0');
     });
-    await page
-      .goto(
-        '/login/loading/#access_token=' +
-          mockToken +
-          '&scope=openid%20profile%20email&expires_in=86400&token_type=Bearer&state=mNK7oJ5SLputhCuYrXYh5n4xEVQXhz6G',
-      )
-      .catch(() => {});
+    await page.goto(await auth0Callback(page)).catch(() => {});
 
     await page.waitForURL('/dataset?tab=mine');
     await userIsLoggedIn(page);

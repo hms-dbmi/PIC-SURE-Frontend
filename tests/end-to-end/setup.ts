@@ -1,5 +1,5 @@
-import { picsureUser, mockToken, userTypes } from '../support/mock-data';
-import { test, mockApiSuccess, mockApiConfig } from './custom-context';
+import { picsureUser, userTypes } from '../support/mock-data';
+import { test, mockApiSuccess, mockApiConfig, auth0Callback } from './custom-context';
 
 // Creates authenticated user contexts for tests using method noted at
 // https://playwright.dev/docs/auth
@@ -24,10 +24,7 @@ Object.entries(userTypes).forEach(async ([user, userVariation]) => {
     const acceptConsentButton = page.getByTestId('app-consent-accept');
     await acceptConsentButton.click();
 
-    const mockLoginResponse =
-      '/login/loading/#access_token=' +
-      mockToken +
-      '&scope=openid%20profile%20email&expires_in=86400&token_type=Bearer&state=mNK7oJ5SLputhCuYrXYh5n4xEVQXhz6G';
+    const mockLoginResponse = await auth0Callback(page);
 
     await mockApiSuccess(page, '*/**/psama/authentication', userData);
     await mockApiSuccess(page, '*/**/psama/authentication/auth0', userData);

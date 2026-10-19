@@ -5,7 +5,7 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { config } from '#lib/config/config.svelte.ts';
-  import { findLoginProvider } from '#lib/auth/providers/AuthProvider.ts';
+  import { findLoginProvider, saveSessionProvider } from '#lib/auth/providers/AuthProvider.ts';
   import { createInstance } from '#lib/auth/providerRegistry.ts';
   import { LoginStateError } from '#lib/auth/loginState.ts';
   import { loginRedirectPath } from '#lib/auth/loginRedirect.ts';
@@ -33,6 +33,7 @@
       if (!user || !user?.token) {
         throw new Error('User not found');
       }
+      saveSessionProvider(provider);
 
       // api returns as string
       user.acceptedTOS = String(user.acceptedTOS) === 'true';

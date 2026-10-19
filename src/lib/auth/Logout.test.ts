@@ -13,7 +13,10 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
 import { logout, setToken } from '#lib/auth/User.ts';
 import { session } from '#lib/auth/session.svelte.ts';
 import { request } from '#lib/api/client.ts';
+import { createLog } from '#lib/telemetry/logger.ts';
 import type AuthProvider from '#lib/auth/providers/AuthProvider.ts';
+import AUTH0 from '#lib/auth/providers/AUTH0.ts';
+import FENCE from '#lib/auth/providers/FENCE.ts';
 
 const navigate = vi.fn();
 session.connect({
@@ -53,6 +56,53 @@ describe('logout', () => {
 
     expect(fetch).toHaveBeenCalledOnce();
     expect(navigate).toHaveBeenCalledOnce();
+  });
+
+  it("ends the session when the provider's logout throws instead of rejecting", async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(new Response('{}'))),
+    );
+    const provider = {
+      logout: () => {
+        throw new URIError('URI malformed');
+      },
+    };
+
+    await logout(provider as unknown as AuthProvider);
+
+    expect(navigate).toHaveBeenCalledExactlyOnceWith('/login');
+  });
+
+  const common = { description: 'Log in', enabled: true, alt: false };
+  describe.each([
+    [
+      'AUTH0',
+      () => new AUTH0({ ...common, name: 'AUTH0', type: 'AUTH0', clientid: 'c', connection: 'x' }),
+    ],
+    [
+      'FENCE',
+      () =>
+        new FENCE({ ...common, name: 'FENCE', type: 'FENCE', uri: 'u', clientid: 'c', idp: 'i' }),
+    ],
+  ])('through %s, which leaves its IdP session alone', (_, create) => {
+    it('ends the session once, without an error', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(() => Promise.resolve(new Response('{}'))),
+      );
+      vi.mocked(createLog).mockClear();
+
+      await logout(create());
+
+      expect(navigate).toHaveBeenCalledExactlyOnceWith('/login');
+      expect(localStorage.getItem('token')).toBeNull();
+      expect(console.error).not.toHaveBeenCalled();
+      const loggedOut = vi
+        .mocked(createLog)
+        .mock.calls.filter((call) => call[1] === 'logout.success');
+      expect(loggedOut).toHaveLength(1);
+    });
   });
 
   describe('the Okta ID token', () => {

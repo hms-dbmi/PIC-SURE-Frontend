@@ -54,10 +54,7 @@ class Mock extends AuthProvider implements MockData {
     window.location.href = `${redirectUrl}#access_token=mock-local-dev-token&token_type=Bearer&state=${newLoginState()}`;
   };
 
-  logout = async (): Promise<void> => {
-    // Resolves (rather than redirecting to a real IDP's logout endpoint) so User.ts's
-    // logout() falls through to its local-only cleanup, same as AUTH0's does today.
-  };
+  logout = async (): Promise<void> => {};
 }
 
 export default Mock;

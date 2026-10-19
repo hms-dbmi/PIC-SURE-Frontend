@@ -395,32 +395,26 @@ export class Session {
   async #endSession(authProvider: AuthProvider | undefined, redirect: boolean) {
     this.#forgetPendingRequests();
     const logError = (error: unknown) => console.error('Error logging out: ' + error);
-    const handleErrors = (error: unknown) => {
-      logError(error);
-      this.#leave(redirect);
-    };
 
     if (browser && this.#token) {
-      // Log only: the provider/redirect handling below always finishes the logout, so
-      // handling this failure too would navigate to /login twice.
+      // Log only: the logout always finishes below, so handling this failure too would
+      // navigate to /login twice.
       await psamaUser.logout().catch(logError);
       this.removeToken();
     }
 
-    if (authProvider) {
-      await authProvider
-        .logout()
-        .then((redirectURL) => {
-          log(createLog('AUTH', 'logout.success'));
-          if (typeof redirectURL === 'string') {
-            this.user = {};
-            location.replace(redirectURL);
-          } else {
-            // If no redirect is provided, go to the login page
-            handleErrors(redirectURL);
-          }
-        })
-        .catch(handleErrors);
+    // Okta and RAS return their IdP's logout URL; without one, the logout ends here. Not
+    // `.catch()`: their logout isn't async, so a failure building the URL throws right away.
+    let idpLogout: string | undefined;
+    try {
+      idpLogout = (await authProvider?.logout()) || undefined;
+    } catch (error) {
+      logError(error);
+    }
+    if (idpLogout) {
+      log(createLog('AUTH', 'logout.success'));
+      this.user = {};
+      location.replace(idpLogout);
     } else {
       this.#leave(redirect);
     }

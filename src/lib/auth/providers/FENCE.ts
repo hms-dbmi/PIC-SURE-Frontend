@@ -52,9 +52,8 @@ class Fence extends AuthProvider implements FenceData {
     }
   };
 
-  logout = async (): Promise<void> => {
-    throw new Error('Method not implemented.');
-  };
+  // Ends only the PIC-SURE session: the Fence session stays for the next login.
+  logout = async (): Promise<void> => {};
 }
 
 export default Fence;

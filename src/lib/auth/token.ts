@@ -7,6 +7,8 @@ import { log, createLog } from '#lib/telemetry/logger.ts';
 export const TOKEN_KEY = 'token';
 /** localStorage: the Okta ID token, which the Okta logout URL sends as its `id_token_hint`. */
 export const OKTA_ID_TOKEN_KEY = 'oktaIdToken';
+/** localStorage: the name of the provider the token's login went through. Goes with the token. */
+export const SESSION_PROVIDER_KEY = 'sessionProvider';
 /** sessionStorage: the user profile without its long-term token, scoped to the tab. */
 export const USER_KEY = 'user';
 /** sessionStorage: why the user was sent to the login page, shown there once. */
@@ -25,7 +27,9 @@ export function writeToken(token: string): void {
 }
 
 export function clearToken(): void {
-  if (browser) localStorage.removeItem(TOKEN_KEY);
+  if (!browser) return;
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(SESSION_PROVIDER_KEY);
 }
 
 /** Calls `listener` with the stored token whenever another tab stores, removes or clears it. */

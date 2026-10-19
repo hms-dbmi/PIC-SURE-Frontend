@@ -1,10 +1,10 @@
 import type { AuthData } from '#lib/auth/providers/AuthProvider.ts';
 import AuthProvider from '#lib/auth/providers/AuthProvider.ts';
-import { browser } from '$app/env';
 import type { User } from '#lib/auth/model/user.ts';
 import * as psamaUser from '#lib/api/psama/user.ts';
 import auth0 from 'auth0-js';
 import { AUTH0_TENANT } from '#lib/config/deployment.ts';
+import { newLoginState, verifyLoginState } from '#lib/auth/loginState.ts';
 
 interface Auth0Data extends AuthData {
   clientid: string;
@@ -21,17 +21,21 @@ class Auth0 extends AuthProvider implements Auth0Data {
     this.connection = data.connection;
   }
 
+  // The implicit grant answers in the hash, form-encoded and in any order: `access_token`,
+  // `token_type`, `expires_in` and `state`, or `error`, `error_description` and `state`.
   authenticate = async (hashParts: string[]): Promise<User | undefined> => {
-    const responseMap = this.getResponseMap(hashParts);
-    const token = responseMap.get('#access_token');
-    if (browser && token) {
-      const redirectURI = this.getRedirectURI();
-      return psamaUser.authenticate('auth0', {
-        access_token: token,
-        redirectURI: redirectURI,
-      });
+    const response = new URLSearchParams(hashParts.join('&').replace(/^#/, ''));
+    verifyLoginState(response.get('state') ?? undefined);
+    const error = response.get('error');
+    if (error) {
+      throw new Error(`Auth0 login failed: ${error}: ${response.get('error_description') ?? ''}`);
     }
-    return undefined;
+    const token = response.get('access_token');
+    if (!token) return undefined;
+    return psamaUser.authenticate('auth0', {
+      access_token: token,
+      redirectURI: this.getRedirectURI(),
+    });
   };
 
   login = async (redirectTo: string, type: string): Promise<void> => {
@@ -46,12 +50,12 @@ class Auth0 extends AuthProvider implements Auth0Data {
     return webAuth.authorize({
       responseType: 'token',
       connection: this.connection,
+      state: newLoginState(),
     });
   };
 
-  logout = async (): Promise<void> => {
-    throw new Error('Method not implemented.');
-  };
+  // Ends only the PIC-SURE session: the Auth0 session stays for the next login.
+  logout = async (): Promise<void> => {};
 }
 
 export default Auth0;

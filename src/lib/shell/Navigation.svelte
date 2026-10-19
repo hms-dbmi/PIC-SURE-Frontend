@@ -6,13 +6,13 @@
 
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
-  import { browser } from '$app/env';
 
   import { createInstance } from '#lib/auth/providerRegistry.ts';
   import { session } from '#lib/auth/session.svelte.ts';
   import { routesFor } from '#lib/auth/nav.ts';
   import { loginRedirectPath } from '#lib/auth/loginRedirect.ts';
-  import AuthProvider, { findLoginProvider } from '#lib/auth/providers/AuthProvider.ts';
+  import type AuthProvider from '#lib/auth/providers/AuthProvider.ts';
+  import { findSessionProvider } from '#lib/auth/providers/AuthProvider.ts';
   import { config } from '#lib/config/config.svelte.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
 
@@ -20,8 +20,6 @@
   import Popover from '#lib/ui/popover/Popover.svelte';
   import AppBar from '#lib/ui/AppBar.svelte';
   import Avatar from '#lib/ui/Avatar.svelte';
-
-  let providerInstance: AuthProvider | undefined = $state(undefined);
 
   function getId({ path, id }: { path: string; id?: string; text: string }) {
     return `app-nav-link` + (id ? `-` + id : path.replaceAll('/', '-'));
@@ -40,14 +38,22 @@
     return current ? 'page' : undefined;
   }
 
+  // Loaded with the page: after a deploy, an open tab can no longer fetch its old provider module.
+  let loadedProvider: AuthProvider | undefined;
   onMount(async () => {
-    if (browser && page) {
-      const providerData = findLoginProvider(page.data?.providers);
-      if (providerData) {
-        providerInstance = await createInstance(providerData);
-      }
-    }
+    const provider = findSessionProvider(page.data?.providers);
+    if (provider) loadedProvider = await createInstance(provider);
   });
+
+  async function logout() {
+    log(createLog('AUTH', 'logout.click'));
+    // Looked up again: another tab may have logged in through another provider since.
+    const provider = findSessionProvider(page.data?.providers);
+    const instance =
+      provider &&
+      (provider.name === loadedProvider?.name ? loadedProvider : await createInstance(provider));
+    session.logout(instance, false);
+  }
 </script>
 
 <AppBar>
@@ -92,14 +98,7 @@
           {/snippet}
           <div class="flex flex-col items-center">
             <p class="pb-6">{email}</p>
-            <Button
-              class="w-fit"
-              id="app-nav-logout"
-              title="Logout"
-              onclick={() => {
-                log(createLog('AUTH', 'logout.click'));
-                session.logout(providerInstance, false);
-              }}>Logout</Button
+            <Button class="w-fit" id="app-nav-logout" title="Logout" onclick={logout}>Logout</Button
             >
           </div>
         </Popover>
