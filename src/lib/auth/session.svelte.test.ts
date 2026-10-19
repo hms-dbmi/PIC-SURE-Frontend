@@ -10,6 +10,7 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
 }));
 
 import { sessionHooks } from '#lib/api/sessionHooks.ts';
+import { ACCESS, requireAccess } from '#lib/auth/access.ts';
 import { session } from '#lib/auth/session.svelte.ts';
 import { createLog, registerSignedInUser } from '#lib/telemetry/logger.ts';
 
@@ -239,6 +240,21 @@ describe('the bootstrap', () => {
     });
   });
 
+  it('stops reporting a failure once a later request loads the profile', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(new Response('', { status: 500 }))),
+    );
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    session.setToken(jwt('recovered'));
+    await session.bootstrap();
+    stubPsama();
+
+    await session.loadUser(true, true);
+
+    expect(session.profileFailed).toBe(false);
+  });
+
   it('makes a consents check wait for it instead of asking twice', async () => {
     const paths = stubPsama();
     session.setToken(jwt('early-reader'));
@@ -291,5 +307,19 @@ describe('another tab changing the token', () => {
 
     expect(session.privileges).toEqual(['QUERY']);
     expect(paths).toEqual([]);
+  });
+});
+
+describe('guards that check privileges', () => {
+  it('share the bootstrap, so running them again sends no request', async () => {
+    const paths = stubPsama({ privileges: ['PIC_SURE_ANY_QUERY', 'NAMED_DATASET'] });
+    session.setToken(jwt('guarded'));
+    const event = { url: new URL('http://localhost/dataset'), parent: async () => ({}) };
+
+    // A navigation, then a preload and an invalidate running the guard again.
+    for (let run = 0; run < 3; run++) await requireAccess(event, ACCESS.dataset);
+    await session.consentsSettled();
+
+    expect(paths.filter((path) => path.endsWith('/me'))).toHaveLength(1);
   });
 });

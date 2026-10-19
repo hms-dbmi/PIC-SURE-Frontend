@@ -3,7 +3,7 @@
   import { resolve } from '$app/paths';
   import { onMount } from 'svelte';
 
-  import { goto } from '$app/navigation';
+  import { goto, invalidateAll } from '$app/navigation';
   import { browser } from '$app/env';
   import { config } from '#lib/config/config.svelte.ts';
   import * as tos from '#lib/api/psama/tos.ts';
@@ -34,7 +34,11 @@
         .accept()
         // Reloads the profile, which now records the acceptance.
         .then(() => session.login(session.token))
-        .then(() => onclose())
+        .then(() => {
+          onclose();
+          // The guards let the user in before they accepted; check their privileges now.
+          invalidateAll();
+        })
         .catch((err) => {
           console.error(err);
           toaster.error({ description: 'An error occured while saving user terms acceptance.' });

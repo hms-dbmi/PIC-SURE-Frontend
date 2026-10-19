@@ -17,7 +17,8 @@
   let { children }: Props = $props();
 
   onMount(() => {
-    if (session.user.token) {
+    // An expired session stays, so the login page can end it.
+    if (session.hasValidToken && session.user.token) {
       goto(resolve(''));
     }
   });

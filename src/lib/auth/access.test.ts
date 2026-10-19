@@ -6,7 +6,8 @@ import type { User } from '#lib/auth/model/user.ts';
 
 const env = vi.hoisted(() => ({ browser: true }));
 const fakeSession = vi.hoisted(() => ({
-  token: '',
+  isLoggedIn: false,
+  hasValidToken: false,
   user: {} as User,
   profileFailed: false,
   bootstrap: vi.fn(() => Promise.resolve()),
@@ -63,6 +64,16 @@ interface Row {
 const signedIn = (...privileges: string[]) => ({ token: VALID, user: { privileges } });
 const closed = { login: { open: false } };
 
+/** Puts the session in the state a row describes. */
+function signIn(token = '', user: User = {}, profileFailed = false) {
+  Object.assign(fakeSession, {
+    isLoggedIn: token !== '',
+    hasValidToken: token === VALID,
+    user,
+    profileFailed,
+  });
+}
+
 async function guard(
   policy: Access,
   url: string,
@@ -79,7 +90,7 @@ async function guard(
 
 beforeEach(() => {
   env.browser = true;
-  Object.assign(fakeSession, { token: '', user: {}, profileFailed: false });
+  signIn();
   fakeSession.bootstrap.mockClear();
   fakeConfig.features = features();
 });
@@ -151,16 +162,14 @@ describe('requireAccess', () => {
 
   it.each(rows)('%s', async (_, row) => {
     env.browser = !row.server;
-    Object.assign(fakeSession, {
-      token: row.token ?? '',
-      user: row.user ?? {},
-      profileFailed: row.profileFailed ?? false,
-    });
+    signIn(row.token, row.user, row.profileFailed);
     fakeConfig.features = features(row.features);
 
     expect(await guard(ACCESS[row.policy], row.url)).toBe(row.to);
   });
 
+  // The profile comes from the session bootstrap, which runs once per token; session.svelte.test.ts
+  // shows guards sharing it.
   it('only reads: no log, no storage write and no request, whatever it decides', async () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal('fetch', fetchSpy);
@@ -170,11 +179,7 @@ describe('requireAccess', () => {
 
     for (const [, row] of rows) {
       env.browser = !row.server;
-      Object.assign(fakeSession, {
-        token: row.token ?? '',
-        user: row.user ?? {},
-        profileFailed: row.profileFailed ?? false,
-      });
+      signIn(row.token, row.user, row.profileFailed);
       fakeConfig.features = features(row.features);
       await guard(ACCESS[row.policy], row.url);
     }
@@ -195,7 +200,7 @@ describe('requireAccess', () => {
 
   it('waits for the session bootstrap before checking privileges', async () => {
     // A fresh tab: the token is stored, the profile isn't loaded yet.
-    Object.assign(fakeSession, { token: VALID, user: {} });
+    signIn(VALID);
     fakeSession.bootstrap.mockImplementationOnce(async () => {
       fakeSession.user = { privileges: [QUERY, 'NAMED_DATASET'] };
     });
@@ -205,7 +210,7 @@ describe('requireAccess', () => {
   });
 
   it('does not wait for the profile when only the login matters', async () => {
-    Object.assign(fakeSession, { token: VALID });
+    signIn(VALID);
     fakeConfig.features = features(closed);
 
     await guard(ACCESS.app, '/');

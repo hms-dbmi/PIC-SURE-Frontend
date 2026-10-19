@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount, type Snippet } from 'svelte';
-  import { afterNavigate } from '$app/navigation';
+  import { afterNavigate, beforeNavigate } from '$app/navigation';
   import { asset } from '$app/paths';
+  import { navigating } from '$app/state';
   import type { AssetPath } from '$app/types';
   import '@fortawesome/fontawesome-free/css/all.min.css';
   import '../styles/app.css';
@@ -37,6 +38,14 @@
     document.documentElement.dataset.theme = theme;
   });
 
+  // Where the current navigation set out for. A guard's redirect fires beforeNavigate again while
+  // the first target is still navigating; it lands somewhere else, which tells a guard's redirect
+  // during Back or Forward from a history step onto a URL that was handled before.
+  let requested: string | undefined;
+  beforeNavigate(({ to }) => {
+    if (!navigating.to) requested = to?.url.href;
+  });
+
   afterNavigate(({ from, to, type }) => {
     log(
       createLog('NAVIGATION', 'page.navigate', {
@@ -45,8 +54,7 @@
         type,
       }),
     );
-    // Going back to the page a guard sent the visitor to isn't a new arrival.
-    if (to && type !== 'popstate') handleAccessReason(to.url);
+    if (to && (type !== 'popstate' || to.url.href !== requested)) handleAccessReason(to.url);
   });
 </script>
 

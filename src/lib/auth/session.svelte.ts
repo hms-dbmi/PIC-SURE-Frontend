@@ -296,9 +296,9 @@ export class Session {
     });
   }
 
-  /** The bootstrap couldn't load the profile for the current token. */
+  /** The bootstrap couldn't load the profile for the current token, and nothing has since. */
   get profileFailed() {
-    return this.#boot?.token === this.#token && this.#boot.failed;
+    return this.#boot?.token === this.#token && this.#boot.failed && !this.#user.privileges;
   }
 
   /** Fills in the profile from PSAMA for the stored token. Used by the login flow and `bootstrap`. */

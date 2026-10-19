@@ -7,7 +7,6 @@ import type { Route } from '#lib/auth/model/route.ts';
 import { isTopAdmin, type User } from '#lib/auth/model/user.ts';
 import { routes } from '#lib/auth/nav.ts';
 import { session } from '#lib/auth/session.svelte.ts';
-import { getTokenExpiration } from '#lib/auth/token.ts';
 import { config } from '#lib/config/config.svelte.ts';
 import type { Features } from '#lib/config/index.ts';
 
@@ -20,21 +19,21 @@ export interface Access {
   /** The reason given to a visitor who isn't signed in. An expired token always gives `expired`. */
   signedOutReason?: AccessReason;
   /** A signed-in visitor needs one of these. */
-  anyOf?: readonly string[];
+  anyOf?: readonly (PicsurePrivileges | BDCPrivileges)[];
   topAdmin?: boolean;
   feature?: (features: Features) => boolean;
   /** Where a visitor who fails `anyOf`, `topAdmin` or `feature` goes. */
   otherwise?: '/' | '/explorer' | '/admin/configuration';
-  /** The reason given with `otherwise`. */
+  /** The reason given to a signed-in visitor who fails `anyOf` or `topAdmin`. */
   deniedReason?: AccessReason;
 }
 
-const authorized: Access = {
+const authorized = {
   login: true,
   signedOutReason: 'no_token',
   anyOf: [PicsurePrivileges.QUERY, BDCPrivileges.AUTHORIZED_ACCESS],
   deniedReason: 'no_privilege',
-};
+} satisfies Access;
 
 // Admin pages are nested in the authorized ones, so an admin also needs query access (D3).
 const admin: Access = {
@@ -59,31 +58,26 @@ export const ACCESS = {
   dashboard: { feature: (features) => features.dashboard },
 } satisfies Record<string, Access>;
 
-/** What a guard knows about the visitor: the session's token and profile. */
 export interface Visitor {
-  token: string;
+  signedIn: boolean;
+  /** Signed in with a token that hasn't expired yet. */
+  tokenValid: boolean;
   user: User;
   /** The session bootstrap couldn't load the profile for this token. */
   profileFailed: boolean;
 }
 
-/** Whether `policy` requires signing in on this deployment. */
+function ownLogin(policy: Access, features: Features): boolean {
+  return typeof policy.login === 'function' ? policy.login(features) : !!policy.login;
+}
+
+/** Whether `policy`, or one it is nested in, requires signing in on this deployment. */
 export function requiresLogin(policy: Access, features: Features): boolean {
-  const login = typeof policy.login === 'function' ? policy.login(features) : policy.login;
-  return !!login || (!!policy.within && requiresLogin(policy.within, features));
+  return ownLogin(policy, features) || (!!policy.within && requiresLogin(policy.within, features));
 }
 
 function checksProfile(policy: Access): boolean {
   return !!policy.anyOf || !!policy.topAdmin || (!!policy.within && checksProfile(policy.within));
-}
-
-// Not isTokenExpired, which logs a token it can't read.
-function hasExpired(token: string): boolean {
-  try {
-    return getTokenExpiration(token) < Date.now();
-  } catch {
-    return true;
-  }
 }
 
 function deniedPath(policy: Access, url: URL): string {
@@ -108,13 +102,14 @@ export function accessRedirect(
   if (policy.feature && !policy.feature(features)) return policy.otherwise ?? '/';
   if (!visitor) return undefined;
 
-  const login = typeof policy.login === 'function' ? policy.login(features) : policy.login;
-  if (login && !visitor.token) return loginRedirectPath(url, policy.signedOutReason);
-  if (login && hasExpired(visitor.token)) return loginRedirectPath(url, 'expired');
+  if (ownLogin(policy, features)) {
+    if (!visitor.signedIn) return loginRedirectPath(url, policy.signedOutReason);
+    if (!visitor.tokenValid) return loginRedirectPath(url, 'expired');
+  }
 
   if (!policy.anyOf && !policy.topAdmin) return undefined;
-  // PSAMA refuses a user who hasn't accepted the terms everything until they do, and the terms
-  // dialog holds them where they are.
+  // Until a user accepts the terms, PSAMA refuses all their requests and the terms dialog holds
+  // them on the page they asked for. Accepting runs the guards again.
   if (visitor.user.acceptedTOS === false) return undefined;
   if (visitor.profileFailed) return loginRedirectPath(url, 'hydrate_failed');
   const privileges = visitor.user.privileges ?? [];
@@ -137,7 +132,12 @@ export async function requireAccess(
   await parent();
   if (browser && checksProfile(policy)) await session.bootstrap();
   const visitor = browser
-    ? { token: session.token, user: session.user, profileFailed: session.profileFailed }
+    ? {
+        signedIn: session.isLoggedIn,
+        tokenValid: session.hasValidToken,
+        user: session.user,
+        profileFailed: session.profileFailed,
+      }
     : undefined;
   const to = accessRedirect(policy, url, config.features, visitor);
   if (to) redirect(302, to);
