@@ -1,13 +1,14 @@
 <script lang="ts">
   import { selectedFrequency } from '#lib/query/GeneFilter.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
+  import { tones } from '#lib/ui/surface.ts';
 
   function onFrequencyChange(frequency: string) {
     log(createLog('ACTION', 'genomic.frequency_select', { frequency }));
   }
 </script>
 
-<label class="cursor-pointer block hover:preset-tonal-surface hover:rounded-md">
+<label class="cursor-pointer block {tones['hover-tonal-surface']} hover:rounded-md">
   <input
     bind:group={$selectedFrequency}
     id="genomic-frequency-rare"
@@ -17,7 +18,7 @@
   />
   Rare
 </label>
-<label class="cursor-pointer block hover:preset-tonal-surface hover:rounded-md">
+<label class="cursor-pointer block {tones['hover-tonal-surface']} hover:rounded-md">
   <input
     bind:group={$selectedFrequency}
     id="genomic-frequency-common"
@@ -27,7 +28,7 @@
   />
   Common
 </label>
-<label class="cursor-pointer block hover:preset-tonal-surface hover:rounded-md">
+<label class="cursor-pointer block {tones['hover-tonal-surface']} hover:rounded-md">
   <input
     bind:group={$selectedFrequency}
     id="genomic-frequency-novel"

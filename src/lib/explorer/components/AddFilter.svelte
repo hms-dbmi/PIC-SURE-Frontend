@@ -17,6 +17,7 @@
   import Loading from '#lib/ui/Loading.svelte';
   import OptionsSelectionList from '#lib/ui/OptionsSelectionList.svelte';
   import { cardClass } from '#lib/ui/surface.ts';
+  import Button from '#lib/ui/Button.svelte';
 
   interface Props {
     data?: SearchResult;
@@ -210,21 +211,16 @@
           </section>
         </div>
       {/if}
-      <button
-        class="btn btn-icon preset-filled-primary-500 m-1"
+      <Button
+        size="icon"
+        class="m-1 h-fit"
         data-testid="filter-add"
         aria-label="Add Filter"
         onclick={addNewFilter}
         disabled={data.type === 'Categorical' && valuesSelected.length === 0}
       >
         <i class="fas fa-plus"></i>
-      </button>
+      </Button>
     {/if}
   </div>
 </div>
-
-<style>
-  .btn {
-    height: fit-content;
-  }
-</style>

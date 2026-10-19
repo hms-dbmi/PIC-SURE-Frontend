@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { tones } from '#lib/ui/surface.ts';
+
   interface Props {
     /** AND or OR; anything else gets the neutral tone. */
     operator: string;
@@ -8,15 +10,15 @@
 
   let { operator, tone = 'operator' }: Props = $props();
 
-  const tones = {
-    AND: 'preset-filled-primary-200-800',
-    OR: 'preset-filled-secondary-200-800',
-    neutral: 'preset-filled-surface-200-800',
+  const operatorTones = {
+    AND: tones['filled-primary-subtle'],
+    OR: tones['filled-secondary-subtle'],
+    neutral: tones['filled-surface-subtle'],
   } as const;
   const toneClass = $derived(
     tone === 'operator' && (operator === 'AND' || operator === 'OR')
-      ? tones[operator]
-      : tones.neutral,
+      ? operatorTones[operator]
+      : operatorTones.neutral,
   );
 </script>
 

@@ -10,6 +10,7 @@
 
   import ShowMoreButton from '#lib/ui/ShowMoreButton.svelte';
   import FacetItem from './FacetItem.svelte';
+  import { tones } from '#lib/ui/surface.ts';
 
   interface Props {
     facetCategory: DictionaryFacetResult;
@@ -175,7 +176,7 @@
   <div class="mb-2 flex flex-wrap gap-2" transition:scale={{ easing: elasticInOut }}>
     {#each selectedFacetsChips as facet}
       <span
-        class="badge z-10 preset-outlined-surface-500 py-2 overflow-hidden"
+        class="badge z-10 {tones['outlined-surface']} py-2 overflow-hidden"
         data-testid="explorer-facet-badge-{facet.name}"
       >
         <span class="overflow-hidden text-ellipsis whitespace-nowrap min-w-0">

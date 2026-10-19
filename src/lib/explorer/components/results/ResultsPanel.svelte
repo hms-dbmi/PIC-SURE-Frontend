@@ -21,6 +21,7 @@
   import ConfirmDialog from '#lib/ui/dialog/ConfirmDialog.svelte';
   import Counts from '#lib/explorer/components/results/Counts.svelte';
   import { log, createLog } from '#lib/telemetry/logger.ts';
+  import Button from '#lib/ui/Button.svelte';
 
   let currentPage: string = $state(page.url.pathname);
   let isDiscoverPage = $derived(currentPage.includes('/discover'));
@@ -132,10 +133,12 @@
     <div class="flex content-center items-center mt-6">
       <h5 class="flex-auto ml-9 mr-2 mb-2 pt-1">Filtered Data Summary</h5>
       {#if hasFilterOrExport}
-        <button
+        <Button
           data-testid="results-reset"
-          class="btn btn-xs preset-tonal-error border border-error-500 hover:preset-filled-error-500 flex-none"
-          onclick={() => (modalOpen = true)}>Reset</button
+          variant="tonal-error"
+          size="xs"
+          class="flex-none"
+          onclick={() => (modalOpen = true)}>Reset</Button
         >
       {/if}
     </div>

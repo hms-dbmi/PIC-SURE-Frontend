@@ -25,11 +25,11 @@
   .driver-popover-navigation-btns button {
     text-shadow: unset;
     /* Skeleton's own small button, without the app's .btn and .btn-sm overrides */
-    @apply btn rounded-base px-3 py-1 text-xs preset-filled-primary-500;
+    @apply btn rounded-base px-3 py-1 text-xs bg-primary-500 text-primary-contrast-500;
   }
 
   .driver-popover-navigation-btns button:hover {
-    @apply preset-filled-secondary-500;
+    @apply bg-secondary-500 text-secondary-contrast-500;
   }
 
   .driver-popover-close-btn {

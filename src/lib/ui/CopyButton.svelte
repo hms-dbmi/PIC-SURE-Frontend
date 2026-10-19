@@ -1,5 +1,6 @@
 <script lang="ts">
   import Popover from '#lib/ui/popover/Popover.svelte';
+  import { buttonClass, type ButtonVariant } from '#lib/ui/button.ts';
 
   interface Props {
     itemToCopy: string;
@@ -11,6 +12,8 @@
     'data-testid'?: string;
     'data-key'?: string;
     triggerTitle?: string;
+    /** Button style for the text form; the icon form ignores it. */
+    variant?: ButtonVariant;
     class?: string;
     /** Runs after a successful copy. */
     oncopy?: () => void;
@@ -26,6 +29,7 @@
     'data-testid': testid = '',
     'data-key': dataKey,
     triggerTitle,
+    variant = 'none',
     class: className = '',
     oncopy,
   }: Props = $props();
@@ -53,7 +57,7 @@
   data-testid={testid || 'ui-copy'}
   data-key={dataKey}
   {triggerTitle}
-  triggerStyle="ml-4 {useIcon ? 'hover:text-primary-600' : 'btn'} {className}"
+  triggerStyle="ml-4 {useIcon ? 'hover:text-primary-600' : buttonClass(variant)} {className}"
   onengage={updateButton}
   onTriggerClick={(e) => e.stopPropagation()}
   color="secondary"

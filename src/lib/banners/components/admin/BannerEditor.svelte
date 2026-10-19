@@ -593,13 +593,10 @@
     </div>
 
     <div class="mt-6 flex items-center justify-end gap-3">
-      <button type="button" class="btn preset-tonal-primary mr-auto" onclick={requestCancel}>
-        Cancel
-      </button>
+      <Button variant="tint" class="mr-auto" onclick={requestCancel}>Cancel</Button>
       {#if editorMode !== 'restore' && banner?.status !== 'PUBLISHED'}
-        <button
-          type="button"
-          class="btn border preset-tonal-primary"
+        <Button
+          variant="soft-static"
           disabled={working !== null ||
             !dirty ||
             !hasContent ||
@@ -609,7 +606,7 @@
           onclick={saveForLater}
         >
           {working === 'save' ? 'Saving...' : banner ? 'Save changes' : 'Save for later'}
-        </button>
+        </Button>
       {/if}
       <Button
         type="submit"

@@ -285,15 +285,14 @@
     </p>
   {/if}
 </Dialog>
-<button
-  type="button"
+<Button
   data-testid="explorer-tour-start"
   id="explorer-tour-start"
-  class="btn preset-filled-secondary-500"
+  variant="filled-secondary"
   onclick={() => {
     started = false;
     openModal = true;
     log(createLog('ACTION', 'tour.open', { pageContext: getPageContext() }));
   }}
   >Take a Tour
-</button>
+</Button>

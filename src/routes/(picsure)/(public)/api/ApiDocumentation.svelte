@@ -3,6 +3,7 @@
   import type { SwaggerComponent, SwaggerSystem } from 'swagger-ui-dist/swagger-ui-bundle.js';
   import { ApiError } from '#lib/api/errors.ts';
   import { getDocumentedServices, getOpenApiDocument } from '#lib/api/picsure/openapi.ts';
+  import Button from '#lib/ui/Button.svelte';
 
   const services = [
     { name: 'hpds-query-service', title: 'HPDS queries' },
@@ -146,9 +147,10 @@
   {:else if error}
     <div role="status" class="border border-surface-200 rounded p-4">
       <p class="mx-0">{error}</p>
-      <button
-        class="btn preset-outlined-primary-500 mt-2"
-        onclick={() => void load(available.length === 0)}>Retry</button
+      <Button
+        variant="outlined-static"
+        class="mt-2"
+        onclick={() => void load(available.length === 0)}>Retry</Button
       >
     </div>
   {/if}

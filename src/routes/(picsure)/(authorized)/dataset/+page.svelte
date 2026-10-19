@@ -18,6 +18,7 @@
   import CopyButtonCell from '#lib/datasets/components/cells/CopyButtonCell.svelte';
   import Actions from '#lib/datasets/components/cells/Actions.svelte';
   import Loading from '#lib/ui/Loading.svelte';
+  import Button from '#lib/ui/Button.svelte';
 
   const columns = [
     { dataElement: 'name', label: 'Dataset ID Name' },
@@ -73,12 +74,11 @@
         {cellOverides}
       />
     {/if}
-    <button
+    <Button
       data-testid="dataset-toggle-archive"
-      type="button"
-      class="btn bg-secondary-500 text-secondary-contrast-500"
+      variant="filled-secondary"
       onclick={() => toggleShowArchived()}
-      >{getShowArchived() ? 'Hide' : 'Show'} deleted datasets</button
+      >{getShowArchived() ? 'Hide' : 'Show'} deleted datasets</Button
     >
   {:catch}
     <ErrorAlert title="API Error">Something went wrong when sending your request.</ErrorAlert>

@@ -52,9 +52,7 @@
 <Dialog bind:open={guard.open} title="Unsaved Changes" onclose={handleCancel}>
   <p>You have unsaved changes to your filters. What would you like to do?</p>
   {#snippet footer()}
-    <button type="button" class="btn border preset-tonal-error" onclick={handleDiscard}>
-      Discard Changes
-    </button>
+    <Button variant="soft-error-static" onclick={handleDiscard}>Discard Changes</Button>
     <Button title="Save changes to query" onclick={handleModalApply}>Apply Changes</Button>
   {/snippet}
 </Dialog>

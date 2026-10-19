@@ -25,6 +25,7 @@
   import Popover from '#lib/ui/popover/Popover.svelte';
   import FilterCardPlaceholder from './FilterCardPlaceholder.svelte';
   import SkeletonBar from '#lib/ui/skeleton/SkeletonBar.svelte';
+  import { buttonClass, buttonSizes } from '#lib/ui/button.ts';
 
   let {
     query,
@@ -67,7 +68,7 @@
 </script>
 
 {#await queryData.errors}
-  <div class="float-right placeholder animate-pulse btn-sm">Restore Filters</div>
+  <div class="float-right placeholder animate-pulse {buttonSizes.compact}">Restore Filters</div>
 {:then errors}
   {@const hasErrors = errors.length > 0}
   {#if hasErrors}
@@ -110,7 +111,7 @@
         triggerDisabled={true}
         data-testid="dataset-restore-popover"
         triggerTypes={['hover']}
-        triggerStyle="btn preset-filled-surface-500 btn-sm"
+        triggerStyle={buttonClass('filled-surface', 'sm')}
       >
         {#snippet trigger()}Restore Filters{/snippet}
         {#if hasErrors}

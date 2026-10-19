@@ -20,6 +20,7 @@ import BannerEditor from '#lib/banners/components/admin/BannerEditor.svelte';
 import type { BannerAudience, ManagedBanner } from '#lib/banners/model/banner.ts';
 import { publishBanner, restoreBanner, updatePublishedBanner } from '#lib/api/picsure/banners.ts';
 import { toaster } from '#lib/ui/toaster.ts';
+import { tones } from '#lib/ui/surface.ts';
 
 const audienceCases: [string, BannerAudience][] = [
   ['Everyone', 'EVERYONE'],
@@ -123,7 +124,7 @@ describe('BannerEditor', () => {
     expect(screen.getByRole('textbox', { name: 'Title' })).toHaveValue('');
     expect(screen.getByRole('combobox', { name: 'Icon' })).toHaveValue('NONE');
     expect(screen.getByRole('region', { name: 'Site announcement' })).toHaveClass(
-      'preset-tonal-primary',
+      tones['tonal-primary'],
     );
     expect(
       screen.queryByRole('button', { name: 'Dismiss site announcement' }),

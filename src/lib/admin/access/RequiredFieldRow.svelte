@@ -1,6 +1,7 @@
 <script lang="ts">
   import IconButton from '#lib/ui/IconButton.svelte';
   import type { RequiredField } from '#lib/auth/model/connection.ts';
+  import { tones } from '#lib/ui/surface.ts';
 
   interface Props {
     field?: RequiredField;
@@ -59,7 +60,7 @@
       bind:value={id}
       disabled={!edit}
       class="input {duplicate &&
-        'preset-tonal-warning border border-warning-500 border-warning-600-400 focus:border-warning-800-200'}"
+        `${tones['tonal-warning']} border border-warning-500 border-warning-600-400 focus:border-warning-800-200`}"
       minlength="1"
       maxlength="255"
     />

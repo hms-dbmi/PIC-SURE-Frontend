@@ -9,6 +9,7 @@ import {
 import { expectAnimationsFinished, expectSectionAligned, userIsLoggedIn } from '../utils';
 import type { Branding } from '../../../src/lib/config/branding';
 import brandingJson from '../../../src/lib/assets/configuration.json' with { type: 'json' };
+import { tones } from '#lib/ui/surface.ts';
 const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
 
 const capabilities = branding?.apiPage?.capabilities || [];
@@ -85,12 +86,12 @@ test.describe('API page', () => {
       const badge = item.getByRole('heading', { level: 3 }).locator('.badge');
       await expect(badge).toBeVisible();
       await expect(badge).toHaveText('Recommended');
-      await expect(badge).toHaveClass(/preset-tonal-primary/);
+      await expect(badge).toContainClass(tones['tonal-primary']);
     }
     const advanced = http.getByRole('heading', { level: 3 }).locator('.badge');
     await expect(advanced).toBeVisible();
     await expect(advanced).toHaveText('Advanced');
-    await expect(advanced).toHaveClass(/preset-tonal-warning/);
+    await expect(advanced).toContainClass(tones['tonal-warning']);
   });
 
   test('Opening one option closes the other, and clicking the open header closes it', async ({
@@ -179,7 +180,7 @@ test.describe('API page', () => {
       await expect(panel.locator('p').first()).toHaveText(
         "Copy your token above, paste it into a file named token.txt, and save it in the same folder as your code. Don't share this file or commit it to GitHub.",
       );
-      await expect(panel.locator('p').first()).toHaveClass(/preset-tonal-primary/);
+      await expect(panel.locator('p').first()).toContainClass(tones['tonal-primary']);
       const codeBlock = panel.locator('.code-block');
       await expect(codeBlock).toContainText('token.txt');
       for (const snippet of code) await expect(codeBlock).toContainText(snippet);

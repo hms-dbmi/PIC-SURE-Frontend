@@ -13,6 +13,7 @@
 
   import AlertDialog from '#lib/ui/dialog/AlertDialog.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
+  import Button from '#lib/ui/Button.svelte';
 
   let { open = $bindable(false) }: { open: boolean } = $props();
 
@@ -80,19 +81,9 @@
     <p>Would you like to remove the invalid filters or go back to {warning.backTo}?</p>
   </ErrorAlert>
   {#snippet actions()}
-    <button
-      type="button"
-      class="btn preset-outlined-warning-500 hover:preset-filled-warning-500"
-      onclick={reset}
-    >
-      Remove Invalid Filters
-    </button>
-    <button
-      type="button"
-      class="btn preset-outlined-warning-500 hover:preset-filled-warning-500"
-      onclick={goBack}
-    >
+    <Button variant="outlined-warning" onclick={reset}>Remove Invalid Filters</Button>
+    <Button variant="outlined-warning" onclick={goBack}>
       Back to {warning.backTo}
-    </button>
+    </Button>
   {/snippet}
 </AlertDialog>

@@ -181,7 +181,8 @@
   #app-footer {
     padding: 0.75rem;
     margin-top: 0;
-    @apply preset-filled-primary-100-900;
+    background-color: var(--color-primary-100-900);
+    color: var(--color-primary-contrast-100-900);
   }
 
   #app-footer ul {
@@ -233,14 +234,14 @@
   }
 
   nav#app-nav a.nav-link[aria-current='page'] {
-    @apply preset-filled-primary-500;
+    @apply bg-primary-500 text-primary-contrast-500;
   }
 
   nav#app-nav a.nav-link:hover,
   nav#app-nav a.nav-link:active,
   nav#app-nav a.nav-link:focus,
   nav#app-nav a.nav-link.highlight {
-    @apply preset-filled-secondary-500;
+    @apply bg-secondary-500 text-secondary-contrast-500;
   }
 
   .help-text a {
@@ -262,15 +263,15 @@
   }
 
   #user-token span.badge.expired {
-    @apply preset-filled-error-500;
+    @apply bg-error-500 text-error-contrast-500;
   }
 
   #user-token span.badge.expiring {
-    @apply preset-filled-warning-500;
+    @apply bg-warning-500 text-warning-contrast-500;
   }
 
   #user-token span.badge.valid {
-    @apply preset-filled-success-500;
+    @apply bg-success-500 text-success-contrast-500;
   }
 
   #user-token #user-token-value {

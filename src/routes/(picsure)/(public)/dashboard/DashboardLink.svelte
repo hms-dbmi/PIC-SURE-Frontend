@@ -23,10 +23,7 @@
     }}>More Info</Button
   >
 {:else}
-  <button
-    type="button"
-    title="Link not available"
-    class="btn preset-tonal-primary border border-primary-500 opacity-50"
-    disabled>More Info</button
+  <Button title="Link not available" variant="tonal-static" class="opacity-50" disabled
+    >More Info</Button
   >
 {/if}

@@ -3,6 +3,7 @@
   import { fade } from 'svelte/transition';
   import { StepperState, setStepper } from '#lib/ui/stepper/stepper.svelte.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
+  import { tones } from '#lib/ui/surface.ts';
 
   type StepMethod = (step: number, name: string, state: StepperState) => void;
   const defaultStep: StepMethod = () => {};
@@ -85,8 +86,8 @@
           <span
             data-testid="ui-stepper-step-{stepperState.stepMap[step]}"
             class="badge rounded-2xl text-sm {isActive(step)
-              ? 'preset-filled-primary-500'
-              : 'preset-filled-surface-500'}">{isActive(step) ? `Step ${step + 1}` : step + 1}</span
+              ? tones['filled-primary']
+              : tones['filled-surface']}">{isActive(step) ? `Step ${step + 1}` : step + 1}</span
           >
         </div>
       {/each}

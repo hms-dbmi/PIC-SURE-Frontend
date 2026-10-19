@@ -22,6 +22,7 @@
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import { sortHierarchyDeepestFirst } from '#lib/utils/hierarchy.ts';
   import { log, createLog, getPageContext } from '#lib/telemetry/logger.ts';
+  import Button from '#lib/ui/Button.svelte';
   interface Props {
     data?: SearchResult;
     onclose?: () => void;
@@ -184,8 +185,9 @@
       </ErrorAlert>
     {/await}
   </div>
-  <button
-    class="btn btn-icon preset-filled-primary-500 m-1"
+  <Button
+    size="icon"
+    class="m-1"
     data-testid="filter-add"
     aria-label={isLoading ? 'Adding Filter...' : 'Add Filter'}
     onclick={addSelection}
@@ -199,5 +201,5 @@
     {:else}
       <i class="fas fa-plus"></i>
     {/if}
-  </button>
+  </Button>
 </div>

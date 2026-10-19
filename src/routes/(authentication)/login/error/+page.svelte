@@ -18,11 +18,12 @@
     <Button class="m-1" href={resolve('login')}
       >Back to Login <i class="fa-solid fa-arrow-right ml-3"></i></Button
     >
-    <a
-      class="btn preset-tonal-primary border border-primary-500 m-1"
+    <Button
+      variant="tonal-static"
+      class="m-1"
       target="_blank"
       href={config.branding.login.contactLink}
-      rel="external">Contact Administrator</a
+      rel="external">Contact Administrator</Button
     >
   </div>
 </section>

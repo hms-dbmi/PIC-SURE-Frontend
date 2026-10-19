@@ -8,6 +8,7 @@
   import Loading from '#lib/ui/Loading.svelte';
   import Datatable from '#lib/ui/datatable/StaticTable.svelte';
   import { log, createLog } from '#lib/telemetry/logger.ts';
+  import { buttonClass } from '#lib/ui/button.ts';
 
   let {
     count,
@@ -60,7 +61,7 @@
           {#if varData.downloadUrl}
             <a
               data-testid="explorer-variant-download"
-              class="btn btn-sm preset-tonal-primary border border-primary-500"
+              class={buttonClass('tonal-static', 'sm')}
               href={varData.downloadUrl}
               rel="external"
               download="variantData.tsv"

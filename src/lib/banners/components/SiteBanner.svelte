@@ -7,6 +7,7 @@
   import { BANNER_LABEL_LENGTH } from '#lib/banners/model/banner.ts';
   import { sanitizeBannerHTML } from '#lib/banners/model/html.ts';
   import { truncate } from '#lib/utils/strings.ts';
+  import { tones } from '#lib/ui/surface.ts';
 
   let {
     banner,
@@ -23,13 +24,13 @@
   const titleId = $props.id();
 
   const toneClasses: Record<BannerAppearance, string> = {
-    PRIMARY: 'preset-tonal-primary border-primary-500',
-    SECONDARY: 'preset-tonal-secondary border-secondary-500',
-    TERTIARY: 'preset-tonal-tertiary border-tertiary-500',
-    SUCCESS: 'preset-tonal-success border-success-500',
-    WARNING: 'preset-tonal-warning border-warning-500',
-    ERROR: 'preset-tonal-error border-error-500',
-    SURFACE: 'preset-tonal-surface border-surface-500',
+    PRIMARY: `${tones['tonal-primary']} border-primary-500`,
+    SECONDARY: `${tones['tonal-secondary']} border-secondary-500`,
+    TERTIARY: `${tones['tonal-tertiary']} border-tertiary-500`,
+    SUCCESS: `${tones['tonal-success']} border-success-500`,
+    WARNING: `${tones['tonal-warning']} border-warning-500`,
+    ERROR: `${tones['tonal-error']} border-error-500`,
+    SURFACE: `${tones['tonal-surface']} border-surface-500`,
   };
 
   const iconClasses: Record<BannerIcon, string | undefined> = {

@@ -90,7 +90,7 @@
               provider={selectedProvider}
               {redirectTo}
               helpText={selectedProvider?.helptext}
-              class="btn preset-filled-primary-500 w-full"
+              class="w-full"
             />
           {:else}
             {#each providers as provider}
@@ -99,7 +99,7 @@
                 {provider}
                 {redirectTo}
                 helpText={provider.helptext}
-                class="btn preset-filled-primary-500 w-full"
+                class="w-full"
               />
             {/each}
           {/if}
@@ -128,7 +128,8 @@
                 {provider}
                 {redirectTo}
                 helpText={provider.helptext}
-                class="btn-sm preset-outlined-primary-500 text-primary-500 hover:preset-filled-primary-500 hover:text-white"
+                variant="outlined"
+                size="compact"
               />
             {/each}
           </div>

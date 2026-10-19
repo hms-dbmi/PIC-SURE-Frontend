@@ -9,7 +9,7 @@
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import Loading from '#lib/ui/Loading.svelte';
   import Turnstile from './Turnstile.svelte';
-  import { cardClass } from '#lib/ui/surface.ts';
+  import { cardClass, tones } from '#lib/ui/surface.ts';
 
   type View = 'idle' | 'form' | 'revealed' | 'error';
 
@@ -209,7 +209,7 @@
       role="alert"
       tabindex="-1"
       bind:this={warning}
-      class="{cardClass} preset-tonal-warning flex items-center gap-4 py-2 px-3 mb-4"
+      class="{cardClass} {tones['tonal-warning']} flex items-center gap-4 py-2 px-3 mb-4"
     >
       <i class="fa-solid fa-triangle-exclamation text-3xl" aria-hidden="true"></i>
       <p class="m-0 font-bold">

@@ -11,6 +11,7 @@
   import { humanizeKey, truncate, visibleLength } from '#lib/utils/strings.ts';
   import { toaster } from '#lib/ui/toaster.ts';
   import { cardClass } from '#lib/ui/surface.ts';
+  import { tones } from '#lib/ui/surface.ts';
 
   interface Props {
     schema: ConfigFieldSchema;
@@ -105,9 +106,9 @@
 
   const originLabel = { env: 'Env', api: 'API', default: 'Default' };
   const originClass = {
-    env: 'preset-tonal-primary border border-primary-500',
-    api: 'preset-tonal-success border border-success-500',
-    default: 'preset-tonal-surface border border-surface-500',
+    env: `${tones['tonal-primary']} border border-primary-500`,
+    api: `${tones['tonal-success']} border border-success-500`,
+    default: `${tones['tonal-surface']} border border-surface-500`,
   };
   const originDotClass = {
     env: 'bg-primary-500',

@@ -18,6 +18,7 @@
   import CollapsiblePanel from '#lib/ui/CollapsiblePanel.svelte';
   import TocLayout from '#lib/ui/toc/TocLayout.svelte';
   import TocSection from '#lib/ui/toc/TocSection.svelte';
+  import { tones } from '#lib/ui/surface.ts';
 
   let mounted = $state(false);
   let loggedIn = $derived(mounted && $tokenStatus);
@@ -262,8 +263,8 @@
                   <span class="text-xl font-bold">{workflow.title}</span>
                   <span
                     class="badge shrink-0 {workflow.id === 'http'
-                      ? 'preset-tonal-warning'
-                      : 'preset-tonal-primary'}"
+                      ? tones['tonal-warning']
+                      : tones['tonal-primary']}"
                   >
                     {workflow.id === 'http' ? 'Advanced' : 'Recommended'}
                   </span>
@@ -273,7 +274,7 @@
                   {workflow.requirements}
                 </span>
               {/snippet}
-              <p class="mx-0 mb-4 p-4 rounded-base preset-tonal-primary">
+              <p class="mx-0 mb-4 p-4 rounded-base {tones['tonal-primary']}">
                 Copy your token above, paste it into a file named <code class="code">token.txt</code
                 >, and save it {workflow.tokenLocation}. Don't share this file or commit it to
                 GitHub.

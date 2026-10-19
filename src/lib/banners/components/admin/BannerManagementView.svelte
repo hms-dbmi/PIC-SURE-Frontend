@@ -439,14 +439,9 @@
       >
         {#if activeTab === 'orderable' && !search.trim() && (orderDirty || savingOrder)}
           <div class="mt-5 flex justify-end gap-3">
-            <button
-              type="button"
-              class="btn preset-tonal-primary"
-              disabled={savingOrder}
-              onclick={cancelOrderChanges}
-            >
+            <Button variant="tint" disabled={savingOrder} onclick={cancelOrderChanges}>
               Cancel order changes
-            </button>
+            </Button>
             <Button
               disabled={savingOrder || disablingUuid !== null || archivingUuid !== null}
               onclick={saveOrder}

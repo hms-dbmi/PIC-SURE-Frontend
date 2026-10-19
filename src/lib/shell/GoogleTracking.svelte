@@ -171,10 +171,11 @@
             data-testid="app-consent-accept"
             onclick={() => updateConsent(true)}>Accept</Button
           >
-          <button
+          <Button
             data-testid="app-consent-reject"
-            class="btn preset-tonal-primary border border-primary-500 mt-1 mb-1 self-center"
-            onclick={() => updateConsent(false)}>Reject</button
+            variant="tonal-static"
+            class="mt-1 mb-1 self-center"
+            onclick={() => updateConsent(false)}>Reject</Button
           >
         </div>
       </div>

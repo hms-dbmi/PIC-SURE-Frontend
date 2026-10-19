@@ -10,6 +10,7 @@
   } from '#lib/banners/model/banner.ts';
   import { truncate } from '#lib/utils/strings.ts';
   import { useSortable } from '@dnd-kit-svelte/svelte/sortable';
+  import { tones } from '#lib/ui/surface.ts';
 
   interface Props {
     banner: ManagementRecord;
@@ -72,9 +73,9 @@
     EXPIRED: 'Expired',
   } as const;
   const lifecycleBadgeClasses = {
-    ACTIVE: 'preset-tonal-success',
+    ACTIVE: tones['tonal-success'],
     SCHEDULED: 'bg-surface-200',
-    SAVED: 'preset-tonal-primary',
+    SAVED: tones['tonal-primary'],
     DISABLED: 'bg-surface-200',
     EXPIRED: 'bg-surface-200',
   } as const;
@@ -164,15 +165,9 @@
         </div>
         <p class="m-0 mt-2 text-sm text-surface-600">{scheduleSummary()}</p>
       </div>
-      <button
-        type="button"
-        class="btn preset-tonal-primary"
-        aria-expanded={open}
-        aria-controls={panelId}
-        onclick={ontoggle}
-      >
+      <Button variant="tint" aria-expanded={open} aria-controls={panelId} onclick={ontoggle}>
         Details {@render bannerContext()}<span aria-hidden="true">{open ? '▴' : '▾'}</span>
-      </button>
+      </Button>
     </div>
     {#if open}
       <section

@@ -17,6 +17,8 @@ import {
   mockDataWithChildren,
 } from '../../support/mock-data';
 import { getOption, userIsLoggedIn, chooseGenomicFilterType } from '../utils';
+import { tones } from '#lib/ui/surface.ts';
+import { buttonVariants } from '#lib/ui/button.ts';
 
 const queryPath = '*/**/picsure/hpds/auth/query';
 const countResultPath = `${queryPath}/sync`;
@@ -106,7 +108,7 @@ async function checkStepRenderedCorrectly(
   // Check that the step header is rendered with correct text and number
   const stepHeader = page.locator('div.stepper-header-step').nth(stepNumber - 1);
   const step = stepHeader.locator('span');
-  await expect(step).toHaveClass(/preset-filled-primary-500/);
+  await expect(step).toContainClass(tones['filled-primary']);
   await expect(page.locator('header.step-header')).toHaveText(headerText);
 
   // Check that the summary section is rendered if expected
@@ -288,14 +290,14 @@ test.describe('Export Page', () => {
     const pfbExportOption = page.getByTestId('export-type-pfb');
     await expect(csvExportOption).toBeVisible();
     await expect(pfbExportOption).toBeVisible();
-    await expect(csvExportOption).not.toHaveClass(/preset-filled-primary-500/);
-    await expect(pfbExportOption).not.toHaveClass(/preset-filled-primary-500/);
+    await expect(csvExportOption).not.toContainClass(buttonVariants.filled);
+    await expect(pfbExportOption).not.toContainClass(buttonVariants.filled);
     await pfbExportOption.click();
-    await expect(csvExportOption).not.toHaveClass(/preset-filled-primary-500/);
-    await expect(pfbExportOption).toHaveClass(/preset-filled-primary-500/);
+    await expect(csvExportOption).not.toContainClass(buttonVariants.filled);
+    await expect(pfbExportOption).toContainClass(buttonVariants.filled);
     await csvExportOption.click();
-    await expect(csvExportOption).toHaveClass(/preset-filled-primary-500/);
-    await expect(pfbExportOption).not.toHaveClass(/preset-filled-primary-500/);
+    await expect(csvExportOption).toContainClass(buttonVariants.filled);
+    await expect(pfbExportOption).not.toContainClass(buttonVariants.filled);
     await expect(nextButton).not.toBeDisabled();
     await mockApiSuccess(page, queryPath, newDatasetResponse);
     await nextButton.click();

@@ -1,6 +1,7 @@
 import { expect } from '@playwright/test';
 import { test } from '../../custom-context';
 import { AdvancedFilteringPage } from './advanced-filtering-page';
+import { tones } from '#lib/ui/surface.ts';
 
 const LONG_RUNNING_TIMEOUT = 80000;
 
@@ -504,7 +505,7 @@ test.describe('Advanced Query Builder - Grouping', () => {
     // Verify there are two radiogroups (root + subgroup)
     await afPage.expectMultipleRadioGroups();
 
-    // Helper to count AND/OR badges (AND uses preset-filled-primary, OR uses preset-filled-secondary)
+    // Helper to count AND/OR badges
     const getBadgeTexts = () => modal.locator('.badge').allTextContents();
 
     const badgesBefore = await getBadgeTexts();
@@ -660,7 +661,7 @@ test.describe('Advanced Query Builder - Genomic Filters (Ordering)', () => {
     await expect(separator.getByRole('button')).toHaveCount(0);
 
     const badge = separator.locator('.badge');
-    await expect(badge).toHaveClass(/preset-filled-surface/);
+    await expect(badge).toContainClass(tones['filled-surface-subtle']);
   });
 });
 

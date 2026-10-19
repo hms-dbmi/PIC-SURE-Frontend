@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tones } from '#lib/ui/surface.ts';
   interface Props {
     data?: { cell: string; row: unknown };
   }
@@ -8,6 +9,6 @@
 
 <span
   class="badge last:p-1 rounded-sm {data.cell === 'Active'
-    ? 'preset-filled-success-500'
-    : 'preset-filled-error-500'}">{data.cell}</span
+    ? tones['filled-success']
+    : tones['filled-error']}">{data.cell}</span
 >
