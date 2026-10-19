@@ -94,6 +94,23 @@ describe('BannerQueue', () => {
     expect(queue.orderDirty).toBe(false);
   });
 
+  it('moves a banner to the position of another, in either direction', async () => {
+    vi.mocked(getManagedBanners).mockResolvedValueOnce([
+      first,
+      second,
+      published('c', 3, 'Outage'),
+    ]);
+    const queue = new BannerQueue();
+    await queue.load();
+
+    expect(queue.move('a', 'c')).toBe(true);
+    expect(queue.orderUuids).toEqual(['b', 'c', 'a']);
+    expect(queue.move('a', 'b')).toBe(true);
+    expect(queue.orderUuids).toEqual(['a', 'b', 'c']);
+    expect(queue.move('a', 'missing')).toBe(false);
+    expect(queue.orderUuids).toEqual(['a', 'b', 'c']);
+  });
+
   it('keeps the committed order when the refetch after saving it fails', async () => {
     const queue = await loadedQueue();
     queue.orderUuids = ['b', 'a'];

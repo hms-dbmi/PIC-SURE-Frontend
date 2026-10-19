@@ -9,24 +9,18 @@
   import type { ManagedBanner } from '#lib/banners/model/banner.ts';
   import type { LifecycleTab } from '#lib/banners/model/list.ts';
   import { BannerQueue } from '#lib/banners/queue.svelte.ts';
+  import SortableProvider from '#lib/ui/sortable/SortableProvider.svelte';
   import {
-    Accessibility,
-    defaultPreset,
+    DragOverlay,
     type DragStartEvent,
     type DragOverEvent,
     type DragEndEvent,
-  } from '@dnd-kit/dom';
+  } from '#lib/ui/sortable/sortable.ts';
   import SearchInput from '#lib/ui/SearchInput.svelte';
   import LiveRegion from '#lib/ui/LiveRegion.svelte';
   import Tabs from '#lib/ui/Tabs.svelte';
   import { createAnnouncer } from '#lib/ui/announcer.svelte.ts';
   import { createUnsavedGuard } from '#lib/ui/unsavedGuard.svelte.ts';
-  import {
-    DragDropProvider,
-    DragOverlay,
-    KeyboardSensor,
-    PointerSensor,
-  } from '@dnd-kit-svelte/svelte';
 
   type OrderTransition =
     | { kind: 'configuration-tab'; destination: string }
@@ -61,7 +55,6 @@
   let activeDragUuid: string | null = $state(null);
   let dragStartOrder: string[] = [];
   let dragTargetUuid: string | null = null;
-  const sensors = [KeyboardSensor, PointerSensor];
   let editorDirty = $state(false);
   const orderGuard = createUnsavedGuard<OrderTransition>(() => mode === 'list' && queue.orderDirty);
 
@@ -69,7 +62,7 @@
     return `${queue.actionLabels.get(uuid) ?? 'banner'}. Position ${position} of ${queue.orderUuids.length}.`;
   }
 
-  function announceMove({ operation: { source, target } }: Parameters<DragOverEvent>[0]) {
+  function announceMove({ operation: { source, target } }: DragOverEvent) {
     if (!source || !target || source.id === target.id || String(target.id) === dragTargetUuid)
       return;
     const destination = queue.orderUuids.indexOf(String(target.id));
@@ -78,23 +71,17 @@
     return `Moved ${reorderDescription(String(source.id), destination + 1)}`;
   }
 
-  const plugins = defaultPreset.plugins.map((plugin) =>
-    plugin === Accessibility
-      ? Accessibility.configure({
-          announcements: {
-            dragstart: ({ operation: { source } }: Parameters<DragStartEvent>[0]) =>
-              source ? `Picked up ${reorderDescription(String(source.id))}` : undefined,
-            dragover: announceMove,
-            dragend: ({ operation: { source }, canceled }: Parameters<DragEndEvent>[0]) =>
-              source
-                ? canceled
-                  ? `Reordering ${queue.actionLabels.get(String(source.id)) ?? 'banner'} canceled.`
-                  : `Dropped ${reorderDescription(String(source.id))}`
-                : undefined,
-          },
-        })
-      : plugin,
-  );
+  const announcements = {
+    dragstart: ({ operation: { source } }: DragStartEvent) =>
+      source ? `Picked up ${reorderDescription(String(source.id))}` : undefined,
+    dragover: announceMove,
+    dragend: ({ operation: { source }, canceled }: DragEndEvent) =>
+      source
+        ? canceled
+          ? `Reordering ${queue.actionLabels.get(String(source.id)) ?? 'banner'} canceled.`
+          : `Dropped ${reorderDescription(String(source.id))}`
+        : undefined,
+  };
 
   const searchAnnouncer = createAnnouncer({ delay: 250 });
   $effect(() => {
@@ -235,7 +222,7 @@
     await reconcileSuccess(banner, editingBanner?.uuid ?? null, true);
   }
 
-  function handleDragStart(event: Parameters<DragStartEvent>[0]) {
+  function handleDragStart(event: DragStartEvent) {
     const source = event?.operation?.source;
     if (!source || queue.savingOrder || !queue.ordering) return;
     activeDragUuid = String(source.id);
@@ -243,21 +230,14 @@
     dragTargetUuid = activeDragUuid;
   }
 
-  function handleDragOver(event: Parameters<DragOverEvent>[0]) {
+  function handleDragOver(event: DragOverEvent) {
     if (queue.savingOrder || !activeDragUuid) return;
     const targetUuid = event?.operation?.target?.id;
     if (!targetUuid || targetUuid === activeDragUuid || targetUuid === dragTargetUuid) return;
-    const sourceIndex = queue.orderUuids.indexOf(activeDragUuid);
-    const targetIndex = queue.orderUuids.indexOf(String(targetUuid));
-    if (sourceIndex < 0 || targetIndex < 0) return;
-    const next = [...queue.orderUuids];
-    const [moved] = next.splice(sourceIndex, 1);
-    next.splice(targetIndex, 0, moved);
-    queue.orderUuids = next;
-    dragTargetUuid = String(targetUuid);
+    if (queue.move(activeDragUuid, String(targetUuid))) dragTargetUuid = String(targetUuid);
   }
 
-  function handleDragEnd(event: Parameters<DragEndEvent>[0]) {
+  function handleDragEnd(event: DragEndEvent) {
     if (event.canceled) queue.orderUuids = dragStartOrder;
     activeDragUuid = null;
     dragTargetUuid = null;
@@ -325,9 +305,8 @@
         <ErrorAlert title="API Error">Site banners could not be loaded.</ErrorAlert>
       </div>
     {:else}
-      <DragDropProvider
-        {sensors}
-        {plugins}
+      <SortableProvider
+        {announcements}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
@@ -446,7 +425,7 @@
             {/if}
           {/if}
         </DragOverlay>
-      </DragDropProvider>
+      </SortableProvider>
     {/if}
   </section>
 {/if}

@@ -11,10 +11,11 @@ type SearchResultFixture = Partial<Omit<SearchResult, 'studyAcronym'>> & {
   studyAcronym?: string | null;
 };
 
-vi.mock('@dnd-kit-svelte/svelte/sortable', () => ({
-  useSortable: () => ({
-    ref: vi.fn(),
-    handleRef: vi.fn(),
+vi.mock('#lib/ui/sortable/sortable.ts', () => ({
+  CollisionPriority: {},
+  createSortable: () => ({
+    attach: vi.fn(),
+    attachHandle: vi.fn(),
   }),
 }));
 

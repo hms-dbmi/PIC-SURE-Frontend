@@ -27,7 +27,7 @@ import { toaster } from '#lib/ui/toaster.ts';
  */
 export class BannerQueue {
   records: ManagementRecord[] = $state.raw([]);
-  /** The order being edited; the drag handlers rewrite it. */
+  /** The order being edited. */
   orderUuids: string[] = $state.raw([]);
   savedOrderUuids: string[] = $state.raw([]);
   loading = $state(true);
@@ -132,6 +132,17 @@ export class BannerQueue {
 
   discardOrderChanges() {
     this.orderUuids = [...this.savedOrderUuids];
+  }
+
+  /** Moves a banner to the position another one holds. Returns false when either isn't in the order. */
+  move(uuid: string, toUuid: string): boolean {
+    const from = this.orderUuids.indexOf(uuid);
+    const to = this.orderUuids.indexOf(toUuid);
+    if (from < 0 || to < 0) return false;
+    const next = [...this.orderUuids];
+    next.splice(to, 0, ...next.splice(from, 1));
+    this.orderUuids = next;
+    return true;
   }
 
   /**

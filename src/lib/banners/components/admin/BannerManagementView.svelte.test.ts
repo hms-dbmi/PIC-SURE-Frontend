@@ -22,18 +22,14 @@ vi.mock('#lib/api/picsure/banners.ts', () => ({
   updateSavedBanner: vi.fn(),
 }));
 
-const sensors = vi.hoisted(() => ({ keyboard: Symbol('keyboard'), pointer: Symbol('pointer') }));
-vi.mock('@dnd-kit-svelte/svelte', async () => ({
-  DragDropProvider: (
-    await import('../../../../../tests/support/fixtures/DragDropProviderMock.svelte')
-  ).default,
+vi.mock('#lib/ui/sortable/SortableProvider.svelte', async () => ({
+  default: (await import('../../../../../tests/support/fixtures/DragDropProviderMock.svelte'))
+    .default,
+}));
+vi.mock('#lib/ui/sortable/sortable.ts', async () => ({
   DragOverlay: (await import('../../../../../tests/support/fixtures/DragOverlayMock.svelte'))
     .default,
-  KeyboardSensor: sensors.keyboard,
-  PointerSensor: sensors.pointer,
-}));
-vi.mock('@dnd-kit-svelte/svelte/sortable', () => ({
-  useSortable: () => ({ ref: vi.fn(), handleRef: vi.fn() }),
+  createSortable: () => ({ attach: vi.fn(), attachHandle: vi.fn() }),
 }));
 vi.mock('#lib/ui/toaster.ts', () => ({ toaster: { success: vi.fn(), error: vi.fn() } }));
 
@@ -184,9 +180,6 @@ describe('BannerManagementView', () => {
     render(BannerManagementView);
     await screen.findByText('System maintenance tonight');
 
-    expect(
-      (globalThis as typeof globalThis & { __bannerDndSensors?: unknown[] }).__bannerDndSensors,
-    ).toEqual([sensors.keyboard, sensors.pointer]);
     const grips = screen.getAllByRole('button', { name: /Reorder banner/ });
     expect(grips).toHaveLength(2);
     expect(grips[0]).toHaveClass('focus-visible:ring-3');

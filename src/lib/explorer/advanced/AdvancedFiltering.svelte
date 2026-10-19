@@ -10,13 +10,8 @@
   import AdvancedGroup from './AdvancedGroup.svelte';
   import AdvancedItem from './AdvancedItem.svelte';
   import GroupDropZone from './GroupDropZone.svelte';
-  import {
-    DragDropProvider,
-    DragOverlay,
-    KeyboardSensor,
-    PointerSensor,
-  } from '@dnd-kit-svelte/svelte';
-  import { move } from '@dnd-kit/helpers';
+  import SortableProvider from '#lib/ui/sortable/SortableProvider.svelte';
+  import { DragOverlay, move } from '#lib/ui/sortable/sortable.ts';
   import { filterState } from '#lib/query/filters.svelte.ts';
   import { LogicTree } from '#lib/query/logicTree.svelte.ts';
   import { Operator, type OperatorType } from '#lib/query/query.ts';
@@ -59,8 +54,6 @@
   })();
 
   let savedSerialized = $state(filterState.tree.serialized);
-
-  const sensors = [KeyboardSensor, PointerSensor];
 
   function getGroupNodeByContainerId(containerId: string | undefined): FilterGroupInterface | null {
     if (!containerId) return null;
@@ -634,8 +627,7 @@
   genomicFilters={filterState.genomic}
 />
 <div class="flex-1 overflow-auto p-2 border border-surface-300 rounded-lg bg-surface-50 w-full">
-  <DragDropProvider
-    {sensors}
+  <SortableProvider
     onDragStart={handleDragStart}
     onDragEnd={handleDragEnd}
     onDragOver={handleDragOver}
@@ -653,12 +645,7 @@
     />
     <!-- Root-level drop zone for un-nesting groups; hidden when dragged group is already at root -->
     {#if !(isGroupDrag && activeNode?.parent === localTree.root)}
-      <GroupDropZone
-        groupId="root"
-        {isGroupDrag}
-        index={(localTree.root as FilterGroupInterface).children.length}
-        isOverlay={false}
-      />
+      <GroupDropZone groupId="root" {isGroupDrag} isOverlay={false} />
     {/if}
     <DragOverlay>
       {#if activeNode && isFilterGroup(activeNode)}
@@ -673,7 +660,7 @@
         <AdvancedItem filter={activeNode} isOverlay={true} onRemove={removeNode} />
       {/if}
     </DragOverlay>
-  </DragDropProvider>
+  </SortableProvider>
   {#if filterState.genomic.length > 0}
     <div data-testid="filter-genomic-section">
       {#if (localTree.root as FilterGroupInterface).children.length > 0}

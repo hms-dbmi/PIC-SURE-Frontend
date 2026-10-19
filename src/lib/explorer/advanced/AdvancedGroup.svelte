@@ -2,7 +2,9 @@
   import Button from '#lib/ui/Button.svelte';
   import OperatorBadge from '#lib/ui/OperatorBadge.svelte';
   import { css } from '#lib/ui/style.ts';
-  import { useSortable } from '@dnd-kit-svelte/svelte/sortable';
+  import { CollisionPriority, createSortable } from '#lib/ui/sortable/sortable.ts';
+  import SortableHandle from '#lib/ui/sortable/SortableHandle.svelte';
+  import DropPreview from '#lib/ui/sortable/DropPreview.svelte';
   import {
     isFilterGroup,
     type FilterGroupInterface,
@@ -14,7 +16,6 @@
   import GroupDropZone from './GroupDropZone.svelte';
   import { Operator, type OperatorType } from '#lib/query/query.ts';
   import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
-  import { CollisionPriority } from '@dnd-kit/abstract';
   import Switch from '#lib/ui/Switch.svelte';
   import { cardClass } from '#lib/ui/surface.ts';
 
@@ -70,11 +71,13 @@
   const showLeadingOperator = $derived(actualIndex > 0 && leadingOperator !== undefined);
 
   // Disable in overlay mode to prevent duplicate sortable IDs
-  const { ref, handleRef } = useSortable({
+  const sortable = createSortable({
     get id() {
       return id;
     },
-    index: () => index,
+    get index() {
+      return index;
+    },
     get group() {
       return parentId;
     },
@@ -103,7 +106,7 @@
   ];
 </script>
 
-<div class="relative" {@attach ref}>
+<div class="relative" {@attach sortable.attach}>
   {#if showLeadingOperator && leadingOperator}
     <div class="flex justify-center py-2 {activeId === id && !isOverlay ? 'invisible' : ''}">
       <OperatorBadge operator={leadingOperator} />
@@ -122,13 +125,11 @@
     )}
   >
     <div class="flex flex-row items-center gap-2 mb-1 w-full">
-      <div
-        class="cursor-grab active:cursor-grabbing mr-2 {isDraggable ? 'block' : 'hidden'}"
+      <SortableHandle
+        handle={sortable.attachHandle}
+        class="mr-2 px-1 {isDraggable ? 'block' : 'hidden'}"
         title="Click and drag to reorder and group filters"
-        {@attach handleRef}
-      >
-        <i class="fa-solid fa-grip-vertical text-xl mx-1"></i>
-      </div>
+      />
       <div class="flex items-center justify-start gap-2 w-full">
         <div>Between {hasSubqueryChildren ? 'subqueries' : 'filters'}:</div>
         <div title="Choose logic for the query">
@@ -215,21 +216,18 @@
         />
       {:else if id !== 'root' && !(isGroupDrag && group.children.some((c) => c.uuid === activeId))}
         <!-- GroupDropZone for dropping groups into this group; hidden when dragging a group that's already in this group -->
-        <GroupDropZone groupId={id} {isGroupDrag} index={group.children.length} {isOverlay} />
+        <GroupDropZone groupId={id} {isGroupDrag} {isOverlay} />
       {/if}
     </div>
   </div>
 
   {#if showDropPreview}
-    <div
+    <DropPreview
       data-testid="filter-drop-preview"
       id={`filter-drop-preview-${id}`}
-      class="max-md:hidden absolute inset-0 bg-primary-500/10 border border-dashed border-primary-500 rounded-lg flex items-center justify-center mt-1"
-    >
-      <span class="text-primary-600 text-xs font-semibold uppercase tracking-wide">
-        Moving: Subquery
-      </span>
-    </div>
+      class="max-md:hidden mt-1 rounded-lg"
+      label="Subquery"
+    />
   {/if}
 </div>
 

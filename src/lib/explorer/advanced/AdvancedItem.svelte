@@ -1,8 +1,9 @@
 <script lang="ts">
   import OperatorBadge from '#lib/ui/OperatorBadge.svelte';
   import { type Filter, type FilterInterface, describeFilter } from '#lib/query/filter.svelte.ts';
-  import { useSortable } from '@dnd-kit-svelte/svelte/sortable';
-  import { CollisionPriority } from '@dnd-kit/abstract';
+  import { CollisionPriority, createSortable } from '#lib/ui/sortable/sortable.ts';
+  import SortableHandle from '#lib/ui/sortable/SortableHandle.svelte';
+  import DropPreview from '#lib/ui/sortable/DropPreview.svelte';
   import { slide } from 'svelte/transition';
   import { cardClass } from '#lib/ui/surface.ts';
 
@@ -51,11 +52,13 @@
   );
 
   // Disable in overlay mode to prevent duplicate sortable IDs
-  const { ref, handleRef } = useSortable({
+  const sortable = createSortable({
     get id() {
       return filter.uuid;
     },
-    index: () => index,
+    get index() {
+      return index;
+    },
     type: 'item',
     accept: 'item',
     collisionPriority: CollisionPriority.High,
@@ -78,7 +81,7 @@
   };
 </script>
 
-<div class="relative" {@attach ref}>
+<div class="relative" {@attach sortable.attach}>
   {#if showLeadingOperator && leadingOperator}
     <div
       class="flex justify-center py-1 {activeId && activeId === filter.uuid && !isOverlay
@@ -96,13 +99,11 @@
       : ''} bg-white"
   >
     <div class="flex flex-row items-center justify-start gap-2">
-      <div
-        class="cursor-grab active:cursor-grabbing m-0 flex items-center"
+      <SortableHandle
+        handle={sortable.attachHandle}
+        class="flex items-center px-1"
         title="Click and drag to reorder and group filters"
-        {@attach handleRef}
-      >
-        <i class="fa-solid fa-grip-vertical text-xl mx-1"></i>
-      </div>
+      />
       <div class="flex flex-col self-end">
         <div data-testid="filter-name" class="text-sm font-medium">{filter.variableName}</div>
         {#if searchResultMetadata}
@@ -140,13 +141,10 @@
   </div>
 
   {#if !isOverlay && activeId === filter.uuid}
-    <div
+    <DropPreview
       data-testid="filter-drop-preview"
-      class="max-md:hidden absolute inset-0 bg-primary-500/10 border border-dashed border-primary-500 rounded-lg flex items-center justify-center"
-    >
-      <span class="text-primary-600 text-xs font-semibold uppercase tracking-wide">
-        Moving: {filter.variableName}
-      </span>
-    </div>
+      class="max-md:hidden rounded-lg"
+      label={filter.variableName}
+    />
   {/if}
 </div>
