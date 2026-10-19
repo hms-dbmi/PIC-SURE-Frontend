@@ -3,9 +3,13 @@
   import { describeConfigField, type ConfigFieldSchema } from '#lib/config/admin.ts';
   import type { ConfigMap, ConfigObject } from '#lib/config/resolve.ts';
   import { adminConfig, type AdminConfigKind } from '#lib/admin/settings/adminConfig.svelte.ts';
-  import { humanizeKey, truncate, visibleLength } from '#lib/utils/strings.ts';
+  import { humanizeKey } from '#lib/utils/strings.ts';
   import { toaster } from '#lib/ui/toaster.ts';
-  import { cardClass, tones } from '#lib/ui/surface.ts';
+  import { cardClass } from '#lib/ui/surface.ts';
+  import { configValueError, serializeConfigValue } from './configValue.ts';
+  import ConfigValueInput from './ConfigValueInput.svelte';
+  import ExpandableText from './ExpandableText.svelte';
+  import OriginBadge from './OriginBadge.svelte';
 
   interface Props {
     schema: ConfigFieldSchema;
@@ -39,24 +43,7 @@
 
   let value: string = $derived(resolvedValue);
   let dirty = $derived(value !== resolvedValue);
-
-  let jsonError = $derived.by(() => {
-    if (schema.type !== 'json') return '';
-    try {
-      JSON.parse(value);
-      return '';
-    } catch (e) {
-      return e instanceof Error ? e.message : 'Invalid JSON';
-    }
-  });
-  let intValid = $derived(schema.type !== 'int' || /^-?\d+$/.test(value.trim()));
-  let valid = $derived(!jsonError && intValid);
-
-  function serialize(): string {
-    if (schema.type === 'int') return String(parseInt(value.trim(), 10));
-    if (schema.type === 'json') return JSON.stringify(JSON.parse(value));
-    return value;
-  }
+  let error = $derived(configValueError(schema.type, value));
 
   let saving = $state(false);
 
@@ -64,7 +51,7 @@
     if (saving) return;
     saving = true;
     try {
-      const serialized = serialize();
+      const serialized = serializeConfigValue(schema.type, value);
       if (apiRow?.uuid) {
         await adminConfig.update(kind, { ...apiRow, value: serialized });
       } else {
@@ -89,37 +76,6 @@
       toaster.error({ title: `Failed to reset ${label}` });
     }
   }
-
-  function prettify() {
-    try {
-      value = JSON.stringify(JSON.parse(value), null, 2);
-    } catch {
-      // Invalid JSON - leave value untouched, jsonError below already surfaces it.
-    }
-  }
-
-  const originLabel = { env: 'Env', api: 'API', default: 'Default' };
-  const originClass = {
-    env: `${tones['tonal-primary']} border border-primary-500`,
-    api: `${tones['tonal-success']} border border-success-500`,
-    default: `${tones['tonal-surface']} border border-surface-500`,
-  };
-  const originDotClass = {
-    env: 'bg-primary-500',
-    api: 'bg-success-500',
-    default: 'bg-surface-500',
-  };
-
-  const DESCRIPTION_LIMIT = 150;
-  let expanded = $state(false);
-  let descriptionTruncatable = $derived(
-    visibleLength(schema.description ?? '') > DESCRIPTION_LIMIT,
-  );
-  let displayDescription = $derived(
-    descriptionTruncatable && !expanded
-      ? truncate(schema.description, DESCRIPTION_LIMIT)
-      : schema.description,
-  );
 </script>
 
 <div
@@ -137,137 +93,32 @@
         >
       </div>
       {#if schema.description}
-        <p
-          class="text-xs opacity-70 mt-1 leading-relaxed"
-          data-testid={`admin-config-field-description-${schema.name}`}
-        >
-          {displayDescription}
-        </p>
-        {#if descriptionTruncatable}
-          <button
-            type="button"
-            class="text-xs font-semibold text-primary-500 hover:underline mt-1"
-            data-testid={`admin-config-field-expand-${schema.name}`}
-            onclick={() => (expanded = !expanded)}
-          >
-            {expanded ? 'Show less' : 'Show more'}
-          </button>
-        {/if}
+        <ExpandableText name={schema.name} text={schema.description} />
       {/if}
     </div>
 
     <div class="min-w-0">
       <div class="flex items-center justify-between gap-2 mb-2.5">
-        <span
-          class="badge {originClass[
-            fieldOrigin.origin
-          ]} rounded-full inline-flex items-center gap-1.5"
-          data-testid={`admin-config-field-origin-${schema.name}`}
-          title={`Resolved value: ${resolvedValue}`}
-        >
-          <span class="inline-block w-1.5 h-1.5 rounded-full {originDotClass[fieldOrigin.origin]}"
-          ></span>
-          {originLabel[fieldOrigin.origin]}
-        </span>
+        <OriginBadge name={schema.name} origin={fieldOrigin.origin} {resolvedValue} />
         {#if rowDisabled}
           <span class="text-xs italic opacity-60">API unavailable</span>
         {/if}
       </div>
 
-      {#if schema.type === 'boolean'}
-        {@const checked = value === 'true'}
-        <label
-          class="inline-flex items-center gap-2.5 relative {editDisabled
-            ? 'cursor-default'
-            : 'cursor-pointer'}"
-          data-testid={`admin-config-field-toggle-${schema.name}`}
-        >
-          <span
-            class="w-9 h-[21px] rounded-full flex-none relative transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary-500 has-[:focus-visible]:ring-offset-2 {checked
-              ? 'bg-primary-500'
-              : 'bg-surface-300-700'}"
-          >
-            <span
-              class="absolute top-0.5 w-[17px] h-[17px] rounded-full bg-surface-50-950 shadow transition-all {checked
-                ? 'left-[17px]'
-                : 'left-0.5'}"
-            ></span>
-            <input
-              type="checkbox"
-              class="sr-only"
-              data-testid={`admin-config-field-input-${schema.name}`}
-              {checked}
-              disabled={editDisabled}
-              onchange={(e) => (value = e.currentTarget.checked ? 'true' : 'false')}
-            />
-          </span>
-          <span class="text-[13.5px] font-medium opacity-80"
-            >{checked ? 'Enabled' : 'Disabled'}</span
-          >
-        </label>
-      {:else if schema.type === 'json'}
-        <div class="border border-surface-200-800 rounded-lg overflow-hidden bg-surface-50-950">
-          <textarea
-            class="textarea font-mono text-sm border-0 rounded-none focus:outline-none"
-            data-testid={`admin-config-field-input-${schema.name}`}
-            rows="4"
-            disabled={editDisabled}
-            bind:value></textarea>
-          <div
-            class="flex justify-end px-2.5 py-1.5 bg-surface-100-900 border-t border-surface-200-800"
-          >
-            <button
-              type="button"
-              class="text-[11.5px] font-semibold text-primary-500 hover:underline px-1"
-              data-testid={`admin-config-field-prettify-${schema.name}`}
-              disabled={editDisabled}
-              onclick={prettify}
-            >
-              Pretty-print
-            </button>
-          </div>
-        </div>
-        {#if jsonError}
-          <p
-            class="text-xs text-error-500 mt-1.5"
-            data-testid={`admin-config-field-error-${schema.name}`}
-          >
-            {jsonError}
-          </p>
-        {/if}
-      {:else if schema.type === 'int'}
-        <input
-          type="text"
-          inputmode="numeric"
-          class="input {!intValid ? 'border-error-500' : ''}"
-          data-testid={`admin-config-field-input-${schema.name}`}
-          disabled={editDisabled}
-          bind:value
-        />
-        {#if !intValid}
-          <p
-            class="text-xs text-error-500 mt-1.5"
-            data-testid={`admin-config-field-error-${schema.name}`}
-          >
-            Must be an integer.
-          </p>
-        {/if}
-      {:else}
-        <input
-          type="text"
-          class="input"
-          data-testid={`admin-config-field-input-${schema.name}`}
-          disabled={editDisabled}
-          bind:value
-        />
-      {/if}
+      <ConfigValueInput
+        name={schema.name}
+        type={schema.type}
+        bind:value
+        disabled={editDisabled}
+        {error}
+      />
 
       <div class="flex items-center gap-3.5 mt-3 min-h-[28px]">
         {#if dirty}
           <Button
             size="sm"
             data-testid={`admin-config-field-save-${schema.name}`}
-            disabled={editDisabled || !valid || saving}
+            disabled={editDisabled || !!error || saving}
             onclick={saveField}
           >
             Save
