@@ -1,6 +1,7 @@
 // Colour treatments and the card frame for elements that aren't buttons (badges, callouts,
 // banners), as complete class strings so Tailwind generates them. Call sites use these names
 // instead of Skeleton's preset-* and card classes, so replacing Skeleton only changes ui/.
+// A name here describes the fill alone: button.ts's `tonal` also adds a border and a hover colour.
 export const tones = {
   'filled-primary': 'preset-filled-primary-500',
   'filled-success': 'preset-filled-success-500',
@@ -19,7 +20,6 @@ export const tones = {
   'tonal-error': 'preset-tonal-error',
   'tonal-surface': 'preset-tonal-surface',
   'outlined-surface': 'preset-outlined-surface-500',
-  // For rows of a list that highlight under the pointer.
   'hover-tonal-surface': 'hover:preset-tonal-surface',
 } as const;
 

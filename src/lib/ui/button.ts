@@ -20,15 +20,13 @@ export const buttonVariants = {
     'preset-outlined-surface-500 hover:preset-tonal-primary border border-primary-500',
   'outlined-warning': 'preset-outlined-warning-500 hover:preset-filled-warning-500',
   'filled-secondary': 'preset-filled-secondary-500',
-  // Turns tonal when disabled.
   'filled-bordered':
     'preset-filled-primary-500 disabled:preset-tonal-primary border border-primary-500',
-  // The `-static` variants and `tint` have no hover colour, as they were before the table existed.
+  // The `-static` variants and `tint` have no hover colour.
   'tonal-static': 'preset-tonal-primary border border-primary-500',
   'soft-static': 'border preset-tonal-primary',
   'soft-error-static': 'border preset-tonal-error',
   'outlined-static': 'preset-outlined-primary-500',
-  // Tonal fill only, without a border.
   tint: 'preset-tonal-primary',
   'tint-error': 'preset-tonal-error',
 } as const;

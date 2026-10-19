@@ -26,6 +26,15 @@ const skeletonOnlyInUi = {
   message: 'Only src/lib/ui/ may import Skeleton; use or add a ui/ primitive.',
 };
 
+// Skeleton class names, with any variant prefixes (hover:, md:dark:, [&:hover]:) and `!`. A lone
+// "card" string is allowed outside class attributes, since it's also a variant name.
+const variantPrefix = String.raw`(\S*:)?!?`;
+const skeletonClassName = String.raw`preset-\S+|btn(-(sm|xs|lg|base|group|icon(-(sm|lg|base))?))?`;
+const cardClassName = 'card(-hover)?';
+const skeletonClass = String.raw`(^|\s)${variantPrefix}(${skeletonClassName})!?(\s|$)`;
+const cardClass = `${variantPrefix}${cardClassName}!?`;
+const cardInClassList = String.raw`(^|\s)${cardClass}\s|\s${cardClass}$`;
+
 // `folder` (under src/lib/) may import only from `allowed` folders and packages: no `#lib/` or
 // `$lib/` specifier outside them, and no relative path that climbs out of `folder` (one config per
 // nesting depth, so `../` is allowed exactly as deep as the file sits). Stylesheets are exempt.
@@ -151,7 +160,8 @@ export default [
   },
   {
     // Skeleton's class vocabulary stays in ui/ too: call sites use ui/ variant props or the
-    // tables in ui/button.ts and ui/surface.ts. (Test files keep their own no-restricted-syntax.)
+    // tables in ui/button.ts and ui/surface.ts. Test files are left out because a second
+    // no-restricted-syntax config would replace theirs.
     files: ['src/**/*.{ts,svelte}'],
     ignores: ['src/lib/ui/**', '**/*.test.ts'],
     rules: {
@@ -159,10 +169,11 @@ export default [
         'error',
         {
           selector: [
-            'Literal[value=/(^|\\s)([\\w-]+:)?(preset-|btn(-(sm|xs|lg|icon(-(sm|lg|base))?))?(\\s|$))/]',
-            'TemplateElement[value.raw=/(^|\\s)([\\w-]+:)?(preset-|btn(-(sm|xs|lg|icon(-(sm|lg|base))?))?(\\s|$))/]',
-            'SvelteLiteral[value=/(^|\\s)([\\w-]+:)?(preset-|btn(-(sm|xs|lg|icon(-(sm|lg|base))?))?(\\s|$))/]',
-            "SvelteAttribute[key.name='class'] SvelteLiteral[value=/(^|\\s)card(\\s|$)/]",
+            ...['Literal[value', 'TemplateElement[value.raw', 'SvelteLiteral[value'].flatMap(
+              (node) => [`${node}=/${skeletonClass}/]`, `${node}=/${cardInClassList}/]`],
+            ),
+            `SvelteAttribute[key.name='class'] SvelteLiteral[value=/(^|\\s)${cardClass}(\\s|$)/]`,
+            `SvelteDirective[kind='Class'][key.name.name=/^(${skeletonClassName}|${cardClassName})$/]`,
           ].join(', '),
           message:
             "Skeleton's preset-*, btn and card classes belong in src/lib/ui/; use a ui/ variant prop or ui/button.ts / ui/surface.ts.",

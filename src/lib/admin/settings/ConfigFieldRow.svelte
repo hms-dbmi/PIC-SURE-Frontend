@@ -10,8 +10,7 @@
   } from '#lib/admin/settings/AdminConfiguration.ts';
   import { humanizeKey, truncate, visibleLength } from '#lib/utils/strings.ts';
   import { toaster } from '#lib/ui/toaster.ts';
-  import { cardClass } from '#lib/ui/surface.ts';
-  import { tones } from '#lib/ui/surface.ts';
+  import { cardClass, tones } from '#lib/ui/surface.ts';
 
   interface Props {
     schema: ConfigFieldSchema;
