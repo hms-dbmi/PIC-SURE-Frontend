@@ -152,9 +152,13 @@ export class BannerDraftForm {
     return this.mode !== 'restore' && this.banner?.status === 'PUBLISHED';
   }
 
+  get #editingPublished() {
+    return this.mode === 'edit' && this.banner?.status === 'PUBLISHED';
+  }
+
   /** A published banner must keep a start. */
   get startMissingError() {
-    return this.mode === 'edit' && this.banner?.status === 'PUBLISHED';
+    return this.#editingPublished;
   }
 
   get scheduleDisabled() {
@@ -169,7 +173,8 @@ export class BannerDraftForm {
   readonly sanitizedLength = $derived(sanitizeBannerHTML(this.htmlContent).length);
   readonly contentTooLong = $derived(this.sanitizedLength > BANNER_CONTENT_MAX_LENGTH);
   readonly hasContent = $derived(hasBannerContent(this.htmlContent));
-  // The .by() forms defer reading the fields the constructor sets.
+  // The .by() forms read the fields the constructor sets inside a closure, which TypeScript
+  // accepts; a plain $derived initializer reading them fails svelte-check.
   readonly startResolution = $derived.by(() =>
     this.startLocal ? resolveLocalMinute(this.startLocal, this.timeZone) : null,
   );
@@ -238,7 +243,7 @@ export class BannerDraftForm {
   );
   readonly canSave = $derived(this.#submittable && this.dirty);
   readonly canPublish = $derived.by(
-    () => this.#submittable && !(this.mode === 'edit' && this.isPublished && !this.dirty),
+    () => this.#submittable && !(this.#editingPublished && !this.dirty),
   );
 
   draft(): BannerDraft {

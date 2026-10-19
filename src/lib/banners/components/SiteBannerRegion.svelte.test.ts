@@ -26,18 +26,10 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
   getSessionId: () => 'session-1',
 }));
 
-vi.mock('#lib/auth/session.svelte.ts', async () => {
-  const { fromStore, writable } = await import('svelte/store');
-  const hasValidToken = writable(false);
-  const validity = fromStore(hasValidToken);
-  authentication.setHasValidToken = (value) => hasValidToken.set(value);
-  return {
-    session: {
-      get hasValidToken() {
-        return validity.current;
-      },
-    },
-  };
+vi.mock('#lib/auth/session.svelte.ts', () => {
+  const session = $state({ hasValidToken: false });
+  authentication.setHasValidToken = (value) => (session.hasValidToken = value);
+  return { session };
 });
 
 import SiteBannerRegion from '#lib/banners/components/SiteBannerRegion.svelte';

@@ -80,15 +80,13 @@
       removedLinks > 0 ? `${removal} Use a relative path, an HTTPS link, or an email link.` : '';
   }
 
-  const scheduleDescription = $derived(
-    form.scheduleDisabled
-      ? 'Expired banner schedules cannot be changed.'
-      : form.mode === 'restore'
-        ? `Times use your local timezone (${form.timeZone}) at minute precision. Leave Start blank to bring the copied banner back immediately using the server's current UTC time.`
-        : form.isPublished
-          ? `Times use your local timezone (${form.timeZone}) at minute precision. Change Start to move this occurrence; leave End blank to keep it active until it is disabled.`
-          : `Times use your local timezone (${form.timeZone}) at minute precision. Leave Start blank to publish immediately using the server's current UTC time.`,
-  );
+  const scheduleDescription = form.scheduleDisabled
+    ? 'Expired banner schedules cannot be changed.'
+    : form.mode === 'restore'
+      ? `Times use your local timezone (${form.timeZone}) at minute precision. Leave Start blank to bring the copied banner back immediately using the server's current UTC time.`
+      : form.isPublished
+        ? `Times use your local timezone (${form.timeZone}) at minute precision. Change Start to move this occurrence; leave End blank to keep it active until it is disabled.`
+        : `Times use your local timezone (${form.timeZone}) at minute precision. Leave Start blank to publish immediately using the server's current UTC time.`;
   const editorCopy =
     form.mode === 'restore'
       ? {
