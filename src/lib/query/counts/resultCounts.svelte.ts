@@ -1,6 +1,7 @@
 import { untrack } from 'svelte';
 
 import { runSyncQuery } from '#lib/api/picsure/query.ts';
+import { session } from '#lib/auth/session.svelte.ts';
 import { log, createLog } from '#lib/telemetry/logger.ts';
 import { isToastShowing, toaster } from '#lib/ui/toaster.ts';
 import { filterState } from '#lib/query/filters.svelte.ts';
@@ -179,3 +180,5 @@ export const resultCountsState = new ResultCounts(
     transport: (request, openEndpoint) => runSyncQuery(request, { openEndpoint }),
   }),
 );
+// Counts depend on whose consents the query ran with.
+session.onEnd(() => resultCountsState.clear());

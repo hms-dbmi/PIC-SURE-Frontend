@@ -1,11 +1,14 @@
 import * as api from '#lib/api/picsure/datasets.ts';
 import type { DataSet } from '#lib/api/picsure/datasets.ts';
+import { session } from '#lib/auth/session.svelte.ts';
 import { log, createLog } from '#lib/telemetry/logger.ts';
 import { assertNoSsrWrite } from '#lib/utils/ssrWrite.ts';
 
 export class Datasets {
   #list: DataSet[] = $state.raw([]);
   #showArchived = $state(false);
+  // Bumped by reset(), so a list that arrives after the session ended is dropped.
+  #generation = 0;
 
   readonly active: DataSet[] = $derived(
     this.#list.filter((ds) => !ds.archived).sort((a, b) => b.rawStartTime - a.rawStartTime),
@@ -23,9 +26,10 @@ export class Datasets {
   };
 
   load = async () => {
+    const generation = this.#generation;
     const list = await api.getDatasets();
     assertNoSsrWrite('datasets');
-    this.#list = list;
+    if (generation === this.#generation) this.#list = list;
   };
 
   toggleArchived = async (uuid: string) => {
@@ -44,6 +48,12 @@ export class Datasets {
 
   get = async (uuid: string): Promise<DataSet> =>
     this.#list.find((ds) => ds.uuid === uuid) ?? api.getDataset(uuid);
+
+  reset = () => {
+    this.#generation++;
+    this.#list = [];
+  };
 }
 
 export const datasets = new Datasets();
+session.onEnd(datasets.reset);

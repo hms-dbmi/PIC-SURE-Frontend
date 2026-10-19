@@ -131,8 +131,9 @@ export class Session {
   }
 
   /**
-   * Runs `listener` each time the session ends, so caches of what the user could see (the admin
-   * lists) are dropped before someone else signs in. Returns the unsubscribe.
+   * Runs `listener` each time the session ends or another user's token replaces it, so caches of
+   * what the user could see (admin lists, counts, datasets) are dropped before someone else signs
+   * in. Returns the unsubscribe.
    */
   onEnd(listener: () => void): () => void {
     this.#endListeners.push(listener);
@@ -208,6 +209,10 @@ export class Session {
 
   setToken(token: string) {
     assertNoSsrWrite('session');
+    // Signing in as someone else without signing out ends the first user's session.
+    if (this.#token && tokenSubject(token) !== tokenSubject(this.#token)) {
+      this.#forgetPendingRequests();
+    }
     writeToken(token);
     this.#token = token;
   }

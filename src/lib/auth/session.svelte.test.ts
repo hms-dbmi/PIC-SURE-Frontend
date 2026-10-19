@@ -471,4 +471,17 @@ describe('the end of a session', () => {
 
     expect(ended).toHaveBeenCalledTimes(2);
   });
+
+  it('tells its listeners when another user signs in over it, but not on a refresh', () => {
+    const ended = vi.fn();
+    const unsubscribe = session.onEnd(ended);
+
+    session.setToken(jwt('first'));
+    session.setToken(jwt('first'));
+    expect(ended).not.toHaveBeenCalled();
+
+    session.setToken(jwt('second'));
+    unsubscribe();
+    expect(ended).toHaveBeenCalledOnce();
+  });
 });
