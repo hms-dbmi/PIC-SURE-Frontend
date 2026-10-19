@@ -1,5 +1,6 @@
 import { request } from '#lib/api/client.ts';
 import { Picsure, PicsurePaths } from '#lib/api/paths.ts';
+import { expectArray, isRecord } from '#lib/api/picsure/guards.ts';
 import { parseQuery, type Query, type SavedQuery } from '#lib/query/query.ts';
 import { parseQueryV2, queryFromV2 } from '#lib/query/v2.ts';
 
@@ -31,10 +32,6 @@ function secondsToDate(seconds: number) {
   const month = dt.toLocaleString('default', { month: '2-digit' });
   const day = dt.toLocaleString('default', { day: '2-digit' });
   return year + '-' + month + '-' + day;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
 function isSavedQuery(value: unknown): value is SavedQuery {
@@ -122,8 +119,7 @@ export interface DatasetUpdate extends DatasetRequest {
 
 export async function getDatasets(): Promise<DataSet[]> {
   const records = await request<unknown>(Picsure.NamedDataSet, { auth: 'open' });
-  if (!Array.isArray(records)) throw new Error('Invalid dataset list response');
-  return records.map(mapDataset);
+  return expectArray(records, 'dataset list').map(mapDataset);
 }
 
 export async function getDataset(uuid: string): Promise<DataSet> {
