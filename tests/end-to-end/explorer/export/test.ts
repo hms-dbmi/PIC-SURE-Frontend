@@ -564,6 +564,7 @@ test.describe('Export Page', () => {
 
     await sampleIdsCheckbox.click();
     await expect(sampleIdsCheckbox).not.toBeChecked();
+    await expect(tableBody.getByRole('cell', { name: 'Patient ID', exact: true })).toBeVisible();
     await expect(tableBody.getByText('Sample ID - Study 1')).toBeHidden();
     await expect(tableBody.getByText('Sample ID - Study 2')).toBeHidden();
   });
@@ -590,6 +591,7 @@ test.describe('Export Page', () => {
     await page.getByRole('button', { name: 'Back', exact: true }).click();
 
     await expect(sampleIdsCheckbox).not.toBeChecked();
+    await expect(tableBody.getByRole('cell', { name: 'Patient ID', exact: true })).toBeVisible();
     await expect(tableBody.getByText('Sample ID - Study 1')).toBeHidden();
     await expect(tableBody.getByText('Sample ID - Study 2')).toBeHidden();
   });

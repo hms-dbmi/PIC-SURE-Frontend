@@ -59,6 +59,9 @@
       if (sampleIds) sampleIdExports = matchingSampleIds;
     } catch (error) {
       console.error('Error checking sample IDs', error);
+      // Match the table, which lists these exports, so unchecking can still remove them
+      sampleIds = true;
+      sampleIdExports = exportedSampleIds;
     } finally {
       checkingSampleIds = false;
     }
