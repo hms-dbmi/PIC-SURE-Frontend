@@ -11,9 +11,13 @@ const mockConfig = vi.hoisted(() => ({
 const mockTos = vi.hoisted(() => ({ latest: vi.fn(), accept: vi.fn() }));
 const mockPsamaUser = vi.hoisted(() => ({ me: vi.fn(), consents: vi.fn() }));
 const mockToaster = vi.hoisted(() => ({ error: vi.fn() }));
+const navigation = vi.hoisted(() => ({ after: () => {} }));
 
 vi.mock('$app/env', () => ({ browser: true }));
-vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
+vi.mock('$app/navigation', () => ({
+  goto: vi.fn(),
+  afterNavigate: (callback: () => void) => (navigation.after = callback),
+}));
 vi.mock('#lib/config/config.svelte.ts', () => ({ config: mockConfig }));
 vi.mock('#lib/api/psama/tos.ts', () => mockTos);
 vi.mock('#lib/api/psama/user.ts', () => mockPsamaUser);
@@ -144,6 +148,27 @@ describe('TermsDialog', () => {
     session.removeToken();
 
     await waitFor(() => expect(dialog()).not.toBeInTheDocument());
+  });
+
+  it('closes the terms opened from the footer on navigation', async () => {
+    signIn(true);
+    render(TermsDialog);
+    termsOfService.dialogOpen = true;
+    await screen.findByTestId('app-footer-terms');
+
+    navigation.after();
+
+    await waitFor(() => expect(dialog()).not.toBeInTheDocument());
+  });
+
+  it('stays open for a user who has not accepted the terms on navigation', async () => {
+    signIn(false);
+    render(TermsDialog);
+    await screen.findByTestId('app-footer-terms');
+
+    navigation.after();
+
+    expect(termsOfService.dialogOpen).toBe(true);
   });
 
   it('can be closed when the terms fail to load, until the next sign-in', async () => {

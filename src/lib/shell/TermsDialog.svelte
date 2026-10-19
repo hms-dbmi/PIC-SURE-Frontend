@@ -1,7 +1,12 @@
 <script lang="ts">
+  import { afterNavigate } from '$app/navigation';
   import Dialog from '#lib/ui/dialog/Dialog.svelte';
   import Terms from '#lib/shell/Terms.svelte';
   import { termsOfService } from '#lib/shell/termsOfService.svelte.ts';
+
+  // Terms opened from a footer belong to the page they were opened on, so a navigation closes them,
+  // including a logout's redirect to /login.
+  afterNavigate(() => termsOfService.closeReading());
 </script>
 
 <Dialog

@@ -13,7 +13,7 @@ const mockConfig = vi.hoisted(() => ({
 }));
 
 vi.mock('$app/env', () => ({ browser: true }));
-vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
+vi.mock('$app/navigation', () => ({ goto: vi.fn(), afterNavigate: vi.fn() }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/') } }));
 vi.mock('#lib/config/config.svelte.ts', () => ({ config: mockConfig }));
 vi.mock('#lib/api/psama/tos.ts', () => ({

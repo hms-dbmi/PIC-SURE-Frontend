@@ -38,7 +38,15 @@ class TermsOfService {
   set dialogOpen(open: boolean) {
     assertNoSsrWrite('termsOfService');
     this.#reading = open;
-    if (!open && untrack(() => this.#required)) this.#closedFor = untrack(() => session.token);
+    untrack(() => {
+      if (!open && this.#required) this.#closedFor = session.token;
+    });
+  }
+
+  /** Closes the terms the footer opened. Required terms stay open. */
+  closeReading() {
+    assertNoSsrWrite('termsOfService');
+    this.#reading = false;
   }
 }
 
