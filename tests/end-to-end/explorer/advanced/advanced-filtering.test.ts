@@ -704,6 +704,14 @@ test.describe('Advanced Query Builder - Unsaved Changes', () => {
     await afPage.expectBadgeText('AND');
   });
 
+  test('AF-UNSAVED-007: Discard Changes follows the link that was clicked', async ({ page }) => {
+    await afPage.selectRootOperator('OR');
+    await page.getByRole('link', { name: 'Help', exact: true }).click();
+    await afPage.expectUnsavedModalVisible();
+    await afPage.clickUnsavedDiscard();
+    await page.waitForURL('**/help');
+  });
+
   test('AF-UNSAVED-004: Apply Changes (modal) applies changes and stays on page', async ({
     page,
   }) => {

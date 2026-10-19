@@ -37,8 +37,8 @@
   }
 
   function handleDiscard() {
-    guard.take();
-    guard.navigate(backUrl);
+    const pending = guard.take();
+    guard.navigate(pending?.kind === 'navigation' && pending.url ? pending.url : backUrl);
   }
 
   function handleModalApply() {
