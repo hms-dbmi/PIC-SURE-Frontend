@@ -31,7 +31,7 @@
       name,
       save: () =>
         role ? admin.roles.update({ ...edited, uuid: role.uuid }) : admin.roles.add(edited),
-      redirect: resolve('admin/configuration'),
+      redirect: resolve('/(picsure)/(authorized)/(admin)/admin/configuration'),
     });
   }
 </script>
@@ -40,7 +40,7 @@
   entity="role"
   uuid={role?.uuid}
   disabled={!session.isTopAdmin}
-  cancelHref={resolve('admin/configuration')}
+  cancelHref={resolve('/(picsure)/(authorized)/(admin)/admin/configuration')}
   validate={() =>
     privileges.length === 0 ? 'At least one privilege must be selected.' : undefined}
   onsave={saveRole}

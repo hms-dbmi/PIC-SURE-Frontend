@@ -7,7 +7,7 @@ import { assertNoSsrWrite } from '#lib/utils/ssrWrite.ts';
 export class Datasets {
   #list: DataSet[] = $state.raw([]);
   #showArchived = $state(false);
-  // Bumped by reset(), so a list that arrives after the session ended is dropped.
+  // Bumped by reset(), so a response that arrives after the session ended is dropped.
   #generation = 0;
 
   readonly active: DataSet[] = $derived(
@@ -36,6 +36,7 @@ export class Datasets {
     const dataset = this.#list.find((ds) => ds.uuid === uuid);
     if (!dataset) return Promise.reject('Could not find dataset in store.');
 
+    const generation = this.#generation;
     const updated = await api.updateDataset(uuid, {
       queryId: dataset.queryId,
       name: dataset.name,
@@ -43,6 +44,7 @@ export class Datasets {
       archived: !dataset.archived,
     });
     assertNoSsrWrite('datasets');
+    if (generation !== this.#generation) return;
     this.#list = this.#list.map((ds) => (ds.uuid === uuid ? updated : ds));
   };
 

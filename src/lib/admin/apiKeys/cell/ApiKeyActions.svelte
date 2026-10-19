@@ -5,7 +5,12 @@
   import { apiKeys } from '#lib/admin/apiKeys/apiKeys.svelte.ts';
   import { extractApiError } from '#lib/admin/apiKeys/model.ts';
 
-  const { data = { cell: '', row: { prefix: '', status: '' } } } = $props();
+  interface Props {
+    /** The table's cell contract: `cell` is the key's uuid. */
+    data: { cell: string; row: { prefix: string; status: string } };
+  }
+
+  const { data }: Props = $props();
 
   async function revoke() {
     // defense-in-depth beyond the disabled trigger

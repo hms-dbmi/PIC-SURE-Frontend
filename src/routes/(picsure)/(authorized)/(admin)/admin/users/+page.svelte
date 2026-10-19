@@ -87,7 +87,7 @@
         </Button>
       </div>
     </div>
-    {#each usersByConnection as connection, i}
+    {#each usersByConnection as connection, i (connection.label)}
       <div class="mb-10">
         <Datatable
           tableName="Users-{connection.label}"

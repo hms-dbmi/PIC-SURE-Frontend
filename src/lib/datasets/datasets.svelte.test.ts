@@ -51,4 +51,19 @@ describe('the datasets list', () => {
 
     expect(datasets.active).toEqual([]);
   });
+
+  it('drops an archive response that arrives after the session ended', async () => {
+    vi.mocked(api.getDatasets).mockResolvedValue([dataset('a')]);
+    await datasets.load();
+    let respond: (updated: DataSet) => void = () => {};
+    vi.mocked(api.updateDataset).mockReturnValue(new Promise((resolve) => (respond = resolve)));
+    const archiving = datasets.toggleArchived('a');
+
+    session.clear();
+    await datasets.load();
+    respond({ ...dataset('a'), archived: true });
+    await archiving;
+
+    expect(datasets.archived).toEqual([]);
+  });
 });

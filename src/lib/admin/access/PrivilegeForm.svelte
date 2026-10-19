@@ -30,7 +30,7 @@
         privilege
           ? admin.privileges.update({ ...edited, uuid: privilege.uuid })
           : admin.privileges.add(edited),
-      redirect: resolve('admin/configuration'),
+      redirect: resolve('/(picsure)/(authorized)/(admin)/admin/configuration'),
     });
   }
 </script>
@@ -40,7 +40,7 @@
     entity="privilege"
     uuid={privilege?.uuid}
     disabled={!session.isTopAdmin}
-    cancelHref={resolve('admin/configuration')}
+    cancelHref={resolve('/(picsure)/(authorized)/(admin)/admin/configuration')}
     onsave={savePrivilege}
   >
     <TextField label="Name:" bind:value={name} required />

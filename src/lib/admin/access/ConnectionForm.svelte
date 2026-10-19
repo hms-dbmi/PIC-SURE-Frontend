@@ -32,7 +32,7 @@
         connection
           ? admin.connections.update({ ...edited, uuid: connection.uuid })
           : admin.connections.add(edited),
-      redirect: resolve('admin/configuration'),
+      redirect: resolve('/(picsure)/(authorized)/(admin)/admin/configuration'),
     });
   }
 </script>
@@ -50,7 +50,7 @@
   entity="connection"
   uuid={connection?.uuid}
   disabled={!session.isTopAdmin}
-  cancelHref={resolve('admin/configuration')}
+  cancelHref={resolve('/(picsure)/(authorized)/(admin)/admin/configuration')}
   onsave={saveConnection}
 >
   <TextField label="Label:" bind:value={label} required />

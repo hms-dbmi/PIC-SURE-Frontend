@@ -52,14 +52,14 @@
       noun: 'user',
       name: email,
       save: sendUser,
-      redirect: resolve('admin/users'),
+      redirect: resolve('/(picsure)/(authorized)/(admin)/admin/users'),
     });
   }
 </script>
 
 <AdminForm
   entity="user"
-  cancelHref={resolve('admin/users')}
+  cancelHref={resolve('/(picsure)/(authorized)/(admin)/admin/users')}
   validate={() => (roles.length === 0 ? 'At least one role must be selected.' : undefined)}
   onsave={saveUser}
 >

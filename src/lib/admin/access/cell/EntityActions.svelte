@@ -67,7 +67,7 @@
         title:
           (error as { status?: number })?.status === 409
             ? `Cannot delete ${subject} as it is still in use by ${inUseBy}`
-            : `An unknown error occured while deleting ${subject}`,
+            : `An unknown error occurred while deleting ${subject}`,
       });
     }
   }
