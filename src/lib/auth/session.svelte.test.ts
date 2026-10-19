@@ -284,6 +284,17 @@ describe('the bootstrap', () => {
     expect(consents).toEqual({ '\\_consents\\': ['phs1'] });
     expect(paths.filter((path) => path.endsWith('/consents'))).toHaveLength(1);
   });
+  it('makes a page waiting for the consents wait for the profile first', async () => {
+    stubPsama();
+    session.setToken(jwt('public-page'));
+
+    const booting = session.bootstrap();
+    await session.consentsSettled();
+
+    expect(session.accessUnavailable).toBe(false);
+    expect(session.consentedStudies).toEqual(['phs1']);
+    await booting;
+  });
 });
 
 describe('a refusal that may mean the user has not accepted the terms', () => {

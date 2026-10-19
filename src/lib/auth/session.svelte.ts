@@ -238,8 +238,12 @@ export class Session {
     return response.userLongTermToken;
   }
 
-  /** Resolves once the in-flight access fetch has succeeded or given up. Never rejects. */
-  consentsSettled(): Promise<void> {
+  /**
+   * Resolves once the in-flight access fetch has succeeded or given up, including the one a
+   * bootstrap in flight starts once the profile is in. Never rejects.
+   */
+  async consentsSettled(): Promise<void> {
+    await this.#boot?.done;
     return this.#consentsRequest;
   }
 
@@ -268,14 +272,12 @@ export class Session {
   /** Waits for or starts the consent request when access has not been loaded yet. */
   ensureConsentsLoaded(): Promise<ConsentsMap | undefined> {
     return untrack(async () => {
-      // A bootstrap in flight requests the consents once the profile is in.
-      await this.#boot?.done;
+      await this.consentsSettled();
       if (this.#user.consents !== undefined) return this.#user.consents;
       // PSAMA refuses the request until the user accepts the terms; accepting loads them.
       if (this.#user.acceptedTOS === false) return undefined;
 
-      await this.consentsSettled();
-      if (this.#user.consents === undefined) await this.loadConsents();
+      await this.loadConsents();
       return this.#user.consents;
     });
   }

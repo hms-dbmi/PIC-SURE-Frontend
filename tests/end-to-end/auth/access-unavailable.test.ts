@@ -1,8 +1,16 @@
 import { expect, type Page } from '@playwright/test';
-import { test, mockApiSuccess, mockApiFail, mockApiConfig } from '../custom-context';
+import {
+  test,
+  mockApiSuccess,
+  mockApiFail,
+  mockApiConfig,
+  tokenOnlyState,
+} from '../custom-context';
 
 import {
+  mockConsents,
   mockDashboard,
+  picsureUser,
   searchResults,
   searchResultPath,
   facetResultPath,
@@ -75,6 +83,31 @@ test.describe('Access unavailable', () => {
     await userIsLoggedIn(page);
 
     await expect(page.locator('#dashboard-data')).toBeVisible();
+    await expect(page.getByTestId('toast-root')).not.toBeVisible();
+  });
+});
+
+test.describe('A fresh tab', () => {
+  test.use({ storageState: tokenOnlyState('tests/end-to-end/.auth/generalUser.json') });
+
+  test('searches with the consents once the profile has loaded', async ({ page }) => {
+    await mockApiConfig(page);
+    await mockApiSuccess(page, facetResultPath, []);
+    await mockApiSuccess(page, consentsPath, { consents: mockConsents });
+    await page.route('*/**/psama/user/me', async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await route.fulfill({ json: picsureUser });
+    });
+    const sentConsents: unknown[] = [];
+    await page.route('**/picsure/dictionary/concepts**', (route) => {
+      sentConsents.push(route.request().postDataJSON()?.consents);
+      return route.fulfill({ json: searchResults });
+    });
+
+    await page.goto('/explorer?search=age');
+    await userIsLoggedIn(page);
+
+    await expect.poll(() => sentConsents).toContainEqual(mockConsents['\\_consents\\']);
     await expect(page.getByTestId('toast-root')).not.toBeVisible();
   });
 });
