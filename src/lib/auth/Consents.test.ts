@@ -26,6 +26,7 @@ import {
   user,
 } from '#lib/auth/User.ts';
 import { session } from '#lib/auth/session.svelte.ts';
+import { config } from '#lib/config/config.svelte.ts';
 import { addConsents } from '#lib/explorer/Dictionary.ts';
 import { Psama } from '#lib/api/paths.ts';
 import { ApiError } from '#lib/api/errors.ts';
@@ -275,10 +276,16 @@ describe('addConsents', () => {
   });
 
   it('throws without toasting while the terms dialog asks the user to accept', async () => {
+    const features = config.features as Record<string, unknown>;
+    Object.assign(features, { termsOfService: true, enforceTermsOfService: true });
     user.set({ acceptedTOS: false });
 
-    await expect(addConsents(blankRequest())).rejects.toThrow(ACCESS_UNAVAILABLE_MESSAGE);
-    expect(mockToaster.error).not.toHaveBeenCalled();
+    try {
+      await expect(addConsents(blankRequest())).rejects.toThrow(ACCESS_UNAVAILABLE_MESSAGE);
+      expect(mockToaster.error).not.toHaveBeenCalled();
+    } finally {
+      Object.assign(features, { termsOfService: false, enforceTermsOfService: false });
+    }
   });
 
   it('stays closed after a reload, where no fetch is in flight to wait on', async () => {

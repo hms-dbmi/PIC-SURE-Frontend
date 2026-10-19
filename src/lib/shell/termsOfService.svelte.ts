@@ -1,4 +1,5 @@
 import { untrack } from 'svelte';
+import { awaitsTerms } from '#lib/auth/access.ts';
 import { session } from '#lib/auth/session.svelte.ts';
 import { config } from '#lib/config/config.svelte.ts';
 import { assertNoSsrWrite } from '#lib/utils/ssrWrite.ts';
@@ -11,12 +12,7 @@ import { assertNoSsrWrite } from '#lib/utils/ssrWrite.ts';
  */
 class TermsOfService {
   // Only an explicit `false`: a profile that hasn't loaded yet (as during login) says nothing.
-  #required = $derived(
-    session.isLoggedIn &&
-      session.user.acceptedTOS === false &&
-      config.features.termsOfService &&
-      config.features.enforceTermsOfService,
-  );
+  #required = $derived(session.isLoggedIn && awaitsTerms(session.user, config.features));
   #reading = $state(false);
   // The token the user closed the required terms under, which they can do when the terms fail to
   // load, so a broken endpoint can't lock them out. A new token, from a sign-in or a refresh, shows

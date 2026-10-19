@@ -31,8 +31,15 @@ function holdFirstRequest() {
   return held;
 }
 
+// The flags the terms dialog checks; with either off, the app never asks for the terms.
+const askForTerms = (on: boolean) => {
+  config.features.termsOfService = on;
+  config.features.enforceTermsOfService = on;
+};
+
 afterEach(() => {
   session.clear();
+  askForTerms(false);
   vi.unstubAllGlobals();
 });
 
@@ -232,6 +239,7 @@ describe('the bootstrap', () => {
   });
 
   it('leaves a user who has not accepted the terms to the terms dialog', async () => {
+    askForTerms(true);
     const paths = stubPsama();
     session.setToken(jwt('terms-pending'));
     session.user = { acceptedTOS: false };
@@ -240,6 +248,17 @@ describe('the bootstrap', () => {
 
     expect(paths).toEqual([]);
     expect(session.profileFailed).toBe(false);
+  });
+
+  it('loads the profile of such a user where the app does not ask for the terms', async () => {
+    const paths = stubPsama();
+    session.setToken(jwt('terms-not-asked'));
+    session.user = { acceptedTOS: false };
+
+    await session.bootstrap();
+
+    expect(paths).toContain('/psama/user/me');
+    expect(session.privileges).toEqual(['QUERY']);
   });
 
   it('records a failed profile request instead of rejecting', async () => {
@@ -298,13 +317,7 @@ describe('the bootstrap', () => {
 });
 
 describe('a refusal that may mean the user has not accepted the terms', () => {
-  // The flags the terms dialog checks; with either off, the app never asks for the terms.
-  const askForTerms = (on: boolean) => {
-    config.features.termsOfService = on;
-    config.features.enforceTermsOfService = on;
-  };
   beforeEach(() => askForTerms(true));
-  afterEach(() => askForTerms(false));
 
   it('opens the terms dialog instead of failing the bootstrap', async () => {
     const paths = refuseUntilTermsAccepted();

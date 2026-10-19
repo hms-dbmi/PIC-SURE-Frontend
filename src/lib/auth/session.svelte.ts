@@ -3,6 +3,7 @@ import { browser } from '$app/env';
 import { ApiError } from '#lib/api/errors.ts';
 import * as psamaUser from '#lib/api/psama/user.ts';
 import { registerSessionHooks } from '#lib/api/sessionHooks.ts';
+import { asksForTerms, awaitsTerms } from '#lib/auth/access.ts';
 import { loginRedirectPath } from '#lib/auth/loginRedirect.ts';
 import { isTopAdmin, type ConsentsMap, type User } from '#lib/auth/model/user.ts';
 import type AuthProvider from '#lib/auth/providers/AuthProvider.ts';
@@ -275,7 +276,7 @@ export class Session {
       await this.consentsSettled();
       if (this.#user.consents !== undefined) return this.#user.consents;
       // PSAMA refuses the request until the user accepts the terms; accepting loads them.
-      if (this.#user.acceptedTOS === false) return undefined;
+      if (awaitsTerms(this.#user, config.features)) return undefined;
 
       await this.loadConsents();
       return this.#user.consents;
@@ -299,7 +300,11 @@ export class Session {
     return untrack(() => {
       if (this.#boot?.token === this.#token) return this.#boot.done;
       const boot = { token: this.#token, done: Promise.resolve(), failed: false };
-      if (this.hasValidToken && !this.#user.privileges && this.#user.acceptedTOS !== false) {
+      if (
+        this.hasValidToken &&
+        !this.#user.privileges &&
+        !awaitsTerms(this.#user, config.features)
+      ) {
         boot.done = this.hydrate().catch((error: unknown) => {
           if (awaitingTerms(error)) return;
           boot.failed = true;
@@ -314,16 +319,15 @@ export class Session {
 
   /**
    * PSAMA refused a request sent with `token` in a way that may mean the user has yet to accept the
-   * terms. Where the app asks for them (the flags the terms dialog checks), holds the user for the
-   * dialog unless they have already accepted: records it in the profile, which opens the dialog, and
-   * accepting reloads the profile. A refusal for a replaced token changes nothing. Returns false
-   * when the refusal ends the session instead.
+   * terms. Where the app asks for them, holds the user for the dialog unless they have already
+   * accepted: records it in the profile, which opens the dialog, and accepting reloads the profile.
+   * A refusal for a replaced token changes nothing. Returns false when the refusal ends the session
+   * instead.
    */
   holdForTerms(token: string): boolean {
     assertNoSsrWrite('session');
     return untrack(() => {
-      const { termsOfService, enforceTermsOfService } = config.features;
-      if (!termsOfService || !enforceTermsOfService) return false;
+      if (!asksForTerms(config.features)) return false;
       if (token !== this.#token) return true;
       if (this.#user.acceptedTOS === true) return false;
       if (this.#user.acceptedTOS !== false) this.user = { ...this.#user, acceptedTOS: false };

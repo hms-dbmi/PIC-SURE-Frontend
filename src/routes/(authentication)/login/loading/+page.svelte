@@ -11,6 +11,7 @@
   import { panelOpen } from '#lib/explorer/panel.ts';
   import Loading from '#lib/ui/Loading.svelte';
   import type { User } from '#lib/auth/model/user.ts';
+  import { asksForTerms } from '#lib/auth/access.ts';
   import { session } from '#lib/auth/session.svelte.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
 
@@ -43,7 +44,7 @@
 
       // api returns as string
       user.acceptedTOS = String(user.acceptedTOS) === 'true';
-      if (config.features.enforceTermsOfService && !user.acceptedTOS) {
+      if (asksForTerms(config.features) && !user.acceptedTOS) {
         // PSAMA refuses the profile request until the terms are accepted, so record just this.
         session.setToken(user.token);
         session.user = { acceptedTOS: false };

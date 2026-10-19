@@ -61,6 +61,19 @@ export interface Visitor {
   profileFailed: boolean;
 }
 
+/** Whether the app asks signed-in users to accept the terms of service before they use it. */
+export function asksForTerms(features: Features): boolean {
+  return features.termsOfService && features.enforceTermsOfService;
+}
+
+/**
+ * Whether the terms dialog holds `user`, who has yet to accept the terms. PSAMA refuses their
+ * requests until they do.
+ */
+export function awaitsTerms(user: User, features: Features): boolean {
+  return user.acceptedTOS === false && asksForTerms(features);
+}
+
 function ownLogin(policy: Access, features: Features): boolean {
   return typeof policy.login === 'function' ? policy.login(features) : !!policy.login;
 }
@@ -119,7 +132,7 @@ export function accessRedirect(
   if (!policy.anyOf && !policy.topAdmin) return undefined;
   // Until a user accepts the terms, PSAMA refuses all their requests and the terms dialog holds
   // them on the page they asked for. Accepting runs the guards again.
-  if (visitor.user.acceptedTOS === false) return undefined;
+  if (awaitsTerms(visitor.user, features)) return undefined;
   if (visitor.profileFailed) return loginRedirectPath(url, 'hydrate_failed');
   return holdsPrivileges(policy, visitor.user) ? undefined : deniedPath(policy, url);
 }

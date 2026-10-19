@@ -1,4 +1,6 @@
+import { awaitsTerms } from '#lib/auth/access.ts';
 import { session } from '#lib/auth/session.svelte.ts';
+import { config } from '#lib/config/config.svelte.ts';
 import { isToastShowing, toaster } from '#lib/ui/toaster.ts';
 
 export const ACCESS_UNAVAILABLE_MESSAGE =
@@ -12,6 +14,6 @@ export const ACCESS_UNAVAILABLE_MESSAGE =
  * dialog is already asking them to accept.
  */
 export function showAccessUnavailable() {
-  if (session.user.acceptedTOS === false || isToastShowing('access-unavailable')) return;
+  if (awaitsTerms(session.user, config.features) || isToastShowing('access-unavailable')) return;
   toaster.error({ id: 'access-unavailable', title: ACCESS_UNAVAILABLE_MESSAGE, closable: true });
 }

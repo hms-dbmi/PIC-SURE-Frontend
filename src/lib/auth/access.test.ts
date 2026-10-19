@@ -64,6 +64,7 @@ interface Row {
 
 const signedIn = (...privileges: string[]) => ({ token: VALID, user: { privileges } });
 const closed = { login: { open: false } };
+const asksForTerms = { termsOfService: true, enforceTermsOfService: true };
 
 /** Puts the session in the state a row describes. */
 function signIn(token = '', user: User = {}, profileFailed = false) {
@@ -126,7 +127,9 @@ describe('requireAccess', () => {
     ['authorized: a profile without privileges goes home',
       { policy: 'authorized', url: '/dataset', token: VALID, user: {}, to: '/?reason=no_privilege&from=%2Fdataset' }],
     ['authorized: a user who has not accepted the terms is left to the terms dialog',
-      { policy: 'authorized', url: '/dataset', token: VALID, user: { acceptedTOS: false }, to: null }],
+      { policy: 'authorized', url: '/dataset', features: asksForTerms, token: VALID, user: { acceptedTOS: false }, to: null }],
+    ['authorized: where the app does not ask for the terms, not having accepted them changes nothing',
+      { policy: 'authorized', url: '/dataset', token: VALID, user: { acceptedTOS: false }, to: '/?reason=no_privilege&from=%2Fdataset' }],
     ['authorized: the server leaves every check to the browser', { policy: 'authorized', url: '/dataset', server: true, to: null }],
 
     ['admin: ADMIN with query access admits', { policy: 'admin', url: '/admin/users', ...signedIn(QUERY, 'ADMIN'), to: null }],
