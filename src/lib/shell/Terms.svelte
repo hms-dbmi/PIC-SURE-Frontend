@@ -15,11 +15,13 @@
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import TermsPreview from '#lib/shell/TermsPreview.svelte';
 
-  let { modalOpen = $bindable(false) }: { modalOpen?: boolean } = $props();
+  interface Props {
+    required: boolean;
+    onclose: () => void;
+  }
+
+  let { required, onclose }: Props = $props();
   let terms: Promise<string> = $state(Promise.resolve(''));
-  let enforceTerms: boolean = $derived(
-    config.features.enforceTermsOfService && session.isLoggedIn && !session.user.acceptedTOS,
-  );
 
   function loadTermsHTML() {
     terms = tos.latest({ auth: 'none' });
@@ -30,14 +32,9 @@
       log(createLog('AUTH', 'tos.accept'));
       tos
         .accept()
-        .then(() => {
-          const token = session.token;
-          if (token) {
-            session.login(token).then(() => {
-              modalOpen = false;
-            });
-          }
-        })
+        // Reloads the profile, which now records the acceptance.
+        .then(() => session.login(session.token))
+        .then(() => onclose())
         .catch((err) => {
           console.error(err);
           toaster.error({ description: 'An error occured while saving user terms acceptance.' });
@@ -62,12 +59,6 @@
     }
   }
 
-  function close() {
-    if (modalOpen !== undefined) {
-      modalOpen = false;
-    }
-  }
-
   onMount(loadTermsHTML);
 </script>
 
@@ -76,18 +67,16 @@
 {:then termsHTML}
   <TermsPreview terms={termsHTML} />
   <footer class="modal-footer flex justify-end space-x-2 mt-6">
-    {#if enforceTerms}
+    {#if required}
       <Button variant="soft" data-testid="terms-reject" onclick={reject}>Reject</Button>
       <Button data-testid="terms-accept" onclick={accept}>Accept</Button>
     {:else}
-      <Button variant="soft" data-testid="terms-close" onclick={close}>Close</Button>
+      <Button variant="soft" data-testid="terms-close" onclick={onclose}>Close</Button>
     {/if}
   </footer>
 {:catch}
   <ErrorAlert data-testid="terms-api-error"
     >Could not load terms of service. Please contact an administrator.</ErrorAlert
   >
-  {#if modalOpen !== undefined}
-    <Button variant="soft" data-testid="terms-close" onclick={close}>Close</Button>
-  {/if}
+  <Button variant="soft" data-testid="terms-close" onclick={onclose}>Close</Button>
 {/await}

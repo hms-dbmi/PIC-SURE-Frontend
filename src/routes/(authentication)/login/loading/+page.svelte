@@ -44,7 +44,9 @@
       // api returns as string
       user.acceptedTOS = String(user.acceptedTOS) === 'true';
       if (config.features.enforceTermsOfService && !user.acceptedTOS) {
+        // PSAMA refuses the profile request until the terms are accepted, so record just this.
         session.setToken(user.token);
+        session.user = { acceptedTOS: false };
         log(
           createLog(
             'LOGIN',

@@ -1,9 +1,8 @@
 <script lang="ts">
   import { page } from '$app/state';
   import { config } from '#lib/config/config.svelte.ts';
-  import { user, isUserLoggedIn } from '#lib/auth/User.ts';
-  import Terms from '#lib/shell/Terms.svelte';
-  import Dialog from '#lib/ui/dialog/Dialog.svelte';
+  import { user } from '#lib/auth/User.ts';
+  import { termsOfService } from '#lib/shell/termsOfService.svelte.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
 
   let { showSitemap: showSitemapProp }: { showSitemap?: boolean } = $props();
@@ -22,15 +21,6 @@
           ($user.privileges && $user.privileges.includes(section.privilege))) &&
         (!section.feature || config.features[section.feature]),
     })),
-  );
-
-  let modalOpen: boolean = $state(
-    config.features.enforceTermsOfService && isUserLoggedIn() && !$user.acceptedTOS,
-  );
-  let modalClosable: boolean = $derived(
-    !config.features.enforceTermsOfService ||
-      !isUserLoggedIn() ||
-      (isUserLoggedIn() && !!$user?.acceptedTOS),
   );
 </script>
 
@@ -71,18 +61,15 @@
   <ul>
     {#if config.features.termsOfService}
       <li>
-        <Dialog
-          bind:open={modalOpen}
-          data-testid="app-footer-terms"
-          aria-label="Terms of Service"
-          size="page"
-          triggerClass="hover:underline text-[0.74rem]"
-          ontrigger={() => log(createLog('NAVIGATION', 'footer.tos_click'))}
-          closeable={modalClosable}
+        <button
+          type="button"
+          data-testid="app-footer-terms-trigger"
+          class="hover:underline text-[0.74rem]"
+          onclick={() => {
+            log(createLog('NAVIGATION', 'footer.tos_click'));
+            termsOfService.dialogOpen = true;
+          }}>Terms of Service</button
         >
-          {#snippet trigger()}Terms of Service{/snippet}
-          <Terms bind:modalOpen />
-        </Dialog>
       </li>
     {/if}
     {#each config.branding.footer.links as link}

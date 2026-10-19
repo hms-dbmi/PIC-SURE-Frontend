@@ -8,6 +8,7 @@
   import { config } from '#lib/config/config.svelte.ts';
   import GoogleTracking from '#lib/shell/GoogleTracking.svelte';
   import ExternalLinkWarning from '#lib/shell/ExternalLinkWarning.svelte';
+  import TermsDialog from '#lib/shell/TermsDialog.svelte';
   import { log, createLog } from '#lib/telemetry/logger.ts';
   import { resumeAfterWafCaptcha } from '#lib/api/wafCaptcha.ts';
 
@@ -52,6 +53,7 @@
 
 <main class="w-full h-full" data-theme={theme}>
   {@render children?.()}
+  <TermsDialog />
   <GoogleTracking />
   {#if config.features.confirmExternalNavigation}
     <ExternalLinkWarning />
