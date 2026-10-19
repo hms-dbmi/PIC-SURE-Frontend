@@ -337,6 +337,12 @@ describe('classifyDrop', () => {
     });
     expect(classifyDrop(tree, b, event)).toEqual({ type: 'fallback', targetId: 'c' });
   });
+
+  it('keeps the reorder of a group dropped on itself', () => {
+    const G = get(tree, 'G');
+    const event = drop({ sourceId: 'G', targetId: 'G', reordered: true });
+    expect(classifyDrop(tree, G, event)).toEqual({ type: 'reorder-applied' });
+  });
 });
 
 describe('applyDrop', () => {

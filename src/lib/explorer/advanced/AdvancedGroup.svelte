@@ -5,51 +5,31 @@
   import { CollisionPriority, createSortable } from '#lib/ui/sortable/sortable.ts';
   import SortableHandle from '#lib/ui/sortable/SortableHandle.svelte';
   import DropPreview from '#lib/ui/sortable/DropPreview.svelte';
-  import {
-    isFilterGroup,
-    type FilterGroupInterface,
-    type FilterInterface,
-  } from '#lib/query/filter.svelte.ts';
+  import { isFilterGroup, type FilterGroupInterface } from '#lib/query/filter.svelte.ts';
   import AdvancedItem from './AdvancedItem.svelte';
   import AdvancedGroup from './AdvancedGroup.svelte';
   import EmptyDropZone from './EmptyDropZone.svelte';
   import GroupDropZone from './GroupDropZone.svelte';
   import { Operator, type OperatorType } from '#lib/query/query.ts';
+  import { getFilterTreeEditor, isInDragOverlay } from './FilterTreeEditor.svelte.ts';
   import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
   import Switch from '#lib/ui/Switch.svelte';
   import { cardClass } from '#lib/ui/surface.ts';
 
   interface Props {
     group: FilterGroupInterface;
-    onRemove: (group: FilterGroupInterface) => void;
-    onRemoveChild: (child: FilterInterface) => void;
-    onOperatorChange?: (group: FilterGroupInterface, operator: OperatorType) => void;
-    onAddGroup?: () => void;
-    activeId?: string | null;
-    isGroupDrag?: boolean;
     index?: number;
-    isOverlay?: boolean;
-    id?: string;
-    parentId?: string;
     depth?: number;
   }
 
-  let {
-    group,
-    activeId = null,
-    isGroupDrag = false,
-    index = 0,
-    isOverlay = false,
-    id = group.uuid,
-    parentId,
-    onRemove = () => {},
-    onRemoveChild = () => {},
-    onOperatorChange = (g, op) => {
-      g.setOperator(op);
-    },
-    depth = 0,
-    onAddGroup = () => {},
-  }: Props = $props();
+  let { group, index = 0, depth = 0 }: Props = $props();
+
+  const editor = getFilterTreeEditor();
+  const isOverlay = isInDragOverlay();
+  const id = $derived(editor.idOf(group));
+  const parentId = $derived(editor.containerOf(group));
+  const activeId = $derived(editor.activeId);
+  const isGroupDrag = $derived(editor.isGroupDrag);
 
   const groupBg = $derived(`background-color: rgba(var(--depth-overlay), ${depth * 0.06})`);
   const groupBorder = $derived(`border-color: rgba(var(--depth-overlay), ${0.2 + depth * 0.08})`);
@@ -94,10 +74,9 @@
       return isOverlay;
     },
   });
-  // Use our controlled activeId rather than dnd-kit's isDragging.current for the
+  // Use the editor's activeId rather than dnd-kit's isDragging.current for the
   // drop preview. isDragging.current can get stuck when tree nodes are replaced
-  // (e.g. restoreSnapshot in handleDragEnd), but activeId is always properly
-  // cleared in clearDragState().
+  // (the editor restores its snapshot on drop), but activeId is always cleared.
   const showDropPreview = $derived(!isOverlay && activeId === id && isDraggable);
 
   const operatorOptions = [
@@ -138,7 +117,7 @@
             value={operatorValue}
             options={operatorOptions}
             tone={operatorValue === Operator.OR ? 'secondary' : 'primary'}
-            onchange={(value) => onOperatorChange(group, value as OperatorType)}
+            onchange={(value) => editor.setOperator(group, value as OperatorType)}
           />
         </div>
         {#if id === 'root'}
@@ -146,7 +125,7 @@
             variant="soft"
             class="leading-(--text-lg--line-height) disabled:opacity-75 ml-auto mb-1"
             title="Add subquery to create a group of filters"
-            onclick={onAddGroup}
+            onclick={editor.addGroup}
           >
             Add Subquery
           </Button>
@@ -165,7 +144,7 @@
             type="button"
             title="Remove Subquery"
             class="hover:text-primary-600"
-            onclick={() => onRemove(group)}
+            onclick={() => editor.remove(group)}
           >
             <i class="fa-solid fa-times-circle"></i>
             <span class="sr-only">Remove Subquery</span>
@@ -177,46 +156,22 @@
     <div class="flex flex-col min-h-[50px] w-full">
       {#each group.children as child, i (child.uuid)}
         {#if id === 'root' && isGroupDrag && child.uuid !== activeId && (i === 0 || group.children[i - 1]?.uuid !== activeId)}
-          <GroupDropZone groupId="root" {isGroupDrag} insertAt={i} {isOverlay} label="Move here" />
+          <GroupDropZone groupId="root" insertAt={i} label="Move here" />
         {/if}
         {#if isFilterGroup(child)}
-          <AdvancedGroup
-            group={child}
-            index={i}
-            parentId={id}
-            depth={depth + 1}
-            {onRemove}
-            {onRemoveChild}
-            {isOverlay}
-            {activeId}
-            {isGroupDrag}
-            {onOperatorChange}
-          />
+          <AdvancedGroup group={child} index={i} depth={depth + 1} />
         {:else}
-          <AdvancedItem
-            filter={child}
-            index={i}
-            parentId={id}
-            {isOverlay}
-            {activeId}
-            onRemove={onRemoveChild}
-          />
+          <AdvancedItem filter={child} index={i} />
         {/if}
       {/each}
       {#if group.children.length === 0}
         <EmptyDropZone groupId={id} />
       {:else if id === 'root' && isGroupDrag && group.children[group.children.length - 1]?.uuid !== activeId}
         <!-- Reorder zone at end of root; skip if dragged group is already last -->
-        <GroupDropZone
-          groupId="root"
-          {isGroupDrag}
-          insertAt={group.children.length}
-          {isOverlay}
-          label="Move here"
-        />
+        <GroupDropZone groupId="root" insertAt={group.children.length} label="Move here" />
       {:else if id !== 'root' && !(isGroupDrag && group.children.some((c) => c.uuid === activeId))}
         <!-- GroupDropZone for dropping groups into this group; hidden when dragging a group that's already in this group -->
-        <GroupDropZone groupId={id} {isGroupDrag} {isOverlay} />
+        <GroupDropZone groupId={id} />
       {/if}
     </div>
   </div>

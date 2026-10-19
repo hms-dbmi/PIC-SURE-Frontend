@@ -1006,6 +1006,32 @@ test.describe('Advanced Query Builder - Drag interactions', () => {
     await expect(afPage.getMoveHereZones()).toHaveCount(0);
   });
 
+  test('AF-DND-022: The keyboard moves a subquery above the one before it', async ({ page }) => {
+    await afPage.closeModal();
+    await afPage.injectTwoGroups(page);
+    await page.goto('/explorer?search=somedata');
+    await expect(page.locator('#results-panel')).toBeVisible();
+    await afPage.openModal();
+
+    const expected = `(${c} AND ${d}) AND (${a} AND ${b})`;
+    await afPage
+      .getGroupCards()
+      .nth(1)
+      .getByRole('button', { name: 'Click and drag to reorder and group filters' })
+      .first()
+      .focus();
+    await page.keyboard.press('Enter');
+    await expect(afPage.getMoveHereZones()).not.toHaveCount(0);
+    // The keyboard sensor picks the next zone by position, so let the zones finish opening
+    await page.waitForFunction(() => document.getAnimations().length === 0);
+    await page.keyboard.press('ArrowUp');
+    await expect(afPage.logicTreeText).toHaveText(expected);
+    await page.keyboard.press('Enter');
+
+    await expect(afPage.getMoveHereZones()).toHaveCount(0);
+    await expect(afPage.logicTreeText).toHaveText(expected);
+  });
+
   test('AF-DND-013: Escape during a pointer drag puts the filter back', async ({ page }) => {
     const { startX } = await afPage.pickUp(handleOf(a));
     await expect(async () => {

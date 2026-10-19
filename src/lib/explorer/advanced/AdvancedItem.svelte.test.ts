@@ -3,8 +3,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 
-import AdvancedItem from '#lib/explorer/advanced/AdvancedItem.svelte';
-import type { FilterInterface } from '#lib/query/filter.svelte.ts';
+import { FilterTreeEditor } from '#lib/explorer/advanced/FilterTreeEditor.svelte.ts';
+import { createFilterGroup, type FilterInterface } from '#lib/query/filter.svelte.ts';
+import { LogicTree } from '#lib/query/logicTree.svelte.ts';
+import AdvancedItemHost from '../../../../tests/support/fixtures/AdvancedItemHost.svelte';
 import type { SearchResult } from '#lib/explorer/types.ts';
 
 type SearchResultFixture = Partial<Omit<SearchResult, 'studyAcronym'>> & {
@@ -44,9 +46,9 @@ function makeFilter(searchResult: SearchResultFixture): FilterInterface {
 }
 
 function renderAdvancedItem(searchResult: SearchResultFixture) {
-  render(AdvancedItem, {
-    filter: makeFilter(searchResult),
-    onRemove: vi.fn(),
+  const editor = new FilterTreeEditor(new LogicTree(createFilterGroup));
+  render(AdvancedItemHost, {
+    props: { filter: makeFilter(searchResult), editor },
   });
 }
 

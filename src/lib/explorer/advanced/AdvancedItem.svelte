@@ -6,24 +6,19 @@
   import DropPreview from '#lib/ui/sortable/DropPreview.svelte';
   import { slide } from 'svelte/transition';
   import { cardClass } from '#lib/ui/surface.ts';
+  import { getFilterTreeEditor, isInDragOverlay } from './FilterTreeEditor.svelte.ts';
 
   interface Props {
     filter: FilterInterface;
     index?: number;
-    parentId?: string;
-    isOverlay?: boolean;
-    activeId?: string | null;
-    onRemove: (filter: FilterInterface) => void;
   }
 
-  let {
-    filter,
-    index = 0,
-    parentId,
-    isOverlay = false,
-    activeId = null,
-    onRemove,
-  }: Props = $props();
+  let { filter, index = 0 }: Props = $props();
+
+  const editor = getFilterTreeEditor();
+  const isOverlay = isInDragOverlay();
+  const parentId = $derived(editor.containerOf(filter));
+  const activeId = $derived(editor.activeId);
 
   const anyRecordOfFilter = $derived(filter.filterType === 'AnyRecordOf');
   let open = $state(false);
@@ -115,7 +110,7 @@
           type="button"
           title="Remove Filter"
           class="hover:text-primary-600"
-          onclick={() => onRemove(filter)}
+          onclick={() => editor.remove(filter)}
         >
           <i class="fa-solid fa-times-circle"></i>
           <span class="sr-only">Remove Filter</span>

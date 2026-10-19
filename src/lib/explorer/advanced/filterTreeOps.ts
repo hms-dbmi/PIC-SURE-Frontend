@@ -235,7 +235,11 @@ export function classifyDrop(
 ): DropOperation {
   const { sourceId, targetData, canceled, moved, reordered } = event;
   let targetId = event.targetId;
-  if (targetId && sourceId && isOwnDropZone(targetId, sourceId)) targetId = null;
+  // A drop on the node itself or its own zones names no target. A keyboard drag of a group ends on
+  // the group's own sortable, after a drag-over moved it through a "Move here" zone.
+  if (targetId && sourceId && (targetId === sourceId || isOwnDropZone(targetId, sourceId))) {
+    targetId = null;
+  }
 
   if (canceled) return { type: 'canceled' };
 

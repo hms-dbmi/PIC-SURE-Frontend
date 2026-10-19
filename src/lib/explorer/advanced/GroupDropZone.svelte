@@ -1,21 +1,17 @@
 <script lang="ts">
   import { CollisionPriority, createDroppable } from '#lib/ui/sortable/sortable.ts';
+  import { getFilterTreeEditor, isInDragOverlay } from './FilterTreeEditor.svelte.ts';
 
   interface Props {
     groupId: string;
     label?: string;
-    isGroupDrag?: boolean;
-    isOverlay?: boolean;
     insertAt?: number;
   }
 
-  let {
-    groupId,
-    label = 'Drop into subquery',
-    isGroupDrag = false,
-    isOverlay = false,
-    insertAt,
-  }: Props = $props();
+  let { groupId, label = 'Drop into subquery', insertAt }: Props = $props();
+
+  const editor = getFilterTreeEditor();
+  const isOverlay = isInDragOverlay();
 
   // When enabled, High priority ensures it wins over group sortables
   // filterTreeOps refuses drops of a group into itself
@@ -36,7 +32,7 @@
   });
 
   // Only show the zone visually when dragging a group
-  const showZone = $derived(!isOverlay && isGroupDrag);
+  const showZone = $derived(!isOverlay && editor.isGroupDrag);
 </script>
 
 <div
