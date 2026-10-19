@@ -16,7 +16,6 @@ vi.mock('#lib/ui/toaster.ts', () => ({ toaster: mockToaster, isToastShowing: () 
 import {
   ACCESS_UNAVAILABLE_MESSAGE,
   accessUnavailable,
-  clearSession,
   ensureConsentsLoaded,
   getConsents,
   loadConsents,
@@ -191,7 +190,7 @@ describe('loadConsents', () => {
     );
 
     const stale = loadConsents();
-    clearSession();
+    session.clear();
     resolveStale({ consents });
     await stale;
 

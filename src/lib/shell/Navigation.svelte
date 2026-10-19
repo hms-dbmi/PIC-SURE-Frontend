@@ -32,7 +32,7 @@
     goto(resolve(appPath(loginRedirectPath(page.url))));
   }
 
-  let signedInUser = $derived(session.isLoggedIn ? session.user : undefined);
+  let signedInUser = $derived(session.signedInUser);
   let routes = $derived(routesFor(signedInUser, config.features));
 
   function currentPage(path: string) {

@@ -14,7 +14,7 @@
       config.branding.footer.excludeSitemapOn.find((hide) => page.url.pathname.includes(hide)),
   );
 
-  let signedInUser = $derived(session.isLoggedIn ? session.user : undefined);
+  let signedInUser = $derived(session.signedInUser);
 
   let sitemap = $derived(
     config.branding.sitemap

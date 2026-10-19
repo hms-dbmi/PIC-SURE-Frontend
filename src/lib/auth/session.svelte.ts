@@ -143,6 +143,11 @@ export class Session {
     return this.#token !== '';
   }
 
+  /** The signed-in user's profile, or `undefined` when nobody is signed in. */
+  get signedInUser(): User | undefined {
+    return this.isLoggedIn ? this.#user : undefined;
+  }
+
   /** Signed in with a token that hasn't expired yet. */
   get hasValidToken() {
     return this.#validity.valid;
@@ -415,7 +420,7 @@ export class Session {
 export const session = new Session();
 
 // Untracked for the same reason as the methods that send requests: requests and logs read these.
-registerSignedInUser(() => untrack(() => (session.isLoggedIn ? session.user : undefined)));
+registerSignedInUser(() => untrack(() => session.signedInUser));
 
 registerSessionHooks({
   getToken: () => untrack(() => session.token),

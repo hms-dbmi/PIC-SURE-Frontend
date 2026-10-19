@@ -10,7 +10,7 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
   registerSignedInUser: vi.fn(),
 }));
 
-import { clearSession, hydrateUserFromToken, logout, setToken } from '#lib/auth/User.ts';
+import { logout, setToken } from '#lib/auth/User.ts';
 import { session } from '#lib/auth/session.svelte.ts';
 import { request } from '#lib/api/client.ts';
 import type AuthProvider from '#lib/auth/providers/AuthProvider.ts';
@@ -84,8 +84,8 @@ describe('logout', () => {
       expect(localStorage.getItem('oktaIdToken')).toBeNull();
     });
 
-    it('goes when a guard clears the session', () => {
-      clearSession();
+    it('goes when the session is cleared', () => {
+      session.clear();
 
       expect(localStorage.getItem('oktaIdToken')).toBeNull();
     });
@@ -160,7 +160,7 @@ describe('logout', () => {
     it('leaves a 401 on the profile request to the logout, so hydration callers stay put', async () => {
       respondFirstWith(new Response('expired', { status: 401 }));
 
-      await expect(hydrateUserFromToken()).resolves.toBeUndefined();
+      await expect(session.hydrate()).resolves.toBeUndefined();
 
       await vi.waitFor(() => expect(navigate).toHaveBeenCalledOnce());
       expect(navigate).toHaveBeenCalledWith('/login?redirectTo=%2Fexplorer');

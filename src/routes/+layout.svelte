@@ -2,7 +2,6 @@
   import { onMount, type Snippet } from 'svelte';
   import { afterNavigate, beforeNavigate } from '$app/navigation';
   import { asset } from '$app/paths';
-  import { navigating } from '$app/state';
   import type { AssetPath } from '$app/types';
   import '@fortawesome/fontawesome-free/css/all.min.css';
   import '../styles/app.css';
@@ -38,12 +37,12 @@
     document.documentElement.dataset.theme = theme;
   });
 
-  // Where the current navigation set out for. A guard's redirect fires beforeNavigate again while
-  // the first target is still navigating; it lands somewhere else, which tells a guard's redirect
-  // during Back or Forward from a history step onto a URL that was handled before.
+  // Where the current navigation set out for. SvelteKit doesn't run beforeNavigate for a guard's
+  // redirect, so a Back or Forward that lands somewhere else was redirected by a guard, and its
+  // reason is new; one that lands where it set out is a history step onto a URL handled before.
   let requested: string | undefined;
   beforeNavigate(({ to }) => {
-    if (!navigating.to) requested = to?.url.href;
+    requested = to?.url.href;
   });
 
   afterNavigate(({ from, to, type }) => {

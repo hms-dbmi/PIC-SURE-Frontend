@@ -36,7 +36,7 @@ class Mock extends AuthProvider implements MockData {
     const responseMap = this.getResponseMap(hashParts);
     const token = responseMap.get('#access_token');
     if (browser && token) {
-      // `psama/user/me` (fetched right after this by User.ts's hydrateUserFromToken) has
+      // `psama/user/me` (fetched right after this, when the login page signs in) has
       // no way to see which provider logged in, so persona has to reach it indirectly -
       // this hands it to the mock server here, which remembers it for that next request.
       return psamaUser.authenticate('mock', { access_token: token, persona: this.persona });

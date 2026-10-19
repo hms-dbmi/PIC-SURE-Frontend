@@ -52,10 +52,6 @@ export function removeToken() {
   session.removeToken();
 }
 
-export function clearSession() {
-  session.clear();
-}
-
 export function isUserLoggedIn() {
   return untrack(() => session.isLoggedIn);
 }
@@ -78,10 +74,6 @@ export function loadConsents() {
 
 export function ensureConsentsLoaded() {
   return session.ensureConsentsLoaded();
-}
-
-export function hydrateUserFromToken() {
-  return session.hydrate();
 }
 
 export function login(token: string) {
