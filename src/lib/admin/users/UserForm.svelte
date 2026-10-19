@@ -1,155 +1,95 @@
 <script lang="ts">
-  import Button from '#lib/ui/Button.svelte';
   import { resolve } from '$app/paths';
-  import { goto } from '$app/navigation';
   import Switch from '#lib/ui/Switch.svelte';
 
-  import type { ExtendedUser, UserRequest } from '#lib/auth/model/user.ts';
+  import type { ExtendedUser } from '#lib/auth/model/user.ts';
   import type { Connection } from '#lib/auth/model/connection.ts';
 
   import * as admin from '#lib/admin/entities.ts';
   import { toaster } from '#lib/ui/toaster.ts';
-
-  import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
+  import AdminForm from '#lib/admin/forms/AdminForm.svelte';
+  import TextField from '#lib/admin/forms/TextField.svelte';
+  import CheckboxGroup from '#lib/admin/forms/CheckboxGroup.svelte';
+  import { saveEntity } from '#lib/admin/forms/saveEntity.ts';
 
   interface Props {
-    user?: ExtendedUser | undefined;
-    roleList: string[][];
+    user?: ExtendedUser;
+    roleList: [string, string][];
     connections: readonly Connection[];
   }
 
-  let { user = undefined, roleList, connections }: Props = $props();
+  let { user, roleList, connections }: Props = $props();
 
-  // svelte-ignore state_referenced_locally
-  let email: string = $state(user && user.email ? user.email : '');
-  // svelte-ignore state_referenced_locally
-  let connection: string = $state(user && user.connection ? user.connection : '');
-  // svelte-ignore state_referenced_locally
-  let active: boolean = $state(user ? user.active : true);
-  // svelte-ignore state_referenced_locally
-  let roles = $state(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    roleList.map(([_name, uuid]) => ({
-      uuid,
-      checked: user ? user.roles.includes(uuid) : false,
-    })),
+  // Edited copies: they reset if the page hands the form another user.
+  let email = $derived(user?.email ?? '');
+  let connection = $derived(user?.connection ?? '');
+  let active = $derived(user ? user.active : true);
+  let roles = $derived(
+    roleList.map(([, uuid]) => uuid).filter((uuid) => user?.roles.includes(uuid)),
   );
-  let validationError: string = $state('');
 
-  async function saveUser(event: Event) {
-    event.preventDefault();
-    const selectedRoles = roles.filter((role) => role.checked);
-    if (selectedRoles.length === 0) {
-      validationError = 'At least one role must be selected.';
-      return;
-    } else {
-      validationError = '';
-    }
-
+  async function sendUser() {
     const generalMetadata = JSON.parse(user?.generalMetadata || '{"email":""}');
     generalMetadata.email = email;
-
-    let newUser: UserRequest = {
+    const request = {
       email,
       connection: await admin.connections.get(connection),
       generalMetadata: JSON.stringify(generalMetadata),
       active,
-      roles: await admin.rolesForSave(selectedRoles.map((role) => role.uuid)),
+      roles: admin.rolesForSave(roles),
     };
-    try {
-      if (user) {
-        await admin.users.update({ ...newUser, uuid: user.uuid });
-      } else {
-        const findUser = await admin.findUserByEmailAndConnection(email, connection);
-        if (findUser) {
-          toaster.error({
-            title: 'Cannot add a user and connection pair that already exists.',
-          });
-          return;
-        }
-
-        await admin.users.add(newUser);
-      }
-
-      toaster.success({
-        title: `Successfully saved ${user ? '' : 'new '}user '${email}'`,
-      });
-      goto(resolve('admin/users'));
-    } catch (error) {
-      console.error(error);
-      toaster.error({
-        title: `An error occured while saving ${user ? '' : 'new '}user '${email}'`,
-      });
+    if (user) return admin.users.update({ ...request, uuid: user.uuid });
+    if (await admin.findUserByEmailAndConnection(email, connection)) {
+      toaster.error({ title: 'Cannot add a user and connection pair that already exists.' });
+      return false;
     }
+    return admin.users.add(request);
+  }
+
+  function saveUser() {
+    return saveEntity({
+      isNew: !user,
+      noun: 'user',
+      name: email,
+      save: sendUser,
+      redirect: resolve('admin/users'),
+    });
   }
 </script>
 
-<form onsubmit={saveUser}>
-  <fieldset data-testid="admin-user-form" class="grid gap-4 my-3">
-    <Switch
-      name="Active"
-      tone="success"
-      checked={active}
-      onchange={(checked) => (active = checked)}
-    >
-      {active ? 'Active' : 'Inactive'}
-    </Switch>
+<AdminForm
+  entity="user"
+  cancelHref={resolve('admin/users')}
+  validate={() => (roles.length === 0 ? 'At least one role must be selected.' : undefined)}
+  onsave={saveUser}
+>
+  <Switch name="Active" tone="success" checked={active} onchange={(checked) => (active = checked)}>
+    {active ? 'Active' : 'Inactive'}
+  </Switch>
 
-    {#if user?.uuid}
-      <label class="label">
-        <span>UUID:</span>
-        <input type="text" class="input" value={user?.uuid} disabled />
-      </label>
-      <label class="label">
-        <span>Subject:</span>
-        <input type="text" class="input" value={user?.subject} disabled />
-      </label>
-    {/if}
+  {#if user?.uuid}
+    <TextField label="UUID:" value={user.uuid} disabled />
+    <TextField label="Subject:" value={user.subject} disabled />
+  {/if}
 
-    <label class={['label', !user?.email && 'required']}>
-      <span>Email:</span>
-      <input
-        type="email"
-        bind:value={email}
-        class="input"
-        required
-        disabled={!!user?.email}
-        minlength="1"
-        maxlength="255"
-      />
-    </label>
+  <TextField label="Email:" type="email" bind:value={email} required disabled={!!user?.email} />
 
-    <label class={['label', !user?.connection && 'required']}>
-      <span>Connection:</span>
-      <select bind:value={connection} required disabled={!!user?.connection}>
-        <option selected={!user || !user.connection} disabled value>none</option>
-        {#each connections as connection}
-          <option value={connection.uuid} selected={user && user.connection === connection.uuid}
-            >{connection.label}</option
-          >
-        {/each}
-      </select>
-    </label>
-
-    <fieldset data-testid="admin-user-role-checkboxes">
-      <legend class="required">Roles:</legend>
-      {#each roleList as [name], index}
-        <label class="flex items-center space-x-2">
-          <input class="checkbox" type="checkbox" bind:checked={roles[index].checked} />
-          <div>{name}</div>
-        </label>
+  <label class={['label', !user?.connection && 'required']}>
+    <span>Connection:</span>
+    <select bind:value={connection} required disabled={!!user?.connection}>
+      <option selected={!user || !user.connection} disabled value>none</option>
+      {#each connections as connection (connection.uuid)}
+        <option value={connection.uuid} selected={user && user.connection === connection.uuid}
+          >{connection.label}</option
+        >
       {/each}
-    </fieldset>
+    </select>
+  </label>
 
-    {#if validationError}
-      <ErrorAlert data-testid="admin-form-validation-error" onclose={() => (validationError = '')}>
-        {validationError}
-      </ErrorAlert>
-    {/if}
-
-    <div class="mt-2">
-      <Button variant="tonal" type="submit">Save</Button>
-      <Button variant="tonal-secondary" href={resolve('admin/users')}>Cancel</Button>
-    </div>
-  </fieldset>
-</form>
+  <CheckboxGroup
+    legend="Roles:"
+    options={roleList}
+    bind:selected={roles}
+    data-testid="admin-user-role-checkboxes"
+  />
+</AdminForm>

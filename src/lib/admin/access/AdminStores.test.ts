@@ -287,7 +287,7 @@ describe('Users store', () => {
         subPrefix: 'okta|',
         requiredFields: '',
       },
-      roles: [{ uuid: 'r-1', name: 'Admin', description: '', privileges: [] }],
+      roles: [{ uuid: 'r-1' }],
     };
     await s.add(request);
 

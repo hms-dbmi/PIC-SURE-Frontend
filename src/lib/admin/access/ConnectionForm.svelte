@@ -1,59 +1,39 @@
 <script lang="ts">
-  import Button from '#lib/ui/Button.svelte';
   import { resolve } from '$app/paths';
-  import { goto } from '$app/navigation';
 
   import type { Connection } from '#lib/auth/model/connection.ts';
   import * as admin from '#lib/admin/entities.ts';
   import { isTopAdmin } from '#lib/auth/User.ts';
-  import { toaster } from '#lib/ui/toaster.ts';
+  import AdminForm from '#lib/admin/forms/AdminForm.svelte';
+  import TextField from '#lib/admin/forms/TextField.svelte';
+  import { saveEntity } from '#lib/admin/forms/saveEntity.ts';
 
   import RequiredFieldsList from '#lib/admin/access/RequiredFieldsList.svelte';
 
   interface Props {
-    connection?: Connection | undefined;
+    connection?: Connection;
   }
 
-  let { connection = undefined }: Props = $props();
+  let { connection }: Props = $props();
 
-  // svelte-ignore state_referenced_locally
-  let label: string = $state(connection?.label || '');
-  // svelte-ignore state_referenced_locally
-  let id: string = $state(connection?.id || '');
-  // svelte-ignore state_referenced_locally
-  let subPrefix: string = $state(connection?.subPrefix || '');
-  // svelte-ignore state_referenced_locally
-  let requiredFields: string = $state(connection?.requiredFields || '[]');
+  // Edited copies: they reset if the page hands the form another connection.
+  let label = $derived(connection?.label || '');
+  let id = $derived(connection?.id || '');
+  let subPrefix = $derived(connection?.subPrefix || '');
+  let requiredFields = $derived(connection?.requiredFields || '[]');
 
-  function updateRequiredFields(json: string) {
-    requiredFields = json;
-  }
-
-  async function saveConnection(event: Event) {
-    event.preventDefault();
-    let newConnection: Connection = {
-      id,
-      label,
-      requiredFields,
-      subPrefix,
-    };
-    try {
-      if (connection) {
-        newConnection = { ...newConnection, uuid: connection.uuid };
-        await admin.connections.update(newConnection);
-      } else {
-        await admin.connections.add(newConnection);
-      }
-      toaster.success({
-        title: `Successfully saved ${connection ? '' : 'new '}connection '${label}'`,
-      });
-      goto(resolve('admin/configuration'));
-    } catch (error) {
-      console.error(error);
-      toaster.error({
-        title: `An error occurred while saving ${connection ? '' : 'new '}connection '${label}'`,
-      });
-    }
+  function saveConnection() {
+    const edited: Connection = { id, label, requiredFields, subPrefix };
+    return saveEntity({
+      isNew: !connection,
+      noun: 'connection',
+      name: label,
+      save: () =>
+        connection
+          ? admin.connections.update({ ...edited, uuid: connection.uuid })
+          : admin.connections.add(edited),
+      redirect: resolve('admin/configuration'),
+    });
   }
 </script>
 
@@ -66,48 +46,15 @@
   >.
 </p>
 
-<form onsubmit={saveConnection}>
-  <fieldset data-testid="admin-connection-form" class="grid gap-4 my-3" disabled={!$isTopAdmin}>
-    {#if connection?.uuid}
-      <label class="label">
-        <span>UUID:</span>
-        <input type="text" class="input" value={connection?.uuid} readonly={true} />
-      </label>
-    {/if}
-
-    <label class="label required">
-      <span>Label:</span>
-      <input type="text" bind:value={label} class="input" required minlength="1" maxlength="255" />
-    </label>
-
-    <label class="label required">
-      <span>ID:</span>
-      <input type="text" bind:value={id} class="input" required minlength="1" maxlength="255" />
-    </label>
-
-    <label class="label required">
-      <span>Sub Prefix:</span>
-      <input
-        type="text"
-        bind:value={subPrefix}
-        class="input"
-        required
-        minlength="1"
-        maxlength="255"
-      />
-    </label>
-
-    <RequiredFieldsList fields={requiredFields} onupdate={updateRequiredFields} />
-
-    <div class="mt-2">
-      <Button variant="tonal" type="submit" data-testid="admin-connection-save">Save</Button>
-      <Button
-        variant="tonal-secondary"
-        href={resolve('admin/configuration')}
-        data-testid="admin-connection-cancel"
-      >
-        Cancel
-      </Button>
-    </div>
-  </fieldset>
-</form>
+<AdminForm
+  entity="connection"
+  uuid={connection?.uuid}
+  disabled={!$isTopAdmin}
+  cancelHref={resolve('admin/configuration')}
+  onsave={saveConnection}
+>
+  <TextField label="Label:" bind:value={label} required />
+  <TextField label="ID:" bind:value={id} required />
+  <TextField label="Sub Prefix:" bind:value={subPrefix} required />
+  <RequiredFieldsList fields={requiredFields} onupdate={(json) => (requiredFields = json)} />
+</AdminForm>

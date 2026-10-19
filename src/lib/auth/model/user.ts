@@ -1,4 +1,3 @@
-import type { Role } from '#lib/auth/model/role.ts';
 import type { Connection } from '#lib/auth/model/connection.ts';
 import { PicsurePrivileges } from '#lib/auth/model/privilege.ts';
 
@@ -36,5 +35,6 @@ export interface UserRequest extends User {
   connection?: Connection;
   generalMetadata: string;
   active: boolean;
-  roles?: Role[];
+  /** PSAMA reads only each role's uuid. */
+  roles?: { uuid: string }[];
 }

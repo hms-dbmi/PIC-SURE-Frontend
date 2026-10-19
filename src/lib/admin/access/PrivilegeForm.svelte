@@ -1,105 +1,57 @@
 <script lang="ts">
-  import Button from '#lib/ui/Button.svelte';
   import { resolve } from '$app/paths';
-  import { goto } from '$app/navigation';
 
   import type { Privilege } from '#lib/auth/model/privilege.ts';
   import * as admin from '#lib/admin/entities.ts';
   import { isTopAdmin } from '#lib/auth/User.ts';
-  import { toaster } from '#lib/ui/toaster.ts';
+  import AdminForm from '#lib/admin/forms/AdminForm.svelte';
+  import TextField from '#lib/admin/forms/TextField.svelte';
+  import { saveEntity } from '#lib/admin/forms/saveEntity.ts';
 
   interface Props {
-    privilege?: Privilege | undefined;
+    privilege?: Privilege;
     applicationList: string[][];
   }
 
-  let { privilege = undefined, applicationList }: Props = $props();
+  let { privilege, applicationList }: Props = $props();
 
-  // svelte-ignore state_referenced_locally
-  let name = $state(privilege ? privilege.name : '');
-  // svelte-ignore state_referenced_locally
-  let description = $state(privilege ? privilege.description : '');
-  // svelte-ignore state_referenced_locally
-  let application = $state(privilege ? privilege.application : '');
+  // Edited copies: they reset if the page hands the form another privilege.
+  let name = $derived(privilege?.name ?? '');
+  let description = $derived(privilege?.description ?? '');
+  let application = $derived(privilege?.application ?? '');
 
-  async function savePrivilege(event: Event) {
-    event.preventDefault();
-    let newPrivilege: Privilege = {
+  function savePrivilege() {
+    const edited: Privilege = { name, description, application };
+    return saveEntity({
+      isNew: !privilege,
+      noun: 'privilege',
       name,
-      description,
-      application,
-    };
-    try {
-      if (privilege) {
-        newPrivilege = { ...newPrivilege, uuid: privilege.uuid };
-        await admin.privileges.update(newPrivilege);
-      } else {
-        await admin.privileges.add(newPrivilege);
-      }
-      toaster.success({
-        title: `Successfully saved ${privilege ? '' : 'new '}privilege '${name}'`,
-      });
-      goto(resolve('admin/configuration'));
-    } catch (error) {
-      console.error(error);
-      toaster.error({
-        title: `An error occurred while saving ${privilege ? '' : 'new '}privilege '${name}'`,
-      });
-    }
+      save: () =>
+        privilege
+          ? admin.privileges.update({ ...edited, uuid: privilege.uuid })
+          : admin.privileges.add(edited),
+      redirect: resolve('admin/configuration'),
+    });
   }
 </script>
 
-<form onsubmit={savePrivilege}>
-  <fieldset data-testid="admin-privilege-form" class="grid gap-4 my-3" disabled={!$isTopAdmin}>
-    {#if privilege?.uuid}
-      <label class="label">
-        <span>UUID:</span>
-        <input type="text" class="input" value={privilege?.uuid} readonly={true} />
-      </label>
-    {/if}
+<AdminForm
+  entity="privilege"
+  uuid={privilege?.uuid}
+  disabled={!$isTopAdmin}
+  cancelHref={resolve('admin/configuration')}
+  onsave={savePrivilege}
+>
+  <TextField label="Name:" bind:value={name} required />
+  <TextField label="Description:" bind:value={description} required />
 
-    <label class="label required">
-      <span>Name:</span>
-      <input type="text" bind:value={name} class="input" required minlength="1" maxlength="255" />
-    </label>
-
-    <label class="label required">
-      <span>Description:</span>
-      <input
-        type="text"
-        bind:value={description}
-        class="input"
-        required
-        minlength="1"
-        maxlength="255"
-      />
-    </label>
-
-    <label class="label required">
-      <span>Application:</span>
-      <select bind:value={application} required>
-        <option value="" disabled>Select an application</option>
-        {#each applicationList as [name, uuid]}
-          <option value={uuid}>{name}</option>
-        {/each}
-      </select>
-    </label>
-
-    <div class="mt-2">
-      <Button variant="tonal" type="submit" data-testid="admin-privilege-save">Save</Button>
-      <Button
-        variant="tonal-secondary"
-        href={resolve('admin/configuration')}
-        data-testid="admin-privilege-cancel"
-      >
-        Cancel
-      </Button>
-    </div>
-  </fieldset>
-</form>
-
-<style>
-  label {
-    margin: 0.5em 0;
-  }
-</style>
+  <label class="label required">
+    <span>Application:</span>
+    <select bind:value={application} required>
+      <option value="" disabled>Select an application</option>
+      {#each applicationList as [name, uuid] (uuid)}
+        <option value={uuid}>{name}</option>
+      {/each}
+    </select>
+  </label>
+</AdminForm>

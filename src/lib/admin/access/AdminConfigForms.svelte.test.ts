@@ -7,6 +7,7 @@ import ConnectionForm from '#lib/admin/access/ConnectionForm.svelte';
 import PrivilegeForm from '#lib/admin/access/PrivilegeForm.svelte';
 import RoleForm from '#lib/admin/access/RoleForm.svelte';
 import { toaster } from '#lib/ui/toaster.ts';
+import * as admin from '#lib/admin/entities.ts';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('#lib/ui/toaster.ts', () => ({ toaster: { success: vi.fn(), error: vi.fn() } }));
@@ -28,7 +29,7 @@ const connection = {
 };
 const privilege = { uuid: 'p-1', name: 'ADMIN', description: 'Admin', application: 'app-1' };
 const role = { uuid: 'r-1', name: 'Researcher', description: 'Reads data', privileges: ['p-1'] };
-const privilegeList = [['ADMIN', 'p-1']];
+const privilegeList: [string, string][] = [['ADMIN', 'p-1']];
 const applicationList = [['App', 'app-1']];
 
 async function save(container: HTMLElement) {
@@ -61,5 +62,19 @@ describe('admin configuration forms', () => {
     expect(toaster.success).toHaveBeenCalledWith({
       title: "Successfully saved new role 'Analyst'",
     });
+  });
+
+  it('sends checked privileges in list order, whatever the click order', async () => {
+    const { container } = render(RoleForm, {
+      role,
+      privilegeList: [...privilegeList, ['QUERY', 'p-2']],
+    });
+    await fireEvent.click(screen.getByLabelText('ADMIN'));
+    await fireEvent.click(screen.getByLabelText('QUERY'));
+    await fireEvent.click(screen.getByLabelText('ADMIN'));
+
+    await save(container);
+
+    expect(admin.roles.update).toHaveBeenCalledWith({ ...role, privileges: ['p-1', 'p-2'] });
   });
 });

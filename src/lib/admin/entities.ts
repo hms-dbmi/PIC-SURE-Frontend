@@ -1,7 +1,6 @@
 import * as access from '#lib/api/psama/access.ts';
 import { mapPrivilege, mapRole, mapUser } from '#lib/api/psama/access.ts';
 import { createResource } from '#lib/admin/resource.svelte.ts';
-import type { Role } from '#lib/auth/model/role.ts';
 import type { UserRequest } from '#lib/auth/model/user.ts';
 
 // Connections have no GET by uuid, so `get` searches the loaded list.
@@ -65,15 +64,9 @@ export async function findUserByEmailAndConnection(email: string, connection: st
 }
 
 /**
- * The roles a user save nests whole. Kept as the forms always sent them: the privilege lookups
- * aren't awaited, so each privilege goes out as `{}` (JSON of a promise) though still fetched.
+ * The roles a user save sends: PSAMA resolves them by uuid (UserService.resolveRoles) and ignores
+ * anything else nested in them.
  */
-export function rolesForSave(uuids: string[]): Promise<Role[]> {
-  return Promise.all(
-    uuids.map(async (uuid) => {
-      const role = await roles.get(uuid);
-      const lookups = role.privileges.map((privilege) => privileges.get(privilege));
-      return { ...role, privileges: lookups as unknown as string[] };
-    }),
-  );
+export function rolesForSave(uuids: string[]): { uuid: string }[] {
+  return uuids.map((uuid) => ({ uuid }));
 }
