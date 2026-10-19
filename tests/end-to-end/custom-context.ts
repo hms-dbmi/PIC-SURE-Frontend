@@ -1,5 +1,6 @@
+import { readFileSync } from 'node:fs';
 import { test as base, expect, type Route, type BrowserContext, type Page } from '@playwright/test';
-import type { TestInfo } from '@playwright/test';
+import type { PlaywrightTestOptions, TestInfo } from '@playwright/test';
 import type { ConfigCache } from '../../src/lib/config/resolve';
 import type { ExpectedResultType } from '../../src/lib/query/query';
 import { TEST_CONFIG_COOKIE } from '../../src/lib/config/testOverride';
@@ -130,14 +131,60 @@ async function screenshotOnFailure({ page }: { page: Page }, testInfo: TestInfo)
   }
 }
 
+type StorageState = Awaited<ReturnType<BrowserContext['storageState']>>;
+
+function missingLocalStorage(
+  expected: Pick<StorageState, 'origins'>,
+  actual: StorageState,
+): string[] {
+  return expected.origins.flatMap(({ origin, localStorage }) => {
+    const present = new Set(
+      actual.origins.find((o) => o.origin === origin)?.localStorage.map((item) => item.name),
+    );
+    return localStorage
+      .filter((item) => !present.has(item.name))
+      .map((item) => `${origin} ${item.name}`);
+  });
+}
+
+/**
+ * Under heavy load WebKit sometimes starts a context without the localStorage Playwright restored
+ * from `storageState`, so a signed-in test begins with no token and the app sends it to /login.
+ * Reads the state back and re-applies it until it's all there.
+ */
+export async function ensureStorageState(
+  context: BrowserContext,
+  storageState: PlaywrightTestOptions['storageState'],
+  testInfo: TestInfo,
+): Promise<StorageState> {
+  let actual = await context.storageState();
+  if (!storageState) return actual;
+  const expected =
+    typeof storageState === 'string'
+      ? (JSON.parse(readFileSync(storageState, 'utf8')) as StorageState)
+      : storageState;
+  for (let reapplied = 0; ; reapplied++) {
+    const missing = missingLocalStorage(expected, actual);
+    if (missing.length === 0) return actual;
+    if (reapplied === 3) {
+      throw new Error(
+        `storageState localStorage missing after 3 re-applies: ${missing.join(', ')}`,
+      );
+    }
+    testInfo.annotations.push({ type: 'storage-state-reapplied', description: missing.join(', ') });
+    await context.setStorageState(expected);
+    actual = await context.storageState();
+  }
+}
+
 export const test = base.extend({
-  context: async ({ context }, use) => {
+  context: async ({ context, storageState }, use, testInfo) => {
     // Playwright's storageState only persists localStorage, not sessionStorage.
     // The app stores user data in sessionStorage (tab-scoped). Extract user from
     // the fixture's localStorage and inject it into sessionStorage before any page
     // scripts run, so the user store initializes with the correct data.
-    const storageState = await context.storageState();
-    const origin = storageState.origins?.find((o) => o.localStorage);
+    const state = await ensureStorageState(context, storageState, testInfo);
+    const origin = state.origins?.find((o) => o.localStorage);
     const userData = origin?.localStorage?.find((item) => item.name === 'user')?.value;
 
     await context.addInitScript(
