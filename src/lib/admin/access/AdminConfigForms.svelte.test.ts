@@ -77,4 +77,13 @@ describe('admin configuration forms', () => {
 
     expect(admin.roles.update).toHaveBeenCalledWith({ ...role, privileges: ['p-1', 'p-2'] });
   });
+
+  it('shows the record the page hands it, even after edits', async () => {
+    const { rerender } = render(RoleForm, { role, privilegeList });
+    await fireEvent.input(screen.getByLabelText('Name:'), { target: { value: 'Edited' } });
+
+    await rerender({ role: { ...role, uuid: 'r-2', name: 'Analyst' }, privilegeList });
+
+    expect(screen.getByLabelText('Name:')).toHaveValue('Analyst');
+  });
 });

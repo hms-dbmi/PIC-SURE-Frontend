@@ -35,23 +35,31 @@
   }
 </script>
 
-<AdminForm
-  entity="privilege"
-  uuid={privilege?.uuid}
-  disabled={!$isTopAdmin}
-  cancelHref={resolve('admin/configuration')}
-  onsave={savePrivilege}
->
-  <TextField label="Name:" bind:value={name} required />
-  <TextField label="Description:" bind:value={description} required />
+<div class="privilege-form">
+  <AdminForm
+    entity="privilege"
+    uuid={privilege?.uuid}
+    disabled={!$isTopAdmin}
+    cancelHref={resolve('admin/configuration')}
+    onsave={savePrivilege}
+  >
+    <TextField label="Name:" bind:value={name} required />
+    <TextField label="Description:" bind:value={description} required />
 
-  <label class="label required">
-    <span>Application:</span>
-    <select bind:value={application} required>
-      <option value="" disabled>Select an application</option>
-      {#each applicationList as [name, uuid] (uuid)}
-        <option value={uuid}>{name}</option>
-      {/each}
-    </select>
-  </label>
-</AdminForm>
+    <label class="label required">
+      <span>Application:</span>
+      <select bind:value={application} required>
+        <option value="" disabled>Select an application</option>
+        {#each applicationList as [name, uuid] (uuid)}
+          <option value={uuid}>{name}</option>
+        {/each}
+      </select>
+    </label>
+  </AdminForm>
+</div>
+
+<style>
+  .privilege-form :global(label) {
+    margin: 0.5em 0;
+  }
+</style>

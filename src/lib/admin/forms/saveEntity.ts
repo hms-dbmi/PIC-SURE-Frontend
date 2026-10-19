@@ -3,9 +3,7 @@ import { toaster } from '#lib/ui/toaster.ts';
 
 interface SaveOptions {
   isNew: boolean;
-  /** The entity in the toasts, e.g. "role". */
   noun: string;
-  /** The record's display name in the toasts. */
   name: string;
   /** Sends the record. Resolving to `false` means it reported its own failure and nothing saved. */
   save: () => Promise<unknown>;

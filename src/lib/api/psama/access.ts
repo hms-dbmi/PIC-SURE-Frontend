@@ -23,8 +23,7 @@ export type UserUpdate = Pick<
   'uuid' | 'email' | 'active' | 'generalMetadata' | 'connection' | 'roles'
 >;
 
-// The admin pages keep the rest of each record as PSAMA sent it: the user actions cell echoes
-// stored users and roles back in its PATCH body.
+// The admin pages keep the rest of each record as PSAMA sent it.
 export const mapPrivilege = ({ application, ...privilege }: PrivilegeDto): Privilege => ({
   ...privilege,
   application: application?.uuid || '',

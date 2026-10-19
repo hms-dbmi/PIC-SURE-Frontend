@@ -9,11 +9,12 @@
   import * as admin from '#lib/admin/entities.ts';
 
   type Kind = 'connection' | 'privilege' | 'role';
+  type Row = { name?: string; label?: string };
 
   interface Props {
     kind: Kind;
     /** The table's cell contract: `cell` is the row's uuid. */
-    data: { cell: string; row: { name?: string; label?: string } };
+    data: { cell: string; row: Row };
   }
 
   let { kind, data }: Props = $props();
@@ -21,6 +22,7 @@
   const KINDS = {
     connection: {
       title: 'Delete Connection?',
+      name: (row: Row) => row.label,
       resource: admin.connections,
       inUseBy: 'an application or user',
       editHref: (uuid: string) =>
@@ -31,6 +33,7 @@
     },
     privilege: {
       title: 'Delete Privilege?',
+      name: (row: Row) => row.name,
       resource: admin.privileges,
       inUseBy: 'a role',
       editHref: (uuid: string) =>
@@ -41,6 +44,7 @@
     },
     role: {
       title: 'Delete Role?',
+      name: (row: Row) => row.name,
       resource: admin.roles,
       inUseBy: 'a user',
       editHref: (uuid: string) =>
@@ -52,8 +56,7 @@
   } satisfies Record<Kind, unknown>;
 
   const config = $derived(KINDS[kind]);
-  // Connections are named by their label, the others by their name.
-  const name = $derived((kind === 'connection' ? data.row.label : data.row.name) ?? '');
+  const name = $derived(config.name(data.row) ?? '');
 
   function edit(event: Event) {
     event.stopPropagation();
