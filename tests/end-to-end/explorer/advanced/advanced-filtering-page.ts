@@ -570,6 +570,159 @@ export class AdvancedFilteringPage {
     await expect(this.getDropPreviews()).toHaveCount(0);
   }
 
+  /**
+   * Pick up a handle, move the pointer onto `target` and release. The target is measured once it
+   * holds still: drop zones animate open when a drag starts. With `arrived`, the move repeats until
+   * it passes, measuring the target again each time, since every reorder during the drag shifts
+   * the cards around it. Leave it out for a drop zone, which may act only on release: the pointer
+   * moves onto the zone once and nudges it, so the drop target is current when it's released.
+   */
+  async dragOnto(handle: Locator, target: Locator, arrived?: () => Promise<void>) {
+    const { startX } = await this.pickUp(handle);
+    const moveOnto = async () => {
+      const box = await this.settledBox(target);
+      const y = box.y + box.height / 2;
+      await this.page.mouse.move(startX, y, { steps: 10 });
+      return y;
+    };
+    if (arrived) {
+      await expect(async () => {
+        await moveOnto();
+        await arrived();
+      }).toPass({ timeout: 15_000 });
+    } else {
+      const y = await moveOnto();
+      await this.page.mouse.move(startX, y + 2);
+      await this.nextFrame();
+      await this.page.mouse.move(startX, y);
+      await this.nextFrame();
+    }
+    await this.page.mouse.up();
+    await expect(this.getDropPreviews()).toHaveCount(0);
+  }
+
+  private async nextFrame() {
+    await this.page.evaluate(
+      () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+    );
+  }
+
+  /** The locator's box once it is the same on two consecutive frames. */
+  private async settledBox(locator: Locator) {
+    await expect(locator).toBeVisible();
+    return await locator.evaluate(
+      (el) =>
+        new Promise<{ x: number; y: number; width: number; height: number }>((resolve) => {
+          let last = '';
+          const tick = () => {
+            const { x, y, width, height } = el.getBoundingClientRect();
+            const now = `${x},${y},${width},${height}`;
+            if (now === last) return resolve({ x, y, width, height });
+            last = now;
+            requestAnimationFrame(tick);
+          };
+          tick();
+        }),
+    );
+  }
+
+  /**
+   * Drag a handle with touch pointer events. Playwright's touchscreen can only tap, so the events
+   * are dispatched in the page the way a browser sends them for a finger: pointerType 'touch', a
+   * pause after the press, then moves to the target's centre and a release there.
+   */
+  async touchDrag(handle: Locator, target: Locator) {
+    await this.readyToDrag(handle);
+    const from = await handle.boundingBox();
+    expect(from).not.toBeNull();
+    await handle.evaluate(
+      async (el, { x, y }) => {
+        const init = (clientY: number) => ({
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+          pointerId: 2,
+          pointerType: 'touch',
+          isPrimary: true,
+          clientX: x,
+          clientY,
+          button: 0,
+          buttons: 1,
+        });
+        // dnd-kit captures the pointer, which throws for an id no real pointer has. A finger's
+        // pointer can be captured, so let the capture fail quietly.
+        const capture = Element.prototype.setPointerCapture;
+        Element.prototype.setPointerCapture = function (pointerId) {
+          try {
+            capture.call(this, pointerId);
+          } catch {
+            // synthetic pointer
+          }
+        };
+        el.dispatchEvent(new PointerEvent('pointerdown', init(y)));
+        await new Promise((resolve) => setTimeout(resolve, 400));
+      },
+      { x: from!.x + from!.width / 2, y: from!.y + from!.height / 2 },
+    );
+    await expect(this.getDropPreviews().first()).toBeVisible();
+    // Measured once the drag has started, as in AF-DND-003
+    const to = await target.boundingBox();
+    expect(to).not.toBeNull();
+    await this.page.evaluate(
+      async ({ x, fromY, toY }) => {
+        const init = (clientY: number, buttons: number) => ({
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+          pointerId: 2,
+          pointerType: 'touch',
+          isPrimary: true,
+          clientX: x,
+          clientY,
+          button: 0,
+          buttons,
+        });
+        for (let i = 1; i <= 10; i++) {
+          const y = fromY + ((toY - fromY) * i) / 10;
+          (document.elementFromPoint(x, y) ?? document).dispatchEvent(
+            new PointerEvent('pointermove', init(y, 1)),
+          );
+          await new Promise((resolve) => requestAnimationFrame(resolve));
+        }
+        (document.elementFromPoint(x, toY) ?? document).dispatchEvent(
+          new PointerEvent('pointerup', init(toY, 0)),
+        );
+      },
+      {
+        x: from!.x + from!.width / 2,
+        fromY: from!.y + from!.height / 2,
+        toY: to!.y + to!.height / 2,
+      },
+    );
+    await expect(this.getDropPreviews()).toHaveCount(0);
+  }
+
+  /** Wrap the last two top-level filters in an OR subquery, through sessionStorage, and reopen. */
+  async reopenWithTrailingSubquery() {
+    await this.closeModal();
+    await this.page.evaluate(() => {
+      const tree = JSON.parse(sessionStorage.getItem('filterTree')!);
+      tree.children.push({
+        children: tree.children.splice(-2, 2),
+        operator: 'OR',
+        uuid: 'test-trailing-subquery',
+      });
+      sessionStorage.setItem('filterTree', JSON.stringify(tree));
+    });
+    await this.page.goto('/explorer?search=somedata');
+    await expect(this.page.locator('#results-panel')).toBeVisible();
+    await this.openModal();
+  }
+
+  getAnnouncement(): Locator {
+    return this.page.locator('[id^="dnd-kit-announcement"]');
+  }
+
   // ==================== Genomic Filter Locators ====================
 
   getGenomicFiltersSection(): Locator {

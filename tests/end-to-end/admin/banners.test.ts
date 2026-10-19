@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import { test, mockApiConfig } from '../custom-context';
 import { userIsLoggedIn } from '../utils';
 import { mockBanner as banner } from '../../support/mock-data';
@@ -1289,6 +1289,148 @@ test.describe('Admins reorder banners to control display priority', () => {
     await expect
       .poll(() => page.getByTestId('banner-item').getByRole('heading').allTextContents())
       .toEqual(['Third notice', 'Second notice', 'First notice', 'Concurrent arrival']);
+  });
+});
+
+test.describe('Admins cancel and touch-drag banner reorders', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/adminUser.json' });
+
+  const titles = ['First notice', 'Second notice', 'Third notice'];
+  const rows = (page: Page) => page.locator('[data-banner-row] p.font-bold');
+  const announcement = (page: Page) => page.locator('[id^="dnd-kit-announcement"]');
+  const handle = (page: Page, title: string) =>
+    page.getByRole('button', { name: `Reorder banner: ${title}` });
+  async function centre(locator: Locator) {
+    const box = await locator.boundingBox();
+    expect(box).not.toBeNull();
+    return { x: box!.x + box!.width / 2, y: box!.y + box!.height / 2 };
+  }
+
+  test.beforeEach(async ({ page }) => {
+    await mockApiConfig(page);
+    for (const path of ['role', 'privilege', 'application', 'connection']) {
+      await page.route(`**/psama/${path}`, (route) => route.fulfill({ json: [] }));
+    }
+    const managed = titles.map((title, index) => ({
+      ...banner,
+      uuid: `${index + 1}1111111-1111-1111-1111-111111111111`,
+      htmlContent: `<p>${title}</p>`,
+      title,
+      status: 'PUBLISHED',
+      lifecycle: 'ACTIVE',
+      priority: (index + 1) * 10,
+      startAt: '2026-08-27T12:00:00Z',
+      endAt: null,
+      publishedAt: '2026-08-27T12:00:00Z',
+      publishedBy: 'admin-id',
+    }));
+    await page.route('**/picsure/operations/banners**', (route) =>
+      route.fulfill({
+        json: new URL(route.request().url()).pathname.endsWith('/banners') ? managed : [],
+      }),
+    );
+    await page.setViewportSize({ width: 1280, height: 2_000 });
+    await page.goto('/admin/configuration?tab=banners');
+    await expect(rows(page)).toHaveText(titles);
+  });
+
+  test('Escape cancels a keyboard reorder, keeps focus and announces it', async ({ page }) => {
+    await handle(page, 'Third notice').focus();
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('ArrowUp');
+    await expect(rows(page)).toHaveText(['First notice', 'Third notice', 'Second notice']);
+
+    await page.keyboard.press('Escape');
+    await expect(rows(page)).toHaveText(titles);
+    await expect(announcement(page)).toContainText('Reordering Third notice canceled.');
+    await expect(page.getByTestId('banner-drop-preview')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Save order' })).toHaveCount(0);
+    await expect(handle(page, 'Third notice')).toBeFocused();
+  });
+
+  test('Escape cancels a pointer reorder, and the dragged row follows the pointer', async ({
+    page,
+  }) => {
+    const start = await centre(handle(page, 'First notice'));
+    const target = await centre(handle(page, 'Second notice'));
+    await page.mouse.move(start.x, start.y);
+    await page.mouse.down();
+    await page.mouse.move(target.x, target.y, { steps: 10 });
+    await expect(rows(page)).toHaveText(['Second notice', 'First notice', 'Third notice']);
+    const overlay = page.locator('article:not([data-banner-row] *)').filter({
+      hasText: 'First notice',
+    });
+    await expect(overlay).toHaveCount(1);
+    const box = await overlay.boundingBox();
+    expect(box).not.toBeNull();
+    expect(target.y).toBeGreaterThan(box!.y);
+    expect(target.y).toBeLessThan(box!.y + box!.height);
+
+    await page.keyboard.press('Escape');
+    await expect(rows(page)).toHaveText(titles);
+    await expect(announcement(page)).toContainText('Reordering First notice canceled.');
+    await expect(page.getByTestId('banner-drop-preview')).toHaveCount(0);
+    await page.mouse.up();
+    await expect(rows(page)).toHaveText(titles);
+    await expect(page.getByRole('button', { name: 'Save order' })).toHaveCount(0);
+  });
+
+  test('dropping a banner outside the list leaves the order unchanged', async ({ page }) => {
+    const start = await centre(handle(page, 'First notice'));
+    await page.mouse.move(start.x, start.y);
+    await page.mouse.down();
+    await expect(page.getByTestId('banner-drop-preview')).toBeVisible();
+    await page.mouse.move(start.x, 5, { steps: 10 });
+    await page.mouse.up();
+
+    await expect(page.getByTestId('banner-drop-preview')).toHaveCount(0);
+    await expect(rows(page)).toHaveText(titles);
+    await expect(page.getByRole('button', { name: 'Save order' })).toHaveCount(0);
+  });
+
+  test('a touch drag reorders banners', async ({ page }) => {
+    const start = await centre(handle(page, 'First notice'));
+    const target = await centre(handle(page, 'Second notice'));
+    // Playwright's touchscreen can only tap, so dispatch the pointer events a finger sends.
+    await page.evaluate(
+      async ({ start, target }) => {
+        const init = (y: number, buttons: number) => ({
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+          pointerId: 2,
+          pointerType: 'touch',
+          isPrimary: true,
+          clientX: start.x,
+          clientY: y,
+          button: 0,
+          buttons,
+        });
+        const at = (y: number) => document.elementFromPoint(start.x, y) ?? document;
+        // dnd-kit captures the pointer, which throws for an id no real pointer has. A finger's
+        // pointer can be captured, so let the capture fail quietly.
+        const capture = Element.prototype.setPointerCapture;
+        Element.prototype.setPointerCapture = function (pointerId) {
+          try {
+            capture.call(this, pointerId);
+          } catch {
+            // synthetic pointer
+          }
+        };
+        at(start.y).dispatchEvent(new PointerEvent('pointerdown', init(start.y, 1)));
+        await new Promise((resolve) => setTimeout(resolve, 400));
+        for (let i = 1; i <= 10; i++) {
+          const y = start.y + ((target.y - start.y) * i) / 10;
+          at(y).dispatchEvent(new PointerEvent('pointermove', init(y, 1)));
+          await new Promise((resolve) => requestAnimationFrame(resolve));
+        }
+        at(target.y).dispatchEvent(new PointerEvent('pointerup', init(target.y, 0)));
+      },
+      { start, target },
+    );
+    await expect(page.getByTestId('banner-drop-preview')).toHaveCount(0);
+    await expect(rows(page)).toHaveText(['Second notice', 'First notice', 'Third notice']);
+    await expect(page.getByRole('button', { name: 'Save order' })).toBeVisible();
   });
 });
 
