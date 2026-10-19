@@ -34,6 +34,9 @@ vi.mock('#lib/ui/sortable/sortable.ts', async () => ({
 vi.mock('#lib/ui/toaster.ts', () => ({ toaster: { success: vi.fn(), error: vi.fn() } }));
 
 import BannerManagementView from '#lib/banners/components/admin/BannerManagementView.svelte';
+import { UnsavedChanges } from '#lib/ui/unsavedGuard.svelte.ts';
+import type { Component } from 'svelte';
+import UnsavedChangesHost from '../../../../../tests/support/fixtures/UnsavedChangesHost.svelte';
 import {
   archiveBanner,
   disableBanner,
@@ -364,11 +367,11 @@ describe('BannerManagementView', () => {
   });
 
   it('guards lifecycle, create, edit, and Configuration tab transitions while order is dirty', async () => {
-    const resolveTab = vi.fn();
+    const unsaved = new UnsavedChanges();
     vi.mocked(getManagedBanners).mockResolvedValue([base, scheduled, records[1]]);
-    const view = render(BannerManagementView, {
-      props: { ontabchangerequestresolve: resolveTab },
-    });
+    // The view takes no props, which the host's generic props type doesn't accept
+    const child = BannerManagementView as Component<Record<string, unknown>>;
+    render(UnsavedChangesHost, { props: { child, props: {}, unsaved } });
     await screen.findByText('System maintenance tonight');
 
     await drag(base.uuid, scheduled.uuid);
@@ -391,13 +394,13 @@ describe('BannerManagementView', () => {
     ).not.toBeInTheDocument();
     await fireEvent.click(screen.getByRole('button', { name: 'Keep ordering' }));
 
-    await view.rerender({
-      ontabchangerequestresolve: resolveTab,
-      tabchangerequest: 'Branding',
-    });
-    expect(screen.getByRole('heading', { name: 'Unsaved Changes' })).toBeInTheDocument();
+    const showBranding = vi.fn();
+    unsaved.request('Branding', showBranding);
+    expect(await screen.findByRole('heading', { name: 'Unsaved Changes' })).toBeInTheDocument();
+    expect(showBranding).not.toHaveBeenCalled();
     await fireEvent.click(screen.getByRole('button', { name: 'Discard order changes' }));
-    expect(resolveTab).toHaveBeenCalledWith('Branding');
+    expect(showBranding).toHaveBeenCalledOnce();
+    expect(bannerRowOrder()).toEqual([base.uuid, scheduled.uuid]);
   });
 
   it('continues the guarded lifecycle and editor transitions after discarding order changes', async () => {

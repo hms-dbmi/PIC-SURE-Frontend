@@ -1,6 +1,6 @@
 <script lang="ts">
   import Button from '#lib/ui/Button.svelte';
-  import { onDestroy, untrack } from 'svelte';
+  import { untrack } from 'svelte';
   import BannerPageTargetFields from '#lib/banners/components/admin/fields/PageTargetFields.svelte';
   import BannerScheduleFields from '#lib/banners/components/admin/fields/ScheduleFields.svelte';
   import SiteBanner from '#lib/banners/components/SiteBanner.svelte';
@@ -20,16 +20,13 @@
   import { createUnsavedGuard } from '#lib/ui/unsavedGuard.svelte.ts';
   import { cardClass } from '#lib/ui/surface.ts';
 
-  type EditorTransition = { kind: 'cancel' } | { kind: 'tab'; destination: string };
+  type EditorTransition = { kind: 'cancel' };
 
   interface Props {
     banner?: ManagedBanner | null;
     mode?: BannerEditorMode;
     onsuccess?: (banner: ManagedBanner) => void;
     oncancel?: () => void;
-    ondirtychange?: (dirty: boolean) => void;
-    tabchangerequest?: string | null;
-    ontabchangerequestresolve?: (destination: string | null) => void;
   }
 
   let {
@@ -37,9 +34,6 @@
     mode = undefined,
     onsuccess = () => {},
     oncancel = () => {},
-    ondirtychange = () => {},
-    tabchangerequest = null,
-    ontabchangerequestresolve = () => {},
   }: Props = $props();
   // The management view mounts a new editor for each banner it opens, so the form reads its
   // source once.
@@ -112,42 +106,17 @@
 
   const guard = createUnsavedGuard<EditorTransition>(() => form.dirty);
   const pendingTabDestination = $derived(
-    (guard.pending?.kind === 'tab' ? guard.pending.destination : null) ?? tabchangerequest,
+    guard.pending?.kind === 'leave' ? guard.pending.destination : null,
   );
-
-  $effect(() => {
-    ondirtychange(form.dirty);
-  });
-
-  $effect(() => {
-    const request = tabchangerequest;
-    if (!request) return;
-    untrack(() => {
-      if (!guard.intercept({ kind: 'tab', destination: request })) {
-        ontabchangerequestresolve(request);
-      }
-    });
-  });
-
-  onDestroy(() => {
-    ondirtychange(false);
-  });
 
   function requestCancel() {
     if (!guard.intercept({ kind: 'cancel' })) oncancel();
   }
 
-  function keepEditing() {
-    const wasTabChange = pendingTabDestination !== null;
-    guard.take();
-    if (wasTabChange) ontabchangerequestresolve(null);
-  }
-
   async function discardChanges() {
-    const tabDestination = pendingTabDestination;
     const pending = guard.take();
-    if (tabDestination) {
-      ontabchangerequestresolve(tabDestination);
+    if (pending?.kind === 'leave') {
+      pending.proceed();
     } else if (pending?.kind === 'cancel') {
       oncancel();
     } else if (pending?.kind === 'navigation' && pending.url) {
@@ -173,7 +142,7 @@
   cancelLabel="Keep editing"
   confirmLabel="Discard changes"
   tone="danger"
-  oncancel={keepEditing}
+  oncancel={() => guard.take()}
   onconfirm={discardChanges}
 >
   {#if pendingTabDestination}

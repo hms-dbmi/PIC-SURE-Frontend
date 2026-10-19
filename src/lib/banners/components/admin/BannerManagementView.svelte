@@ -23,7 +23,6 @@
   import { createUnsavedGuard } from '#lib/ui/unsavedGuard.svelte.ts';
 
   type OrderTransition =
-    | { kind: 'configuration-tab'; destination: string }
     | { kind: 'lifecycle-tab'; tab: LifecycleTab; focus: boolean }
     | { kind: 'create' }
     | { kind: 'edit'; banner: ManagedBanner };
@@ -33,17 +32,6 @@
     { value: 'expired' as const, label: 'Expired' },
   ];
   const ARRIVAL_HIGHLIGHT_MS = 1_800;
-  interface Props {
-    ondirtychange?: (dirty: boolean) => void;
-    tabchangerequest?: string | null;
-    ontabchangerequestresolve?: (destination: string | null) => void;
-  }
-
-  let {
-    ondirtychange = () => {},
-    tabchangerequest = null,
-    ontabchangerequestresolve = () => {},
-  }: Props = $props();
 
   const queue = new BannerQueue();
   let lifecycleTabList: ReturnType<typeof Tabs<LifecycleTab>> | undefined = $state();
@@ -55,7 +43,6 @@
   let activeDragUuid: string | null = $state(null);
   let dragStartOrder: string[] = [];
   let dragTargetUuid: string | null = null;
-  let editorDirty = $state(false);
   const orderGuard = createUnsavedGuard<OrderTransition>(() => mode === 'list' && queue.orderDirty);
 
   function reorderDescription(uuid: string, position = queue.orderUuids.indexOf(uuid) + 1): string {
@@ -98,17 +85,6 @@
 
   onDestroy(() => {
     if (arrivalTimeout !== undefined) window.clearTimeout(arrivalTimeout);
-    ondirtychange(false);
-  });
-
-  $effect(() => {
-    ondirtychange(mode === 'list' ? queue.orderDirty : editorDirty);
-  });
-
-  $effect(() => {
-    const request = tabchangerequest;
-    if (!request || mode !== 'list') return;
-    orderGuard.intercept({ kind: 'configuration-tab', destination: request });
   });
 
   function createBanner() {
@@ -154,18 +130,13 @@
     if (focus) lifecycleTabList?.focusTab(tab);
   }
 
-  function keepOrdering() {
-    const transition = orderGuard.take();
-    if (transition?.kind === 'configuration-tab') ontabchangerequestresolve(null);
-  }
-
   async function discardOrderChanges() {
     const transition = orderGuard.take();
     queue.discardOrderChanges();
     if (!transition) return;
 
-    if (transition.kind === 'configuration-tab') {
-      ontabchangerequestresolve(transition.destination);
+    if (transition.kind === 'leave') {
+      transition.proceed();
     } else if (transition.kind === 'lifecycle-tab') {
       applyLifecycleTab(transition.tab, transition.focus);
     } else if (transition.kind === 'create') {
@@ -252,7 +223,7 @@
   cancelLabel="Keep ordering"
   confirmLabel="Discard order changes"
   tone="danger"
-  oncancel={keepOrdering}
+  oncancel={() => orderGuard.take()}
   onconfirm={discardOrderChanges}
 >
   You have unsaved banner ordering. Discard it or keep ordering.
@@ -262,9 +233,6 @@
   <BannerEditor
     banner={editingBanner}
     {mode}
-    ondirtychange={(dirty) => (editorDirty = dirty)}
-    {tabchangerequest}
-    {ontabchangerequestresolve}
     onsuccess={mode === 'restore' ? handleRestoreSuccess : handleSuccess}
     oncancel={() => {
       mode = 'list';

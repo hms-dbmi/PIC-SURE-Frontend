@@ -27,6 +27,7 @@
   import { session } from '#lib/auth/session.svelte.ts';
 
   import Loading from '#lib/ui/Loading.svelte';
+  import { UnsavedChanges, setUnsavedChanges } from '#lib/ui/unsavedGuard.svelte.ts';
 
   // Tab label -> its ?tab= value, so links (e.g. the old /admin/api-keys route) can open a tab.
   const TAB_PARAMS: Record<string, string> = {
@@ -53,13 +54,11 @@
 
   const startTab = untrack(() => tabFromUrl(page.url) ?? visibleTabs[0]);
   let tabSet: string = $state(startTab);
-  let requestedTab: string = $state(startTab);
-  let bannerEditorDirty = $state(false);
-  let pendingTab: string | null = $state(null);
+  // The banner editor and order guard register here, so a tab change asks before discarding.
+  const unsaved = setUnsavedChanges(new UnsavedChanges());
 
   function showTab(tab: string) {
     tabSet = tab;
-    requestedTab = tab;
     replaceState(resolve(`admin/configuration?tab=${TAB_PARAMS[tab]}`), page.state);
   }
 
@@ -70,22 +69,8 @@
   $effect(() => {
     const linked = tabFromUrl(page.url) ?? visibleTabs[0];
     untrack(() => {
-      if (linked !== tabSet) {
-        bannerEditorDirty = false;
-        showTab(linked);
-      }
+      if (linked !== tabSet) showTab(linked);
     });
-  });
-
-  $effect(() => {
-    if (requestedTab !== tabSet) {
-      if (tabSet === 'Site banners' && bannerEditorDirty) {
-        pendingTab = requestedTab;
-        requestedTab = tabSet;
-      } else {
-        untrack(() => showTab(requestedTab));
-      }
-    }
   });
 
   // A link to the Site banners tab while it's open (e.g. the nav's Configuration link for admins)
@@ -98,15 +83,6 @@
   afterNavigate(({ type }) => {
     if (type !== 'enter' && leftBannersOpen && tabSet === 'Site banners') bannerViewKey += 1;
   });
-
-  function resolveBannerTabChange(destination: string | null) {
-    pendingTab = null;
-    requestedTab = tabSet;
-    if (destination) {
-      bannerEditorDirty = false;
-      showTab(destination);
-    }
-  }
 
   const roleTable = {
     columns: [
@@ -184,7 +160,7 @@
     label="Configuration sections"
     tabs={visibleTabs.map((tab) => ({ value: tab, label: tab }))}
     value={tabSet}
-    onchange={(tab) => (requestedTab = tab)}
+    onchange={(tab) => unsaved.request(tab, () => showTab(tab))}
   >
     {#snippet panel(tab)}
       {#if tab === 'Access Control'}
@@ -296,11 +272,7 @@
       {:else if tab === 'Site banners'}
         {#if tabSet === 'Site banners'}
           {#key bannerViewKey}
-            <BannerManagementView
-              ondirtychange={(dirty) => (bannerEditorDirty = dirty)}
-              tabchangerequest={pendingTab}
-              ontabchangerequestresolve={resolveBannerTabChange}
-            />
+            <BannerManagementView />
           {/key}
         {/if}
       {:else if tab === 'Settings & Features'}

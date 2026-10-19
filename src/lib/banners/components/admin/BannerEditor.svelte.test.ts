@@ -2,6 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
+import { flushSync } from 'svelte';
 
 const navigation = vi.hoisted(() => ({ beforeNavigate: vi.fn(), goto: vi.fn() }));
 
@@ -17,6 +18,8 @@ vi.mock('#lib/api/picsure/banners.ts', () => ({
 }));
 
 import BannerEditor from '#lib/banners/components/admin/BannerEditor.svelte';
+import { UnsavedChanges } from '#lib/ui/unsavedGuard.svelte.ts';
+import UnsavedChangesHost from '../../../../../tests/support/fixtures/UnsavedChangesHost.svelte';
 import type { BannerAudience, ManagedBanner } from '#lib/banners/model/banner.ts';
 import { publishBanner, restoreBanner, updatePublishedBanner } from '#lib/api/picsure/banners.ts';
 import { toaster } from '#lib/ui/toaster.ts';
@@ -715,8 +718,10 @@ describe('BannerEditor', () => {
   });
 
   it('validates unsupported parameter syntax and keeps the edit dirty', async () => {
-    const ondirtychange = vi.fn();
-    render(BannerEditor, { props: { banner: published, ondirtychange } });
+    const unsaved = new UnsavedChanges();
+    render(UnsavedChangesHost, {
+      props: { child: BannerEditor, props: { banner: published }, unsaved },
+    });
     await fireEvent.click(screen.getByRole('radio', { name: 'Specific pages' }));
     await fireEvent.click(screen.getByRole('button', { name: 'Add page target' }));
     await fireEvent.change(screen.getByRole('combobox', { name: 'Target 1 type' }), {
@@ -730,7 +735,10 @@ describe('BannerEditor', () => {
       screen.getByText('Only plain [name] parameter segments are supported.'),
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save changes' })).toBeDisabled();
-    await waitFor(() => expect(ondirtychange).toHaveBeenLastCalledWith(true));
+    const proceed = vi.fn();
+    unsaved.request('Branding', proceed);
+    expect(await screen.findByRole('dialog')).toHaveTextContent('Discard them to open Branding');
+    expect(proceed).not.toHaveBeenCalled();
   });
 
   it('adds an empty page target that requires an intentional path', async () => {
@@ -773,18 +781,22 @@ describe('BannerEditor', () => {
       pageTargets: [{ kind: 'EXACT' as const, path: '/status' }],
     };
     vi.mocked(updatePublishedBanner).mockResolvedValue(normalized);
-    const ondirtychange = vi.fn();
-    render(BannerEditor, { props: { banner: targeted, ondirtychange } });
+    const unsaved = new UnsavedChanges();
+    render(UnsavedChangesHost, {
+      props: { child: BannerEditor, props: { banner: targeted }, unsaved },
+    });
 
     await fireEvent.input(screen.getByRole('textbox', { name: 'Target 1 path' }), {
       target: { value: ' /status/ ' },
     });
     await fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
-    await waitFor(() => {
-      expect(screen.getByRole('textbox', { name: 'Target 1 path' })).toHaveValue('/status');
-      expect(ondirtychange).toHaveBeenLastCalledWith(false);
-    });
+    await waitFor(() =>
+      expect(screen.getByRole('textbox', { name: 'Target 1 path' })).toHaveValue('/status'),
+    );
+    const proceed = vi.fn();
+    unsaved.request('Branding', proceed);
+    expect(proceed).toHaveBeenCalledOnce();
   });
 
   it('reopens targeted pages and removes individual entries', async () => {
@@ -867,14 +879,17 @@ describe('BannerEditor', () => {
   });
 
   it('merges a dirty tab change into the open editor confirmation', async () => {
-    const ontabchangerequestresolve = vi.fn();
-    const view = render(BannerEditor, { props: { ontabchangerequestresolve } });
+    const unsaved = new UnsavedChanges();
+    const oncancel = vi.fn();
+    render(UnsavedChangesHost, { props: { child: BannerEditor, props: { oncancel }, unsaved } });
     const editor = await screen.findByRole('textbox', { name: 'Banner content' });
     editor.innerHTML = '<p>Unsaved content</p>';
     await fireEvent.input(editor);
     await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
-    await view.rerender({ tabchangerequest: 'Branding', ontabchangerequestresolve });
+    const proceed = vi.fn();
+    unsaved.request('Branding', proceed);
+    flushSync();
 
     expect(screen.getAllByRole('heading', { name: 'Unsaved Changes' })).toHaveLength(1);
     expect(screen.getByRole('dialog')).toHaveTextContent('Discard them to open Branding');
@@ -882,13 +897,15 @@ describe('BannerEditor', () => {
     await fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.getByRole('dialog')).toHaveTextContent('Discard them to open Branding');
     await fireEvent.click(screen.getByRole('button', { name: 'Keep editing' }));
-    expect(ontabchangerequestresolve).toHaveBeenCalledOnce();
-    expect(ontabchangerequestresolve).toHaveBeenCalledWith(null);
+    expect(proceed).not.toHaveBeenCalled();
 
-    await view.rerender({ tabchangerequest: null, ontabchangerequestresolve });
-    await view.rerender({ tabchangerequest: 'Branding', ontabchangerequestresolve });
+    unsaved.request('Branding', proceed);
+    flushSync();
     expect(screen.getByRole('dialog')).toHaveTextContent('Discard them to open Branding');
     expect(screen.getAllByRole('heading', { name: 'Unsaved Changes' })).toHaveLength(1);
+    await fireEvent.click(screen.getByRole('button', { name: 'Discard changes' }));
+    expect(proceed).toHaveBeenCalledOnce();
+    expect(oncancel).not.toHaveBeenCalled();
   });
 
   it('leaves external unloads to the native prompt without disabling later navigation guards', async () => {

@@ -2,14 +2,56 @@ import { browser } from '$app/env';
 import { beforeNavigate, goto } from '$app/navigation';
 import { resolve } from '$app/paths';
 import { appPath } from '#lib/api/paths.ts';
-import { onDestroy } from 'svelte';
+import { createContext, onDestroy } from 'svelte';
 
 export interface NavigationTransition {
   kind: 'navigation';
   url: URL | null;
 }
 
-export type GuardedTransition<T> = T | NavigationTransition;
+/** A request from the page around a guard, such as a tab change, that discarding goes on with. */
+export interface LeaveRequest {
+  kind: 'leave';
+  /** Where the request goes, for the confirmation's wording. */
+  destination: string;
+  proceed: () => void;
+}
+
+export type GuardedTransition<T> = T | NavigationTransition | LeaveRequest;
+
+interface RegisteredGuard {
+  isDirty: () => boolean;
+  confirm: (request: LeaveRequest) => void;
+}
+
+/**
+ * The unsaved-changes guards inside one part of a page. The component that owns the part (the
+ * configuration page around its tabs) creates it and provides it with `setUnsavedChanges`; every
+ * guard created below it registers itself, so the owner can ask before switching away.
+ */
+export class UnsavedChanges {
+  #guards: RegisteredGuard[] = [];
+
+  register(guard: RegisteredGuard): () => void {
+    this.#guards.push(guard);
+    return () => {
+      this.#guards = this.#guards.filter((registered) => registered !== guard);
+    };
+  }
+
+  /**
+   * Runs `proceed` now when no guard has unsaved changes. Otherwise the guard with changes asks
+   * first, and runs it if they're discarded.
+   */
+  request(destination: string, proceed: () => void) {
+    const dirty = this.#guards.find((guard) => guard.isDirty());
+    if (dirty) dirty.confirm({ kind: 'leave', destination, proceed });
+    else proceed();
+  }
+}
+
+const [getUnsavedChanges, setUnsavedChanges, hasUnsavedChanges] = createContext<UnsavedChanges>();
+export { setUnsavedChanges };
 
 export interface UnsavedGuard<T> {
   /** Whether a transition is pending confirmation. Settable to false so a Dialog can bind to it. */
@@ -27,8 +69,8 @@ export interface UnsavedGuard<T> {
 }
 
 /**
- * Must be created during component initialisation: it registers beforeNavigate
- * and cleans up its beforeunload listener with onDestroy.
+ * Must be created during component initialisation: it registers beforeNavigate, cleans up its
+ * beforeunload listener with onDestroy, and joins the UnsavedChanges provided above it, if any.
  */
 export function createUnsavedGuard<T extends { kind: string } = never>(
   isDirty: () => boolean,
@@ -43,6 +85,15 @@ export function createUnsavedGuard<T extends { kind: string } = never>(
     cancel();
     pending = { kind: 'navigation', url: to?.url ?? null };
   });
+
+  if (hasUnsavedChanges()) {
+    onDestroy(
+      getUnsavedChanges().register({
+        isDirty,
+        confirm: (request) => (pending = request),
+      }),
+    );
+  }
 
   if (browser) {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
