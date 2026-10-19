@@ -34,6 +34,7 @@ export type Features = Indexable & {
   login: {
     open: boolean;
   };
+  mcpConnect: boolean;
   restoreV2queries: boolean;
   termsOfService: boolean;
   wafCaptchaRecovery: boolean;
@@ -48,6 +49,7 @@ export type Settings = Indexable & {
     tagManager: string;
   };
   maxDataPointsForExport: number;
+  mcpUrl: string;
   tour: {
     auth: string;
     open: string;
@@ -475,6 +477,13 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
         'Makes Data Dashboard rows clickable, opening a drawer with more detail about the selected row.',
     },
 
+    MCP_CONNECT: {
+      group: 'AI Assistants',
+      type: 'boolean',
+      default: false,
+      description:
+        "Shows the 'AI Assistant' tab on the API page with connection snippets for Claude Code, Claude Desktop, and Cursor; also requires MCP_URL.",
+    },
     // --- Navigation ---
     CONFIRM_EXTERNAL_NAVIGATION: {
       group: 'Navigation',
@@ -493,6 +502,14 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
     },
   },
   settings: {
+    MCP_URL: {
+      group: 'AI Assistants',
+      type: 'string',
+      default: '',
+      description:
+        "Public URL of this site's MCP server, used in the AI Assistant connection snippets; the tab stays hidden while this is empty.",
+    },
+
     // --- Google ---
     GOOGLE_ANALYTICS_ID: {
       group: 'Google',
@@ -730,6 +747,7 @@ export function mapFeatures(apiFeatures: ConfigObject[]): Features {
     login: {
       open: parse('OPEN'),
     },
+    mcpConnect: parse('MCP_CONNECT'),
     restoreV2queries: parse('RESTORE_V2_QUERY'),
     termsOfService: parse('ENABLE_TOS'),
     useQueryTemplate: parse('USE_QUERY_TEMPLATE'),
@@ -756,6 +774,7 @@ export function mapSettings(apiSettings: ConfigObject[]): Settings {
       tagManager: parse.asString('GOOGLE_TAG_MANAGER_ID'),
     },
     maxDataPointsForExport: parse.asInt('MAX_DATA_POINTS_FOR_EXPORT'),
+    mcpUrl: parse.asString('MCP_URL'),
     tour: {
       auth: parse.asString('AUTH_TOUR_NAME'),
       open: parse.asString('OPEN_TOUR_NAME'),

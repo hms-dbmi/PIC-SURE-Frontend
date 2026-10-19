@@ -6,7 +6,7 @@
   import Modal from '$lib/components/Modal.svelte';
   import {
     user,
-    getUser,
+    loadLongTermToken,
     getTokenExpiration,
     getTokenExpirationAsDate,
     refreshLongTermToken as refresh,
@@ -82,7 +82,7 @@
 </script>
 
 <div id="user-token-container">
-  {#await getUser(true, true)}
+  {#await loadLongTermToken()}
     <Loading ring size="medium" />
   {:then}
     <div id="user-token" class="card bg-surface-50-950">
