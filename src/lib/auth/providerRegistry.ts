@@ -1,7 +1,6 @@
 import type { AuthData } from '#lib/auth/providers/AuthProvider.ts';
 import AuthProvider from '#lib/auth/providers/AuthProvider.ts';
 
-// A provider's CONNECTION setting, if any, which the duplicate check below compares.
 type ProviderData = AuthData & { connection?: string };
 
 const providerDataRegistry: ProviderData[] = [];

@@ -28,7 +28,8 @@ class Auth0 extends AuthProvider implements Auth0Data {
     verifyLoginState(response.get('state') ?? undefined);
     const error = response.get('error');
     if (error) {
-      throw new Error(`Auth0 login failed: ${error}: ${response.get('error_description') ?? ''}`);
+      const reason = [error, response.get('error_description')].filter(Boolean).join(': ');
+      throw new Error(`Auth0 login failed: ${reason}`);
     }
     const token = response.get('access_token');
     if (!token) return undefined;

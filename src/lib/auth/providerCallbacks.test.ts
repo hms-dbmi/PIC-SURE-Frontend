@@ -180,4 +180,12 @@ describe('AUTH0', () => {
     ).rejects.toThrow('access_denied: User did not authorize the request');
     expect(request).not.toHaveBeenCalled();
   });
+
+  it('fails with just the error when Auth0 gives no description', async () => {
+    const state = await startLogin(auth0());
+
+    await expect(auth0().authenticate(['#error=login_required', `state=${state}`])).rejects.toThrow(
+      /^Auth0 login failed: login_required$/,
+    );
+  });
 });
