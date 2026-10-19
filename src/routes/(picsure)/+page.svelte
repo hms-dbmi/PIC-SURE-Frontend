@@ -6,14 +6,14 @@
   import { goto } from '$app/navigation';
   import Searchbox from '#lib/ui/Searchbox.svelte';
   import Stats from './Stats.svelte';
-  import { isUserLoggedIn } from '#lib/auth/User.ts';
+  import { session } from '#lib/auth/session.svelte.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
 
   let searchTerm = $state('');
 
   function search() {
     log(createLog('SEARCH', 'landing.search', { term: searchTerm }));
-    if (config.features.login.open && config.features.discover && !isUserLoggedIn()) {
+    if (config.features.login.open && config.features.discover && !session.isLoggedIn) {
       goto(resolve(`discover?search=${encodeURIComponent(searchTerm)}`));
     } else {
       goto(resolve(`explorer?search=${encodeURIComponent(searchTerm)}`));
@@ -24,7 +24,7 @@
 
   const actionsToDisplay = $derived(
     config.branding.landing.actions.filter((action) => {
-      if (isUserLoggedIn()) {
+      if (session.isLoggedIn) {
         return action.showIfLoggedIn;
       } else {
         return action.isOpen || !action.showIfLoggedIn;

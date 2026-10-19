@@ -8,7 +8,7 @@
   import { config } from '#lib/config/config.svelte.ts';
   import * as tos from '#lib/api/psama/tos.ts';
   import { toaster } from '#lib/ui/toaster.ts';
-  import { login, logout, user, isUserLoggedIn, getToken } from '#lib/auth/User.ts';
+  import { session } from '#lib/auth/session.svelte.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
 
   import Loading from '#lib/ui/Loading.svelte';
@@ -18,7 +18,7 @@
   let { modalOpen = $bindable(false) }: { modalOpen?: boolean } = $props();
   let terms: Promise<string> = $state(Promise.resolve(''));
   let enforceTerms: boolean = $derived(
-    config.features.enforceTermsOfService && isUserLoggedIn() && !$user.acceptedTOS,
+    config.features.enforceTermsOfService && session.isLoggedIn && !session.user.acceptedTOS,
   );
 
   function loadTermsHTML() {
@@ -31,9 +31,9 @@
       tos
         .accept()
         .then(() => {
-          const token = getToken();
+          const token = session.token;
           if (token) {
-            login(token).then(() => {
+            session.login(token).then(() => {
               modalOpen = false;
             });
           }
@@ -50,7 +50,7 @@
   function reject() {
     if (browser) {
       log(createLog('AUTH', 'tos.reject'));
-      logout().then(() => {
+      session.logout().then(() => {
         if (config.branding.termsOfService.rejectionUrl) {
           window.location.href = config.branding.termsOfService.rejectionUrl;
         } else {

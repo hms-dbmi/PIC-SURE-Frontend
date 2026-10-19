@@ -4,10 +4,10 @@
   import { StatPromise, isStatValueEqual } from '#lib/query/counts/StatBuilder.ts';
   import type { StatResult } from '#lib/query/counts/Stat.ts';
   import { stats, authStats, loadLandingStats } from './landingStats.ts';
-  import { isUserLoggedIn } from '#lib/auth/User.ts';
+  import { session } from '#lib/auth/session.svelte.ts';
   import Stat from './Stat.svelte';
 
-  const showAuthStats = $derived(isUserLoggedIn() && $authStats.length > 0);
+  const showAuthStats = $derived(session.isLoggedIn && $authStats.length > 0);
 
   let isStatsMatching = $state(false);
 
@@ -54,9 +54,7 @@
     checkStatsMatching($stats, $authStats).then((match) => (isStatsMatching = match));
   });
 
-  const showPublicStats = $derived(
-    ($stats.length > 0 && !isStatsMatching) || $authStats.length === 0,
-  );
+  const showPublicStats = $derived(!showAuthStats || ($stats.length > 0 && !isStatsMatching));
 
   onMount(loadLandingStats);
 </script>

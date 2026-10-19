@@ -11,7 +11,7 @@
   import { panelOpen } from '#lib/explorer/panel.ts';
   import Loading from '#lib/ui/Loading.svelte';
   import type { User } from '#lib/auth/model/user.ts';
-  import { login, setToken } from '#lib/auth/User.ts';
+  import { session } from '#lib/auth/session.svelte.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
 
   async function attemptUserLogin() {
@@ -44,7 +44,7 @@
       // api returns as string
       user.acceptedTOS = String(user.acceptedTOS) === 'true';
       if (config.features.enforceTermsOfService && !user.acceptedTOS) {
-        setToken(user.token);
+        session.setToken(user.token);
         log(
           createLog(
             'LOGIN',
@@ -59,9 +59,9 @@
           ),
         );
       } else {
-        // Hydrate the store via login() before logging so createLog reads user_id/email/roles
-        // from it; without this the store is empty and the event is logged blank.
-        await login(user.token);
+        // Load the profile before logging so createLog reads user_id/email/roles from the
+        // session; without it the event is logged blank.
+        await session.login(user.token);
         log(createLog('LOGIN', 'login.success', { provider: providerType }, { status: 200 }));
       }
 

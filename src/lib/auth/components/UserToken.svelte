@@ -6,26 +6,21 @@
   import CopyButton from '#lib/ui/CopyButton.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import ConfirmDialog from '#lib/ui/dialog/ConfirmDialog.svelte';
-  import {
-    user,
-    getUser,
-    getTokenExpiration,
-    getTokenExpirationAsDate,
-    refreshLongTermToken as refresh,
-  } from '#lib/auth/User.ts';
-  import Loading from '../../ui/Loading.svelte';
+  import { session } from '#lib/auth/session.svelte.ts';
+  import { getTokenExpiration, getTokenExpirationAsDate } from '#lib/auth/token.ts';
+  import Loading from '#lib/ui/Loading.svelte';
   import { log, createLog } from '#lib/telemetry/logger.ts';
   import { cardClass } from '#lib/ui/surface.ts';
 
   const defaultRefreshText = 'Refresh';
   const placeHolderToken =
     '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••';
-  let account = $state($user?.email || 'There was an error retrieving your account.');
+  let account = $derived(session.user.email || 'There was an error retrieving your account.');
   let revealed = $state(false);
   let refreshButtonDisabled = $state(false);
   let refreshPromise: Promise<string> = $state(Promise.resolve(defaultRefreshText));
 
-  let token = $derived($user?.token);
+  let token = $derived(session.user.token);
   let expires = $derived(token ? extractExperationDate(token) : 0);
   let badge = $derived(expires && checkIfExpired());
 
@@ -60,7 +55,8 @@
   function refreshToken() {
     log(createLog('ACTION', 'token.refresh'));
     refreshButtonDisabled = true;
-    refreshPromise = refresh()
+    refreshPromise = session
+      .refreshLongTermToken()
       .then(() => 'Refreshed!')
       .catch((e) => {
         console.log('Error: ', e);
@@ -85,7 +81,7 @@
 </script>
 
 <div id="user-token-container">
-  {#await getUser(true, true)}
+  {#await session.loadUser(true, true)}
     <Loading ring size="medium" />
   {:then}
     <div id="user-token" class="{cardClass} bg-surface-50-950">
@@ -104,7 +100,7 @@
         <label for="user-token-expires">Expires:</label>
         <div>
           <span id="user-token-expires" class="w-1/3 mr-2"
-            >{getTokenExpirationAsDate($user?.token || '')
+            >{getTokenExpirationAsDate(token || '')
               ?.toString()
               ?.substring(0, 24)}</span
           >
@@ -119,7 +115,7 @@
       </section>
       <footer class="card-footer mt-2">
         <CopyButton
-          itemToCopy={$user.token || ''}
+          itemToCopy={token || ''}
           oncopy={() => log(createLog('ACTION', 'token.copy'))}
           variant="tonal"
         />
