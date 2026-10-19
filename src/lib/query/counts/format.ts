@@ -1,4 +1,7 @@
-import type { PatientCount, StatValue } from '#lib/query/counts/Stat.ts';
+export type PatientCount = string | number | undefined;
+export type PatientCountMap = Record<string, PatientCount>;
+/** One count cell: a single count, or a map of counts (cross counts). */
+export type CountValue = PatientCount | PatientCountMap;
 
 const PLUS_MINUS = '±';
 
@@ -16,11 +19,11 @@ function parseCount(count: PatientCount): { value: number; suffix: number } {
   return { value, suffix };
 }
 
-function normalizeCounts(countInput: StatValue[]): PatientCount[] {
-  return countInput.flatMap((x: StatValue) => (typeof x === 'object' ? Object.values(x) : x));
+function normalizeCounts(countInput: CountValue[]): PatientCount[] {
+  return countInput.flatMap((x: CountValue) => (typeof x === 'object' ? Object.values(x) : x));
 }
 
-export function countResult(results: StatValue[], asString = true): PatientCount {
+export function countResult(results: CountValue[], asString = true): PatientCount {
   const counts = normalizeCounts(results);
   if (counts.length === 0) return asString ? '0' : 0;
   if (counts.length === 1 && counts[0]?.toString().startsWith('<')) return counts[0];
@@ -42,8 +45,8 @@ export function countResult(results: StatValue[], asString = true): PatientCount
 }
 
 export function isCountValueEqual(
-  a: StatValue | null | undefined,
-  b: StatValue | null | undefined,
+  a: CountValue | null | undefined,
+  b: CountValue | null | undefined,
 ): boolean {
   if (a === b) return true;
 

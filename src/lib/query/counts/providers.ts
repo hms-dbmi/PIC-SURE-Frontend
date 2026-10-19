@@ -1,17 +1,15 @@
 import type { QueryRequest } from '#lib/api/picsure/query.types.ts';
-import type { PatientCount, PatientCountMap } from '#lib/query/counts/Stat.ts';
+import type { CountValue, PatientCount } from '#lib/query/counts/format.ts';
 import { useOpenAccess } from '#lib/explorer/mode.ts';
 import { buildRequest } from '#lib/query/build.ts';
 import type { QueryDescriptor } from '#lib/query/descriptor.svelte.ts';
 
-export type CountValue = PatientCount | PatientCountMap;
-
 /**
- * A typed result-count provider. The executor (`QueryCountService`) is
- * responsible for unwrapping `{errorType, message}` envelopes BEFORE calling
- * `parse(raw)`, and for emitting per-request telemetry.
+ * A count sent as a query. The executor (`QueryCountService`) transports the
+ * request, unwraps `{errorType, message}` envelopes BEFORE calling
+ * `parse(raw)`, and emits per-request telemetry.
  */
-export interface CountProvider {
+export interface QueryCountProvider {
   id: string;
   /** Whether the descriptor's counts come from the open-access (aggregate) endpoint. */
   openEndpoint(descriptor: QueryDescriptor): boolean;
@@ -19,22 +17,38 @@ export interface CountProvider {
   parse(raw: unknown): CountValue;
 }
 
-const patientCount: CountProvider = {
+/** A count that comes from somewhere other than a query (the dictionary, the config). */
+export interface FetchCountProvider {
+  id: string;
+  fetch(descriptor: QueryDescriptor): Promise<CountValue>;
+}
+
+export type CountProvider = QueryCountProvider | FetchCountProvider;
+
+export function isQueryProvider(provider: CountProvider): provider is QueryCountProvider {
+  return 'buildRequest' in provider;
+}
+
+/** Open access asks for the studies-consents cross count; signed-in users get a plain count. */
+export function patientCountRequest(descriptor: QueryDescriptor): QueryRequest {
+  return buildRequest(descriptor, descriptor.isOpenAccess ? 'CROSS_COUNT' : 'COUNT');
+}
+
+export function parsePatientCount(raw: unknown): CountValue {
+  if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+    const map = raw as Record<string, PatientCount>;
+    return map['\\_studies_consents\\'] ?? 0;
+  }
+  return raw as PatientCount;
+}
+
+const patientCount: QueryCountProvider = {
   id: 'query:patientCount',
   openEndpoint: (descriptor) => useOpenAccess(descriptor.isOpenAccess),
-  buildRequest(descriptor) {
-    const resultType = descriptor.isOpenAccess ? 'CROSS_COUNT' : 'COUNT';
-    return buildRequest(descriptor, resultType);
-  },
-  parse(raw) {
-    if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
-      const map = raw as Record<string, PatientCount>;
-      return map['\\_studies_consents\\'] ?? 0;
-    }
-    return raw as PatientCount;
-  },
+  buildRequest: patientCountRequest,
+  parse: parsePatientCount,
 };
 
-export const resultProviders: Record<string, CountProvider> = {
+export const resultProviders: Record<string, QueryCountProvider> = {
   [patientCount.id]: patientCount,
 };

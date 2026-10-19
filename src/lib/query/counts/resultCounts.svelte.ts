@@ -4,7 +4,6 @@ import { runSyncQuery } from '#lib/api/picsure/query.ts';
 import { log, createLog } from '#lib/telemetry/logger.ts';
 import { isToastShowing, toaster } from '#lib/ui/toaster.ts';
 import { filterState } from '#lib/query/filters.svelte.ts';
-import { getCountResource } from '#lib/explorer/Resources.ts';
 import { buildDescriptor, stableHash } from '#lib/query/descriptor.svelte.ts';
 import { resultProviders } from '#lib/query/counts/providers.ts';
 import type { QueryDescriptor } from '#lib/query/descriptor.svelte.ts';
@@ -63,13 +62,12 @@ export class ResultCounts {
     return this.#status === 'loading';
   }
 
-  async load(descriptor: QueryDescriptor, isOpenAccess: boolean): Promise<LoadResult> {
+  async load(descriptor: QueryDescriptor): Promise<LoadResult> {
     const id = ++this.#requestId;
     this.#status = 'loading';
     try {
       const provider = resultProviders['query:patientCount'];
-      const resource = getCountResource(isOpenAccess);
-      const snapshot = await this.#service.getCount(descriptor, provider, resource);
+      const snapshot = await this.#service.getCount(descriptor, provider);
       // Newer load() has superseded this one; committing now would race it.
       if (id !== this.#requestId) return { kind: 'stale' };
       this.#snapshot = snapshot;
@@ -150,10 +148,9 @@ export class ResultCounts {
     getIsOpenAccess: () => boolean,
     prebuiltDescriptor?: QueryDescriptor,
   ): Promise<void> {
-    const isOpenAccess = getIsOpenAccess();
     try {
-      const descriptor = prebuiltDescriptor ?? this.#buildCurrentDescriptor(isOpenAccess);
-      const result = await this.load(descriptor, isOpenAccess);
+      const descriptor = prebuiltDescriptor ?? this.#buildCurrentDescriptor(getIsOpenAccess());
+      const result = await this.load(descriptor);
       if (result.kind === 'error') this.#showErrorToast();
     } catch (error) {
       console.error(error);

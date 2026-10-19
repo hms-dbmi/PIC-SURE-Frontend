@@ -7,7 +7,6 @@ const mocks = vi.hoisted(() => ({
       statFields: {} as Record<string, { label: string; id: string; conceptPath: string }[]>,
     },
   },
-  loggedIn: true,
 }));
 
 vi.mock('$app/env', () => ({ browser: false }));
@@ -20,24 +19,23 @@ vi.mock('#lib/api/client.ts', () => ({ request: vi.fn() }));
 vi.mock('#lib/config/config.svelte.ts', () => ({ config: mocks.config }));
 vi.mock('#lib/telemetry/logger.ts', () => ({
   log: vi.fn(),
-  createLog: vi.fn(),
+  createLog: vi.fn((category: string, event: string, data: Record<string, unknown>) => ({
+    event,
+    data,
+  })),
   registerAssociatedStudies: vi.fn(),
   getPageContext: vi.fn(),
 }));
-vi.mock('#lib/auth/User.ts', async () => {
-  const { writable } = await import('svelte/store');
-  return {
-    user: writable({}),
-    ensureConsentsLoaded: vi.fn(),
-    isUserLoggedIn: vi.fn(() => mocks.loggedIn),
-  };
-});
 vi.mock('#lib/explorer/Dictionary.ts', () => ({
   getConceptDetails: vi.fn(),
   addConsents: vi.fn(async (request: object) => ({ ...request, consents: ['phs1.c1'] })),
 }));
 
 import * as api from '#lib/api/client.ts';
+import { log } from '#lib/telemetry/logger.ts';
+import { runSyncQuery } from '#lib/api/picsure/query.ts';
+import { buildDescriptor } from '#lib/query/descriptor.svelte.ts';
+import { createQueryCountService } from '#lib/query/counts/service.ts';
 import { filterState } from '#lib/query/filters.svelte.ts';
 import {
   createFilterGroup,
@@ -47,11 +45,7 @@ import {
 import { LogicTree } from '#lib/query/logicTree.svelte.ts';
 import type { SearchResult } from '#lib/explorer/types.ts';
 import type { StatConfig } from '#lib/config/index.ts';
-import {
-  getResultList,
-  getValidStatList,
-  populateStatRequests,
-} from '#lib/query/counts/StatBuilder.ts';
+import { statEntries, statProvider } from '#lib/query/counts/statProviders.ts';
 
 const request = vi.mocked(api.request);
 
@@ -87,23 +81,37 @@ function query(fields: object) {
   };
 }
 
-// Runs one stat through the public entry points and reports the client call and the
-// value, keyed by the resource name the result map uses.
+// Why the executor failed a stat, from its `query.cell_failed` log.
+function failure() {
+  const entries = vi
+    .mocked(log)
+    .mock.calls.map(
+      ([entry]) =>
+        entry as unknown as { event: string; data: { error?: string; errorType?: string } },
+    );
+  const data = entries.find(({ event }) => event === 'query.cell_failed')?.data;
+  return data?.errorType ?? data?.error?.replace(/^Error: /, '');
+}
+
+// Runs one stat through the count executor and reports the client calls and the value. A
+// failed stat reports why it failed.
 async function runStat(
   stat: StatConfig,
   { open = false, addFilters = false }: { open?: boolean; addFilters?: boolean } = {},
 ) {
-  const [result] = addFilters
-    ? getResultList(open, [stat])
-    : populateStatRequests([{ ...stat, auth: !open, result: {} }]);
-  const [[resource, promise]] = Object.entries(result.result);
-  const value = await promise.catch((e: unknown) => ({ rejected: e }));
-  return { resource, value, calls: wireCalls() };
+  const service = createQueryCountService({
+    transport: (request, openEndpoint) => runSyncQuery(request, { openEndpoint }),
+  });
+  const filters = addFilters
+    ? filterState.queryFilters
+    : { phenotypicClause: null, genomicFilters: [] };
+  const snapshot = await service.getCount(buildDescriptor(open, filters), statProvider(stat)!);
+  const value = snapshot.summary.hasError ? { rejected: failure() } : snapshot.count;
+  return { value, calls: wireCalls() };
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mocks.loggedIn = true;
   mocks.config.features.login.open = false;
   mocks.config.features.explorer.open = false;
   mocks.config.branding.statFields = {
@@ -123,7 +131,7 @@ beforeEach(() => {
   filterState.restore(tree, []);
 });
 
-describe('StatBuilder request map', () => {
+describe('stat providers', () => {
   it.each([
     {
       name: 'dict:facets:dataset_id counts facets with patients (auth)',
@@ -303,7 +311,7 @@ describe('StatBuilder request map', () => {
       key: 'query:blank',
       response: { errorType: 'error', message: 'bad' },
       call: [AUTH, query({}), 'open'],
-      value: { rejected: 'api error' },
+      value: { rejected: 'error' },
     },
   ])('$name', async ({ key, open, addFilters, response, call, value }) => {
     request.mockResolvedValue(response);
@@ -333,7 +341,6 @@ describe('StatBuilder request map', () => {
 
   it('returns a hardcoded value without a request', async () => {
     expect(await runStat({ key: 'hardcoded', label: 'h', value: '1,000' })).toEqual({
-      resource: 'hpds',
       value: '1,000',
       calls: [],
     });
@@ -341,35 +348,33 @@ describe('StatBuilder request map', () => {
   });
 
   it.each([
-    { key: 'query:blank', open: false, explore: false, resource: 'hpds', path: AUTH },
-    { key: 'query:blank', open: true, explore: false, resource: 'hpdsOpen', path: OPEN },
+    { key: 'query:blank', open: false, explore: false, path: AUTH },
+    { key: 'query:blank', open: true, explore: false, path: OPEN },
     // With explore-without-login, open requests go to the auth resource...
-    { key: 'query:blank', open: true, explore: true, resource: 'hpds', path: AUTH },
+    { key: 'query:blank', open: true, explore: true, path: AUTH },
     // ...except open patient counts and dictionary stats, which keep their open path.
-    { key: 'query:patientCount', open: true, explore: true, resource: 'hpds', path: OPEN },
+    { key: 'query:patientCount', open: true, explore: true, path: OPEN },
     {
       key: 'dict:concepts',
       open: true,
       explore: true,
-      resource: 'hpds',
       path: 'picsure/dictionary/concepts?page_number=1&page_size=1',
     },
   ])(
-    'keys results by count resource: $key, open $open, explore $explore',
-    async ({ key, open, explore, resource, path }) => {
+    'picks the endpoint: $key, open $open, explore $explore',
+    async ({ key, open, explore, path }) => {
       mocks.config.features.login.open = explore;
       mocks.config.features.explorer.open = explore;
       request.mockResolvedValue(1);
 
       const result = await runStat({ key, label: key }, { open });
 
-      expect(result.resource).toBe(resource);
       expect(result.calls[0][0]).toBe(path);
     },
   );
 });
 
-describe('StatBuilder stat lists', () => {
+describe('stat entries', () => {
   const stats: StatConfig[] = [
     { key: 'query:blank', label: 'both' },
     { key: 'dict:concepts', label: 'auth only', auth: true },
@@ -410,27 +415,7 @@ describe('StatBuilder stat lists', () => {
       ],
     },
     { name: 'logged out, login closed', loggedIn: false, loginOpen: false, expected: [] },
-  ])('getValidStatList: $name', ({ loggedIn, loginOpen, expected }) => {
-    mocks.loggedIn = loggedIn;
-    mocks.config.features.login.open = loginOpen;
-
-    const list = getValidStatList(stats);
-
-    expect(summary(list)).toEqual(expected);
-    expect(list.every((stat) => Object.keys(stat.result).length === 0)).toBe(true);
-  });
-
-  it('getResultList keeps known stats and marks them by access', async () => {
-    request.mockResolvedValue(1);
-
-    const list = getResultList(true, stats);
-    await Promise.allSettled(list.flatMap((stat) => Object.values(stat.result)));
-
-    expect(summary(list)).toEqual([
-      ['both', false],
-      ['auth only', false],
-      ['open only', false],
-    ]);
-    expect(getResultList(false, [{ key: 'unknown', label: 'x' }])).toEqual([]);
+  ])('$name', ({ loggedIn, loginOpen, expected }) => {
+    expect(summary(statEntries(stats, { loggedIn, loginOpen }))).toEqual(expected);
   });
 });

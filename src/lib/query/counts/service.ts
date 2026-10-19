@@ -1,6 +1,7 @@
 import type { QueryDescriptor } from '#lib/query/descriptor.svelte.ts';
 import { stableHash } from '#lib/query/descriptor.svelte.ts';
-import type { CountProvider, CountValue } from '#lib/query/counts/providers.ts';
+import { isQueryProvider, type CountProvider } from '#lib/query/counts/providers.ts';
+import type { CountValue } from '#lib/query/counts/format.ts';
 import type { ResultCountSnapshot } from '#lib/query/counts/snapshot.ts';
 import { summarize } from '#lib/query/counts/snapshot.ts';
 import { LRU } from '#lib/utils/lru.ts';
@@ -16,11 +17,7 @@ export interface QueryCountServiceOptions {
 }
 
 export interface QueryCountService {
-  getCount(
-    descriptor: QueryDescriptor,
-    provider: CountProvider,
-    resource: { name: string; uuid: string },
-  ): Promise<ResultCountSnapshot>;
+  getCount(descriptor: QueryDescriptor, provider: CountProvider): Promise<ResultCountSnapshot>;
   clear(): void;
 }
 
@@ -51,15 +48,16 @@ export function createQueryCountService(options: QueryCountServiceOptions): Quer
   async function executeOne(
     descriptor: QueryDescriptor,
     provider: CountProvider,
-    resource: { name: string; uuid: string },
   ): Promise<CellOutcome> {
     try {
+      if (!isQueryProvider(provider)) {
+        return { value: await provider.fetch(descriptor), error: false };
+      }
       const request = provider.buildRequest(descriptor);
       const openEndpoint = provider.openEndpoint(descriptor);
       log(
         createLog('QUERY', 'query.execute', {
           providerId: provider.id,
-          resourceUuid: resource.uuid,
           path: PicsurePaths.syncQuery(openEndpoint),
           expectedResultType: request.query.expectedResultType,
         }),
@@ -69,7 +67,6 @@ export function createQueryCountService(options: QueryCountServiceOptions): Quer
         log(
           createLog('QUERY', 'query.cell_failed', {
             providerId: provider.id,
-            resourceUuid: resource.uuid,
             errorType: raw.errorType,
             message: raw.message,
           }),
@@ -81,7 +78,6 @@ export function createQueryCountService(options: QueryCountServiceOptions): Quer
       log(
         createLog('QUERY', 'query.cell_failed', {
           providerId: provider.id,
-          resourceUuid: resource.uuid,
           error: String(e),
         }),
       );
@@ -89,27 +85,18 @@ export function createQueryCountService(options: QueryCountServiceOptions): Quer
     }
   }
 
-  function cacheKeyFor(
-    descriptor: QueryDescriptor,
-    provider: CountProvider,
-    resource: { name: string; uuid: string },
-  ): string {
-    return `${stableHash(descriptor)}|${provider.id}|${resource.uuid}`;
-  }
-
   function getCount(
     descriptor: QueryDescriptor,
     provider: CountProvider,
-    resource: { name: string; uuid: string },
   ): Promise<ResultCountSnapshot> {
-    const key = cacheKeyFor(descriptor, provider, resource);
+    const key = `${stableHash(descriptor)}|${provider.id}`;
     const cached = cache.get(key);
     if (cached) return Promise.resolve(cached);
     const pending = inflight.get(key);
     if (pending) return pending;
 
     const startedGeneration = generation;
-    const promise = executeOne(descriptor, provider, resource)
+    const promise = executeOne(descriptor, provider)
       .then((outcome) => {
         const snapshot: ResultCountSnapshot = {
           descriptorKey: stableHash(descriptor),
