@@ -21,7 +21,6 @@ export async function searchConcepts(
   page: Pick<Pageable, 'pageNumber' | 'pageSize'>,
   { signal }: Options = {},
 ): Promise<DictionaryConceptResult> {
-  // callers read a missing content list as an empty page
   const response = expectRecord(
     await request<unknown>(Picsure.Concepts, {
       method: 'POST',
@@ -32,7 +31,10 @@ export async function searchConcepts(
     }),
     'concept search',
   );
-  return response as unknown as DictionaryConceptResult;
+  // an answer without a content list is an empty page (the tour's search mocks send one)
+  const content =
+    response.content === undefined ? [] : expectArray(response.content, 'concept search');
+  return { ...response, content } as unknown as DictionaryConceptResult;
 }
 
 export async function searchFacets(

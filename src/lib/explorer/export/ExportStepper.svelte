@@ -90,10 +90,11 @@
 
   async function checkExportStatus(lastPicsureResultId?: string): Promise<void> {
     const statusId = lastPicsureResultId || getDatasetId();
+    if (!statusId) throw new Error('No dataset ID provided');
 
     return withBackoff(
       async () => {
-        const res = await getQueryStatus(statusId ?? '', getQueryRequest());
+        const res = await getQueryStatus(statusId, getQueryRequest());
 
         if (res.status === 'ERROR') {
           setLockDownload(true);

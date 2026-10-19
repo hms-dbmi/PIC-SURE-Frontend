@@ -4,7 +4,6 @@
   import Summary from '#lib/explorer/export/Summary.svelte';
   import Loading from '#lib/ui/Loading.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
-  import type { DataSetResponse } from '#lib/datasets/dataset.ts';
   import { submitQuery as startQuery } from '#lib/api/picsure/query.ts';
   import { stepperState } from '#lib/ui/stepper/stepperState.ts';
   import { exports } from '#lib/explorer/export/Export.ts';
@@ -22,7 +21,7 @@
 
   const PROMISE_WAIT_INTERVAL = 7;
   let processingMessage: string = $state('');
-  let datasetIdPromise: Promise<void | DataSetResponse> = $state(Promise.resolve());
+  let datasetIdPromise: Promise<void> = $state(Promise.resolve());
   let preparePromise: Promise<void> = $state(Promise.resolve());
   let datasetNameInput: string | undefined = $state(getDatasetNameInput());
 
@@ -34,7 +33,7 @@
       retry: "Something's taking longer than usual. We are still working on it...",
     };
 
-    function requestUpdate(method: () => Promise<void | DataSetResponse>, retry: boolean = true) {
+    function requestUpdate(method: () => Promise<void>, retry: boolean = true) {
       processingMessage = retry ? statetext.initial : statetext.retry;
       if (retry) {
         interval = setInterval(() => {

@@ -44,6 +44,20 @@ describe('concept responses', () => {
     ).rejects.toThrow('Invalid concept search response');
   });
 
+  it('reads a search answer without a content list as an empty page', async () => {
+    respond.mockResolvedValue({ totalElements: 0 });
+    await expect(
+      searchConcepts({ facets: [], search: '' }, { pageNumber: 0, pageSize: 10 }),
+    ).resolves.toMatchObject({ content: [], totalElements: 0 });
+  });
+
+  it('rejects a search answer whose content is not a list', async () => {
+    respond.mockResolvedValue({ content: {} });
+    await expect(
+      searchConcepts({ facets: [], search: '' }, { pageNumber: 0, pageSize: 10 }),
+    ).rejects.toThrow('Invalid concept search response');
+  });
+
   it('rejects a concept without a concept path', async () => {
     respond.mockResolvedValue({});
     await expect(getConceptDetail('ds', '\\a\\')).rejects.toThrow(

@@ -54,6 +54,11 @@ describe('variant results', () => {
     await expect(countVariants(query)).resolves.toBe(12);
   });
 
+  it("reads HPDS's string count for a query without genomic filters", async () => {
+    respond.mockResolvedValue({ count: '0' });
+    await expect(countVariants(query)).resolves.toBe(0);
+  });
+
   it('rejects a count response without a number', async () => {
     respond.mockResolvedValue({ errorType: 'error', message: 'bad' });
     await expect(countVariants(query)).rejects.toThrow('Invalid variant count response');

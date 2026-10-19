@@ -26,25 +26,32 @@ export async function runCount(query: QueryRequestBody): Promise<number> {
   return count;
 }
 
+// HPDS sends some counts as numeric strings, e.g. a variant count of "0" for a query without
+// genomic filters
+function toCount(value: unknown): number | undefined {
+  const count = typeof value === 'string' && value.trim() !== '' ? Number(value) : value;
+  return typeof count === 'number' && Number.isFinite(count) ? count : undefined;
+}
+
 /**
- * A cross-count query's counts by concept path. Entries that aren't numbers, such as an open
- * endpoint's obfuscated `12 ±3` or the fields of an HPDS error answer, are left out.
+ * A cross-count query's counts by concept path. Entries that aren't counts, such as the fields of
+ * an HPDS error answer, are left out.
  */
 export async function runCrossCount(query: QueryRequestBody): Promise<Record<string, number>> {
   const response = await runSyncQuery(query);
   if (!isRecord(response)) throw new Error('Invalid cross count response');
   const counts: Record<string, number> = {};
   for (const [conceptPath, value] of Object.entries(response)) {
-    const count = typeof value === 'string' && value.trim() !== '' ? Number(value) : value;
-    if (typeof count === 'number' && Number.isFinite(count)) counts[conceptPath] = count;
+    const count = toCount(value);
+    if (count !== undefined) counts[conceptPath] = count;
   }
   return counts;
 }
 
 export async function countVariants(query: QueryRequestBody): Promise<number> {
   const response = await runSyncQuery(query);
-  const count = isRecord(response) ? response.count : undefined;
-  if (typeof count !== 'number') throw new Error('Invalid variant count response');
+  const count = isRecord(response) ? toCount(response.count) : undefined;
+  if (count === undefined) throw new Error('Invalid variant count response');
   return count;
 }
 
