@@ -1,6 +1,6 @@
 import { request } from '#lib/api/client.ts';
 import { Picsure, PicsurePaths } from '#lib/api/paths.ts';
-import type { QueryRequestBody, QueryStatus } from '#lib/api/picsure/query.types.ts';
+import type { QueryRequest, QueryStatus } from '#lib/api/picsure/query.types.ts';
 import { isRecord } from '#lib/api/picsure/guards.ts';
 
 /**
@@ -8,7 +8,7 @@ import { isRecord } from '#lib/api/picsure/guards.ts';
  * type. HPDS reports some failures as a 200 with an `errorType`; callers check for those.
  */
 export function runSyncQuery(
-  query: QueryRequestBody,
+  query: QueryRequest,
   { openEndpoint = false, signal }: { openEndpoint?: boolean; signal?: AbortSignal } = {},
 ): Promise<unknown> {
   return request(PicsurePaths.syncQuery(openEndpoint), {
@@ -20,7 +20,7 @@ export function runSyncQuery(
 }
 
 /** A COUNT query's patient count. */
-export async function runCount(query: QueryRequestBody): Promise<number> {
+export async function runCount(query: QueryRequest): Promise<number> {
   const count = await runSyncQuery(query);
   if (typeof count !== 'number') throw new Error('Invalid count response');
   return count;
@@ -37,7 +37,7 @@ function toCount(value: unknown): number | undefined {
  * A cross-count query's counts by concept path. Entries that aren't counts, such as the fields of
  * an HPDS error answer, are left out.
  */
-export async function runCrossCount(query: QueryRequestBody): Promise<Record<string, number>> {
+export async function runCrossCount(query: QueryRequest): Promise<Record<string, number>> {
   const response = await runSyncQuery(query);
   if (!isRecord(response)) throw new Error('Invalid cross count response');
   const counts: Record<string, number> = {};
@@ -48,7 +48,7 @@ export async function runCrossCount(query: QueryRequestBody): Promise<Record<str
   return counts;
 }
 
-export async function countVariants(query: QueryRequestBody): Promise<number> {
+export async function countVariants(query: QueryRequest): Promise<number> {
   const response = await runSyncQuery(query);
   const count = isRecord(response) ? toCount(response.count) : undefined;
   if (count === undefined) throw new Error('Invalid variant count response');
@@ -56,21 +56,18 @@ export async function countVariants(query: QueryRequestBody): Promise<number> {
 }
 
 /** A tab-separated VCF excerpt, header line first. */
-export async function getVariantExcerpt(query: QueryRequestBody): Promise<string> {
+export async function getVariantExcerpt(query: QueryRequest): Promise<string> {
   const response = await runSyncQuery(query);
   if (typeof response !== 'string') throw new Error('Invalid variant excerpt response');
   return response;
 }
 
 /** Starts an asynchronous query, the first step of an export. */
-export async function submitQuery(query: QueryRequestBody): Promise<QueryStatus> {
+export async function submitQuery(query: QueryRequest): Promise<QueryStatus> {
   return toQueryStatus(await request(Picsure.Query, { method: 'POST', body: query, auth: 'open' }));
 }
 
-export async function getQueryStatus(
-  queryId: string,
-  query: QueryRequestBody,
-): Promise<QueryStatus> {
+export async function getQueryStatus(queryId: string, query: QueryRequest): Promise<QueryStatus> {
   return toQueryStatus(
     await request(PicsurePaths.queryStatus(queryId), { method: 'POST', body: query, auth: 'open' }),
   );
@@ -82,10 +79,7 @@ export function getQueryResult(queryId: string): Promise<ArrayBuffer | string> {
 }
 
 /** A signed URL that lets an external platform fetch the result, or null without one. */
-export async function getSignedUrl(
-  queryId: string,
-  query: QueryRequestBody,
-): Promise<string | null> {
+export async function getSignedUrl(queryId: string, query: QueryRequest): Promise<string | null> {
   const response = await request(PicsurePaths.querySignedUrl(queryId), {
     method: 'POST',
     body: query,

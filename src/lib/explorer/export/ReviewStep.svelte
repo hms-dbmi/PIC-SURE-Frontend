@@ -13,7 +13,8 @@
   import type { ExportInterface } from '#lib/explorer/export/types.ts';
   import type { ExportRowInterface } from '#lib/explorer/export/ExportRow.ts';
   import { searchDictionary } from '#lib/explorer/Dictionary.ts';
-  import { QueryV3 } from '#lib/query/query.ts';
+  import { parseQuery } from '#lib/query/query.ts';
+  import { buildRequest } from '#lib/query/build.ts';
   import { runCrossCount } from '#lib/api/picsure/query.ts';
   import { toaster } from '#lib/ui/toaster.ts';
 
@@ -22,10 +23,10 @@
   import Loading from '#lib/ui/Loading.svelte';
   import Datatable from '#lib/ui/datatable/StaticTable.svelte';
   import { log, createLog } from '#lib/telemetry/logger.ts';
-  import type { QueryRequestInterfaceV3 } from '#lib/api/picsure/query.types.ts';
+  import type { QueryRequest } from '#lib/api/picsure/query.types.ts';
 
   export interface PrepareProps {
-    query: QueryRequestInterfaceV3;
+    query: QueryRequest;
     rows: ExportRowInterface[];
     preparePromise: Promise<void>;
     dataLimitExceeded: boolean;
@@ -101,12 +102,14 @@
     }
 
     // Get sample ID counts via cross counts query
-    const crossCountQuery = new QueryV3(structuredClone($state.snapshot(query).query));
-    crossCountQuery.expectedResultType = 'CROSS_COUNT';
     const crossCountFields = concepts.content.map((concept) => concept.conceptPath);
-    crossCountQuery.select = crossCountFields;
+    const crossCountRequest = buildRequest(
+      parseQuery($state.snapshot(query).query),
+      'CROSS_COUNT',
+      (crossCountQuery) => ({ ...crossCountQuery, select: crossCountFields }),
+    );
 
-    const crossCountResponse = await runCrossCount({ query: crossCountQuery });
+    const crossCountResponse = await runCrossCount(crossCountRequest);
 
     // Filter and return only concepts with counts > 0
     return concepts.content.filter((concept) => crossCountResponse[concept.conceptPath] > 0);

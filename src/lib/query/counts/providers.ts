@@ -1,7 +1,7 @@
-import type { QueryRequestInterfaceV3 } from '#lib/api/picsure/query.types.ts';
+import type { QueryRequest } from '#lib/api/picsure/query.types.ts';
 import type { PatientCount, PatientCountMap } from '#lib/query/counts/Stat.ts';
 import { useOpenAccess } from '#lib/explorer/mode.ts';
-import { buildQueryRequestV3FromDescriptor } from '#lib/query/build.ts';
+import { buildRequest } from '#lib/query/build.ts';
 import type { QueryDescriptor } from '#lib/query/descriptor.svelte.ts';
 
 export type CountValue = PatientCount | PatientCountMap;
@@ -15,7 +15,7 @@ export interface CountProvider {
   id: string;
   /** Whether the descriptor's counts come from the open-access (aggregate) endpoint. */
   openEndpoint(descriptor: QueryDescriptor): boolean;
-  buildRequest(descriptor: QueryDescriptor): QueryRequestInterfaceV3;
+  buildRequest(descriptor: QueryDescriptor): QueryRequest;
   parse(raw: unknown): CountValue;
 }
 
@@ -24,7 +24,7 @@ const patientCount: CountProvider = {
   openEndpoint: (descriptor) => useOpenAccess(descriptor.isOpenAccess),
   buildRequest(descriptor) {
     const resultType = descriptor.isOpenAccess ? 'CROSS_COUNT' : 'COUNT';
-    return buildQueryRequestV3FromDescriptor(descriptor, resultType);
+    return buildRequest(descriptor, resultType);
   },
   parse(raw) {
     if (raw && typeof raw === 'object' && !Array.isArray(raw)) {

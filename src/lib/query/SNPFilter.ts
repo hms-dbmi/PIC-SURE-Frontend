@@ -3,9 +3,8 @@ import { get, writable, type Writable } from 'svelte/store';
 import { runCount } from '#lib/api/picsure/query.ts';
 import { Genotype, type SNP } from '#lib/query/genomic.ts';
 import { createSnpsFilter, type SnpFilterInterface } from '#lib/query/filter.svelte.ts';
-import type { GenomicFilterInterfacev3 } from '#lib/query/query.ts';
-import type { QueryRequestInterfaceV3 } from '#lib/api/picsure/query.types.ts';
-import { getBlankQueryRequestV3 } from '#lib/query/build.ts';
+import type { GenomicClause } from '#lib/query/query.ts';
+import { buildRequest } from '#lib/query/build.ts';
 
 export const selectedSNPs: Writable<SNP[]> = writable([]);
 
@@ -23,11 +22,11 @@ export function clearSnpFilters() {
 }
 
 function snpRequest(snp: SNP): Promise<number> {
-  const filter: GenomicFilterInterfacev3 = {
+  const filter: GenomicClause = {
     key: snp.search,
     values: [Genotype.Heterozygous, Genotype.Homozygous],
   };
-  const searchRequest: QueryRequestInterfaceV3 = getBlankQueryRequestV3();
+  const searchRequest = buildRequest(null);
   searchRequest.query.genomicFilters.push(filter);
   return runCount(searchRequest);
 }

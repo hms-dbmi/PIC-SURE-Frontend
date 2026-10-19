@@ -6,14 +6,16 @@
 
   import {
     loadQuerySummaryData,
-    estimateV3,
+    estimateQuery,
     type QuerySummaryData,
     type QueryEstimate,
-  } from '../../query/restore';
+  } from '#lib/query/restore.ts';
 
-  import { QueryV3 } from '#lib/query/query.ts';
+  import { createQuery, type Query } from '#lib/query/query.ts';
   import { QueryVersion } from '#lib/datasets/dataset.ts';
-  import { queryV2ToV3, type QueryV2 } from '#lib/query/v2.ts';
+  import { queryFromV2, type QueryV2 } from '#lib/query/v2.ts';
+  import { ENSURE_MAX_DEPTH, getConceptDetails } from '#lib/explorer/Dictionary.ts';
+  import { getConceptTree } from '#lib/api/picsure/dictionary.ts';
 
   import { genomicFilters, allFilters, setFilterTree } from '#lib/query/filters.ts';
   import { exports } from '#lib/explorer/export/Export.ts';
@@ -33,18 +35,25 @@
     version,
     name,
   }: {
-    query: QueryV2 | QueryV3;
+    query: QueryV2 | Query;
     version: string;
     name?: string;
   } = $props();
 
   let modal = $state(false);
   let hasExistingFilters = $derived($allFilters.length > 0);
-  let queryV3: QueryV3 = $derived(
-    new QueryV3(version === QueryVersion.V2 ? queryV2ToV3(query as QueryV2) : (query as QueryV3)),
+  let currentQuery: Query = $derived(
+    createQuery(version === QueryVersion.V2 ? queryFromV2(query as QueryV2) : (query as Query)),
   );
-  let estimate: QueryEstimate = $derived(estimateV3(queryV3));
-  let queryData: QuerySummaryData = $derived(loadQuerySummaryData(queryV3));
+  let estimate: QueryEstimate = $derived(estimateQuery(currentQuery));
+  let queryData: QuerySummaryData = $derived(
+    loadQuerySummaryData(currentQuery, {
+      getConceptDetails,
+      getConceptTree: (dataset, conceptPath) =>
+        getConceptTree(dataset, ENSURE_MAX_DEPTH, conceptPath),
+      bypassConceptLookup: config.settings.dataset.bypassConceptLookup,
+    }),
+  );
 
   async function setFilters() {
     modal = false;

@@ -5,7 +5,7 @@
   import { config } from '#lib/config/config.svelte.ts';
   import type { ExportRowInterface } from '#lib/explorer/export/ExportRow.ts';
   import { exports } from '#lib/explorer/export/Export.ts';
-  import { filters } from '#lib/query/filters.ts';
+  import { currentQueryFilters, filters } from '#lib/query/filters.ts';
   import { resultCountsState } from '#lib/query/counts/resultCounts.svelte.ts';
   import { createDatasetName } from '#lib/api/picsure/datasets.ts';
   import { getQueryStatus } from '#lib/api/picsure/query.ts';
@@ -36,8 +36,7 @@
     resetExportStepperState,
   } from '#lib/explorer/export/ExportStepperManager.svelte.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
-  import { getQueryRequestV3, getFilterConcepts } from '#lib/query/build.ts';
-  import { QueryV3 } from '#lib/query/query.ts';
+  import { buildRequest, filterConcepts } from '#lib/query/build.ts';
 
   const { rows = [] }: { rows?: ExportRowInterface[] } = $props();
 
@@ -61,9 +60,9 @@
 
   onMount(async () => {
     setQueryRequest(
-      getQueryRequestV3('COUNT', (query: QueryV3) => {
+      buildRequest(currentQueryFilters(), 'COUNT', (query) => {
         // populate selected export columns from filters
-        query.select = [...new Set([...query.select, ...getFilterConcepts(query)])];
+        query.select = [...new Set([...query.select, ...filterConcepts(query, $filters)])];
         return query;
       }),
     );

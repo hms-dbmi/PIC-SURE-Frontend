@@ -1,25 +1,21 @@
 import {
   Operator,
-  QueryV3,
+  createQuery,
   type ExpectedResultType,
-  type GenomicFilterInterfacev3,
+  type Query,
+  type GenomicClause,
   type PhenotypicClause,
-  type PhenotypicFilterInterface,
+  type PhenotypicFilter,
 } from '#lib/query/query.ts';
+import { GENE_FILTER_KEYS, type GeneFilterValues } from '#lib/query/genomic.ts';
 
 type NumericRange = {
   min?: number;
   max?: number;
 };
 
-type CategoryVariantInfoFilters = {
-  Gene_with_variant?: string[];
-  Variant_consequence_calculated?: string[];
-  Variant_frequency_as_text?: string[];
-};
-
 type VariantInfoFilters = {
-  categoryVariantInfoFilters?: CategoryVariantInfoFilters;
+  categoryVariantInfoFilters?: GeneFilterValues;
   numericVariantInfoFilters?: {
     Variant_frequency_as_number?: number[];
   };
@@ -122,28 +118,22 @@ function normalizeVariantInfoFilters(value: unknown): VariantInfoFilters[] | nul
   if (category === null || category === undefined) return [];
   if (!isRecord(category)) return null;
 
-  const supportedKeys = new Set([
-    'Gene_with_variant',
-    'Variant_consequence_calculated',
-    'Variant_frequency_as_text',
-  ]);
+  const supportedKeys = new Set<string>(GENE_FILTER_KEYS);
   const hasUnsupportedFilter = Object.entries(category).some(
     ([key, filter]) => !supportedKeys.has(key) && containsFilterData(filter),
   );
   if (hasUnsupportedFilter) return null;
 
-  const gene = normalizeStringArray(category.Gene_with_variant);
-  const consequence = normalizeStringArray(category.Variant_consequence_calculated);
-  const frequency = normalizeStringArray(category.Variant_frequency_as_text);
-  if (gene === null || consequence === null || frequency === null) return null;
+  const categoryVariantInfoFilters: GeneFilterValues = {};
+  for (const key of GENE_FILTER_KEYS) {
+    const values = normalizeStringArray(category[key]);
+    if (values === null) return null;
+    categoryVariantInfoFilters[key] = values;
+  }
 
   return [
     {
-      categoryVariantInfoFilters: {
-        Gene_with_variant: gene,
-        Variant_consequence_calculated: consequence,
-        Variant_frequency_as_text: frequency,
-      },
+      categoryVariantInfoFilters,
       numericVariantInfoFilters: {},
     },
   ];
@@ -224,7 +214,7 @@ export function parseQueryV2(value: unknown): QueryV2 | null {
 }
 
 function anyRecordOfGroup(conceptPaths: string[]): PhenotypicClause | null {
-  const requiredFilters: PhenotypicFilterInterface[] = conceptPaths.map((conceptPath) => ({
+  const requiredFilters: PhenotypicFilter[] = conceptPaths.map((conceptPath) => ({
     type: 'PhenotypicFilter',
     phenotypicFilterType: 'REQUIRED',
     conceptPath,
@@ -241,7 +231,7 @@ function anyRecordOfGroup(conceptPaths: string[]): PhenotypicClause | null {
   };
 }
 
-export function queryV2ToV3(query: QueryV2): QueryV3 {
+export function queryFromV2(query: QueryV2): Query {
   const clauses: PhenotypicClause[] = [];
 
   for (const [conceptPath, values] of Object.entries(query.categoryFilters)) {
@@ -281,22 +271,10 @@ export function queryV2ToV3(query: QueryV2): QueryV3 {
   }
 
   const category = query.variantInfoFilters[0]?.categoryVariantInfoFilters;
-  const genomicFilters: GenomicFilterInterfacev3[] = [];
-  if (category?.Gene_with_variant?.length) {
-    genomicFilters.push({ key: 'Gene_with_variant', values: category.Gene_with_variant });
-  }
-  if (category?.Variant_consequence_calculated?.length) {
-    genomicFilters.push({
-      key: 'Variant_consequence_calculated',
-      values: category.Variant_consequence_calculated,
-    });
-  }
-  if (category?.Variant_frequency_as_text?.length) {
-    genomicFilters.push({
-      key: 'Variant_frequency_as_text',
-      values: category.Variant_frequency_as_text,
-    });
-  }
+  const genomicFilters: GenomicClause[] = GENE_FILTER_KEYS.flatMap((key) => {
+    const values = category?.[key];
+    return values?.length ? [{ key, values }] : [];
+  });
 
   let phenotypicClause: PhenotypicClause | null = null;
   if (clauses.length === 1) {
@@ -312,7 +290,7 @@ export function queryV2ToV3(query: QueryV2): QueryV3 {
 
   const select = [...new Set([...query.fields, ...query.crossCountFields])];
 
-  return new QueryV3({
+  return createQuery({
     select,
     authorizationFilters: [],
     phenotypicClause,

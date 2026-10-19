@@ -1,17 +1,15 @@
 import type { LogicTree } from '#lib/query/logicTree.svelte.ts';
 import type { Filter, FilterInterface } from '#lib/query/filter.svelte.ts';
-import type { PhenotypicClause, GenomicFilterInterfacev3 } from '#lib/query/query.ts';
-import { buildPhenotypicClauseFromTree, buildGenomicFiltersFromFilters } from '#lib/query/build.ts';
+import { toQueryFilters, type QueryFilters } from '#lib/query/build.ts';
 
 /**
  * Plain-data descriptor of a count query. `phenotypicClause` and
- * `genomicFilters` must be free of Svelte `$state` proxies — downstream code
- * structuredClones them. Use `buildDescriptor` rather than hand-constructing.
+ * `genomicFilters` must be free of Svelte `$state` proxies, so the descriptor
+ * hashes stably and cached requests can share it. Use `buildDescriptor` rather
+ * than hand-constructing.
  */
-export interface QueryDescriptor {
+export interface QueryDescriptor extends QueryFilters {
   isOpenAccess: boolean;
-  phenotypicClause: PhenotypicClause | null;
-  genomicFilters: GenomicFilterInterfacev3[];
 }
 
 export interface DescriptorInputs {
@@ -21,13 +19,8 @@ export interface DescriptorInputs {
 }
 
 export function buildDescriptor(inputs: DescriptorInputs): QueryDescriptor {
-  const rawClause = buildPhenotypicClauseFromTree(inputs.filterTree);
-  const rawGenomic = buildGenomicFiltersFromFilters(inputs.genomicFilters);
-  return {
-    isOpenAccess: inputs.isOpenAccess,
-    phenotypicClause: rawClause ? ($state.snapshot(rawClause) as PhenotypicClause) : null,
-    genomicFilters: $state.snapshot(rawGenomic) as GenomicFilterInterfacev3[],
-  };
+  const filters = toQueryFilters(inputs.filterTree, inputs.genomicFilters);
+  return { isOpenAccess: inputs.isOpenAccess, ...($state.snapshot(filters) as QueryFilters) };
 }
 
 // Object keys sorted at every depth so `{a:1,b:2}` and `{b:2,a:1}` hash the

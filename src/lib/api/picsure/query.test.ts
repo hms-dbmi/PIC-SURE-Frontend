@@ -12,10 +12,10 @@ import {
   runCrossCount,
   runSyncQuery,
 } from '#lib/api/picsure/query.ts';
-import type { QueryRequestBody } from '#lib/api/picsure/query.types.ts';
+import type { QueryRequest } from '#lib/api/picsure/query.types.ts';
 
 const respond = vi.mocked(request);
-const query = { query: { expectedResultType: 'COUNT' } } as QueryRequestBody;
+const query = { query: { expectedResultType: 'COUNT' } } as QueryRequest;
 
 beforeEach(() => respond.mockReset());
 

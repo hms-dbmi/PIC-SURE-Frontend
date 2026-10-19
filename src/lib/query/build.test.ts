@@ -7,7 +7,14 @@ vi.mock('#lib/auth/User.ts', async () => {
 });
 vi.mock('#lib/explorer/Dictionary.ts', () => ({ getConceptDetails: vi.fn() }));
 
-import { createGroup, filterTree, genomicFilters } from '#lib/query/filters.ts';
+import { get } from 'svelte/store';
+import {
+  createGroup,
+  currentQueryFilters,
+  filters,
+  filterTree,
+  genomicFilters,
+} from '#lib/query/filters.ts';
 import {
   createAnyRecordOfFilter,
   createCategoricalFilter,
@@ -19,9 +26,9 @@ import {
   type FilterInterface,
 } from '#lib/query/filter.svelte.ts';
 import { LogicTree } from '#lib/query/logicTree.svelte.ts';
-import { Operator } from '#lib/query/query.ts';
+import { Operator, queryLeaves } from '#lib/query/query.ts';
 import type { SearchResult } from '#lib/explorer/types.ts';
-import { getBlankQueryRequestV3, getFilterConcepts, getQueryRequestV3 } from '#lib/query/build.ts';
+import { buildRequest, filterConcepts } from '#lib/query/build.ts';
 
 function searchResult(conceptPath: string, children: SearchResult[] = []): SearchResult {
   return {
@@ -46,7 +53,7 @@ function setFilters(nodes: FilterInterface[], genomic: Filter[] = []) {
 
 function requestFor(nodes: FilterInterface[], genomic: Filter[] = []) {
   setFilters(nodes, genomic);
-  return getQueryRequestV3();
+  return buildRequest(currentQueryFilters());
 }
 
 // Every phenotypic tree is wrapped in the root AND group, even a single filter.
@@ -60,7 +67,7 @@ beforeEach(() => setFilters([]));
 
 describe('QueryBuilder request JSON', () => {
   it('sends an empty COUNT query when there are no filters', () => {
-    expect(getQueryRequestV3()).toEqual({
+    expect(buildRequest(currentQueryFilters())).toEqual({
       query: {
         select: [],
         authorizationFilters: [],
@@ -254,8 +261,8 @@ describe('QueryBuilder request JSON', () => {
       [createRequiredFilter(searchResult('\\a\\'))],
       [createGenomicFilter({ Gene_with_variant: ['BRCA1'] })],
     );
-    const mutated = getQueryRequestV3('CROSS_COUNT', (query) => {
-      query.select = query.leaves.map((leaf) => leaf.conceptPath);
+    const mutated = buildRequest(currentQueryFilters(), 'CROSS_COUNT', (query) => {
+      query.select = queryLeaves(query).map((leaf) => leaf.conceptPath);
       return query;
     });
 
@@ -272,7 +279,7 @@ describe('QueryBuilder request JSON', () => {
       [createGenomicFilter({ Gene_with_variant: ['BRCA1'] })],
     );
 
-    const request = getBlankQueryRequestV3('DATAFRAME', (query) => {
+    const request = buildRequest(null, 'DATAFRAME', (query) => {
       query.select = ['\\s\\'];
       return query;
     });
@@ -295,9 +302,9 @@ describe('QueryBuilder request JSON', () => {
       createGroup([anyRecord, createNumericFilter(searchResult('\\b\\'), '1')], Operator.OR),
     ]);
 
-    // getFilterConcepts needs the unserialised query, so it runs in the mutator, as in the export step.
-    const request = getQueryRequestV3('DATAFRAME', (query) => {
-      query.select = getFilterConcepts(query);
+    // filterConcepts needs the unserialised query, so it runs in the mutator, as in the export step.
+    const request = buildRequest(currentQueryFilters(), 'DATAFRAME', (query) => {
+      query.select = filterConcepts(query, get(filters));
       return query;
     });
     expect(request.query.select).toEqual(['\\a\\', '\\p\\c1\\', '\\p\\c1\\g\\', '\\b\\']);

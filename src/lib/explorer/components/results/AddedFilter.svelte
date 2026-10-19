@@ -9,8 +9,8 @@
   import {
     type Filter,
     type AnyRecordOfFilterInterface,
-    derivedFilterDescription,
-    derivedStudyDescription,
+    describeFilter,
+    studyLabel,
   } from '#lib/query/filter.svelte.ts';
   import { removeFilter, activeFilter, activeSearch } from '#lib/query/filters.ts';
   import { populateFromGeneFilter } from '#lib/query/GeneFilter.ts';
@@ -149,8 +149,8 @@
   </header>
   {#if open}
     <section class="p-1 whitespace-pre-wrap" transition:slide={{ axis: 'y' }}>
-      {derivedFilterDescription(filter)}
-      {derivedStudyDescription(filter)}
+      {describeFilter(filter)}
+      {studyLabel(filter.searchResult)}
       {#if filter.filterType === 'Categorical' && filter.displayType !== 'any' && filter.displayType !== 'anyRecordOf'}
         <div>Values: {filter.categoryValues.join(', ')}</div>
       {/if}

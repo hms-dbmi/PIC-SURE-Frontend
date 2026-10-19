@@ -1,10 +1,11 @@
 <script lang="ts">
   import OperatorBadge from '#lib/ui/OperatorBadge.svelte';
-  import type {
-    Filter,
-    FilterInterface,
-    FilterGroupInterface,
-    AnyRecordOfFilterInterface,
+  import {
+    describeFilter,
+    studyLabel,
+    type Filter,
+    type FilterInterface,
+    type FilterGroupInterface,
   } from '#lib/query/filter.svelte.ts';
   import { LogicTree } from '#lib/query/logicTree.svelte.ts';
   import { cardClass } from '#lib/ui/surface.ts';
@@ -18,42 +19,11 @@
   } = $props();
 
   let length = $derived(filterTree.length + genomicFilters.length);
-
-  function filterDescription(filter: Filter): string {
-    if (filter.filterType === 'Categorical') {
-      if (filter.displayType === 'restrict') {
-        const n = filter.categoryValues.length;
-        return `${n > 1 ? n + ' ' : ''}value${n !== 1 ? 's' : ''}: ${filter.categoryValues.join(', ')}`;
-      }
-      return 'Any value';
-    }
-    if (filter.filterType === 'AnyRecordOf') {
-      return `${(filter as AnyRecordOfFilterInterface).concepts.length} variable(s)`;
-    }
-    if (filter.filterType === 'numeric') {
-      switch (filter.displayType) {
-        case 'between':
-          return `Between ${filter.min} and ${filter.max}`;
-        case 'greaterThan':
-          return `> ${filter.min}`;
-        case 'lessThan':
-          return `< ${filter.max}`;
-        default:
-          return 'Any value';
-      }
-    }
-    return filter.description || '';
-  }
-
-  function studyLabel(filter: Filter): string {
-    const sr = filter.searchResult;
-    if (!sr) return filter.dataset || '';
-    if (sr.studyAcronym && sr.dataset) return `${sr.studyAcronym} · ${sr.dataset}`;
-    return sr.studyAcronym || sr.dataset || filter.dataset || '';
-  }
 </script>
 
 {#snippet filterCard(filter: Filter)}
+  {@const study = studyLabel(filter.searchResult, true) || filter.dataset || ''}
+  {@const description = describeFilter(filter, 'summary')}
   <div
     class="{cardClass} bg-surface-100 flex flex-col ml-2 p-3 gap-0.5 text-sm"
     data-testid="dataset-filter-card"
@@ -61,11 +31,11 @@
     <p class="font-semibold leading-snug m-0" title={filter.variableName}>
       {filter.variableName || filter.id}
     </p>
-    {#if studyLabel(filter)}
-      <p class="text-xs text-surface-700 m-0 mb-1">From {studyLabel(filter)}</p>
+    {#if study}
+      <p class="text-xs text-surface-700 m-0 mb-1">From {study}</p>
     {/if}
-    {#if filterDescription(filter)}
-      <p class="text-surface-700 m-0 mt-1">{filterDescription(filter)}</p>
+    {#if description}
+      <p class="text-surface-700 m-0 mt-1">{description}</p>
     {/if}
   </div>
 {/snippet}

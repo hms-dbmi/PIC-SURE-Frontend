@@ -7,7 +7,7 @@ import QuerySummary from '#lib/datasets/components/QuerySummary.svelte';
 import { loadQuerySummaryData } from '#lib/query/restore.ts';
 import { QueryVersion } from '#lib/datasets/dataset.ts';
 import { LogicTree } from '#lib/query/logicTree.svelte.ts';
-import { QueryV3 } from '#lib/query/query.ts';
+import { createQuery } from '#lib/query/query.ts';
 import type { QueryV2 } from '#lib/query/v2.ts';
 import type { FilterInterface, FilterGroupInterface } from '#lib/query/filter.svelte.ts';
 
@@ -23,12 +23,10 @@ vi.mock('#lib/config/config.svelte.ts', () => ({ config: mockConfig }));
 
 vi.mock('#lib/query/filters.ts', async () => {
   const { writable } = await import('svelte/store');
-  const { createFilterGroup } = await import('#lib/query/filter.svelte.ts');
   return {
     allFilters: writable([]),
     genomicFilters: writable([]),
     setFilterTree: vi.fn(),
-    createGroup: createFilterGroup,
   };
 });
 
@@ -36,6 +34,7 @@ const mockConceptPath = vi.hoisted(() => vi.fn());
 vi.mock('#lib/explorer/Dictionary.ts', async () => {
   return {
     getConceptDetails: mockConceptPath,
+    ENSURE_MAX_DEPTH: 100,
   };
 });
 
@@ -50,7 +49,7 @@ vi.mock('#lib/explorer/export/Export.ts', async () => {
 vi.mock('#lib/query/restore.ts', () => ({
   loadQuerySummaryData: vi.fn(),
   pathToSearchResult: vi.fn(),
-  estimateV3: vi.fn().mockReturnValue({ filters: 3, exports: 3 }),
+  estimateQuery: vi.fn().mockReturnValue({ filters: 3, exports: 3 }),
 }));
 
 const mockLoadQuerySummaryData = vi.mocked(loadQuerySummaryData);
@@ -79,7 +78,7 @@ const baseData = {
   errors: Promise.resolve([]),
 };
 
-const baseProps = { query: new QueryV3(), version: QueryVersion.V3 };
+const baseProps = { query: createQuery(), version: QueryVersion.V3 };
 const queryV2: QueryV2 = {
   fields: [],
   categoryFilters: {},
@@ -110,7 +109,7 @@ describe('QuerySummary', () => {
   });
 
   it('passes a V3 summary through to loadQuerySummaryData without filtering system fields', async () => {
-    const query = new QueryV3({
+    const query = createQuery({
       select: ['\\dataset\\age\\', '\\_consents\\'],
       authorizationFilters: [],
       phenotypicClause: null,
@@ -126,13 +125,14 @@ describe('QuerySummary', () => {
 
     expect(mockLoadQuerySummaryData).toHaveBeenCalledWith(
       expect.objectContaining({ select: ['\\dataset\\age\\', '\\_consents\\'] }),
+      expect.anything(),
     );
     expect(query.select).toEqual(['\\dataset\\age\\', '\\_consents\\']);
   });
 
   it('passes a V3 summary through to loadQuerySummaryData not reaching out to bypassed fields', async () => {
     const select = ['\\dataset\\age\\', '\\_consents\\', `\\${mockBypassPath}\\`];
-    const query = new QueryV3({
+    const query = createQuery({
       select,
       authorizationFilters: [],
       phenotypicClause: null,

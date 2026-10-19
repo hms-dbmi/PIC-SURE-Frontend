@@ -10,7 +10,7 @@
     createContinuousPlot,
     createCategoryPlot,
   } from '#lib/explorer/visualizations/plotly.ts';
-  import { getQueryRequestV3 } from '#lib/query/build.ts';
+  import { buildRequest } from '#lib/query/build.ts';
   import {
     categoricalHasData,
     continuousHasData,
@@ -23,7 +23,7 @@
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import { useOpenAccess } from '#lib/explorer/mode.ts';
   import LogicTreeSummary from '#lib/explorer/advanced/LogicTreeSummary.svelte';
-  import { filters, filterTree, genomicFilters } from '#lib/query/filters.ts';
+  import { currentQueryFilters, filters, filterTree, genomicFilters } from '#lib/query/filters.ts';
   import { type Filter, type FilterGroupInterface } from '#lib/query/filter.svelte.ts';
   import { get } from 'svelte/store';
 
@@ -64,7 +64,7 @@
       subtitle: getSubtitle(data.conceptPath),
     });
 
-    const query = getQueryRequestV3();
+    const query = buildRequest(currentQueryFilters());
 
     await getDistributions(query.query, { openEndpoint: useOpenAccess() })
       .then((resp) => {

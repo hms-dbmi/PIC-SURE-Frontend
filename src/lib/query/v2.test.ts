@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseQueryV2, queryV2ToV3 } from '#lib/query/v2.ts';
+import { parseQueryV2, queryFromV2 } from '#lib/query/v2.ts';
 
 function makeQueryV2(overrides: Record<string, unknown> = {}) {
   return {
@@ -113,7 +113,7 @@ describe('parseQueryV2', () => {
   });
 });
 
-describe('queryV2ToV3', () => {
+describe('queryFromV2', () => {
   it('maps and deduplicates selected fields', () => {
     const query = parseQueryV2(
       makeQueryV2({
@@ -123,7 +123,7 @@ describe('queryV2ToV3', () => {
     );
     if (!query) throw new Error('Invalid test query');
 
-    expect(queryV2ToV3(query).select).toEqual([
+    expect(queryFromV2(query).select).toEqual([
       '\\dataset\\age\\',
       '\\dataset\\sex\\',
       '\\dataset\\height\\',
@@ -140,7 +140,7 @@ describe('queryV2ToV3', () => {
     );
     if (!query) throw new Error('Invalid test query');
 
-    expect(queryV2ToV3(query).phenotypicClause).toMatchObject({
+    expect(queryFromV2(query).phenotypicClause).toMatchObject({
       type: 'PhenotypicSubquery',
       operator: 'AND',
       phenotypicClauses: [
@@ -180,7 +180,7 @@ describe('queryV2ToV3', () => {
     );
     if (!query) throw new Error('Invalid test query');
 
-    expect(queryV2ToV3(query).genomicFilters).toEqual([
+    expect(queryFromV2(query).genomicFilters).toEqual([
       { key: 'Gene_with_variant', values: ['BRCA1'] },
       { key: 'Variant_consequence_calculated', values: ['missense_variant'] },
       { key: 'Variant_frequency_as_text', values: ['Common'] },
@@ -191,7 +191,7 @@ describe('queryV2ToV3', () => {
     const query = parseQueryV2(makeQueryV2({ expectedResultType: ['DATAFRAME', 'COUNT'] }));
     if (!query) throw new Error('Invalid test query');
 
-    expect(queryV2ToV3(query).expectedResultType).toBe('DATAFRAME');
+    expect(queryFromV2(query).expectedResultType).toBe('DATAFRAME');
   });
 
   it('preserves OR within any-record groups and AND between groups', () => {
@@ -203,7 +203,7 @@ describe('queryV2ToV3', () => {
     );
     if (!query) throw new Error('Invalid test query');
 
-    const converted = queryV2ToV3(query);
+    const converted = queryFromV2(query);
 
     expect(converted.phenotypicClause).toMatchObject({
       type: 'PhenotypicSubquery',

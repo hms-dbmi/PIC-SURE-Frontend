@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
 import { mapDataset, QueryVersion } from '#lib/datasets/dataset.ts';
-import { QueryV3 } from '#lib/query/query.ts';
+import { queryLeaves, type Query } from '#lib/query/query.ts';
 import type { QueryV2 } from '#lib/query/v2.ts';
 
 const V2_INNER_QUERY = {
@@ -74,8 +74,7 @@ describe('mapDataset', () => {
 
       // Then
       expect(dataset.version).toBe(QueryVersion.V3);
-      expect(dataset.query).toBeInstanceOf(QueryV3);
-      const query = dataset.query as QueryV3;
+      const query = dataset.query as Query;
       expect(query.select).toEqual(V3_INNER_QUERY.select);
       expect(query.phenotypicClause).toMatchObject({
         type: 'PhenotypicFilter',
@@ -110,8 +109,7 @@ describe('mapDataset', () => {
 
       // Then
       expect(dataset.version).toBe(QueryVersion.V3);
-      expect(dataset.query).toBeInstanceOf(QueryV3);
-      const query = dataset.query as QueryV3;
+      const query = dataset.query as Query;
       expect(query.select).toEqual(V3_INNER_QUERY.select);
       expect(query.phenotypicClause).toMatchObject({
         type: 'PhenotypicFilter',
@@ -254,11 +252,11 @@ describe('mapDataset', () => {
       const dataset = mapDataset(data);
 
       // Then
-      const query = dataset.query as QueryV3;
+      const query = dataset.query as Query;
       expect(query.genomicFilters[0].min).toBeUndefined();
       expect(query.genomicFilters[0].max).toBeUndefined();
       expect(query.genomicFilters[0].values).toEqual(['HTR6']);
-      const leaf = query.leaves[0];
+      const leaf = queryLeaves(query)[0];
       expect(leaf.min).toBeUndefined();
       expect(leaf.max).toBeUndefined();
       expect(leaf.values).toBeUndefined();

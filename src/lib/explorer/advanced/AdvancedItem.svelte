@@ -1,10 +1,6 @@
 <script lang="ts">
   import OperatorBadge from '#lib/ui/OperatorBadge.svelte';
-  import {
-    type Filter,
-    type FilterInterface,
-    derivedFilterDescription,
-  } from '#lib/query/filter.svelte.ts';
+  import { type Filter, type FilterInterface, describeFilter } from '#lib/query/filter.svelte.ts';
   import { useSortable } from '@dnd-kit-svelte/svelte/sortable';
   import { CollisionPriority } from '@dnd-kit/abstract';
   import { slide } from 'svelte/transition';
@@ -138,7 +134,7 @@
     </div>
     {#if open}
       <section class="pb-2 px-4 whitespace-pre-wrap" transition:slide={{ axis: 'y' }}>
-        {derivedFilterDescription(filter as Filter)}
+        {describeFilter(filter as Filter)}
       </section>
     {/if}
   </div>

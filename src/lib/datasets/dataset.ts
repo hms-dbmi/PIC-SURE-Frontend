@@ -1,10 +1,10 @@
 import type { Indexable } from '#lib/utils/objects.ts';
-import { QueryV3 } from '#lib/query/query.ts';
+import { parseQuery, type Query, type SavedQuery } from '#lib/query/query.ts';
 import { parseQueryV2, type QueryV2 } from '#lib/query/v2.ts';
 
 export const QueryVersion = { UNKNOWN: 'UNKNOWN', V2: 'V2', V3: 'V3' };
 
-type MappedQuery = QueryV2 | QueryV3 | null;
+type MappedQuery = QueryV2 | Query | null;
 
 // TODO: Replace metadata type
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -36,7 +36,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
-function isSavedQueryV3(value: unknown): value is Parameters<typeof QueryV3.fromSerialized>[0] {
+function isSavedQuery(value: unknown): value is SavedQuery {
   return isRecord(value) && 'phenotypicClause' in value;
 }
 
@@ -73,9 +73,9 @@ export function mapDataset(data: any) {
         ? JSON.parse(jsonQuery.query)
         : jsonQuery.query;
 
-      if (isSavedQueryV3(subquery)) {
+      if (isSavedQuery(subquery)) {
         version = QueryVersion.V3;
-        query = QueryV3.fromSerialized(subquery);
+        query = parseQuery(subquery);
       } else {
         const queryV2 = parseQueryV2(subquery);
         if (queryV2) {

@@ -6,17 +6,15 @@
   import { config } from '#lib/config/config.svelte.ts';
   import { isToastShowing, toaster } from '#lib/ui/toaster.ts';
 
-  import type { QueryRequestInterfaceV3 } from '#lib/api/picsure/query.types.ts';
   import { panelOpen } from '#lib/explorer/panel.ts';
 
   import Content from '#lib/shell/Content.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import VariantExplorer from '#lib/explorer/variant/VariantExplorer.svelte';
-  import { getQueryRequestV3 } from '#lib/query/build.ts';
+  import { currentQueryFilters } from '#lib/query/filters.ts';
 
   onMount(() => {
-    const request: QueryRequestInterfaceV3 = getQueryRequestV3();
-    if (request.query.genomicFilters.length === 0) {
+    if (currentQueryFilters().genomicFilters.length === 0) {
       if (!isToastShowing('no-query')) {
         toaster.error({
           id: 'no-query',

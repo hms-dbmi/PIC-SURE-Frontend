@@ -5,13 +5,10 @@ import type { ResultCountSnapshot } from '#lib/query/counts/snapshot.ts';
 import { summarize } from '#lib/query/counts/snapshot.ts';
 import { LRU } from '#lib/utils/lru.ts';
 import { log, createLog } from '#lib/telemetry/logger.ts';
-import type { QueryRequestInterfaceV3 } from '#lib/api/picsure/query.types.ts';
+import type { QueryRequest } from '#lib/api/picsure/query.types.ts';
 import { PicsurePaths } from '#lib/api/paths.ts';
 
-export type CountTransport = (
-  request: QueryRequestInterfaceV3,
-  openEndpoint: boolean,
-) => Promise<unknown>;
+export type CountTransport = (request: QueryRequest, openEndpoint: boolean) => Promise<unknown>;
 
 export interface QueryCountServiceOptions {
   transport: CountTransport;

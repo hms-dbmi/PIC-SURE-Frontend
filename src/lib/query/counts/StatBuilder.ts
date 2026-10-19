@@ -2,7 +2,12 @@ import { config } from '#lib/config/config.svelte.ts';
 import { searchConcepts, searchFacets } from '#lib/api/picsure/dictionary.ts';
 import { runSyncQuery } from '#lib/api/picsure/query.ts';
 
-import type { ExpectedResultType, QueryV3, PhenotypicFilterInterface } from '#lib/query/query.ts';
+import {
+  appendClauses,
+  type ExpectedResultType,
+  type PhenotypicFilter,
+  type Query,
+} from '#lib/query/query.ts';
 import type { DictionarySearchRequest } from '#lib/api/picsure/dictionary.types.ts';
 import type { StatConfig, StatField } from '#lib/config/index.ts';
 import type {
@@ -16,9 +21,9 @@ import type {
 import { isUserLoggedIn } from '#lib/auth/User.ts';
 import { addConsents } from '#lib/explorer/Dictionary.ts';
 import { getCountResource } from '#lib/explorer/Resources.ts';
-import { getQueryRequestV3, getBlankQueryRequestV3 } from '#lib/query/build.ts';
+import { buildRequest } from '#lib/query/build.ts';
+import { currentQueryFilters } from '#lib/query/filters.ts';
 import { countResult } from '#lib/query/counts/format.ts';
-import type { QueryRequestInterfaceV3 } from '#lib/api/picsure/query.types.ts';
 import { log, createLog } from '#lib/telemetry/logger.ts';
 import { useOpenAccess } from '#lib/explorer/mode.ts';
 
@@ -81,7 +86,7 @@ async function getConceptCount({ isOpenAccess }: RequestMapOptions): Promise<Pat
 }
 
 function blank({ addFilters, isOpenAccess }: RequestMapOptions): Promise<PatientCount> {
-  const request = addFilters ? getQueryRequestV3('COUNT') : getBlankQueryRequestV3('COUNT');
+  const request = buildRequest(addFilters ? currentQueryFilters() : null, 'COUNT');
   return runSyncQuery(request, { openEndpoint: useOpenAccess(isOpenAccess) }).then(
     rejectIfQueryError,
   );
@@ -95,14 +100,14 @@ interface CategoryMap {
   [key: string]: string[];
 }
 const queryMappers = {
-  addCrossCountFields: (concepts: string[]) => (query: QueryV3) => {
+  addCrossCountFields: (concepts: string[]) => (query: Query) => {
     query.select = concepts;
     return query;
   },
-  addCategoryMap: (map: CategoryMap) => (query: QueryV3) => {
-    const clauses: PhenotypicFilterInterface[] = [];
+  addCategoryMap: (map: CategoryMap) => (query: Query) => {
+    const clauses: PhenotypicFilter[] = [];
     Object.entries(map).forEach(([conceptPath, fieldList]) => {
-      const clause: PhenotypicFilterInterface = {
+      const clause: PhenotypicFilter = {
         type: 'PhenotypicFilter',
         phenotypicFilterType: 'FILTER',
         conceptPath,
@@ -115,15 +120,13 @@ const queryMappers = {
       }
       clauses.push(clause);
     });
-    query.addClauses(clauses);
+    query.phenotypicClause = appendClauses(query.phenotypicClause, clauses);
     return query;
   },
 };
 
 async function getOpenPatientCount({ addFilters }: RequestMapOptions): Promise<PatientCount> {
-  const request: QueryRequestInterfaceV3 = addFilters
-    ? getQueryRequestV3('CROSS_COUNT')
-    : getBlankQueryRequestV3('CROSS_COUNT');
+  const request = buildRequest(addFilters ? currentQueryFilters() : null, 'CROSS_COUNT');
   log(
     createLog('QUERY', 'query.execute', {
       isOpenAccess: true,
@@ -137,7 +140,7 @@ async function getOpenPatientCount({ addFilters }: RequestMapOptions): Promise<P
 }
 
 function getAuthPatientCount({ addFilters }: RequestMapOptions): Promise<PatientCount> {
-  const request = addFilters ? getQueryRequestV3('COUNT') : getBlankQueryRequestV3('COUNT');
+  const request = buildRequest(addFilters ? currentQueryFilters() : null, 'COUNT');
   log(
     createLog('QUERY', 'query.execute', {
       isOpenAccess: false,
@@ -157,9 +160,7 @@ function getCrossCounts(field: string, type: ExpectedResultType) {
     const fields: string[] = getStatFields(field).map((f) => f.conceptPath);
     if (fields.length === 0) return Promise.reject(`${field} feilds were not configured`);
     const mapper = queryMappers.addCrossCountFields(fields);
-    const request = addFilters
-      ? getQueryRequestV3(type, mapper)
-      : getBlankQueryRequestV3(type, mapper);
+    const request = buildRequest(addFilters ? currentQueryFilters() : null, type, mapper);
     log(
       createLog('QUERY', 'query.execute', {
         isOpenAccess,
@@ -188,9 +189,7 @@ function getConsentCount(type: ExpectedResultType) {
     );
 
     const mapper = queryMappers.addCategoryMap(categoryMap);
-    const request = addFilters
-      ? getQueryRequestV3(type, mapper)
-      : getBlankQueryRequestV3(type, mapper);
+    const request = buildRequest(addFilters ? currentQueryFilters() : null, type, mapper);
     return runSyncQuery(request, { openEndpoint: useOpenAccess(isOpenAccess) }).then(
       rejectIfQueryError,
     );

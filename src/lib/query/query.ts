@@ -10,36 +10,31 @@ export type ExpectedResultType =
   | 'VARIANT_COUNT_FOR_QUERY'
   | 'SECRET_ADMIN_DATAFRAME';
 
-// -------------------------------- V3 Query -------------------------------- //
-
 type UUID = `${string}-${string}-${string}-${string}-${string}` | null;
 export type PhenotypicFilterType = 'REQUIRED' | 'FILTER' | 'ANY_RECORD_OF';
-export type PhenotypicClause = PhenotypicSubqueryInterface | PhenotypicFilterInterface;
+export type PhenotypicClause = PhenotypicSubquery | PhenotypicFilter;
 export const Operator = {
   AND: 'AND',
   OR: 'OR',
 } as const;
 export type OperatorType = (typeof Operator)[keyof typeof Operator];
 
-export interface QueryInterfaceV3 {
+export interface Query {
   select: string[];
-  authorizationFilters: AuthorizationFilterInterface[];
+  authorizationFilters: AuthorizationFilter[];
   phenotypicClause: PhenotypicClause | null;
-  genomicFilters: GenomicFilterInterfacev3[];
+  genomicFilters: GenomicClause[];
   expectedResultType: ExpectedResultType;
   picsureId: UUID;
   id: UUID;
 }
 
-export interface PhenotypicClauseInterface {
-  type: string;
-}
-export interface AuthorizationFilterInterface {
+export interface AuthorizationFilter {
   conceptPath: string;
   values: string[];
 }
 
-export interface PhenotypicFilterInterface extends PhenotypicClauseInterface {
+export interface PhenotypicFilter {
   type: 'PhenotypicFilter';
   phenotypicFilterType: PhenotypicFilterType;
   conceptPath: string;
@@ -49,18 +44,75 @@ export interface PhenotypicFilterInterface extends PhenotypicClauseInterface {
   not: boolean;
 }
 
-export interface PhenotypicSubqueryInterface extends PhenotypicClauseInterface {
+export interface PhenotypicSubquery {
   type: 'PhenotypicSubquery';
   not: boolean | null;
   phenotypicClauses: PhenotypicClause[];
   operator: OperatorType;
 }
 
-export interface GenomicFilterInterfacev3 {
+export interface GenomicClause {
   key: string;
   values?: string[];
   min?: number;
   max?: number;
+}
+
+// The wire form has no `type` tags (the backend tells a subquery from a filter by its fields),
+// and JSON drops undefined fields.
+export type PhenotypicFilterJson = Omit<PhenotypicFilter, 'type'>;
+export type PhenotypicSubqueryJson = Omit<PhenotypicSubquery, 'type' | 'phenotypicClauses'> & {
+  phenotypicClauses: PhenotypicClauseJson[];
+};
+export type PhenotypicClauseJson = PhenotypicFilterJson | PhenotypicSubqueryJson;
+export type QueryJson = Omit<Query, 'phenotypicClause'> & {
+  phenotypicClause: PhenotypicClauseJson | null;
+};
+
+export function createQuery(fields: Partial<Query> = {}): Query {
+  return {
+    select: fields.select || [],
+    authorizationFilters: fields.authorizationFilters || [],
+    phenotypicClause: fields.phenotypicClause || null,
+    genomicFilters: fields.genomicFilters || [],
+    expectedResultType: fields.expectedResultType || 'COUNT',
+    picsureId: fields.picsureId || null,
+    id: fields.id || null,
+  };
+}
+
+export function queryLeaves(query: Pick<Query, 'phenotypicClause'>): PhenotypicFilter[] {
+  const getLeaves = (node: PhenotypicClause): PhenotypicFilter[] =>
+    node.type === 'PhenotypicSubquery' ? node.phenotypicClauses.flatMap(getLeaves) : [node];
+  return query.phenotypicClause ? getLeaves(query.phenotypicClause) : [];
+}
+
+/**
+ * Appends `clauses` to a root clause without mutating it: a lone filter becomes a
+ * `defaultOperator` group of itself and the first clause; a group gains them as children.
+ */
+export function appendClauses(
+  root: PhenotypicClause | null,
+  clauses: PhenotypicClause[],
+  defaultOperator: OperatorType = Operator.AND,
+): PhenotypicClause | null {
+  return clauses.reduce<PhenotypicClause | null>((current, clause) => {
+    if (current === null) return clause;
+    if (current.type === 'PhenotypicFilter') {
+      return {
+        type: 'PhenotypicSubquery',
+        phenotypicClauses: [current, clause],
+        operator: defaultOperator,
+        not: false,
+      };
+    }
+    return { ...current, phenotypicClauses: [...current.phenotypicClauses, clause] };
+  }, root);
+}
+
+/** Strips the `type` tags and undefined fields, as the backend expects. */
+export function toQueryJson(query: Query): QueryJson {
+  return JSON.parse(JSON.stringify(query, (key, value) => (key === 'type' ? undefined : value)));
 }
 
 // The API echoes saved queries back with every field present, so unset bounds and
@@ -69,124 +121,58 @@ function undefinedIfNull<T>(value: unknown): T | undefined {
   return value === null ? undefined : (value as T);
 }
 
-export class QueryV3 implements QueryInterfaceV3 {
-  select: string[];
-  authorizationFilters: AuthorizationFilterInterface[];
-  phenotypicClause: PhenotypicClause | null;
-  genomicFilters: GenomicFilterInterfacev3[];
-  expectedResultType: ExpectedResultType;
-  picsureId: UUID;
-  id: UUID;
-
-  constructor(newQuery?: QueryInterfaceV3) {
-    this.select = newQuery?.select || [];
-    this.authorizationFilters = newQuery?.authorizationFilters || [];
-    this.phenotypicClause = newQuery?.phenotypicClause || null;
-    this.genomicFilters = newQuery?.genomicFilters || [];
-    this.expectedResultType = newQuery?.expectedResultType || 'COUNT';
-    this.picsureId = newQuery?.picsureId || null;
-    this.id = newQuery?.id || null;
-  }
-
-  get leaves(): PhenotypicFilterInterface[] {
-    const getLeaves = (node: PhenotypicClause): PhenotypicFilterInterface[] => {
-      if (node.type === 'PhenotypicSubquery') {
-        return node.phenotypicClauses.flatMap((child) => getLeaves(child));
-      }
-
-      return [node];
-    };
-    return this.phenotypicClause ? getLeaves(this.phenotypicClause) : [];
-  }
-
-  addClauses(clauses: PhenotypicClause[], defaultOperator: OperatorType = Operator.AND) {
-    clauses.forEach((clause: PhenotypicClause) => this.addClause(clause, defaultOperator));
-  }
-
-  addClause(clause: PhenotypicClause, defaultOperator: OperatorType = Operator.AND) {
-    if (this.phenotypicClause === null) {
-      this.phenotypicClause = clause;
-    } else if (this.phenotypicClause.type === 'PhenotypicFilter') {
-      this.phenotypicClause = {
-        type: 'PhenotypicSubquery',
-        phenotypicClauses: [this.phenotypicClause, clause],
-        operator: defaultOperator,
-        not: false,
-      };
-    } else if (this.phenotypicClause.type === 'PhenotypicSubquery') {
-      this.phenotypicClause.phenotypicClauses = [
-        ...(this.phenotypicClause.phenotypicClauses || []),
-        clause,
-      ];
-    }
-  }
-
-  hasGenomicFilter(): boolean {
-    return this.genomicFilters.length > 0;
-  }
-
-  hasFilter(): boolean {
-    return (
-      this.hasGenomicFilter() ||
-      (this.phenotypicClause !== null &&
-        ((this.phenotypicClause.type === 'PhenotypicSubquery' &&
-          this.phenotypicClause.phenotypicClauses.length > 0) ||
-          this.phenotypicClause.type === 'PhenotypicFilter'))
-    );
-  }
-
-  private static deserializeClause(clause: Record<string, unknown>): PhenotypicClause {
-    if ('operator' in clause || 'phenotypicClauses' in clause) {
-      return {
-        type: 'PhenotypicSubquery',
-        operator: clause.operator as OperatorType,
-        not: (clause.not as boolean) ?? false,
-        phenotypicClauses: ((clause.phenotypicClauses as Record<string, unknown>[]) || []).map(
-          QueryV3.deserializeClause,
-        ),
-      };
-    }
+function parseClause(clause: Record<string, unknown>): PhenotypicClause {
+  if ('operator' in clause || 'phenotypicClauses' in clause) {
     return {
-      type: 'PhenotypicFilter',
-      phenotypicFilterType: clause.phenotypicFilterType as PhenotypicFilterType,
-      conceptPath: clause.conceptPath as string,
+      type: 'PhenotypicSubquery',
+      operator: clause.operator as OperatorType,
       not: (clause.not as boolean) ?? false,
-      values: undefinedIfNull<string[]>(clause.values),
-      min: undefinedIfNull<number>(clause.min),
-      max: undefinedIfNull<number>(clause.max),
+      phenotypicClauses: ((clause.phenotypicClauses as Record<string, unknown>[]) || []).map(
+        parseClause,
+      ),
     };
   }
+  return {
+    type: 'PhenotypicFilter',
+    phenotypicFilterType: clause.phenotypicFilterType as PhenotypicFilterType,
+    conceptPath: clause.conceptPath as string,
+    not: (clause.not as boolean) ?? false,
+    values: undefinedIfNull<string[]>(clause.values),
+    min: undefinedIfNull<number>(clause.min),
+    max: undefinedIfNull<number>(clause.max),
+  };
+}
 
-  private static deserializeGenomicFilter(
-    filter: GenomicFilterInterfacev3,
-  ): GenomicFilterInterfacev3 {
-    return {
-      key: filter.key,
-      values: undefinedIfNull<string[]>(filter.values),
-      min: undefinedIfNull<number>(filter.min),
-      max: undefinedIfNull<number>(filter.max),
-    };
-  }
+function parseGenomicClause(filter: GenomicClause): GenomicClause {
+  return {
+    key: filter.key,
+    values: undefinedIfNull<string[]>(filter.values),
+    min: undefinedIfNull<number>(filter.min),
+    max: undefinedIfNull<number>(filter.max),
+  };
+}
 
-  static fromSerialized(data: {
-    select?: string[];
-    authorizationFilters?: AuthorizationFilterInterface[];
-    phenotypicClause?: object | null;
-    genomicFilters?: GenomicFilterInterfacev3[];
-    expectedResultType?: ExpectedResultType;
-    picsureId?: UUID;
-    id?: UUID;
-  }): QueryV3 {
-    return new QueryV3({
-      select: data.select || [],
-      authorizationFilters: data.authorizationFilters || [],
-      phenotypicClause: data.phenotypicClause
-        ? QueryV3.deserializeClause(data.phenotypicClause as Record<string, unknown>)
-        : null,
-      genomicFilters: (data.genomicFilters || []).map(QueryV3.deserializeGenomicFilter),
-      expectedResultType: data.expectedResultType || 'COUNT',
-      picsureId: data.picsureId ?? null,
-      id: data.id ?? null,
-    });
-  }
+export interface SavedQuery {
+  select?: string[];
+  authorizationFilters?: AuthorizationFilter[];
+  phenotypicClause?: object | null;
+  genomicFilters?: GenomicClause[];
+  expectedResultType?: ExpectedResultType;
+  picsureId?: UUID;
+  id?: UUID;
+}
+
+/** Restores the `type` tags of a query that went over the wire (a saved dataset's query). */
+export function parseQuery(data: SavedQuery): Query {
+  return createQuery({
+    select: data.select || [],
+    authorizationFilters: data.authorizationFilters || [],
+    phenotypicClause: data.phenotypicClause
+      ? parseClause(data.phenotypicClause as Record<string, unknown>)
+      : null,
+    genomicFilters: (data.genomicFilters || []).map(parseGenomicClause),
+    expectedResultType: data.expectedResultType || 'COUNT',
+    picsureId: data.picsureId ?? null,
+    id: data.id ?? null,
+  });
 }

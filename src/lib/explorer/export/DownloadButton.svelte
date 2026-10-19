@@ -3,7 +3,7 @@
   import { ApiError, consentDeniedMessage } from '#lib/api/errors.ts';
   import { config } from '#lib/config/config.svelte.ts';
   import { browser } from '$app/env';
-  import type { QueryRequestInterfaceV3 } from '#lib/api/picsure/query.types.ts';
+  import type { QueryRequest } from '#lib/api/picsure/query.types.ts';
   import { getQueryResult } from '#lib/api/picsure/query.ts';
   import ConfirmDialog from '#lib/ui/dialog/ConfirmDialog.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
@@ -11,7 +11,7 @@
   import Loading from '#lib/ui/Loading.svelte';
   import { log, createLog } from '#lib/telemetry/logger.ts';
   interface Props {
-    query: QueryRequestInterfaceV3;
+    query: QueryRequest;
     datasetId: string | undefined;
   }
 

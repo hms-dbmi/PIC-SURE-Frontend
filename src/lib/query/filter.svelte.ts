@@ -1,6 +1,6 @@
 import { genericUUID, objectUUID } from '#lib/utils/uuid.ts';
 import type { SearchResult } from '#lib/explorer/types.ts';
-import { GenotypeMap, type SNP } from '#lib/query/genomic.ts';
+import { GenotypeMap, type GeneFilterValues, type SNP } from '#lib/query/genomic.ts';
 import { type OperatorType, Operator } from '#lib/query/query.ts';
 
 import type { LogicNode, LogicGroup } from '#lib/query/logicTree.svelte.ts';
@@ -57,12 +57,8 @@ export interface NumericFilterInterface extends FilterInterface {
   max?: string | undefined;
 }
 
-export interface GenomicFilterInterface extends FilterInterface {
+export interface GenomicFilterInterface extends FilterInterface, GeneFilterValues {
   filterType: 'genomic';
-  //todo make types?
-  Gene_with_variant?: string[];
-  Variant_consequence_calculated?: string[];
-  Variant_frequency_as_text?: string[];
   min?: string;
   max?: string;
 }
@@ -232,13 +228,9 @@ export function createNumericFilter(
   return filter;
 }
 
-export function createGenomicFilter(geneFilter: {
-  Gene_with_variant?: string[];
-  Variant_consequence_calculated?: string[];
-  Variant_frequency_as_text?: string[];
-  min?: string;
-  max?: string;
-}): GenomicFilterInterface {
+export function createGenomicFilter(
+  geneFilter: GeneFilterValues & { min?: string; max?: string },
+): GenomicFilterInterface {
   const orJoin = (key: string, arr: string[] | undefined) =>
     arr && arr.length > 0 ? `${key}: ${arr.join(', ')}` : undefined;
   const descriptionParts = [
@@ -303,7 +295,15 @@ export function createSnpsFilter(snps: SNP[]): SnpFilterInterface {
   return filter;
 }
 
-export function derivedFilterDescription(filter: Filter): string {
+/**
+ * What a filter restricts to. `sentence` is the explorer's wording ("Restricting to …");
+ * `summary` is the dataset summary's short form, empty when there's nothing to add.
+ */
+export function describeFilter(filter: Filter, form: 'sentence' | 'summary' = 'sentence'): string {
+  return form === 'summary' ? summarizeFilter(filter) : filterSentence(filter);
+}
+
+function filterSentence(filter: Filter): string {
   if (filter.filterType === 'Categorical') {
     if (filter.displayType === 'restrict') {
       const valueText = filter.categoryValues.length === 1 ? 'value' : 'values';
@@ -334,9 +334,40 @@ export function derivedFilterDescription(filter: Filter): string {
   return 'N/A';
 }
 
-export function derivedStudyDescription(filter: Filter) {
-  if (filter.searchResult?.studyAcronym && filter.searchResult?.dataset) {
-    return `${filter.searchResult.studyAcronym} (${filter.searchResult.dataset})`;
+function summarizeFilter(filter: Filter): string {
+  if (filter.filterType === 'Categorical') {
+    if (filter.displayType === 'restrict') {
+      const n = filter.categoryValues.length;
+      return `${n > 1 ? n + ' ' : ''}value${n !== 1 ? 's' : ''}: ${filter.categoryValues.join(', ')}`;
+    }
+    return 'Any value';
   }
-  return filter.searchResult?.studyAcronym || filter.searchResult?.dataset || '';
+  if (filter.filterType === 'AnyRecordOf') {
+    return `${filter.concepts.length} variable(s)`;
+  }
+  if (filter.filterType === 'numeric') {
+    switch (filter.displayType) {
+      case 'between':
+        return `Between ${filter.min} and ${filter.max}`;
+      case 'greaterThan':
+        return `> ${filter.min}`;
+      case 'lessThan':
+        return `< ${filter.max}`;
+      default:
+        return 'Any value';
+    }
+  }
+  return filter.description || '';
+}
+
+/** "ACRONYM (dataset)" (`compact`: "ACRONYM · dataset"), or whichever of the two is set. */
+export function studyLabel(
+  study: { studyAcronym?: string; dataset?: string } | undefined,
+  compact = false,
+): string {
+  const { studyAcronym, dataset } = study ?? {};
+  if (studyAcronym && dataset) {
+    return compact ? `${studyAcronym} · ${dataset}` : `${studyAcronym} (${dataset})`;
+  }
+  return studyAcronym || dataset || '';
 }

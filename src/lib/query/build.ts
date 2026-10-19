@@ -1,24 +1,28 @@
 import {
-  QueryV3,
+  createQuery,
+  toQueryJson,
   type ExpectedResultType,
-  type PhenotypicFilterInterface,
-  type PhenotypicSubqueryInterface,
-  type PhenotypicFilterType,
+  type GenomicClause,
   type PhenotypicClause,
+  type PhenotypicFilter,
+  type PhenotypicSubquery,
+  type Query,
 } from '#lib/query/query.ts';
-import type { QueryRequestInterfaceV3 } from '#lib/api/picsure/query.types.ts';
-import { get } from 'svelte/store';
-import { filters, filterTree, genomicFilters } from '#lib/query/filters.ts';
+import type { QueryRequest } from '#lib/api/picsure/query.types.ts';
 import type {
   Filter,
-  FilterType,
   FilterInterface,
   GenomicFilterInterface,
   SnpFilterInterface,
-  AnyRecordOfFilterInterface,
 } from '#lib/query/filter.svelte.ts';
-import { LogicTree } from '#lib/query/logicTree.svelte.ts';
-import type { GenomicFilterInterfacev3, OperatorType } from '#lib/query/query.ts';
+import { GENE_FILTER_KEYS, GENOMIC_RANGE_KEY } from '#lib/query/genomic.ts';
+import type { LogicTree } from '#lib/query/logicTree.svelte.ts';
+
+/** The filter part of a query: what the user's filter tree and genomic filters send. */
+export interface QueryFilters {
+  phenotypicClause: PhenotypicClause | null;
+  genomicFilters: GenomicClause[];
+}
 
 const parseNumber = (input: string | number | null | undefined): number | undefined => {
   if (input === null || input === undefined) return undefined;
@@ -33,253 +37,142 @@ const parseNumber = (input: string | number | null | undefined): number | undefi
   return Number.isFinite(n) ? n : undefined;
 };
 
-// -------------------------------- V3 Query -------------------------------- //
-
-function serializeQueryV3(query: QueryV3) {
-  return JSON.parse(
-    JSON.stringify(query, (key, value) => {
-      if (key === 'type') return undefined;
-      return value;
-    }),
-  );
-}
-
-export function buildPhenotypicClauseFromTree(
-  tree: LogicTree<FilterInterface>,
-): PhenotypicClause | null {
+export function treeToClause(tree: LogicTree<FilterInterface>): PhenotypicClause | null {
   if (tree.root.children.length === 0) return null;
 
-  const groupClause = (operator: OperatorType): PhenotypicSubqueryInterface => ({
-    type: 'PhenotypicSubquery',
-    operator,
-    phenotypicClauses: [],
-    not: false,
-  });
   const mapNode = (node: FilterInterface): PhenotypicClause => {
     if (tree.isGroup(node)) {
-      const newGroup = groupClause(node.operator);
-      newGroup.phenotypicClauses = node.children.map(mapNode);
-      return newGroup;
+      const group: PhenotypicSubquery = {
+        type: 'PhenotypicSubquery',
+        operator: node.operator,
+        phenotypicClauses: [],
+        not: false,
+      };
+      group.phenotypicClauses = node.children.map(mapNode);
+      return group;
     }
-    return convertPhenotypicFilterToClause(node as Filter);
+    return filterToClause(node as Filter);
   };
   return mapNode(tree.root);
 }
 
-export function buildGenomicFiltersFromFilters(
-  genomicFilters: Filter[],
-): GenomicFilterInterfacev3[] {
-  const out: GenomicFilterInterfacev3[] = [];
-  genomicFilters.forEach((filter: Filter) => {
-    if (filter.filterType === 'snp') {
-      convertSnpFilterToClause(filter).forEach((g) => out.push(g));
-    } else if (filter.filterType === 'genomic') {
-      convertGenomicFilterToClause(filter).forEach((g) => out.push(g));
-    }
+export function genomicToClauses(genomicFilters: Filter[]): GenomicClause[] {
+  return genomicFilters.flatMap((filter) => {
+    if (filter.filterType === 'snp') return snpFilterToClauses(filter);
+    if (filter.filterType === 'genomic') return geneFilterToClauses(filter);
+    return [];
   });
-  return out;
 }
 
-export function buildQueryRequestV3FromDescriptor(
-  descriptor: import('#lib/query/descriptor.svelte.ts').QueryDescriptor,
+export function toQueryFilters(
+  tree: LogicTree<FilterInterface>,
+  genomicFilters: Filter[],
+): QueryFilters {
+  return {
+    phenotypicClause: treeToClause(tree),
+    genomicFilters: genomicToClauses(genomicFilters),
+  };
+}
+
+/**
+ * The one request factory. `filters` null sends no filters. `edit` sees the query before it is
+ * serialised; it may set its own fields but must not mutate the clauses in `filters`, which
+ * are shared (use `appendClauses`).
+ */
+export function buildRequest(
+  filters: QueryFilters | null,
   expectedResultType: ExpectedResultType = 'COUNT',
-  mutateMethod: (query: QueryV3) => QueryV3 = (q) => q,
-): QueryRequestInterfaceV3 {
-  let query: QueryV3 = new QueryV3();
-  query.expectedResultType = expectedResultType;
-  // Defensive clone: QueryV3.addClause reassigns `phenotypicClauses` on the
-  // existing clause object, so an aliased descriptor.phenotypicClause would be
-  // mutated by mutateMethod. The descriptor must remain immutable so stableHash
-  // stays stable for cache lookups.
-  query.phenotypicClause = descriptor.phenotypicClause
-    ? structuredClone(descriptor.phenotypicClause)
-    : null;
-  descriptor.genomicFilters.forEach((g) => query.genomicFilters.push(structuredClone(g)));
-  query = mutateMethod(query);
-  return { query: serializeQueryV3(query) };
+  edit: (query: Query) => Query = (query) => query,
+): QueryRequest {
+  const query = createQuery({ expectedResultType });
+  if (filters) {
+    query.phenotypicClause = filters.phenotypicClause;
+    query.genomicFilters = [...filters.genomicFilters];
+  }
+  return { query: toQueryJson(edit(query)) };
 }
 
-export function getFilterConcepts(query: QueryV3): string[] {
-  if (query.phenotypicClause == null) return [];
-
+/** Every concept path a query filters on, with any-record-of filters expanded from `filters`. */
+export function filterConcepts(query: Query, filters: readonly Filter[]): string[] {
   const concepts: string[] = [];
 
   function mapClause(clause: PhenotypicClause): void {
-    if (clause.type === 'PhenotypicSubquery' && clause.phenotypicClauses.length > 0) {
+    if (clause.type === 'PhenotypicSubquery') {
       clause.phenotypicClauses.forEach(mapClause);
-      return;
-    }
-    const thisFilter = clause as PhenotypicFilterInterface;
-    if (thisFilter.phenotypicFilterType === 'ANY_RECORD_OF') {
-      const anyRecordFilter = get(filters).find(
-        (filter) => filter.id === thisFilter.conceptPath,
-      ) as AnyRecordOfFilterInterface | undefined;
-      if (!anyRecordFilter) return;
-      anyRecordFilter.concepts.forEach((concept) => concepts.push(concept));
+    } else if (clause.phenotypicFilterType === 'ANY_RECORD_OF') {
+      const anyRecordFilter = filters.find((filter) => filter.id === clause.conceptPath);
+      if (anyRecordFilter?.filterType === 'AnyRecordOf') concepts.push(...anyRecordFilter.concepts);
     } else {
-      concepts.push(thisFilter.conceptPath);
+      concepts.push(clause.conceptPath);
     }
   }
-  mapClause(query.phenotypicClause);
+  if (query.phenotypicClause) mapClause(query.phenotypicClause);
 
   return concepts;
 }
 
-export function getQueryRequestV3(
-  expectedResultType: ExpectedResultType = 'COUNT',
-  mutateMethod: (query: QueryV3) => QueryV3 = (q) => q,
-): QueryRequestInterfaceV3 {
-  return getBlankQueryRequestV3(expectedResultType, (query: QueryV3) => {
-    query.phenotypicClause = buildPhenotypicClauseFromTree(get(filterTree));
-    get(genomicFilters).forEach((filter: Filter) => {
-      if (filter.filterType === 'snp') {
-        convertSnpFilterToClause(filter).forEach((genomicFilter) => {
-          query.genomicFilters.push(genomicFilter);
-        });
-      } else if (filter.filterType === 'genomic') {
-        convertGenomicFilterToClause(filter).forEach((genomicFilter) => {
-          query.genomicFilters.push(genomicFilter);
-        });
-      }
-    });
-    return mutateMethod(query);
-  });
-}
-
-export function getBlankQueryRequestV3(
-  expectedResultType: ExpectedResultType = 'COUNT',
-  mutateMethod: (query: QueryV3) => QueryV3 = (q) => q,
-): QueryRequestInterfaceV3 {
-  let query: QueryV3 = new QueryV3();
-  query.expectedResultType = expectedResultType;
-
-  query = mutateMethod(query);
-
-  return {
-    query: serializeQueryV3(query),
-  };
-}
-
-const convertPhenotypicFilterToClause = (filter: Filter): PhenotypicFilterInterface => {
-  const newFilterClause: PhenotypicFilterInterface = {
+function filterToClause(filter: Filter): PhenotypicFilter {
+  const clause: PhenotypicFilter = {
     type: 'PhenotypicFilter',
-    phenotypicFilterType: convertFilterTypeToClauseType(filter.filterType),
+    phenotypicFilterType: 'FILTER',
     conceptPath: filter.id,
     not: false,
   };
   switch (filter.filterType) {
     case 'AnyRecordOf':
-      newFilterClause.phenotypicFilterType = 'ANY_RECORD_OF';
+      clause.phenotypicFilterType = 'ANY_RECORD_OF';
       break;
 
     case 'required':
-      newFilterClause.phenotypicFilterType = 'REQUIRED';
+      clause.phenotypicFilterType = 'REQUIRED';
       break;
 
     case 'numeric':
       if (filter.min === undefined && filter.max === undefined) {
-        newFilterClause.phenotypicFilterType = 'REQUIRED';
+        clause.phenotypicFilterType = 'REQUIRED';
       }
       if (filter.min !== undefined) {
-        newFilterClause.min = parseNumber(filter.min);
+        clause.min = parseNumber(filter.min);
       }
       if (filter.max !== undefined) {
-        newFilterClause.max = parseNumber(filter.max);
+        clause.max = parseNumber(filter.max);
       }
       break;
 
     case 'Categorical':
       if (!filter.categoryValues?.length) {
-        newFilterClause.phenotypicFilterType = 'REQUIRED';
+        clause.phenotypicFilterType = 'REQUIRED';
       } else {
-        newFilterClause.values = filter.categoryValues;
+        clause.values = filter.categoryValues;
       }
       break;
   }
-  return newFilterClause;
-};
+  return clause;
+}
 
-const convertGenomicFilterToClause = (
-  filter: GenomicFilterInterface,
-): GenomicFilterInterfacev3[] => {
-  const genomicFilters: GenomicFilterInterfacev3[] = [];
-
-  const hasMinMax =
-    (filter.min !== undefined && filter.min !== '') ||
-    (filter.max !== undefined && filter.max !== '');
-  const hasCategoricalValues =
-    (filter.Gene_with_variant && filter.Gene_with_variant.length > 0) ||
-    (filter.Variant_consequence_calculated && filter.Variant_consequence_calculated.length > 0) ||
-    (filter.Variant_frequency_as_text && filter.Variant_frequency_as_text.length > 0);
-
-  if (hasMinMax && !hasCategoricalValues) {
-    const min = filter.min ? parseNumber(filter.min) : undefined;
-    const max = filter.max ? parseNumber(filter.max) : undefined;
-    return convertNumericGenomicFilterToClause('genomic_range', min, max);
-  }
-  if (filter.Gene_with_variant && filter.Gene_with_variant.length > 0) {
-    genomicFilters.push({
-      key: 'Gene_with_variant',
-      values: filter.Gene_with_variant,
-    });
-  }
-
-  if (filter.Variant_consequence_calculated && filter.Variant_consequence_calculated.length > 0) {
-    genomicFilters.push({
-      key: 'Variant_consequence_calculated',
-      values: filter.Variant_consequence_calculated,
-    });
-  }
-
-  if (filter.Variant_frequency_as_text && filter.Variant_frequency_as_text.length > 0) {
-    genomicFilters.push({
-      key: 'Variant_frequency_as_text',
-      values: filter.Variant_frequency_as_text,
-    });
-  }
-
-  return genomicFilters;
-};
-
-const convertSnpFilterToClause = (snps: SnpFilterInterface): GenomicFilterInterfacev3[] => {
-  const genomicFilters: GenomicFilterInterfacev3[] = [];
-
-  (snps.snpValues || []).forEach((snp) => {
-    genomicFilters.push({
-      key: snp.search,
-      values: snp.constraint.split(','),
-    });
+// A range is sent only when no variant-info value is set.
+function geneFilterToClauses(filter: GenomicFilterInterface): GenomicClause[] {
+  const valueClauses: GenomicClause[] = GENE_FILTER_KEYS.flatMap((key) => {
+    const values = filter[key];
+    return values && values.length > 0 ? [{ key, values }] : [];
   });
+  if (valueClauses.length > 0) return valueClauses;
 
-  return genomicFilters;
-};
+  const min = filter.min ? parseNumber(filter.min) : undefined;
+  const max = filter.max ? parseNumber(filter.max) : undefined;
+  if (min === undefined && max === undefined) return [];
+  return [
+    {
+      key: GENOMIC_RANGE_KEY,
+      ...(min !== undefined && { min }),
+      ...(max !== undefined && { max }),
+    },
+  ];
+}
 
-const convertNumericGenomicFilterToClause = (
-  key: string,
-  min?: number,
-  max?: number,
-): GenomicFilterInterfacev3[] => {
-  if (min !== undefined && max !== undefined) {
-    return [{ key, min, max }];
-  } else if (min !== undefined) {
-    return [{ key, min }];
-  } else if (max !== undefined) {
-    return [{ key, max }];
-  }
-  return [];
-};
-
-function convertFilterTypeToClauseType(filterType: FilterType): PhenotypicFilterType {
-  switch (filterType) {
-    case 'Categorical':
-    case 'numeric':
-      return 'FILTER';
-    case 'AnyRecordOf':
-      return 'ANY_RECORD_OF';
-    case 'required':
-      return 'REQUIRED';
-    case 'snp':
-      return 'FILTER';
-  }
-  return 'FILTER';
+function snpFilterToClauses(snps: SnpFilterInterface): GenomicClause[] {
+  return (snps.snpValues || []).map((snp) => ({
+    key: snp.search,
+    values: snp.constraint.split(','),
+  }));
 }

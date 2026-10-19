@@ -10,6 +10,7 @@
     createCategoricalFilter,
     createNumericFilter,
     createRequiredFilter,
+    studyLabel,
   } from '#lib/query/filter.svelte.ts';
   import { getConceptDetails } from '#lib/explorer/Dictionary.ts';
   import { panelOpen } from '#lib/explorer/panel.ts';
@@ -44,10 +45,7 @@
     if (existingFilter) {
       display = data?.display || '';
       description = data?.description || '';
-      studyDisplay =
-        data.studyAcronym && data.dataset
-          ? `${data.studyAcronym} (${data.dataset})`
-          : data.studyAcronym || data.dataset || '';
+      studyDisplay = studyLabel(data);
       if (existingFilter.filterType === 'Categorical') {
         if (existingFilter.categoryValues.length === 0) {
           selectedOptions = data?.values || [];

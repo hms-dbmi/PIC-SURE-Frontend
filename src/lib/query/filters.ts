@@ -15,6 +15,7 @@ import { type Filter, type FilterInterface, createFilterGroup } from '#lib/query
 import type { SearchResult } from '#lib/explorer/types.ts';
 import type { OperatorType } from '#lib/query/query.ts';
 import { LogicTree } from '#lib/query/logicTree.svelte.ts';
+import { toQueryFilters, type QueryFilters } from '#lib/query/build.ts';
 
 const genomicFilterTypes = ['snp', 'genomic'];
 
@@ -68,6 +69,11 @@ export const hasInvalidFilter: Readable<boolean> = derived(
     return $allFilters.some((filter) => !hasConsentForFilter(filter, consents));
   },
 );
+
+/** The current filter tree and genomic filters as query clauses, for `buildRequest`. */
+export function currentQueryFilters(): QueryFilters {
+  return toQueryFilters(get(filterTree), get(genomicFilters));
+}
 
 // modal data
 export const activeFilter: Writable<Filter | undefined> = writable();
