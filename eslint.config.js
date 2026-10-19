@@ -182,6 +182,7 @@ export default [
   ...importBoundary('ui', ['ui', 'utils']),
   ...importBoundary('utils', ['utils']),
   ...importBoundary('config', ['config', 'api', 'assets', 'ui', 'utils']),
+  ...importBoundary('auth', ['auth', 'api', 'config', 'telemetry', 'ui', 'utils']),
   ...svelte.configs['flat/prettier'],
   {
     files: ['**/*.svelte.js', '**/*.svelte.ts'],
