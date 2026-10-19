@@ -25,7 +25,8 @@
   import Popover from '#lib/ui/popover/Popover.svelte';
   import FilterCardPlaceholder from './FilterCardPlaceholder.svelte';
   import SkeletonBar from '#lib/ui/skeleton/SkeletonBar.svelte';
-  import { buttonClass, buttonSizes } from '#lib/ui/button.ts';
+  import Button from '#lib/ui/Button.svelte';
+  import { buttonSizes } from '#lib/ui/button.ts';
 
   let {
     query,
@@ -107,13 +108,10 @@
     </div>
   {:else}
     <div class="float-right">
-      <Popover
-        triggerDisabled={true}
-        data-testid="dataset-restore-popover"
-        triggerTypes={['hover']}
-        triggerStyle={buttonClass('filled-surface', 'sm')}
-      >
-        {#snippet trigger()}Restore Filters{/snippet}
+      <Popover data-testid="dataset-restore-popover" triggerTypes={['hover']}>
+        {#snippet trigger(props)}
+          <Button {...props} variant="filled-surface" size="sm" disabled>Restore Filters</Button>
+        {/snippet}
         {#if hasErrors}
           This query can't currently be restored because it has returned errors. Refresh or contact
           an admin.

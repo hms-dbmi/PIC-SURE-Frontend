@@ -1,164 +1,226 @@
-<script lang="ts">
-  import { css } from '#lib/ui/style.ts';
-  import type { Snippet } from 'svelte';
-  import {
-    FloatingArrow,
-    arrow,
-    autoUpdate,
-    flip,
-    offset,
-    useClick,
-    useDismiss,
-    useFocus,
-    useHover,
-    useFloating,
-    useInteractions,
-    useRole,
-    type ElementProps,
-    type FloatingContext,
-  } from '@skeletonlabs/floating-ui-svelte';
-  import { fade } from 'svelte/transition';
-  import { shift, type Placement } from '@floating-ui/dom';
-  import { sanitizeHTML } from '#lib/utils/html.ts';
+<script lang="ts" module>
+  import type { Attachment } from 'svelte/attachments';
 
-  export type TriggerType = 'click' | 'hover' | 'focus' | 'manual';
-  interface Props {
-    open?: boolean;
-    title?: string;
-    message?: string;
-    triggerStyle?: string;
-    triggerTypes?: string[];
-    triggerDisabled?: boolean;
-    placement?: Placement;
-    color?: string;
-    size?: string;
+  export type TriggerType = 'click' | 'hover' | 'focus';
+
+  const tones = {
+    surface: { panel: 'bg-surface-100', arrow: 'fill-surface-100' },
+    secondary: { panel: 'bg-secondary-100', arrow: 'fill-secondary-100' },
+  };
+
+  const textSizes = { sm: 'text-sm', base: '' };
+
+  /** Spread onto the trigger element: `{#snippet trigger(props)}<Button {...props}>…` */
+  export interface PopoverTriggerProps {
+    [key: symbol]: Attachment<HTMLElement>;
+    'aria-expanded': boolean;
+    'aria-haspopup'?: 'dialog';
+    'aria-controls'?: string;
+    'aria-describedby'?: string;
     'data-testid'?: string;
-    'data-key'?: string;
-    triggerTitle?: string;
-    trigger?: Snippet;
-    children?: Snippet;
-    onengage?: () => void;
-    onTriggerClick?: (event: MouseEvent) => void;
+    onclick?: (event: MouseEvent) => void;
+    onmousemove?: () => void;
+    onmouseleave?: () => void;
+    onfocus?: (event: FocusEvent) => void;
+    onblur?: (event: FocusEvent) => void;
   }
-
-  let {
-    open = $bindable(false),
-    title,
-    message,
-    triggerStyle = '',
-    triggerTypes = ['click'],
-    triggerDisabled = false,
-    placement = 'top',
-    color = 'surface',
-    size = 'text-sm',
-    'data-testid': testid = '',
-    'data-key': dataKey,
-    triggerTitle,
-    trigger,
-    children,
-    onengage = () => {},
-    onTriggerClick,
-  }: Props = $props();
-
-  let elemArrow: HTMLElement | null = $state(null);
-
-  // Use Floating
-  const floating = $derived(
-    useFloating({
-      whileElementsMounted: autoUpdate,
-      get open() {
-        return open;
-      },
-      onOpenChange: (newOpen: boolean) => {
-        if (newOpen) onengage();
-        open = newOpen;
-      },
-      placement: placement,
-      get middleware() {
-        return [offset(10), flip(), shift(), elemArrow && arrow({ element: elemArrow })];
-      },
-    }),
-  );
-
-  function getHover(context: FloatingContext): ElementProps | undefined {
-    if (triggerTypes.includes('hover')) {
-      // restMs requires the pointer to dwell on the trigger before opening, so a fast
-      // pass-through (e.g. WebKit's real stepped pointer-move events during an unrelated
-      // click elsewhere) doesn't pop the tooltip open.
-      return useHover(context, { move: false, restMs: 150 });
-    }
-    return undefined;
-  }
-
-  function getClick(context: FloatingContext): ElementProps | undefined {
-    if (triggerTypes.includes('click')) {
-      return useClick(context);
-    }
-    return undefined;
-  }
-
-  function getFocus(context: FloatingContext): ElementProps | undefined {
-    if (triggerTypes.includes('focus')) {
-      return useFocus(context);
-    }
-    return undefined;
-  }
-
-  // Interactions
-  let interactionsToUse = $derived(
-    [
-      useRole(floating.context, { role: 'tooltip' }),
-      useDismiss(floating.context),
-      getHover(floating.context),
-      getClick(floating.context),
-      getFocus(floating.context),
-    ].filter((x) => x !== undefined),
-  );
-
-  const interactions = $derived(useInteractions(interactionsToUse));
 </script>
 
-<button
-  bind:this={floating.elements.reference}
-  {...testid ? { 'data-testid': `${testid}-trigger` } : {}}
-  class="cursor-pointer {triggerStyle}"
-  {...interactions.getReferenceProps({ onclick: onTriggerClick })}
-  title={triggerTitle}
-  aria-label={triggerTitle}
-  data-key={dataKey}
-  disabled={triggerDisabled}
->
-  {@render trigger?.()}
-</button>
+<script lang="ts">
+  import type { Snippet } from 'svelte';
+  import { createAttachmentKey } from 'svelte/attachments';
+  import { fade } from 'svelte/transition';
+  import {
+    arrow,
+    autoUpdate,
+    computePosition,
+    flip,
+    offset,
+    shift,
+    type Placement,
+    type Side,
+  } from '@floating-ui/dom';
+
+  interface Props {
+    /** `dialog` for interactive content (buttons, links); `tooltip` for text. */
+    role?: 'tooltip' | 'dialog';
+    /** Accessible name of a `dialog` popover. */
+    label?: string;
+    triggerTypes?: TriggerType[];
+    placement?: Placement;
+    color?: keyof typeof tones;
+    textSize?: keyof typeof textSizes;
+    'data-testid'?: string;
+    trigger: Snippet<[PopoverTriggerProps]>;
+    children: Snippet;
+    /** Runs when the popover opens, and again when a click pins one that hover or focus opened. */
+    onopen?: (by: TriggerType) => void;
+  }
+
+  const {
+    role = 'tooltip',
+    label,
+    triggerTypes = ['click'],
+    placement = 'top',
+    color = 'surface',
+    textSize = 'sm',
+    'data-testid': testid = '',
+    trigger,
+    children,
+    onopen,
+  }: Props = $props();
+
+  // The pointer must rest on the trigger this long before it opens, so a pointer passing over
+  // it on its way to something else (e.g. WebKit's stepped pointer moves during an unrelated
+  // click) doesn't pop it open.
+  const HOVER_REST_MS = 150;
+
+  const id = $props.id();
+  let open = $state(false);
+  // A popover opened by click stays open when the pointer or focus leaves; one opened by hover
+  // or focus closes with it.
+  let openedBy: TriggerType | undefined;
+  let reference: HTMLElement | undefined = $state();
+  let arrowElement: SVGSVGElement | undefined = $state();
+  let panel: HTMLElement | undefined;
+  let hoverTimer: ReturnType<typeof setTimeout> | undefined;
+
+  function show(by: TriggerType) {
+    // A click pins a popover that hover or focus opened; nothing downgrades a click-opened one.
+    if (openedBy === 'click' || (open && by !== 'click')) return;
+    open = true;
+    openedBy = by;
+    onopen?.(by);
+  }
+
+  function hide() {
+    clearTimeout(hoverTimer);
+    open = false;
+    openedBy = undefined;
+  }
+
+  const referenceKey = createAttachmentKey();
+  const attachReference: Attachment<HTMLElement> = (element) => {
+    reference = element;
+    return () => {
+      clearTimeout(hoverTimer);
+      if (reference === element) reference = undefined;
+    };
+  };
+
+  const triggerProps: PopoverTriggerProps = $derived({
+    [referenceKey]: attachReference,
+    'aria-expanded': open,
+    ...(role === 'dialog'
+      ? { 'aria-haspopup': 'dialog', 'aria-controls': open ? id : undefined }
+      : { 'aria-describedby': open ? id : undefined }),
+    ...(testid ? { 'data-testid': `${testid}-trigger` } : {}),
+    ...(triggerTypes.includes('click') && {
+      onclick: () => (open && openedBy === 'click' ? hide() : show('click')),
+    }),
+    ...(triggerTypes.includes('hover') && {
+      // Not mouseenter: a trigger that appears under a still pointer isn't being hovered.
+      onmousemove: () => {
+        if (open) return;
+        clearTimeout(hoverTimer);
+        hoverTimer = setTimeout(() => show('hover'), HOVER_REST_MS);
+      },
+      onmouseleave: () => {
+        clearTimeout(hoverTimer);
+        if (openedBy === 'hover') hide();
+      },
+    }),
+    ...(triggerTypes.includes('focus') && {
+      onfocus: (event: FocusEvent) => {
+        // Like :focus-visible: a mouse press that focuses the trigger isn't a keyboard visit.
+        if ((event.currentTarget as HTMLElement).matches(':focus-visible')) show('focus');
+      },
+      onblur: (event: FocusEvent) => {
+        const next = event.relatedTarget as Node | null;
+        if (openedBy === 'focus' && !panel?.contains(next)) hide();
+      },
+    }),
+  });
+
+  const arrowRotation: Record<Side, string> = {
+    top: '',
+    bottom: 'rotate(180deg)',
+    left: 'rotate(-90deg)',
+    right: 'rotate(90deg)',
+  };
+
+  // Positions the open popover against its trigger and closes it on Escape or a press outside.
+  const floating: Attachment<HTMLElement> = (element) => {
+    if (!reference) return;
+    const anchor = reference;
+    panel = element;
+
+    const stopUpdates = autoUpdate(anchor, element, async () => {
+      const middleware = [offset(10), flip(), shift()];
+      if (arrowElement) middleware.push(arrow({ element: arrowElement }));
+      const position = await computePosition(anchor, element, { placement, middleware });
+      // Whole device pixels, so text and edges stay crisp
+      const dpr = window.devicePixelRatio || 1;
+      element.style.left = `${Math.round(position.x * dpr) / dpr}px`;
+      element.style.top = `${Math.round(position.y * dpr) / dpr}px`;
+
+      const tip = position.middlewareData.arrow;
+      if (!arrowElement || !tip) return;
+      const side = position.placement.split('-')[0] as Side;
+      Object.assign(arrowElement.style, {
+        top: '',
+        right: '',
+        bottom: '',
+        left: tip.x != null ? `${tip.x}px` : '',
+        transform: arrowRotation[side],
+      });
+      if (tip.y != null) arrowElement.style.top = `${tip.y}px`;
+      arrowElement.style[side] = '100%';
+    });
+
+    function onKeydown(event: KeyboardEvent) {
+      if (event.key !== 'Escape') return;
+      const hadFocus = element.contains(document.activeElement);
+      hide();
+      if (hadFocus) anchor.focus();
+    }
+    function onPointerdown(event: PointerEvent) {
+      const target = event.target as Node;
+      if (!element.contains(target) && !anchor.contains(target)) hide();
+    }
+    document.addEventListener('keydown', onKeydown);
+    document.addEventListener('pointerdown', onPointerdown);
+
+    return () => {
+      if (panel === element) panel = undefined;
+      stopUpdates();
+      document.removeEventListener('keydown', onKeydown);
+      document.removeEventListener('pointerdown', onPointerdown);
+    };
+  };
+</script>
+
+{@render trigger(triggerProps)}
 {#if open}
   <div
-    bind:this={floating.elements.floating}
-    class="popover {size}"
-    aria-label={title || 'Help popover'}
-    {@attach css(
-      `background-color: var(--color-${color}-100); opacity: 0.95;${floating.floatingStyles}`,
-    )}
-    {...interactions.getFloatingProps()}
-    data-testid={testid}
+    {id}
+    {role}
+    aria-label={role === 'dialog' ? label : undefined}
+    class="popover opacity-95 {textSizes[textSize]} {tones[color].panel}"
+    data-testid={testid || undefined}
+    {@attach floating}
     transition:fade={{ duration: 200 }}
   >
-    <div>
-      {#if title}
-        <header class="flex justify-between font-bold text-xl">{title}</header>
-      {/if}
-      {#if message}
-        <article>
-          <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-          {@html sanitizeHTML(message)}
-        </article>
-      {:else}
-        {@render children?.()}
-      {/if}
-    </div>
-    <FloatingArrow
-      bind:ref={elemArrow}
-      context={floating.context}
-      fill="var(--color-{color}-100)"
-    />
+    {@render children()}
+    <svg
+      bind:this={arrowElement}
+      class="pointer-events-none absolute {tones[color].arrow}"
+      width="14"
+      height="14"
+      viewBox="0 0 14 14"
+      aria-hidden="true"
+    >
+      <path d="M0,0 H14 L7,7 Z" />
+    </svg>
   </div>
 {/if}

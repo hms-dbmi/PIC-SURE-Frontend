@@ -1,6 +1,7 @@
 <script lang="ts">
   import Popover from '#lib/ui/popover/Popover.svelte';
-  import { buttonClass, type ButtonVariant } from '#lib/ui/button.ts';
+  import Button from '#lib/ui/Button.svelte';
+  import type { ButtonVariant } from '#lib/ui/button.ts';
 
   interface Props {
     itemToCopy: string;
@@ -55,20 +56,31 @@
 
 <Popover
   data-testid={testid || 'ui-copy'}
-  data-key={dataKey}
-  {triggerTitle}
-  triggerStyle="ml-4 {useIcon ? 'hover:text-primary-600' : buttonClass(variant)} {className}"
-  onengage={updateButton}
-  onTriggerClick={(e) => e.stopPropagation()}
+  onopen={updateButton}
   color="secondary"
   placement="bottom"
 >
-  {#snippet trigger()}
-    {#if useIcon}
-      <i class="fa-xl {activeIcon}"></i>
-    {:else}
-      {activeButtonText}
-    {/if}
+  {#snippet trigger(props)}
+    <Button
+      {...props}
+      variant={useIcon ? 'none' : variant}
+      size={useIcon ? 'none' : 'md'}
+      class="ml-4 {useIcon ? 'hover:text-primary-600' : ''} {className}"
+      title={triggerTitle}
+      aria-label={triggerTitle}
+      data-key={dataKey}
+      onclick={(event: MouseEvent) => {
+        // Keeps the click from reaching a clickable table row around the button.
+        event.stopPropagation();
+        props.onclick?.(event);
+      }}
+    >
+      {#if useIcon}
+        <i class="fa-xl {activeIcon}"></i>
+      {:else}
+        {activeButtonText}
+      {/if}
+    </Button>
   {/snippet}
   {altText}
 </Popover>

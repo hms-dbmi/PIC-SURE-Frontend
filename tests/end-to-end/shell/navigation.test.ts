@@ -54,6 +54,24 @@ test.describe('Any logged in user', () => {
     // Then
     await expect(page.locator('#app-nav-user')).toContainText('Login');
   });
+  test('User menu opens as a dialog and closes on Escape', async ({ page }) => {
+    const trigger = page.getByTestId('app-nav-user-menu-trigger');
+    await expect(trigger).toHaveAttribute('aria-haspopup', 'dialog');
+
+    // Retried because a click before hydration is dropped
+    await expect(async () => {
+      await trigger.click();
+      await expect(page.getByRole('dialog', { name: 'Account' })).toBeVisible({ timeout: 1000 });
+    }).toPass();
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    await expect(
+      page.getByRole('dialog', { name: 'Account' }).getByRole('button', { name: 'Logout' }),
+    ).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog', { name: 'Account' })).toHaveCount(0);
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  });
   test('Clicking logout redirects to login page', async ({ page }) => {
     // When
     const popoutButton = page.locator('#app-nav-user button').first();

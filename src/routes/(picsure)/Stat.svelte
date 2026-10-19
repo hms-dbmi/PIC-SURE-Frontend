@@ -6,7 +6,7 @@
   import { countResult } from '#lib/query/counts/format.ts';
   import { sanitizeHTML } from '#lib/utils/html.ts';
   import Loading from '#lib/ui/Loading.svelte';
-  import HelpInfoPopup from '#lib/ui/popover/HelpInfoPopup.svelte';
+  import HelpTip from '#lib/ui/popover/HelpTip.svelte';
   interface Props {
     stats: Readable<StatResult[]>;
     description: string;
@@ -63,7 +63,7 @@
               </strong>
             </div>
             {#if counts.some(StatPromise.rejected)}
-              <HelpInfoPopup
+              <HelpTip
                 type="exclamation"
                 color="warning"
                 data-testid="landing-stat-error-{authString}-{i}"

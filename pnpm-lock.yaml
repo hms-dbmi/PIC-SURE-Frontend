@@ -81,9 +81,6 @@ importers:
       '@fortawesome/fontawesome-free':
         specifier: ^7.2.0
         version: 7.2.0
-      '@skeletonlabs/floating-ui-svelte':
-        specifier: ^0.3.9
-        version: 0.3.9(svelte@5.57.1(@typescript-eslint/types@8.71.2))
       '@skeletonlabs/skeleton':
         specifier: ^3.2.0
         version: 3.2.0(tailwindcss@4.3.3)
@@ -477,9 +474,6 @@ packages:
   '@floating-ui/dom@1.7.6':
     resolution: {integrity: sha512-9gZSAI5XM36880PPMm//9dfiEngYoC6Am2izES1FF406YFsjvyBMmeJ2g4SAju3xWwtuynNRFL2s9hgxpLI5SQ==}
 
-  '@floating-ui/utils@0.2.10':
-    resolution: {integrity: sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ==}
-
   '@floating-ui/utils@0.2.11':
     resolution: {integrity: sha512-RiB/yIh78pcIxl6lLMG0CgBXAZ2Y0eVHqMPYugu+9U0AeT6YBeiJpf7lbdJNIugFP5SIjwNRgo4DhR1Qxi26Gg==}
 
@@ -685,12 +679,6 @@ packages:
 
   '@shikijs/vscode-textmate@10.0.2':
     resolution: {integrity: sha512-83yeghZ2xxin3Nj8z1NMd/NCuca+gsYXswywDy5bHvwlWL8tpTQmzGeUuHd9FC3E/SBEMvzJRwWEOz5gGes9Qg==}
-
-  '@skeletonlabs/floating-ui-svelte@0.3.9':
-    resolution: {integrity: sha512-YjGAqVVD54v2biXgbVeZKTj40Zc1I7hS62NTpF72UBFzKsFrYN8+odexBaHNZ/4ScPYLF1ChA0vp3NClo8To1Q==}
-    deprecated: 'This project is no longer actively maintained. Please see this GitHub Discussion: https://github.com/skeletonlabs/floating-ui-svelte/discussions/169 for details about why it was deprecated and where to go next'
-    peerDependencies:
-      svelte: '>=5.53.5'
 
   '@skeletonlabs/skeleton-svelte@1.5.1':
     resolution: {integrity: sha512-XYvIy0CPYYIGUV6TjGpUrjSkTJcuWxGqT7aKK+zXuMjVUGqNLAWrHabITRgWHvAlQwlo5V10pKxwphrQeunqWA==}
@@ -2660,8 +2648,6 @@ snapshots:
       '@floating-ui/core': 1.7.5
       '@floating-ui/utils': 0.2.11
 
-  '@floating-ui/utils@0.2.10': {}
-
   '@floating-ui/utils@0.2.11': {}
 
   '@fortawesome/fontawesome-free@7.2.0': {}
@@ -2817,12 +2803,6 @@ snapshots:
       '@types/hast': 3.0.5
 
   '@shikijs/vscode-textmate@10.0.2': {}
-
-  '@skeletonlabs/floating-ui-svelte@0.3.9(svelte@5.57.1(@typescript-eslint/types@8.71.2))':
-    dependencies:
-      '@floating-ui/dom': 1.7.6
-      '@floating-ui/utils': 0.2.10
-      svelte: 5.57.1(@typescript-eslint/types@8.71.2)
 
   '@skeletonlabs/skeleton-svelte@1.5.1(svelte@5.57.1(@typescript-eslint/types@8.71.2))':
     dependencies:

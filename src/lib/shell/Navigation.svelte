@@ -88,11 +88,13 @@
     <div id="app-nav-user" class="content-center">
       {#if $user && $user.privileges && $user.email && isUserLoggedIn()}
         <!-- Logout -->
-        <Popover data-testid="app-nav-user-menu">
-          {#snippet trigger()}
-            <Avatar class="m-3">
-              {($user.email || '?').toUpperCase().charAt(0)}
-            </Avatar>
+        <Popover data-testid="app-nav-user-menu" role="dialog" label="Account">
+          {#snippet trigger(props)}
+            <Button {...props} variant="none" size="none" aria-label="Account">
+              <Avatar class="m-3">
+                {($user.email || '?').toUpperCase().charAt(0)}
+              </Avatar>
+            </Button>
           {/snippet}
           <div class="flex flex-col items-center">
             <p class="pb-6">{$user.email}</p>

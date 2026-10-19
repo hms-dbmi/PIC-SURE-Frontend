@@ -82,6 +82,11 @@ test.describe('Advanced Query Builder - Build Advanced Query Button', () => {
     const advancedFilteringBtn = page.getByTestId('results-advanced-filtering-open');
     await expect(advancedFilteringBtn).toBeVisible();
     await expect(advancedFilteringBtn).toBeDisabled();
+
+    // The button is the popover's trigger itself, not a button inside another one
+    await expect(page.locator('button button')).toHaveCount(0);
+    await advancedFilteringBtn.hover();
+    await expect(page.getByRole('tooltip')).toContainText('not available with only one');
   });
 
   test('AF-TOOL-003: Build Advanced Query button becomes enabled when a second filter is added', async ({
