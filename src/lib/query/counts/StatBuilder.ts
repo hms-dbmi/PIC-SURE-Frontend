@@ -81,7 +81,7 @@ function getFacetCategoryCount(category: string) {
 async function getConceptCount({ isOpenAccess }: RequestMapOptions): Promise<PatientCount> {
   const request: DictionarySearchRequest = await dictionaryRequest(isOpenAccess);
   return searchConcepts(request, { pageNumber: 1, pageSize: 1 }).then((res) => {
-    return res.totalElements || Promise.reject('total not found');
+    return res.totalElements ?? Promise.reject('total not found');
   });
 }
 

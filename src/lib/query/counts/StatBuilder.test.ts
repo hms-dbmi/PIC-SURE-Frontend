@@ -151,11 +151,18 @@ describe('StatBuilder request map', () => {
       value: 42,
     },
     {
-      // Quirk: a real total of 0 is treated as missing.
-      name: 'dict:concepts rejects a total of 0',
+      name: 'dict:concepts returns a total of 0',
       key: 'dict:concepts',
       open: true,
       response: { totalElements: 0 },
+      call: ['picsure/dictionary/concepts?page_number=1&page_size=1', noConsents, 'open'],
+      value: 0,
+    },
+    {
+      name: 'dict:concepts rejects a response without a total',
+      key: 'dict:concepts',
+      open: true,
+      response: {},
       call: ['picsure/dictionary/concepts?page_number=1&page_size=1', noConsents, 'open'],
       value: { rejected: 'total not found' },
     },
