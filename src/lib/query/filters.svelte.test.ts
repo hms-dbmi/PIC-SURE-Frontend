@@ -29,6 +29,8 @@ import {
 } from '#lib/query/filter.svelte.ts';
 import type { SearchResult } from '#lib/explorer/types.ts';
 import { LogicTree } from '#lib/query/logicTree.svelte.ts';
+import { createQuery, type PhenotypicFilter } from '#lib/query/query.ts';
+import { queryToFilterTree } from '#lib/query/restore.ts';
 // sessionStorage as the code before FilterState wrote it, and the request it sent for it.
 import savedSession from '#lib/query/filters.fixture.json';
 
@@ -109,6 +111,37 @@ describe('restoring a saved session', () => {
     const edited = createCategoricalFilter(mockSearchResult('\\phs1\\sex\\', 'phs1'), ['Male']);
     filters.update(filters.phenotypic[0].uuid, edited);
     expect(filters.phenotypic[0]).toMatchObject({ categoryValues: ['Male'] });
+  });
+});
+
+describe('restoring a saved dataset', () => {
+  it('keeps its top-level filters removable', async () => {
+    const lookup = {
+      getConceptDetails: async (conceptPath: string) => mockSearchResult(conceptPath, 'phs1'),
+      getConceptTree: async (_dataset: string, conceptPath: string) =>
+        mockSearchResult(conceptPath, 'phs1'),
+      bypassConceptLookup: [],
+    };
+    const leaf = (conceptPath: string): PhenotypicFilter => ({
+      type: 'PhenotypicFilter',
+      phenotypicFilterType: 'FILTER',
+      conceptPath,
+      values: ['x'],
+      not: false,
+    });
+    const query = createQuery({
+      phenotypicClause: {
+        type: 'PhenotypicSubquery',
+        operator: 'AND',
+        phenotypicClauses: [leaf('\\phs1\\sex\\'), leaf('\\phs1\\smoker\\')],
+        not: false,
+      },
+    });
+    filters.restore(await queryToFilterTree(lookup, query, []), []);
+
+    filters.remove(filters.phenotypic[0].uuid);
+
+    expect(filters.phenotypic.map((f) => f.id)).toEqual(['\\phs1\\smoker\\']);
   });
 });
 

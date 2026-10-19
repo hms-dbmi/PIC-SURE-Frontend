@@ -16,6 +16,7 @@ import {
   createGenomicFilter,
   createNumericFilter,
   createRequiredFilter,
+  createSnpsFilter,
   type AnyRecordOfFilterInterface,
   type FilterGroupInterface,
   type FilterInterface,
@@ -26,6 +27,8 @@ import { genomicToClauses, treeToClause } from '#lib/query/build.ts';
 
 import {
   genomicClausesToFilter,
+  genomicClausesToFilters,
+  estimateQuery,
   pathToSearchResult,
   queryToFilterTree,
   loadQuerySummaryData,
@@ -374,6 +377,36 @@ describe('queryToFilterTree', () => {
     expect(tree.leafNodes).toHaveLength(2);
   });
 
+  it('restores top-level filters that can be removed from the tree', async () => {
+    // Given
+    const filter = (conceptPath: string) => ({
+      type: 'PhenotypicFilter' as const,
+      phenotypicFilterType: 'FILTER' as const,
+      conceptPath,
+      not: false,
+      values: ['x'],
+    });
+    const query = makeQuery({
+      phenotypicClause: {
+        type: 'PhenotypicSubquery',
+        operator: 'OR',
+        not: false,
+        phenotypicClauses: [
+          filter('\\\\dataset\\\\apples\\\\'),
+          filter('\\\\dataset\\\\banana\\\\'),
+        ],
+      },
+    });
+    const tree = await queryToFilterTree(lookup, query, []);
+
+    // When
+    tree.remove(tree.root.children[0]);
+
+    // Then
+    expect(tree.root.children).toHaveLength(1);
+    expect(tree.root.operator).toBe('OR');
+  });
+
   it('OR root group is retained', async () => {
     // Given
     const query = makeQuery({
@@ -694,6 +727,40 @@ describe('loadQuerySummaryData', () => {
     expect(data.filterTree.leafNodes).toHaveLength(0);
   });
 
+  it('restores a saved SNP filter', async () => {
+    // Given
+    const query = makeQuery({
+      genomicFilters: [{ key: 'chr17,35269878,GT,A', values: ['1/1', '0/1'] }],
+    });
+
+    // When
+    const data = await allLoadQuerySummaryData(query);
+
+    // Then
+    expect(data.genomicFilters).toHaveLength(1);
+    expect(data.genomicFilters[0]).toMatchObject({
+      filterType: 'snp',
+      snpValues: [{ search: 'chr17,35269878,GT,A', constraint: '1/1,0/1' }],
+    });
+  });
+
+  it('restores gene and SNP clauses of one query as two filters', async () => {
+    // Given
+    const query = makeQuery({
+      genomicFilters: [
+        { key: 'Gene_with_variant', values: ['BRCA1'] },
+        { key: 'chr17,35269878,GT,A', values: ['0/1'] },
+      ],
+    });
+
+    // When
+    const data = await allLoadQuerySummaryData(query);
+
+    // Then
+    expect(data.genomicFilters.map((filter) => filter.filterType)).toEqual(['genomic', 'snp']);
+    expect(genomicToClauses(data.genomicFilters)).toEqual(query.genomicFilters);
+  });
+
   it('V3: builds filterTree from phenotypicClause', async () => {
     // Given
     const query = makeQuery({
@@ -711,6 +778,29 @@ describe('loadQuerySummaryData', () => {
 
     // Then
     expect(data.filterTree.leafNodes).toHaveLength(1);
+  });
+});
+
+const snpFilter = createSnpsFilter([
+  { search: 'chr17,35269878,GT,A', constraint: '1/1,0/1' },
+  { search: 'chr1,12345,A,G', constraint: '0/1' },
+]);
+const geneFilter = createGenomicFilter({ Gene_with_variant: ['BRCA1'] });
+
+describe('estimateQuery', () => {
+  it('counts a placeholder card per restored filter', () => {
+    const query = makeQuery({
+      phenotypicClause: {
+        type: 'PhenotypicFilter',
+        phenotypicFilterType: 'REQUIRED',
+        conceptPath: '\\\\dataset\\\\age\\\\',
+        not: false,
+      },
+      select: ['\\\\dataset\\\\age\\\\'],
+      genomicFilters: genomicToClauses([geneFilter, snpFilter]),
+    });
+
+    expect(estimateQuery(query)).toEqual({ filters: 3, exports: 1 });
   });
 });
 
@@ -787,5 +877,15 @@ describe('round trip: tree → clause → tree', () => {
     const clauses = genomicToClauses([createGenomicFilter(filter)]);
 
     expect(genomicToClauses([genomicClausesToFilter(clauses)])).toEqual(clauses);
+  });
+
+  it.each([
+    { name: 'a SNP filter', filters: () => [snpFilter] },
+    { name: 'a SNP filter before a gene filter', filters: () => [snpFilter, geneFilter] },
+    { name: 'a gene filter before a SNP filter', filters: () => [geneFilter, snpFilter] },
+  ])('restores $name to the same genomic clauses', ({ filters }) => {
+    const clauses = genomicToClauses(filters());
+
+    expect(genomicToClauses(genomicClausesToFilters(clauses))).toEqual(clauses);
   });
 });

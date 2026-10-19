@@ -11,11 +11,18 @@ import {
   createCategoricalFilter,
   createNumericFilter,
   createGenomicFilter,
+  createSnpsFilter,
   createFilterGroup,
   createRequiredFilter,
   createAnyRecordOfFilter,
 } from '#lib/query/filter.svelte.ts';
-import { GENE_FILTER_KEYS, type GeneFilterKey, type GeneFilterValues } from '#lib/query/genomic.ts';
+import {
+  GENE_FILTER_KEYS,
+  GENOMIC_RANGE_KEY,
+  type GeneFilterKey,
+  type GeneFilterValues,
+  type SNP,
+} from '#lib/query/genomic.ts';
 import type { SearchResult } from '#lib/explorer/types.ts';
 import { LogicTree } from '#lib/query/logicTree.svelte.ts';
 import { mapSearchResultAsExport } from '#lib/explorer/export/Export.ts';
@@ -68,7 +75,7 @@ export interface QueryEstimate {
 
 export function estimateQuery(query: Query): QueryEstimate {
   return {
-    filters: queryLeaves(query).length + (query.genomicFilters.length > 1 ? 1 : 0),
+    filters: queryLeaves(query).length + genomicClausesToFilters(query.genomicFilters).length,
     exports: query.select.length,
   };
 }
@@ -154,7 +161,7 @@ export async function queryToFilterTree(
     const nodes = await Promise.all(
       clause.phenotypicClauses.map((clause) => clauseToFilterNode(lookup, clause, errors)),
     );
-    tree.root.children = nodes;
+    tree.add(...nodes);
     tree.root.operator = clause.operator;
   }
   return tree;
@@ -162,6 +169,25 @@ export async function queryToFilterTree(
 
 const isGeneFilterKey = (key: string): key is GeneFilterKey =>
   (GENE_FILTER_KEYS as readonly string[]).includes(key);
+
+// A SNP clause is keyed by the variant itself (`chr17,35269878,GT,A`), so any other key with
+// values is one; the gene keys and the range key make up the gene filter.
+const isSnpClause = ({ key, values }: GenomicClause) =>
+  !isGeneFilterKey(key) && key !== GENOMIC_RANGE_KEY && values !== undefined;
+
+/** The genomic filters a saved query's clauses came from: a gene filter, a SNP filter, or both. */
+export function genomicClausesToFilters(gfs: GenomicClause[]): Filter[] {
+  const snps: SNP[] = gfs
+    .filter(isSnpClause)
+    .map(({ key, values = [] }) => ({ search: key, constraint: values.join(',') }));
+  const geneClauses = gfs.filter((clause) => !isSnpClause(clause));
+  const filters = [
+    ...(geneClauses.length ? [genomicClausesToFilter(geneClauses)] : []),
+    ...(snps.length ? [createSnpsFilter(snps)] : []),
+  ];
+  // Each filter's clauses are saved together, so the first clause says which filter came first.
+  return gfs.length && isSnpClause(gfs[0]) ? filters.reverse() : filters;
+}
 
 export function genomicClausesToFilter(gfs: GenomicClause[]): Filter {
   const geneFilter: GeneFilterValues & { min?: string; max?: string } = {};
@@ -208,9 +234,7 @@ export type QuerySummaryData = {
 export function loadQuerySummaryData(query: Query, lookup: ConceptLookup): QuerySummaryData {
   const errorsList: string[] = [];
   const filterTree = queryToFilterTree(lookup, query, errorsList);
-  const genomicFilters = Promise.resolve(
-    query.genomicFilters.length ? [genomicClausesToFilter(query.genomicFilters)] : [],
-  );
+  const genomicFilters = Promise.resolve(genomicClausesToFilters(query.genomicFilters));
   const exports = getExports(lookup, query, errorsList);
   const errors = Promise.all([filterTree, exports]).then(() => errorsList);
 
