@@ -22,24 +22,21 @@
   }
 
   async function toggleActivate(active: boolean) {
-    const user = await admin.users.get(data.cell);
-    if (!user) return;
-
-    const connection = await admin.connections.get(user.connection);
-    const roles = admin.rolesForSave(user.roles);
-
-    if (!(user && connection && roles.length > 0)) return;
-
-    const newUser = { ...user, active, connection, roles };
+    const action = `${active ? 'r' : 'd'}eactivat`;
     try {
-      await admin.users.update(newUser);
-      toaster.success({
-        title: `Successfully ${active ? 'r' : 'd'}eactivated user '${newUser.email}'`,
+      const user = await admin.users.get(data.cell);
+      const connection = await admin.connections.get(user.connection);
+      await admin.users.update({
+        ...user,
+        active,
+        connection,
+        roles: admin.rolesForSave(user.roles),
       });
+      toaster.success({ title: `Successfully ${action}ed user '${user.email}'` });
     } catch (error) {
       console.error(error);
       toaster.error({
-        title: `An error occured while ${active ? 'r' : 'd'}eactivating user '${user.email}'`,
+        title: `An error occurred while ${action}ing user '${data.row.email}'`,
       });
     }
   }
