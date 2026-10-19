@@ -204,6 +204,20 @@ test.describe('Advanced Query Builder - Global Combiner', () => {
     await afPage.openModal();
     await afPage.expectBadgeText('OR');
   });
+
+  test('AF-COMBINER-006: Arrow keys switch the top-level AND/OR control and keep focus on it', async ({
+    page,
+  }) => {
+    await afPage.getRootOperatorRadio('AND').focus();
+
+    await page.keyboard.press('ArrowRight');
+    await afPage.expectBadgeText('OR');
+    await expect(afPage.getRootOperatorRadio('OR')).toBeFocused();
+
+    await page.keyboard.press('ArrowLeft');
+    await afPage.expectBadgeText('AND');
+    await expect(afPage.getRootOperatorRadio('AND')).toBeFocused();
+  });
 });
 
 test.describe('Advanced Query Builder - Drag and Drop', () => {

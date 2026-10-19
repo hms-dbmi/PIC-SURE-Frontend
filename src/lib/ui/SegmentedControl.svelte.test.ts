@@ -20,4 +20,20 @@ describe('SegmentedControl', () => {
 
     await waitFor(() => expect(onchange).toHaveBeenCalledWith('OR'));
   });
+
+  it('keeps focus on the picked option when the new value comes back', async () => {
+    const { rerender } = render(SegmentedControl, {
+      name: 'operator',
+      value: 'AND',
+      options,
+      onchange: (value: string) => rerender({ value }),
+    });
+    const or = screen.getByRole('radio', { name: 'OR' });
+    or.focus();
+
+    await fireEvent.click(or);
+
+    await waitFor(() => expect(screen.getByRole('radio', { name: 'OR' })).toBeChecked());
+    await waitFor(() => expect(screen.getByRole('radio', { name: 'OR' })).toHaveFocus());
+  });
 });
