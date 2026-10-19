@@ -10,16 +10,16 @@
   import { isUserLoggedIn } from '$lib/stores/User';
   import { goto } from '$app/navigation';
 
-  let exportRows: ExportRowInterface[] = $exports.map((exp) => {
-    return {
+  const exportRows: ExportRowInterface[] = $derived(
+    $exports.map((exp) => ({
       ref: exp,
       selected: true,
       variableId: exp.conceptPath,
       name: exp.display || exp.searchResult?.display || exp.searchResult?.name,
       description: exp.searchResult?.description,
       type: exp.searchResult?.type,
-    };
-  });
+    })),
+  );
   let filterRows: ExportRowInterface[] = $allFilters.map((filter) => {
     return {
       ref: filter,

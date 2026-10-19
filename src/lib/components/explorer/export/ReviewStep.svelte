@@ -35,44 +35,32 @@
     { dataElement: 'type', label: 'Type', sort: true, class: 'text-center' },
   ];
 
-  let activeRows: ExportRowInterface[] = $derived(rows);
   let loadingSampleIds = $state(false);
   let sampleIds = $state(false);
-  let lastExports: ExportRowInterface[] = $state([]);
+  let sampleIdExports: ExportInterface[] = $state([]);
   let checkingSampleIds = $state(false);
 
   onMount(async () => {
     const exportedSampleIds = $exports.filter((e: ExportInterface) =>
       e.conceptPath.includes('SAMPLE_ID'),
     );
-    if (exportedSampleIds.length > 0) {
-      checkingSampleIds = true;
+    if (exportedSampleIds.length === 0) return;
+
+    checkingSampleIds = true;
+    try {
       const genomicConcepts = await getGenomicConcepts();
-      if (genomicConcepts.length > 0) {
-        // Find sample IDs that match genomic concepts
-        const matchingSampleIds = exportedSampleIds.filter((sampleId) =>
-          genomicConcepts.some(
-            (concept: { conceptPath: string }) => concept.conceptPath === sampleId.conceptPath,
-          ),
-        );
-        sampleIds = matchingSampleIds.length === genomicConcepts.length;
-        checkingSampleIds = false;
-        if (sampleIds) {
-          lastExports = matchingSampleIds.map((item) => ({
-            ref: item,
-            variableId: item.conceptPath,
-            variableName: item.display,
-            description: item.searchResult?.description,
-            type: item.searchResult?.type,
-            selected: true,
-          })) as ExportRowInterface[];
-        }
-      } else {
-        sampleIds = false;
-        checkingSampleIds = false;
-      }
-    } else {
-      sampleIds = false;
+      // Find sample IDs that match genomic concepts
+      const matchingSampleIds = exportedSampleIds.filter((sampleId) =>
+        genomicConcepts.some(
+          (concept: { conceptPath: string }) => concept.conceptPath === sampleId.conceptPath,
+        ),
+      );
+      sampleIds = genomicConcepts.length > 0 && matchingSampleIds.length === genomicConcepts.length;
+      if (sampleIds) sampleIdExports = matchingSampleIds;
+    } catch (error) {
+      console.error('Error checking sample IDs', error);
+    } finally {
+      checkingSampleIds = false;
     }
   });
 
@@ -114,41 +102,13 @@
     try {
       loadingSampleIds = true;
       if (!sampleIds) {
-        const exportsToRemove: ExportInterface[] = lastExports?.map(
-          (e) => e.ref,
-        ) as ExportInterface[];
-        removeExports(exportsToRemove || []);
-        activeRows = activeRows.filter(
-          (r) => !lastExports.some((le) => le.variableId === r.variableId),
-        );
+        removeExports(sampleIdExports);
         return;
       }
 
       const genomicConcepts = await getGenomicConcepts();
-
-      // Create new exports for each concept
-      const newExports = genomicConcepts.map(mapSearchResultAsExport);
-
-      // Add exports and create corresponding rows
-      addExports(newExports);
-      const newRows = newExports.map(
-        (e) =>
-          ({
-            ref: e,
-            variableId: e?.searchResult?.conceptPath,
-            variableName: e?.display,
-            description: e?.searchResult?.description,
-            type: e?.searchResult?.type,
-            selected: true,
-          }) as ExportRowInterface,
-      );
-      //Remove duplicates
-      activeRows = Array.from(
-        [...activeRows, ...newRows]
-          .reduce((map, row) => map.set(row.variableId, row), new Map())
-          .values(),
-      );
-      lastExports = newRows;
+      sampleIdExports = genomicConcepts.map(mapSearchResultAsExport);
+      addExports(sampleIdExports);
     } catch (error) {
       console.error('Error in toggleSampleIds', error);
       toaster.error({
@@ -177,7 +137,7 @@
         export. Please reduce the data selection or the number of selected participants.
       </ErrorAlert>
     {:else if !loadingSampleIds}
-      <Datatable tableName="ExportSummary" ariaLabel="Export summary" data={activeRows} {columns} />
+      <Datatable tableName="ExportSummary" ariaLabel="Export summary" data={rows} {columns} />
       {#if config.features.explorer.enableSampleIdCheckbox}
         <div>
           <label for="sample-ids-checkbox" class="flex items-center" data-testid="sample-ids-label">
