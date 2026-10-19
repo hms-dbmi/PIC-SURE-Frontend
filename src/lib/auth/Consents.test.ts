@@ -51,6 +51,8 @@ beforeEach(() => {
   vi.spyOn(console, 'error').mockImplementation(() => {});
   setToken('token');
   user.set({ consents: {} });
+  config.features.termsOfService = false;
+  config.features.enforceTermsOfService = false;
 });
 
 describe('getConsents', () => {
@@ -275,16 +277,21 @@ describe('addConsents', () => {
   });
 
   it('throws without toasting while the terms dialog asks the user to accept', async () => {
-    const features = config.features as Record<string, unknown>;
-    Object.assign(features, { termsOfService: true, enforceTermsOfService: true });
+    config.features.termsOfService = true;
+    config.features.enforceTermsOfService = true;
     user.set({ acceptedTOS: false });
 
-    try {
-      await expect(addConsents(blankRequest())).rejects.toThrow(ACCESS_UNAVAILABLE_MESSAGE);
-      expect(mockToaster.error).not.toHaveBeenCalled();
-    } finally {
-      Object.assign(features, { termsOfService: false, enforceTermsOfService: false });
-    }
+    await expect(addConsents(blankRequest())).rejects.toThrow(ACCESS_UNAVAILABLE_MESSAGE);
+    expect(mockToaster.error).not.toHaveBeenCalled();
+  });
+
+  it('toasts for such a user where the app does not ask for the terms', async () => {
+    user.set({ acceptedTOS: false });
+
+    await expect(addConsents(blankRequest())).rejects.toThrow(ACCESS_UNAVAILABLE_MESSAGE);
+    expect(mockToaster.error).toHaveBeenCalledWith(
+      expect.objectContaining({ title: ACCESS_UNAVAILABLE_MESSAGE }),
+    );
   });
 
   it('stays closed after a reload, where no fetch is in flight to wait on', async () => {

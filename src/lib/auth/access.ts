@@ -68,7 +68,8 @@ export function asksForTerms(features: Features): boolean {
 
 /**
  * Whether the terms dialog holds `user`, who has yet to accept the terms. PSAMA refuses their
- * requests until they do.
+ * requests until they do. Only an explicit `false` counts: a profile that hasn't loaded yet (as
+ * during login) says nothing.
  */
 export function awaitsTerms(user: User, features: Features): boolean {
   return user.acceptedTOS === false && asksForTerms(features);

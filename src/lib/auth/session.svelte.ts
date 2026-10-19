@@ -296,8 +296,8 @@ export class Session {
   /**
    * Loads the profile for the stored token when this tab doesn't have it: a fresh tab (the profile
    * is in sessionStorage), or another tab signing in. Once per token, so every load may call it.
-   * Leaves a user who hasn't accepted the terms to the terms dialog: PSAMA refuses them until
-   * then, and a refusal opens the dialog. Never rejects; `profileFailed` says whether the profile
+   * Leaves a user the terms dialog holds (`awaitsTerms`) to it: PSAMA refuses them until they
+   * accept, and a refusal opens the dialog. Never rejects; `profileFailed` says whether the profile
    * request failed for another reason.
    */
   bootstrap(): Promise<void> {

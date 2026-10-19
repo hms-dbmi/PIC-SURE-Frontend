@@ -261,6 +261,16 @@ describe('the bootstrap', () => {
     expect(session.privileges).toEqual(['QUERY']);
   });
 
+  it('asks for the consents of such a user where the app does not ask for the terms', async () => {
+    const paths = stubPsama();
+    session.setToken(jwt('terms-not-asked-consents'));
+    session.user = { privileges: ['QUERY'], acceptedTOS: false };
+
+    await session.ensureConsentsLoaded();
+
+    expect(paths).toEqual(['/psama/user/me/consents']);
+  });
+
   it('records a failed profile request instead of rejecting', async () => {
     vi.stubGlobal(
       'fetch',
@@ -303,6 +313,7 @@ describe('the bootstrap', () => {
     expect(consents).toEqual({ '\\_consents\\': ['phs1'] });
     expect(paths.filter((path) => path.endsWith('/consents'))).toHaveLength(1);
   });
+
   it('makes a page waiting for the consents wait for the profile first', async () => {
     stubPsama();
     session.setToken(jwt('public-page'));

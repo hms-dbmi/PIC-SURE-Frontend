@@ -11,7 +11,6 @@ import { assertNoSsrWrite } from '#lib/utils/ssrWrite.ts';
  * accept; the dialog keeps the app from looking usable before then.
  */
 class TermsOfService {
-  // Only an explicit `false`: a profile that hasn't loaded yet (as during login) says nothing.
   #required = $derived(session.isLoggedIn && awaitsTerms(session.user, config.features));
   #reading = $state(false);
   // The token the user closed the required terms under, which they can do when the terms fail to
