@@ -11,10 +11,9 @@ import * as admin from '#lib/admin/entities.ts';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('#lib/ui/toaster.ts', () => ({ toaster: { success: vi.fn(), error: vi.fn() } }));
-vi.mock('#lib/auth/User.ts', async () => {
-  const { readable } = await import('svelte/store');
-  return { isTopAdmin: readable(true) };
-});
+vi.mock('#lib/auth/session.svelte.ts', () => ({
+  session: { isTopAdmin: true, onEnd: () => {} },
+}));
 vi.mock('#lib/admin/entities.ts', () => {
   const saves = () => ({ add: vi.fn(), update: vi.fn() });
   return { connections: saves(), privileges: saves(), roles: saves() };

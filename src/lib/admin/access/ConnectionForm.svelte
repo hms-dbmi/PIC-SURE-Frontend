@@ -3,7 +3,7 @@
 
   import type { Connection } from '#lib/auth/model/connection.ts';
   import * as admin from '#lib/admin/entities.ts';
-  import { isTopAdmin } from '#lib/auth/User.ts';
+  import { session } from '#lib/auth/session.svelte.ts';
   import AdminForm from '#lib/admin/forms/AdminForm.svelte';
   import TextField from '#lib/admin/forms/TextField.svelte';
   import { saveEntity } from '#lib/admin/forms/saveEntity.ts';
@@ -49,7 +49,7 @@
 <AdminForm
   entity="connection"
   uuid={connection?.uuid}
-  disabled={!$isTopAdmin}
+  disabled={!session.isTopAdmin}
   cancelHref={resolve('admin/configuration')}
   onsave={saveConnection}
 >

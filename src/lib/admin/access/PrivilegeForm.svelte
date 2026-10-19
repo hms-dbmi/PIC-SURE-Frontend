@@ -3,7 +3,7 @@
 
   import type { Privilege } from '#lib/auth/model/privilege.ts';
   import * as admin from '#lib/admin/entities.ts';
-  import { isTopAdmin } from '#lib/auth/User.ts';
+  import { session } from '#lib/auth/session.svelte.ts';
   import AdminForm from '#lib/admin/forms/AdminForm.svelte';
   import TextField from '#lib/admin/forms/TextField.svelte';
   import { saveEntity } from '#lib/admin/forms/saveEntity.ts';
@@ -39,7 +39,7 @@
   <AdminForm
     entity="privilege"
     uuid={privilege?.uuid}
-    disabled={!$isTopAdmin}
+    disabled={!session.isTopAdmin}
     cancelHref={resolve('admin/configuration')}
     onsave={savePrivilege}
   >

@@ -4,7 +4,7 @@
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
 
-  import { isTopAdmin } from '#lib/auth/User.ts';
+  import { session } from '#lib/auth/session.svelte.ts';
   import { toaster } from '#lib/ui/toaster.ts';
   import * as admin from '#lib/admin/entities.ts';
   import type { AccessKind } from '#lib/admin/access/model/kind.ts';
@@ -54,7 +54,7 @@
   }
 
   async function remove() {
-    if (!$isTopAdmin) return;
+    if (!session.isTopAdmin) return;
     // The row goes once the delete lands; keep what the toasts need.
     const { resource, inUseBy } = config;
     const subject = `${kind} '${name}'`;
@@ -79,7 +79,7 @@
     label="Edit (e)"
     data-testid="admin-{kind}-edit-{data.cell}"
     shortcut="e"
-    disabled={!$isTopAdmin}
+    disabled={!session.isTopAdmin}
     onclick={edit}
   />
   <ConfirmButton
@@ -90,7 +90,7 @@
     title={config.title}
     confirmLabel="Yes"
     cancelLabel="No"
-    disabled={!$isTopAdmin}
+    disabled={!session.isTopAdmin}
     onconfirm={remove}
   >
     Are you sure you want to delete {kind} '{name}'?

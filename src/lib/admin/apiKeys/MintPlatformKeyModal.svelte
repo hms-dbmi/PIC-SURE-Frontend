@@ -5,7 +5,7 @@
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import CopyButton from '#lib/ui/CopyButton.svelte';
 
-  import { isTopAdmin } from '#lib/auth/User.ts';
+  import { session } from '#lib/auth/session.svelte.ts';
   import { apiKeys } from '#lib/admin/apiKeys/apiKeys.svelte.ts';
   import {
     extractApiError,
@@ -71,7 +71,7 @@
   data-testid="admin-api-key-mint"
   title={minted ? 'Platform API Key Created' : 'Mint Platform API Key'}
   size="form"
-  disabled={!$isTopAdmin}
+  disabled={!session.isTopAdmin}
   closeable={!minted && !isSubmitting}
   onclose={clearState}
   triggerClass={buttonClass('tonal')}

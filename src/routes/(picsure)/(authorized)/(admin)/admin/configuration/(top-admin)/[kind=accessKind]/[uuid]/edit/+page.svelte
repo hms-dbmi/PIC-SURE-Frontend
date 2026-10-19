@@ -1,8 +1,15 @@
 <script lang="ts">
-  import AccessKindPage from '#lib/admin/access/AccessKindPage.svelte';
+  import Content from '#lib/shell/Content.svelte';
+  import AccessKindPage, { accessKindTitle } from '#lib/admin/access/AccessKindPage.svelte';
   import type { PageProps } from './$types';
 
   let { params }: PageProps = $props();
 </script>
 
-<AccessKindPage kind={params.kind} uuid={params.uuid} />
+<Content
+  title={accessKindTitle(params.kind, params.uuid)}
+  backUrl="/admin/configuration"
+  backTitle="Back to Configuration"
+>
+  <AccessKindPage kind={params.kind} uuid={params.uuid} />
+</Content>

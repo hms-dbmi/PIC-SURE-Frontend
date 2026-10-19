@@ -24,7 +24,7 @@
   import ApiKeysPanel from '#lib/admin/apiKeys/ApiKeysPanel.svelte';
 
   import * as admin from '#lib/admin/entities.ts';
-  import { isTopAdmin } from '#lib/auth/User.ts';
+  import { session } from '#lib/auth/session.svelte.ts';
 
   import Loading from '#lib/ui/Loading.svelte';
 
@@ -41,7 +41,7 @@
     Object.keys(TAB_PARAMS).filter(
       (tab) =>
         // PSAMA only accepts role, privilege, and connection writes from top admins.
-        (tab !== 'Access Control' || $isTopAdmin) &&
+        (tab !== 'Access Control' || session.isTopAdmin) &&
         (tab !== 'Terms of Service' || config.features.termsOfService),
     ),
   );
@@ -165,7 +165,7 @@
 <!-- The operations service only accepts config writes from top admins. Tabs keep hidden panels
      mounted, so only the open tab renders its notice. -->
 {#snippet readOnlyNotice(tab: string)}
-  {#if !$isTopAdmin && tabSet === tab}
+  {#if !session.isTopAdmin && tabSet === tab}
     <ErrorAlert
       data-testid="admin-top-admin-required"
       title="Top Administrator Only"
@@ -308,11 +308,11 @@
         <ConfigKindTab
           kinds={['features', 'settings']}
           title="Settings & Features"
-          readOnly={!$isTopAdmin}
+          readOnly={!session.isTopAdmin}
         />
       {:else if tab === 'Branding'}
         {@render readOnlyNotice('Branding')}
-        <ConfigKindTab kinds={['branding']} title="Branding" readOnly={!$isTopAdmin} />
+        <ConfigKindTab kinds={['branding']} title="Branding" readOnly={!session.isTopAdmin} />
       {:else if tab === 'API Keys'}
         {#if tabSet === 'API Keys'}
           <ApiKeysPanel />

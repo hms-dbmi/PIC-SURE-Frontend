@@ -10,10 +10,9 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
   getPageContext: vi.fn(() => 'test-context'),
 }));
 
-vi.mock('#lib/auth/User.ts', async () => {
-  const { writable } = await import('svelte/store');
-  return { isTopAdmin: writable(true) };
-});
+vi.mock('#lib/auth/session.svelte.ts', () => ({
+  session: { isTopAdmin: true, onEnd: () => {} },
+}));
 
 const psama = vi.hoisted(() => ({
   mintPlatform: vi.fn(),

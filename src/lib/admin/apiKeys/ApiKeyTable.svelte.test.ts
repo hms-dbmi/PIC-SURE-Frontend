@@ -22,10 +22,9 @@ vi.mock('#lib/explorer/ExpandableRow.ts', async () => {
   };
 });
 
-vi.mock('#lib/auth/User.ts', async () => {
-  const { writable } = await import('svelte/store');
-  return { isTopAdmin: writable(true) };
-});
+vi.mock('#lib/auth/session.svelte.ts', () => ({
+  session: { isTopAdmin: true, onEnd: () => {} },
+}));
 
 vi.mock('#lib/ui/toaster.ts', () => ({
   toaster: { success: vi.fn(), error: vi.fn() },

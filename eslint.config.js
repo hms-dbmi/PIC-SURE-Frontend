@@ -219,6 +219,16 @@ export default [
       'datasets/components/SelectedVariablesSummary.svelte': ['explorer/export/types.ts'],
     },
   ),
+  ...importBoundary('admin', [
+    'admin',
+    'query',
+    'api',
+    'auth',
+    'config',
+    'telemetry',
+    'ui',
+    'utils',
+  ]),
   ...svelte.configs['flat/prettier'],
   {
     files: ['**/*.svelte.js', '**/*.svelte.ts'],

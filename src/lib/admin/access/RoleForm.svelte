@@ -3,7 +3,7 @@
 
   import type { Role } from '#lib/auth/model/role.ts';
   import * as admin from '#lib/admin/entities.ts';
-  import { isTopAdmin } from '#lib/auth/User.ts';
+  import { session } from '#lib/auth/session.svelte.ts';
   import AdminForm from '#lib/admin/forms/AdminForm.svelte';
   import TextField from '#lib/admin/forms/TextField.svelte';
   import CheckboxGroup from '#lib/admin/forms/CheckboxGroup.svelte';
@@ -39,7 +39,7 @@
 <AdminForm
   entity="role"
   uuid={role?.uuid}
-  disabled={!$isTopAdmin}
+  disabled={!session.isTopAdmin}
   cancelHref={resolve('admin/configuration')}
   validate={() =>
     privileges.length === 0 ? 'At least one privilege must be selected.' : undefined}

@@ -1,6 +1,5 @@
-<script lang="ts">
+<script lang="ts" module>
   import { config } from '#lib/config/config.svelte.ts';
-  import Content from '#lib/shell/Content.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import Loading from '#lib/ui/Loading.svelte';
   import ConnectionForm from '#lib/admin/access/ConnectionForm.svelte';
@@ -9,14 +8,6 @@
 
   import type { AccessKind } from '#lib/admin/access/model/kind.ts';
   import * as admin from '#lib/admin/entities.ts';
-
-  interface Props {
-    kind: AccessKind;
-    /** The record to edit; the page creates a new one without it. */
-    uuid?: string;
-  }
-
-  let { kind, uuid }: Props = $props();
 
   // Each `load` fetches the record and the lists its form offers as options, and tags the
   // result with its kind so the template can narrow `entity`.
@@ -49,36 +40,48 @@
     },
   } satisfies Record<AccessKind, { label: string; editTitle?: string; load: unknown }>;
 
+  /** The page heading: "New Role", "Edit Connection". */
+  export function accessKindTitle(kind: AccessKind, uuid?: string) {
+    return `${uuid ? 'Edit' : 'New'} ${KINDS[kind].label}`;
+  }
+</script>
+
+<script lang="ts">
+  interface Props {
+    kind: AccessKind;
+    /** The record to edit; the page creates a new one without it. */
+    uuid?: string;
+  }
+
+  let { kind, uuid }: Props = $props();
+
   const descriptor: { label: string; editTitle?: string } = $derived(KINDS[kind]);
-  const action = $derived(uuid ? 'Edit' : 'New');
-  const title = $derived(`${action} ${descriptor.label}`);
-  const pageTitle = $derived((uuid && descriptor.editTitle) || title);
+  const action = $derived(uuid ? 'edit' : 'new');
+  const pageTitle = $derived((uuid && descriptor.editTitle) || accessKindTitle(kind, uuid));
 </script>
 
 <svelte:head>
   <title>{config.branding.applicationName} | {pageTitle}</title>
 </svelte:head>
 
-<Content {title} backUrl="/admin/configuration" backTitle="Back to Configuration">
-  {#await KINDS[kind].load(uuid)}
-    <Loading />
-  {:then loaded}
-    <section id="admin-{kind}-{action.toLowerCase()}">
-      {#if loaded.kind === 'connection'}
-        <ConnectionForm connection={loaded.entity} />
-      {:else if loaded.kind === 'privilege'}
-        <PrivilegeForm applicationList={admin.applications.options} privilege={loaded.entity} />
-      {:else}
-        <RoleForm privilegeList={admin.privileges.options} role={loaded.entity} />
-      {/if}
-    </section>
-  {:catch}
-    <ErrorAlert title="API Error">
-      {#if uuid}
-        An error occurred while retrieving {kind} {uuid}.
-      {:else}
-        Something went wrong when sending your request.
-      {/if}
-    </ErrorAlert>
-  {/await}
-</Content>
+{#await KINDS[kind].load(uuid)}
+  <Loading />
+{:then loaded}
+  <section id="admin-{kind}-{action}">
+    {#if loaded.kind === 'connection'}
+      <ConnectionForm connection={loaded.entity} />
+    {:else if loaded.kind === 'privilege'}
+      <PrivilegeForm applicationList={admin.applications.options} privilege={loaded.entity} />
+    {:else}
+      <RoleForm privilegeList={admin.privileges.options} role={loaded.entity} />
+    {/if}
+  </section>
+{:catch}
+  <ErrorAlert title="API Error">
+    {#if uuid}
+      An error occurred while retrieving {kind} {uuid}.
+    {:else}
+      Something went wrong when sending your request.
+    {/if}
+  </ErrorAlert>
+{/await}
