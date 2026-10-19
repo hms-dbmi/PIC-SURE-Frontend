@@ -62,7 +62,6 @@ export class FilterState {
 
   #warning: FilterWarningKind | undefined = $state();
 
-  // leafNodes returns FilterInterface[], narrow to the Filter union
   #phenotypic = $derived(this.#tree.leafNodes as Filter[]);
   #all = $derived([...this.#phenotypic, ...this.#genomic]);
   #queryFilters = $derived(
@@ -249,7 +248,6 @@ export class FilterState {
       log(createLog('FILTER', 'filter.clear', { count, pageContext: getPageContext() }));
   }
 
-  /** Replaces the phenotypic tree. */
   setTree(tree: LogicTree<FilterInterface>) {
     assertNoSsrWrite('filters');
     this.#tree = tree;

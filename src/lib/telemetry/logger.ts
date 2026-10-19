@@ -7,7 +7,6 @@ import { BDCPrivileges, PicsurePrivileges } from '../auth/model/privilege';
 import type { User } from '../auth/model/user';
 import { routes } from '#lib/auth/nav.ts';
 
-// Registered by the filter state, which logs through here
 let associatedStudies: () => string[] = () => [];
 export function registerAssociatedStudies(provider: () => string[]) {
   associatedStudies = provider;
