@@ -15,7 +15,6 @@ describe('HelpTip', () => {
 
   it('opens a tooltip that describes its trigger on click', async () => {
     const { onopen, trigger } = renderTip();
-    expect(trigger).toHaveAttribute('aria-expanded', 'false');
 
     await fireEvent.click(trigger);
 
@@ -58,6 +57,25 @@ describe('HelpTip', () => {
     await fireEvent.mouseLeave(trigger);
     await vi.advanceTimersByTimeAsync(300);
     expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+
+  it('stays closed after Escape until the pointer comes back', async () => {
+    vi.useFakeTimers();
+    const { trigger } = renderTip();
+
+    await fireEvent.mouseEnter(trigger);
+    await fireEvent.mouseMove(trigger);
+    await vi.advanceTimersByTimeAsync(200);
+    await fireEvent.keyDown(document, { key: 'Escape' });
+    await fireEvent.mouseMove(trigger);
+    await vi.advanceTimersByTimeAsync(500);
+    expect(screen.queryByRole('tooltip')).toBeNull();
+
+    await fireEvent.mouseLeave(trigger);
+    await fireEvent.mouseEnter(trigger);
+    await fireEvent.mouseMove(trigger);
+    await vi.advanceTimersByTimeAsync(200);
+    expect(screen.getByRole('tooltip')).toBeTruthy();
   });
 
   it('stays open when the pointer leaves after a click pinned it', async () => {

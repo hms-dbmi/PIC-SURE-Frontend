@@ -39,7 +39,7 @@
                 data-testid="results-advanced-filtering-open"
                 variant="tonal-static"
                 size="sm"
-                class="disabled mr-0 ml-auto cursor-default"
+                class="disabled mr-0 ml-auto cursor-not-allowed"
                 aria-disabled="true"
               >
                 Build Advanced Query

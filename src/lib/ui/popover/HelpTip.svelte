@@ -31,7 +31,7 @@
 {#if text}
   <div data-testid={testid}>
     <Popover
-      data-testid="{testid}-content"
+      data-testid={testid && `${testid}-content`}
       triggerTypes={['click', 'hover']}
       textSize="base"
       {onopen}

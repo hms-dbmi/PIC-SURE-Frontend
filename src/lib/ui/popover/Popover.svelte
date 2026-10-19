@@ -13,12 +13,13 @@
   /** Spread onto the trigger element: `{#snippet trigger(props)}<Button {...props}>…` */
   export interface PopoverTriggerProps {
     [key: symbol]: Attachment<HTMLElement>;
-    'aria-expanded': boolean;
+    'aria-expanded'?: boolean;
     'aria-haspopup'?: 'dialog';
     'aria-controls'?: string;
     'aria-describedby'?: string;
     'data-testid'?: string;
     onclick?: (event: MouseEvent) => void;
+    onmouseenter?: () => void;
     onmousemove?: () => void;
     onmouseleave?: () => void;
     onfocus?: (event: FocusEvent) => void;
@@ -84,6 +85,9 @@
   let arrowElement: SVGSVGElement | undefined = $state();
   let panel: HTMLElement | undefined;
   let hoverTimer: ReturnType<typeof setTimeout> | undefined;
+  // Set when the popover closes, so the pointer still on the trigger doesn't reopen what the
+  // user just dismissed; cleared when the pointer enters again.
+  let hoverBlocked = false;
 
   function show(by: TriggerType) {
     // A click pins a popover that hover or focus opened; nothing downgrades a click-opened one.
@@ -95,6 +99,7 @@
 
   function hide() {
     clearTimeout(hoverTimer);
+    hoverBlocked = true;
     open = false;
     openedBy = undefined;
   }
@@ -110,9 +115,8 @@
 
   const triggerProps: PopoverTriggerProps = $derived({
     [referenceKey]: attachReference,
-    'aria-expanded': open,
     ...(role === 'dialog'
-      ? { 'aria-haspopup': 'dialog', 'aria-controls': open ? id : undefined }
+      ? { 'aria-haspopup': 'dialog', 'aria-expanded': open, 'aria-controls': open ? id : undefined }
       : { 'aria-describedby': open ? id : undefined }),
     ...(testid ? { 'data-testid': `${testid}-trigger` } : {}),
     ...(triggerTypes.includes('click') && {
@@ -120,8 +124,9 @@
     }),
     ...(triggerTypes.includes('hover') && {
       // Not mouseenter: a trigger that appears under a still pointer isn't being hovered.
+      onmouseenter: () => (hoverBlocked = false),
       onmousemove: () => {
-        if (open) return;
+        if (open || hoverBlocked) return;
         clearTimeout(hoverTimer);
         hoverTimer = setTimeout(() => show('hover'), HOVER_REST_MS);
       },

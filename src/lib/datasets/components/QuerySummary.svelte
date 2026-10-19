@@ -108,9 +108,16 @@
     </div>
   {:else}
     <div class="float-right">
-      <Popover data-testid="dataset-restore-popover" triggerTypes={['hover']}>
+      <Popover data-testid="dataset-restore-popover" triggerTypes={['hover', 'focus']}>
         {#snippet trigger(props)}
-          <Button {...props} variant="filled-surface" size="sm" disabled>Restore Filters</Button>
+          <!-- aria-disabled keeps the button focusable and hoverable, so the reason shows. -->
+          <Button
+            {...props}
+            variant="filled-surface"
+            size="sm"
+            class="disabled cursor-not-allowed"
+            aria-disabled="true">Restore Filters</Button
+          >
         {/snippet}
         {#if hasErrors}
           This query can't currently be restored because it has returned errors. Refresh or contact

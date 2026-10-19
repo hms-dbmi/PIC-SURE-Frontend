@@ -61,6 +61,7 @@ test.describe('Advanced Query Builder - Build Advanced Query Button', () => {
 
   test('AF-TOOL-002: Build Advanced Query button is disabled with only one filter', async ({
     page,
+    browserName,
   }) => {
     await mockApiSuccess(
       page,
@@ -83,10 +84,24 @@ test.describe('Advanced Query Builder - Build Advanced Query Button', () => {
     await expect(advancedFilteringBtn).toBeVisible();
     await expect(advancedFilteringBtn).toBeDisabled();
 
-    // The button is the popover's trigger itself, not a button inside another one
-    await expect(page.locator('button button')).toHaveCount(0);
+    // The button itself is the tooltip's trigger, for the pointer and the keyboard
     await advancedFilteringBtn.hover();
-    await expect(page.getByRole('tooltip')).toContainText('not available with only one');
+    const tooltip = page.getByRole('tooltip');
+    await expect(tooltip).toContainText('not available with only one');
+    await expect(advancedFilteringBtn).toHaveAttribute(
+      'aria-describedby',
+      (await tooltip.getAttribute('id'))!,
+    );
+    await page.mouse.move(0, 0);
+    await expect(tooltip).toHaveCount(0);
+
+    // WebKit, like Safari, only tabs to buttons with Option held
+    const tab = browserName === 'webkit' ? 'Alt+Tab' : 'Tab';
+    await advancedFilteringBtn.focus();
+    await page.keyboard.press(`Shift+${tab}`);
+    await page.keyboard.press(tab);
+    await expect(advancedFilteringBtn).toBeFocused();
+    await expect(tooltip).toContainText('not available with only one');
   });
 
   test('AF-TOOL-003: Build Advanced Query button becomes enabled when a second filter is added', async ({
