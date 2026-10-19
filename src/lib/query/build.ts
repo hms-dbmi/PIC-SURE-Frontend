@@ -5,7 +5,6 @@ import {
   type GenomicClause,
   type PhenotypicClause,
   type PhenotypicFilter,
-  type PhenotypicSubquery,
   type Query,
 } from '#lib/query/query.ts';
 import type { QueryRequest } from '#lib/api/picsure/query.types.ts';
@@ -18,7 +17,6 @@ import type {
 import { GENE_FILTER_KEYS, GENOMIC_RANGE_KEY } from '#lib/query/genomic.ts';
 import type { LogicTree } from '#lib/query/logicTree.svelte.ts';
 
-/** The filter part of a query: what the user's filter tree and genomic filters send. */
 export interface QueryFilters {
   phenotypicClause: PhenotypicClause | null;
   genomicFilters: GenomicClause[];
@@ -42,14 +40,12 @@ export function treeToClause(tree: LogicTree<FilterInterface>): PhenotypicClause
 
   const mapNode = (node: FilterInterface): PhenotypicClause => {
     if (tree.isGroup(node)) {
-      const group: PhenotypicSubquery = {
+      return {
         type: 'PhenotypicSubquery',
         operator: node.operator,
-        phenotypicClauses: [],
+        phenotypicClauses: node.children.map(mapNode),
         not: false,
       };
-      group.phenotypicClauses = node.children.map(mapNode);
-      return group;
     }
     return filterToClause(node as Filter);
   };

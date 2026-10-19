@@ -38,6 +38,9 @@ vi.mock('#lib/explorer/Dictionary.ts', async () => {
   };
 });
 
+const mockConceptTree = vi.hoisted(() => vi.fn());
+vi.mock('#lib/api/picsure/dictionary.ts', () => ({ getConceptTree: mockConceptTree }));
+
 vi.mock('#lib/explorer/export/Export.ts', async () => {
   const { writable } = await import('svelte/store');
   return {
@@ -151,6 +154,28 @@ describe('QuerySummary', () => {
     expect(mockConceptPath).toHaveBeenCalledWith(select[0], 'dataset');
     expect(mockConceptPath).toHaveBeenCalledWith(select[1], '_consents');
     expect(mockConceptPath).not.toHaveBeenCalledWith(select[2], mockBypassPath);
+  });
+
+  it('restores an any-record-of filter from its full concept tree', async () => {
+    const conceptPath = '\\dataset\\visits\\';
+    const child = { conceptPath: `${conceptPath}first\\`, dataset: 'dataset', children: [] };
+    mockConceptTree.mockResolvedValue({ conceptPath, dataset: 'dataset', children: [child] });
+    const query = createQuery({
+      phenotypicClause: {
+        type: 'PhenotypicFilter',
+        phenotypicFilterType: 'ANY_RECORD_OF',
+        conceptPath,
+        not: false,
+      },
+    });
+    const actual =
+      await vi.importActual<typeof import('#lib/query/restore.ts')>('#lib/query/restore.ts');
+    mockLoadQuerySummaryData.mockImplementation(actual.loadQuerySummaryData);
+
+    render(QuerySummary, { query, version: QueryVersion.V3 });
+    await screen.findByTestId('dataset-filters-container');
+
+    expect(mockConceptTree).toHaveBeenCalledWith('dataset', 100, conceptPath);
   });
 
   it('disables the Restore Filters button and shows an error alert when data.errors is non-empty', async () => {

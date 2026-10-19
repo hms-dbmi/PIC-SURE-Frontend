@@ -256,6 +256,60 @@ describe('QueryBuilder request JSON', () => {
     expect(request.query.genomicFilters).toEqual(genomic);
   });
 
+  // toEqual ignores key order; this pins the bytes the backend receives.
+  it('sends the request keys in a fixed order', () => {
+    const request = requestFor(
+      [
+        createGroup(
+          [
+            createNumericFilter(searchResult('\\n\\'), '1', '2'),
+            createCategoricalFilter(searchResult('\\a\\'), ['x']),
+          ],
+          Operator.OR,
+        ),
+      ],
+      [createGenomicFilter({ min: '1', max: '2' })],
+    );
+
+    expect(JSON.stringify(request)).toBe(
+      JSON.stringify({
+        query: {
+          select: [],
+          authorizationFilters: [],
+          phenotypicClause: {
+            operator: 'AND',
+            phenotypicClauses: [
+              {
+                operator: 'OR',
+                phenotypicClauses: [
+                  {
+                    phenotypicFilterType: 'FILTER',
+                    conceptPath: '\\n\\',
+                    not: false,
+                    min: 1,
+                    max: 2,
+                  },
+                  {
+                    phenotypicFilterType: 'FILTER',
+                    conceptPath: '\\a\\',
+                    not: false,
+                    values: ['x'],
+                  },
+                ],
+                not: false,
+              },
+            ],
+            not: false,
+          },
+          genomicFilters: [{ key: 'genomic_range', min: 1, max: 2 }],
+          expectedResultType: 'COUNT',
+          picsureId: null,
+          id: null,
+        },
+      }),
+    );
+  });
+
   it('applies the result type and mutator after the filters are added', () => {
     const request = requestFor(
       [createRequiredFilter(searchResult('\\a\\'))],

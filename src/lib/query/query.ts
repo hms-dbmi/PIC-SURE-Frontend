@@ -110,7 +110,6 @@ export function appendClauses(
   }, root);
 }
 
-/** Strips the `type` tags and undefined fields, as the backend expects. */
 export function toQueryJson(query: Query): QueryJson {
   return JSON.parse(JSON.stringify(query, (key, value) => (key === 'type' ? undefined : value)));
 }
@@ -123,13 +122,14 @@ function undefinedIfNull<T>(value: unknown): T | undefined {
 
 function parseClause(clause: Record<string, unknown>): PhenotypicClause {
   if ('operator' in clause || 'phenotypicClauses' in clause) {
+    // Same key order as the builder's groups, so a parsed query re-serialises byte-identically.
     return {
       type: 'PhenotypicSubquery',
       operator: clause.operator as OperatorType,
-      not: (clause.not as boolean) ?? false,
       phenotypicClauses: ((clause.phenotypicClauses as Record<string, unknown>[]) || []).map(
         parseClause,
       ),
+      not: (clause.not as boolean) ?? false,
     };
   }
   return {

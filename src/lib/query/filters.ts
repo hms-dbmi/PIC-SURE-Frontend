@@ -70,7 +70,6 @@ export const hasInvalidFilter: Readable<boolean> = derived(
   },
 );
 
-/** The current filter tree and genomic filters as query clauses, for `buildRequest`. */
 export function currentQueryFilters(): QueryFilters {
   return toQueryFilters(get(filterTree), get(genomicFilters));
 }

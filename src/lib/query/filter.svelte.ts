@@ -295,15 +295,8 @@ export function createSnpsFilter(snps: SNP[]): SnpFilterInterface {
   return filter;
 }
 
-/**
- * What a filter restricts to. `sentence` is the explorer's wording ("Restricting to …");
- * `summary` is the dataset summary's short form, empty when there's nothing to add.
- */
-export function describeFilter(filter: Filter, form: 'sentence' | 'summary' = 'sentence'): string {
-  return form === 'summary' ? summarizeFilter(filter) : filterSentence(filter);
-}
-
-function filterSentence(filter: Filter): string {
+/** What a filter restricts to, as the explorer words it ("Restricting to …"). */
+export function describeFilter(filter: Filter): string {
   if (filter.filterType === 'Categorical') {
     if (filter.displayType === 'restrict') {
       const valueText = filter.categoryValues.length === 1 ? 'value' : 'values';
@@ -334,7 +327,8 @@ function filterSentence(filter: Filter): string {
   return 'N/A';
 }
 
-function summarizeFilter(filter: Filter): string {
+/** The dataset summary's short form of `describeFilter`; empty when there's nothing to add. */
+export function summarizeFilter(filter: Filter): string {
   if (filter.filterType === 'Categorical') {
     if (filter.displayType === 'restrict') {
       const n = filter.categoryValues.length;
@@ -363,7 +357,7 @@ function summarizeFilter(filter: Filter): string {
 /** "ACRONYM (dataset)" (`compact`: "ACRONYM · dataset"), or whichever of the two is set. */
 export function studyLabel(
   study: { studyAcronym?: string; dataset?: string } | undefined,
-  compact = false,
+  { compact = false } = {},
 ): string {
   const { studyAcronym, dataset } = study ?? {};
   if (studyAcronym && dataset) {

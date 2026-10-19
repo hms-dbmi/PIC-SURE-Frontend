@@ -1,8 +1,8 @@
 <script lang="ts">
   import OperatorBadge from '#lib/ui/OperatorBadge.svelte';
   import {
-    describeFilter,
     studyLabel,
+    summarizeFilter,
     type Filter,
     type FilterInterface,
     type FilterGroupInterface,
@@ -22,8 +22,8 @@
 </script>
 
 {#snippet filterCard(filter: Filter)}
-  {@const study = studyLabel(filter.searchResult, true) || filter.dataset || ''}
-  {@const description = describeFilter(filter, 'summary')}
+  {@const study = studyLabel(filter.searchResult, { compact: true }) || filter.dataset || ''}
+  {@const description = summarizeFilter(filter)}
   <div
     class="{cardClass} bg-surface-100 flex flex-col ml-2 p-3 gap-0.5 text-sm"
     data-testid="dataset-filter-card"

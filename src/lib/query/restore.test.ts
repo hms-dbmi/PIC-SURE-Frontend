@@ -458,7 +458,7 @@ describe('queryToFilterTree', () => {
     ]);
   });
 
-  it('calls getConceptTree with ENSURE_MAX_DEPTH and the concept path for ANY_RECORD_OF', async () => {
+  it('asks the lookup for the concept tree of an ANY_RECORD_OF concept', async () => {
     // Given
     const conceptPath = '\\\\dataset\\\\variable\\\\';
     const query = makeQuery({

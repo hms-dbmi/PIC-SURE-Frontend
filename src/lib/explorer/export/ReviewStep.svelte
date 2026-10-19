@@ -103,8 +103,9 @@
 
     // Get sample ID counts via cross counts query
     const crossCountFields = concepts.content.map((concept) => concept.conceptPath);
+    const { phenotypicClause, genomicFilters } = parseQuery($state.snapshot(query).query);
     const crossCountRequest = buildRequest(
-      parseQuery($state.snapshot(query).query),
+      { phenotypicClause, genomicFilters },
       'CROSS_COUNT',
       (crossCountQuery) => ({ ...crossCountQuery, select: crossCountFields }),
     );
