@@ -1,13 +1,7 @@
-import { redirect, type LoadEvent } from '@sveltejs/kit';
-import { browser } from '$app/env';
 import type { AccessReason } from '#lib/auth/accessReason.ts';
 import { loginRedirectPath } from '#lib/auth/loginRedirect.ts';
 import { BDCPrivileges, PicsurePrivileges } from '#lib/auth/model/privilege.ts';
-import type { Route } from '#lib/auth/model/route.ts';
 import { isTopAdmin, type User } from '#lib/auth/model/user.ts';
-import { routes } from '#lib/auth/nav.ts';
-import { session } from '#lib/auth/session.svelte.ts';
-import { config } from '#lib/config/config.svelte.ts';
 import type { Features } from '#lib/config/index.ts';
 
 /** Who may open a route. Privilege lists name both deployments' privileges (PIC-SURE and BDC). */
@@ -76,8 +70,24 @@ export function requiresLogin(policy: Access, features: Features): boolean {
   return ownLogin(policy, features) || (!!policy.within && requiresLogin(policy.within, features));
 }
 
-function checksProfile(policy: Access): boolean {
-  return !!policy.anyOf || !!policy.topAdmin || (!!policy.within && checksProfile(policy.within));
+function holdsPrivileges(policy: Access, user: User): boolean {
+  const privileges = user.privileges ?? [];
+  return (
+    (!policy.anyOf || policy.anyOf.some((privilege) => privileges.includes(privilege))) &&
+    (!policy.topAdmin || isTopAdmin(user))
+  );
+}
+
+/**
+ * Whether `policy` lets in a visitor with this profile (`undefined` when signed out). The nav and
+ * footer show a link only to these visitors. Token expiry and the terms aren't checked: the guard
+ * deals with those when the visitor arrives.
+ */
+export function admits(policy: Access, features: Features, user: User | undefined): boolean {
+  if (policy.within && !admits(policy.within, features, user)) return false;
+  if (policy.feature && !policy.feature(features)) return false;
+  if (!user && ownLogin(policy, features)) return false;
+  return holdsPrivileges(policy, user ?? {});
 }
 
 function deniedPath(policy: Access, url: URL): string {
@@ -112,66 +122,5 @@ export function accessRedirect(
   // them on the page they asked for. Accepting runs the guards again.
   if (visitor.user.acceptedTOS === false) return undefined;
   if (visitor.profileFailed) return loginRedirectPath(url, 'hydrate_failed');
-  const privileges = visitor.user.privileges ?? [];
-  const allowed =
-    (!policy.anyOf || policy.anyOf.some((privilege) => privileges.includes(privilege))) &&
-    (!policy.topAdmin || isTopAdmin(visitor.user));
-  return allowed ? undefined : deniedPath(policy, url);
-}
-
-/**
- * A route's guard: waits for the layouts above it and, when `policy` checks privileges, for the
- * session bootstrap, then redirects unless `policy` lets the visitor in. It only reads: the page
- * it redirects to acts on the reason in the URL (see `handleAccessReason`).
- */
-export async function requireAccess(
-  { url, parent }: Pick<LoadEvent, 'url' | 'parent'>,
-  policy: Access,
-): Promise<void> {
-  // The root layout applies the config, and outer layouts run their guards first.
-  await parent();
-  if (browser && checksProfile(policy)) await session.bootstrap();
-  const visitor = browser
-    ? {
-        signedIn: session.isLoggedIn,
-        tokenValid: session.hasValidToken,
-        user: session.user,
-        profileFailed: session.profileFailed,
-      }
-    : undefined;
-  const to = accessRedirect(policy, url, config.features, visitor);
-  if (to) redirect(302, to);
-}
-
-/** The nav routes `user` may open. Pass `undefined` for a signed-out visitor. */
-export function routesFor(user: User | undefined, features: Features): Route[] {
-  const privileges: string[] = user?.privileges ?? [];
-
-  function featureRoutes(routeList: Route[]): Route[] {
-    return routeList
-      .filter((route) => (route.feature ? features[route.feature] : true))
-      .map((route) =>
-        route.children ? { ...route, children: featureRoutes(route.children) } : route,
-      );
-  }
-
-  if (privileges.length === 0) {
-    const openRoutes = featureRoutes(routes.filter((route) => !route.privilege));
-    if (!user && features.login.open && !features.discover) {
-      openRoutes.unshift({ path: '/explorer', text: 'Explore' });
-    }
-    return openRoutes;
-  }
-
-  const featured = featureRoutes(routes);
-  if (privileges.includes(PicsurePrivileges.SUPER)) return featured;
-
-  function allowedRoutes(routeList: Route[]): Route[] {
-    return routeList
-      .filter((route) => !route.privilege || route.privilege.some((p) => privileges.includes(p)))
-      .map((route) =>
-        route.children ? { ...route, children: allowedRoutes(route.children) } : route,
-      );
-  }
-  return allowedRoutes(featured);
+  return holdsPrivileges(policy, visitor.user) ? undefined : deniedPath(policy, url);
 }

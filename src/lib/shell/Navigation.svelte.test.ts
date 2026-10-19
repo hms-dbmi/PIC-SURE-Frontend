@@ -2,6 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/svelte';
+import { flushSync } from 'svelte';
 
 const mockPage = vi.hoisted(() => ({ url: new URL('http://localhost/') }));
 
@@ -29,7 +30,7 @@ vi.mock('#lib/config/config.svelte.ts', () => ({
 }));
 
 import Navigation from '#lib/shell/Navigation.svelte';
-import { removeToken, setToken, user } from '#lib/auth/User.ts';
+import { session } from '#lib/auth/session.svelte.ts';
 import { PicsurePrivileges } from '#lib/auth/model/privilege.ts';
 
 const { QUERY, NAMED_DATASET, API_ACCESS, ADMIN, SUPER } = PicsurePrivileges;
@@ -66,15 +67,19 @@ const roles = {
       '/help',
     ],
   },
+  // The admin pages need query access too (D3).
+  adminWithoutQuery: {
+    privileges: [ADMIN, NAMED_DATASET, API_ACCESS],
+    links: ['/dashboard', '/discover', '/api', '/help'],
+  },
 };
 
 function signIn(privileges?: string[]) {
   if (privileges) {
-    setToken('token');
-    user.set({ email: 'test@pic-sure.org', privileges });
+    session.setToken('token');
+    session.user = { email: 'test@pic-sure.org', privileges };
   } else {
-    removeToken();
-    user.set({});
+    session.clear();
   }
 }
 
@@ -93,8 +98,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
-  localStorage.clear();
-  user.set({});
+  session.clear();
   vi.restoreAllMocks();
 });
 
@@ -117,6 +121,17 @@ describe('Navigation', () => {
       // The logo link always carries aria-current; it isn't part of the page navigation.
       expect(current.filter((href) => href !== '/')).toEqual([path]);
     });
+  });
+
+  it('drops the signed-in links when the user signs out', () => {
+    signIn(roles.admin.privileges);
+    const nav = renderAt('/help');
+
+    session.removeToken();
+    flushSync();
+
+    expect(linkPaths(nav)).toEqual(roles.signedOut.links);
+    expect(screen.getByRole('button', { name: 'Login' })).toBeVisible();
   });
 
   it('keeps a section current on its sub-pages', () => {

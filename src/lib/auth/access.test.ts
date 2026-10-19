@@ -23,7 +23,8 @@ vi.mock('#lib/auth/session.svelte.ts', () => ({ session: fakeSession }));
 vi.mock('#lib/config/config.svelte.ts', () => ({ config: fakeConfig }));
 vi.mock('#lib/telemetry/logger.ts', () => ({ log: vi.fn(), createLog: vi.fn(() => ({})) }));
 
-import { ACCESS, requireAccess, type Access } from '#lib/auth/access.ts';
+import { ACCESS, type Access } from '#lib/auth/access.ts';
+import { requireAccess } from '#lib/auth/guard.ts';
 import { log } from '#lib/telemetry/logger.ts';
 
 function makeToken(exp: number): string {

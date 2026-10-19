@@ -5,12 +5,9 @@
  */
 import { untrack } from 'svelte';
 import { toStore, type Readable, type Updater, type Writable } from 'svelte/store';
-import { routesFor } from '#lib/auth/access.ts';
-import type { Route } from '#lib/auth/model/route.ts';
 import type { User } from '#lib/auth/model/user.ts';
 import type AuthProvider from '#lib/auth/providers/AuthProvider.ts';
 import { session } from '#lib/auth/session.svelte.ts';
-import { config } from '#lib/config/config.svelte.ts';
 
 export { getConsents } from '#lib/auth/session.svelte.ts';
 export { getTokenExpiration, getTokenExpirationAsDate, isTokenExpired } from '#lib/auth/token.ts';
@@ -42,9 +39,6 @@ export const user: Writable<User> = bridge(
 export const isTopAdmin: Readable<boolean> = bridge(() => session.isTopAdmin);
 export const consentedStudies: Readable<string[]> = bridge(() => session.consentedStudies);
 export const accessUnavailable: Readable<boolean> = bridge(() => session.accessUnavailable);
-export const userRoutes: Readable<Route[]> = bridge(() =>
-  routesFor(session.isLoggedIn ? session.user : undefined, config.features),
-);
 
 export function setToken(token: string) {
   session.setToken(token);

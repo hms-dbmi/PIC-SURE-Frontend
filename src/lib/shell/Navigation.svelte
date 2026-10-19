@@ -9,10 +9,11 @@
   import { browser } from '$app/env';
 
   import { createInstance } from '#lib/auth/providerRegistry.ts';
-  import { user, userRoutes, isUserLoggedIn, logout } from '#lib/auth/User.ts';
+  import { session } from '#lib/auth/session.svelte.ts';
+  import { routesFor } from '#lib/auth/nav.ts';
   import { loginRedirectPath } from '#lib/auth/loginRedirect.ts';
-  import type { Route } from '#lib/auth/model/route.ts';
   import AuthProvider, { findLoginProvider } from '#lib/auth/providers/AuthProvider.ts';
+  import { config } from '#lib/config/config.svelte.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
 
   import Logo from '#lib/shell/Logo.svelte';
@@ -31,21 +32,13 @@
     goto(resolve(appPath(loginRedirectPath(page.url))));
   }
 
-  const isActivePath = $derived((path: string) => {
-    return page.url.pathname === path || page.url.pathname.startsWith(`${path}/`);
-  });
+  let signedInUser = $derived(session.isLoggedIn ? session.user : undefined);
+  let routes = $derived(routesFor(signedInUser, config.features));
 
-  let currentPage = $derived((route: Route) => {
-    if (route.children) {
-      for (const child of route.children) {
-        if (isActivePath(child.path)) {
-          return 'page';
-        }
-      }
-      return undefined;
-    }
-    return isActivePath(route.path) ? 'page' : undefined;
-  });
+  function currentPage(path: string) {
+    const current = page.url.pathname === path || page.url.pathname.startsWith(`${path}/`);
+    return current ? 'page' : undefined;
+  }
 
   onMount(async () => {
     if (browser && page) {
@@ -71,13 +64,13 @@
   {/snippet}
   <nav id="app-nav">
     <ul>
-      {#each $userRoutes as route}
+      {#each routes as route (route.path)}
         <li>
           <a
             class="nav-link"
             id={getId(route)}
             href={resolve(appPath(route.path))}
-            aria-current={currentPage(route)}
+            aria-current={currentPage(route.path)}
             >{route.text}
           </a>
         </li>
@@ -86,25 +79,26 @@
   </nav>
   {#snippet trail()}
     <div id="app-nav-user" class="content-center">
-      {#if $user && $user.privileges && $user.email && isUserLoggedIn()}
+      {#if signedInUser?.privileges && signedInUser.email}
+        {@const email = signedInUser.email}
         <!-- Logout -->
         <Popover data-testid="app-nav-user-menu" role="dialog" label="Account">
           {#snippet trigger(props)}
             <Button {...props} variant="none" size="none" aria-label="Account">
               <Avatar class="m-3">
-                {($user.email || '?').toUpperCase().charAt(0)}
+                {email.toUpperCase().charAt(0)}
               </Avatar>
             </Button>
           {/snippet}
           <div class="flex flex-col items-center">
-            <p class="pb-6">{$user.email}</p>
+            <p class="pb-6">{email}</p>
             <Button
               class="w-fit"
               id="app-nav-logout"
               title="Logout"
               onclick={() => {
                 log(createLog('AUTH', 'logout.click'));
-                logout(providerInstance, false);
+                session.logout(providerInstance, false);
               }}>Logout</Button
             >
           </div>

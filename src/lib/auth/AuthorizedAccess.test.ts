@@ -22,7 +22,9 @@ vi.mock('#lib/config/config.svelte.ts', () => ({
   },
 }));
 
-import { getUser, setToken, user, userRoutes } from '#lib/auth/User.ts';
+import { getUser, setToken, user } from '#lib/auth/User.ts';
+import { routesFor } from '#lib/auth/nav.ts';
+import { config } from '#lib/config/config.svelte.ts';
 
 // What the three baseline roles carry in the BDC auth schema, plus AUTHORIZED_ACCESS on
 // MANUAL_ROLE_AUTH_ACCESS. Every authenticated BDC user holds exactly this.
@@ -38,7 +40,7 @@ const AUTHENTICATED_PRIVILEGES = [
 // receives AUTHORIZED_ACCESS. This is the only permanent population that must not get the routes.
 const OPEN_ACCESS_PRIVILEGES = ['MANAGED_PRIV_OPEN_ACCESS', 'MANAGED_PRIV_DICTIONARY'];
 
-const navPaths = () => get(userRoutes).map((r) => r.path);
+const navPaths = () => routesFor(get(user), config.features).map((r) => r.path);
 
 beforeEach(() => {
   mockApi.request.mockReset();

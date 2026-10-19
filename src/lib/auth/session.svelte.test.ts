@@ -10,7 +10,8 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
 }));
 
 import { sessionHooks } from '#lib/api/sessionHooks.ts';
-import { ACCESS, requireAccess } from '#lib/auth/access.ts';
+import { ACCESS } from '#lib/auth/access.ts';
+import { requireAccess } from '#lib/auth/guard.ts';
 import { session } from '#lib/auth/session.svelte.ts';
 import { createLog, registerSignedInUser } from '#lib/telemetry/logger.ts';
 

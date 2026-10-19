@@ -1,7 +1,8 @@
 <script lang="ts">
   import { page } from '$app/state';
   import { config } from '#lib/config/config.svelte.ts';
-  import { user } from '#lib/auth/User.ts';
+  import { showsLink } from '#lib/auth/nav.ts';
+  import { session } from '#lib/auth/session.svelte.ts';
   import { termsOfService } from '#lib/shell/termsOfService.svelte.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
 
@@ -13,46 +14,53 @@
       config.branding.footer.excludeSitemapOn.find((hide) => page.url.pathname.includes(hide)),
   );
 
+  let signedInUser = $derived(session.isLoggedIn ? session.user : undefined);
+
+  // A section shows when the deployment's config allows it and the visitor may open one of its links.
   let sitemap = $derived(
-    config.branding.sitemap.map((section) => ({
-      ...section,
-      show:
-        (!section.privilege ||
-          ($user.privileges && $user.privileges.includes(section.privilege))) &&
-        (!section.feature || config.features[section.feature]),
-    })),
+    config.branding.sitemap
+      .filter(
+        (section) =>
+          (!section.privilege || signedInUser?.privileges?.includes(section.privilege)) &&
+          (!section.feature || config.features[section.feature]),
+      )
+      .map((section) => ({
+        ...section,
+        links: section.links.filter(
+          (link) =>
+            (!link.feature || config.features[link.feature]) &&
+            showsLink(link.url, signedInUser, config.features),
+        ),
+      }))
+      .filter((section) => section.links.length > 0),
   );
 </script>
 
-{#if !hideSitemap && config.branding.sitemap.length > 0}
+{#if !hideSitemap && sitemap.length > 0}
   <div id="app-footer-sitemap">
     <div class="flex flex-wrap place-content-center">
       {#each sitemap as section}
-        {#if section.show}
-          <ul class="basis-1/8">
-            <li class="font-bold text-center">{section.category}</li>
-            {#each section.links as link}
-              {#if !link.feature || config.features[link.feature]}
-                <li class="text-center">
-                  <a
-                    target={link.newTab ? '_blank' : '_self'}
-                    rel="external"
-                    href={link.url}
-                    class="hover:underline"
-                    onclick={() =>
-                      log(
-                        createLog('NAVIGATION', 'sitemap.link_click', {
-                          title: link.title,
-                          url: link.url,
-                          category: section.category,
-                        }),
-                      )}>{link.title}</a
-                  >
-                </li>
-              {/if}
-            {/each}
-          </ul>
-        {/if}
+        <ul class="basis-1/8">
+          <li class="font-bold text-center">{section.category}</li>
+          {#each section.links as link}
+            <li class="text-center">
+              <a
+                target={link.newTab ? '_blank' : '_self'}
+                rel="external"
+                href={link.url}
+                class="hover:underline"
+                onclick={() =>
+                  log(
+                    createLog('NAVIGATION', 'sitemap.link_click', {
+                      title: link.title,
+                      url: link.url,
+                      category: section.category,
+                    }),
+                  )}>{link.title}</a
+              >
+            </li>
+          {/each}
+        </ul>
       {/each}
     </div>
   </div>

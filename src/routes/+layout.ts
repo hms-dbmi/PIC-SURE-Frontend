@@ -1,6 +1,7 @@
 import type { LayoutLoad } from './$types';
 import { applyConfig } from '#lib/config/config.svelte.ts';
-import { ACCESS, requireAccess } from '#lib/auth/access.ts';
+import { ACCESS } from '#lib/auth/access.ts';
+import { requireAccess } from '#lib/auth/guard.ts';
 
 export const load: LayoutLoad = async (event) => {
   // Runs on both SSR and the client's hydration-time re-run of this load, off the

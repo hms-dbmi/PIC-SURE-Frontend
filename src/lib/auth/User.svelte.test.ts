@@ -8,9 +8,6 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
   log: vi.fn(),
   registerSignedInUser: vi.fn(),
 }));
-vi.mock('#lib/config/config.svelte.ts', () => ({
-  config: { features: { dashboard: false, discover: false, login: { open: false } } },
-}));
 
 import {
   getToken,
@@ -19,9 +16,7 @@ import {
   setToken,
   tokenStatus,
   user,
-  userRoutes,
 } from '#lib/auth/User.ts';
-import { PicsurePrivileges } from '#lib/auth/model/privilege.ts';
 import { session } from '#lib/auth/session.svelte.ts';
 
 afterEach(() => {
@@ -97,18 +92,5 @@ describe('the stores bridged from the session', () => {
       email: 'set@example.org',
       privileges: ['QUERY'],
     });
-  });
-
-  it('recompute the routes when the user signs out, not only when the profile changes', () => {
-    user.set({ privileges: [PicsurePrivileges.QUERY] });
-    setToken('token');
-    const paths: string[][] = [];
-    const unsubscribe = userRoutes.subscribe((routes) => paths.push(routes.map((r) => r.path)));
-
-    removeToken();
-    flushSync();
-
-    expect(paths).toEqual([['/explorer', '/help'], ['/help']]);
-    unsubscribe();
   });
 });
