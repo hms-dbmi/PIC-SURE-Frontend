@@ -17,7 +17,9 @@ export type { DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/dom';
  * stop. Must be called during component initialisation.
  */
 export function createSortable<T extends Data = Data>(input: CreateSortableInput<T>) {
-  // Inherit from `input` rather than spread it, so its getters stay live.
+  // Inherit from `input` rather than spread it, so its getters stay live. The adapter copies only
+  // own properties when it builds the Sortable, so id, index and the rest arrive a moment later
+  // from its effects, which dnd-kit handles by registering the sortable again under its id.
   return createDndSortable<T>(
     Object.create(input, {
       plugins: { value: input.plugins ?? [SortableKeyboardPlugin, OptimisticSortingPlugin] },

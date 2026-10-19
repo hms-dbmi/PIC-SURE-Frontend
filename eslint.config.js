@@ -24,6 +24,11 @@ const skeletonOnlyInUi = {
   message: 'Only src/lib/ui/ may import Skeleton; use or add a ui/ primitive.',
 };
 
+const dndKitOnlyInUi = {
+  group: ['@dnd-kit/*'],
+  message: 'Only src/lib/ui/ may import dnd-kit; use or extend ui/sortable.',
+};
+
 // Skeleton class names, with any variant prefixes (hover:, md:dark:, [&:hover]:) and `!`. A lone
 // "card" string is allowed outside class attributes, since it's also a variant name.
 const variantPrefix = String.raw`(\S*:)?!?`;
@@ -50,8 +55,8 @@ function importBoundary(folder, allowed, pending = {}) {
             message,
           },
           { regex: `^(\\.\\./){${depth - 1}}\\.\\.(/|$)(?!.*\\.css$)`, message },
-          // A later config's rule replaces an earlier one's, so repeat the Skeleton rule here.
-          ...(folder === 'ui' ? [] : [skeletonOnlyInUi]),
+          // A later config's rule replaces an earlier one's, so repeat the ui-only rules here.
+          ...(folder === 'ui' ? [] : [skeletonOnlyInUi, dndKitOnlyInUi]),
         ],
       },
     ],
@@ -165,7 +170,7 @@ export default [
     files: ['src/**/*.{ts,svelte}', 'tests/**/*.ts'],
     ignores: ['src/lib/ui/**'],
     rules: {
-      'no-restricted-imports': ['error', { patterns: [skeletonOnlyInUi] }],
+      'no-restricted-imports': ['error', { patterns: [skeletonOnlyInUi, dndKitOnlyInUi] }],
     },
   },
   {

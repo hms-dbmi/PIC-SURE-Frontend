@@ -369,7 +369,8 @@ describe('BannerManagementView', () => {
   it('guards lifecycle, create, edit, and Configuration tab transitions while order is dirty', async () => {
     const unsaved = new UnsavedChanges();
     vi.mocked(getManagedBanners).mockResolvedValue([base, scheduled, records[1]]);
-    // The view takes no props, which the host's generic props type doesn't accept
+    // A component without props doesn't fit the host's generic Component<P> (props are
+    // contravariant), whatever the host's props type
     const child = BannerManagementView as Component<Record<string, unknown>>;
     render(UnsavedChangesHost, { props: { child, props: {}, unsaved } });
     await screen.findByText('System maintenance tonight');

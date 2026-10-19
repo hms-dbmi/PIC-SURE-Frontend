@@ -27,7 +27,6 @@ import { toaster } from '#lib/ui/toaster.ts';
  */
 export class BannerQueue {
   records: ManagementRecord[] = $state.raw([]);
-  /** The order being edited. */
   orderUuids: string[] = $state.raw([]);
   savedOrderUuids: string[] = $state.raw([]);
   loading = $state(true);
