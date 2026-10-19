@@ -1,8 +1,5 @@
 import OktaBaseProvider, { type OktaBaseData as OktaData } from './OktaBaseProvider';
 
-const STATE_NAME = 'oauthState';
-const STATE_PREFIX = 'okta-';
-
 class OKTA extends OktaBaseProvider {
   constructor(data: OktaData) {
     if (
@@ -13,7 +10,7 @@ class OKTA extends OktaBaseProvider {
     ) {
       throw new Error('Missing required OKTA parameter(s).');
     }
-    super(data, STATE_NAME, STATE_PREFIX);
+    super(data);
     this.logouturl = data.logouturl || '';
   }
 
@@ -31,11 +28,7 @@ class OKTA extends OktaBaseProvider {
   }
 
   // OKTA logout flow: App -> Okta -> (this.logouturl || App)
-  logout = (): Promise<string> => {
-    localStorage.removeItem(this.stateStorageKey);
-
-    return Promise.resolve(this.oktaLogoutRedirectURI);
-  };
+  logout = (): Promise<string> => Promise.resolve(this.oktaLogoutRedirectURI);
 }
 
 export default OKTA;

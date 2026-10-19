@@ -7,7 +7,8 @@
   import { config } from '#lib/config/config.svelte.ts';
   import { findLoginProvider } from '#lib/auth/providers/AuthProvider.ts';
   import { createInstance } from '#lib/auth/providerRegistry.ts';
-  import { browser } from '$app/env';
+  import { LoginStateError } from '#lib/auth/loginState.ts';
+  import { loginRedirectPath } from '#lib/auth/loginRedirect.ts';
   import { panelOpen } from '#lib/explorer/panel.ts';
   import Loading from '#lib/ui/Loading.svelte';
   import type { User } from '#lib/auth/model/user.ts';
@@ -15,26 +16,17 @@
   import { session } from '#lib/auth/session.svelte.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
 
-  async function attemptUserLogin() {
-    let redirectTo = '/';
-    if (browser) {
-      redirectTo = sessionStorage.getItem('redirect') || '/';
-    }
-
+  async function attemptUserLogin(redirectTo: string) {
     // Retrives the providers from the server's providerRegistry created via hooks.server.ts
     const provider = findLoginProvider(page.data?.providers);
-    if (!provider) {
-      throw new Error('Provider not found');
-    }
+    // The provider is saved when a login starts, so without it this tab started none.
+    if (!provider) throw new LoginStateError('missing');
     const providerType = provider.type;
 
     const providerInstance = await createInstance(provider);
     let hashParts = page.url.hash?.split('&') || [];
     if (page.url.search.startsWith('?')) {
       hashParts = page.url.search.substring(1).split('&') || [];
-    }
-    if (!hashParts || hashParts.length === 0) {
-      return new Error('Provider configuration error');
     }
 
     await providerInstance.authenticate(hashParts).then(async (user: User | undefined) => {
@@ -90,7 +82,15 @@
 
   onMount(async () => {
     panelOpen.set(false);
-    attemptUserLogin().catch((error) => {
+    const redirectTo = sessionStorage.getItem('redirect') || '/';
+    attemptUserLogin(redirectTo).catch((error) => {
+      if (error instanceof LoginStateError && error.problem === 'missing') {
+        log(createLog('LOGIN', 'login.restart'));
+        // `redirect` already holds the path and query the login set out from.
+        const restart = loginRedirectPath({ pathname: redirectTo, search: '' }, 'login_restart');
+        goto(resolve(appPath(restart)));
+        return;
+      }
       log(createLog('LOGIN', 'login.failure', { error: String(error) }, { status: 401 }));
       console.error('Login Error: ', error);
       goto(resolve('login/error'));

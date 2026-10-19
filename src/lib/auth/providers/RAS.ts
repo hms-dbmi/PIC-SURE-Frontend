@@ -11,7 +11,7 @@ class RAS extends OktaBaseProvider {
     ) {
       throw new Error('Missing required RAS parameter(s).');
     }
-    super(data, 'state', 'ras-');
+    super(data);
   }
 
   protected get psamaProvider(): string {
@@ -29,15 +29,12 @@ class RAS extends OktaBaseProvider {
   // RAS logout flow
   // RAS logouturl set:     App -> RAS(this.logouturl) -> OKTA -> APP
   // RAS logouturl not set: App ------------------------> OKTA -> APP
-  logout = (): Promise<string> => {
-    localStorage.removeItem(this.stateStorageKey);
-
-    return Promise.resolve(
+  logout = (): Promise<string> =>
+    Promise.resolve(
       this.logouturl
         ? this.logouturl + encodeURIComponent(this.oktaLogoutRedirectURI)
         : this.oktaLogoutRedirectURI,
     );
-  };
 }
 
 export default RAS;

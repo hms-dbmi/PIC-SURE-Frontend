@@ -11,6 +11,8 @@ export const OKTA_ID_TOKEN_KEY = 'oktaIdToken';
 export const USER_KEY = 'user';
 /** sessionStorage: why the user was sent to the login page, shown there once. */
 export const LOGOUT_REASON_KEY = 'logout-reason';
+/** sessionStorage: the OAuth `state` of the login this tab started. Its callback removes it. */
+export const LOGIN_STATE_KEY = 'loginState';
 
 /** The stored session token, or `''` when there is none (always on the server). */
 export function readToken(): string {

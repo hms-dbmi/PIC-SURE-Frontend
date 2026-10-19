@@ -4,11 +4,11 @@ import AuthProvider from '#lib/auth/providers/AuthProvider.ts';
 import * as psamaUser from '#lib/api/psama/user.ts';
 import type { OktaUser } from '#lib/auth/model/user.ts';
 import { OKTA_ID_TOKEN_KEY } from '#lib/auth/token.ts';
+import { newLoginState, verifyLoginState } from '#lib/auth/loginState.ts';
 
 export interface OktaBaseData extends AuthData {
   uri: string;
   clientid: string;
-  state?: string;
   idp: string;
   oktaidpid: string;
   oktalogouturl: string;
@@ -17,18 +17,12 @@ export interface OktaBaseData extends AuthData {
 abstract class OktaBaseProvider extends AuthProvider implements OktaBaseData {
   uri: string;
   clientid: string;
-  state: string;
   oktaidpid: string;
   oktalogouturl: string;
   idp: string;
-  protected readonly stateStorageKey: string;
 
-  constructor(data: OktaBaseData, stateKey: string, statePrefix: string) {
+  constructor(data: OktaBaseData) {
     super(data);
-    this.stateStorageKey = stateKey;
-    this.state = localStorage.getItem(stateKey) || statePrefix + this.generateRandomState();
-    localStorage.setItem(stateKey, this.state);
-
     this.uri = data.uri;
     this.clientid = data.clientid;
     this.oktaidpid = data.oktaidpid;
@@ -36,31 +30,14 @@ abstract class OktaBaseProvider extends AuthProvider implements OktaBaseData {
     this.oktalogouturl = data.oktalogouturl;
   }
 
-  protected generateRandomState(): string {
-    const randomPart = Math.random().toString(36).substring(2, 15);
-    const timePart = new Date().getTime().toString(36);
-    return randomPart + timePart;
-  }
-
   /** The provider's name in PSAMA's authentication path. */
   protected abstract get psamaProvider(): string;
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   authenticate = async (hashParts: string[]): Promise<OktaUser | undefined> => {
     const responseMap = this.getResponseMap(hashParts);
+    verifyLoginState(responseMap.get('state'));
     const code = responseMap.get('code');
-    const responseState = responseMap.get('state') || '';
-    const localState = this.state;
-
-    if (!code || localState !== responseState) {
-      console.debug(
-        `${this.constructor.name} authentication failed`,
-        `code: ${code}`,
-        `state: ${responseState}`,
-        `localState: ${localState}`,
-      );
-      return undefined;
-    }
+    if (!code) return undefined;
 
     const newUser = await psamaUser.authenticate<OktaUser>(this.psamaProvider, { code });
     if (newUser && newUser?.oktaIdToken) {
@@ -78,7 +55,7 @@ abstract class OktaBaseProvider extends AuthProvider implements OktaBaseData {
       const clientID = encodeURIComponent(this.clientid);
       const clientidpId = this.oktaidpid ? encodeURIComponent(this.oktaidpid) : undefined;
       const redirect = encodeURIComponent(redirectUrl);
-      const state = encodeURIComponent(this.state);
+      const state = newLoginState();
       window.location.href =
         this.uri +
         '?response_type=code' +

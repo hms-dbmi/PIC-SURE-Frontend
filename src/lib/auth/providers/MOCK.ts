@@ -3,6 +3,7 @@ import AuthProvider from '#lib/auth/providers/AuthProvider.ts';
 import { browser } from '$app/env';
 import type { User } from '#lib/auth/model/user.ts';
 import * as psamaUser from '#lib/api/psama/user.ts';
+import { newLoginState, verifyLoginState } from '#lib/auth/loginState.ts';
 
 interface MockData extends AuthData {
   // From VITE_AUTH_PROVIDER_MODULE_<name>_PERSONA - hooks.server.ts lowercases whatever
@@ -17,8 +18,9 @@ interface MockData extends AuthData {
  * external IDP, which can't be satisfied by tests/end-to-end/mock-server - there's no
  * hosted login page to mock. This skips that hop entirely: `login` jumps straight to the
  * same `/login/loading` callback a real provider would eventually redirect back to, with a
- * fabricated implicit-flow hash, so the rest of the login pipeline (authenticate ->
- * psama/authentication/:provider -> picsureUser) runs unmodified against the mock server.
+ * fabricated implicit-flow hash and a real per-login `state`, so the rest of the login pipeline
+ * (state check -> authenticate -> psama/authentication/:provider -> picsureUser) runs
+ * unmodified against the mock server.
  *
  * Enable by pointing an existing provider's `_TYPE` at MOCK in `.env`, e.g.:
  *   VITE_AUTH_PROVIDER_MODULE_GOOGLE_TYPE=MOCK
@@ -34,6 +36,7 @@ class Mock extends AuthProvider implements MockData {
 
   authenticate = async (hashParts: string[]): Promise<User | undefined> => {
     const responseMap = this.getResponseMap(hashParts);
+    verifyLoginState(responseMap.get('state'));
     const token = responseMap.get('#access_token');
     if (browser && token) {
       // `psama/user/me` (fetched right after this, when the login page signs in) has
@@ -48,7 +51,7 @@ class Mock extends AuthProvider implements MockData {
     if (!browser) return;
     this.saveState(redirectTo, type);
     const redirectUrl = this.getRedirectURI();
-    window.location.href = `${redirectUrl}#access_token=mock-local-dev-token&token_type=Bearer`;
+    window.location.href = `${redirectUrl}#access_token=mock-local-dev-token&token_type=Bearer&state=${newLoginState()}`;
   };
 
   logout = async (): Promise<void> => {

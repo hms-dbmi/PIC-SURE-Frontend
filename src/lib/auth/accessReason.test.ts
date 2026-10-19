@@ -109,6 +109,14 @@ describe('handleAccessReason', () => {
     });
   });
 
+  it('tells a visitor whose login callback found no login in the tab to log in again', async () => {
+    expect(await arrive('/login?redirectTo=%2Fexplorer&reason=login_restart', signedOut)).toEqual({
+      events: [],
+      ended: false,
+      toasts: ['Your login could not be completed. Please log in again.'],
+    });
+  });
+
   it('waits for a fresh tab to load the profile before deciding a denial applies', async () => {
     fakeSession.bootstrap.mockImplementationOnce(async () => {
       fakeSession.privileges = QUERY;
@@ -133,6 +141,7 @@ describe('handleAccessReason', () => {
     ],
     ['no_privilege', '/?reason=no_privilege&from=%2Fadmin%2Fusers', signedIn],
     ['explore', '/login?redirectTo=%2F&reason=explore', signedIn],
+    ['login_restart', '/login?redirectTo=%2F&reason=login_restart', signedIn],
     ['no_privilege', '/?reason=no_privilege&from=%2Fdataset', signedOut],
   ])('ignores %s once it no longer applies (%s)', async (_, path, state) => {
     expect(await arrive(path, state)).toEqual({ events: [], ended: false, toasts: [] });

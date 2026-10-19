@@ -174,7 +174,8 @@ test.describe('Login page', () => {
       }
     }
   });
-  for (const providerName of enabledProviders) {
+  // MOCK has no IdP page; 'Login state' below logs in with it.
+  for (const providerName of enabledProviders.filter((name) => name !== 'MOCK')) {
     const providerUrl: { [key: string]: string | undefined } = {
       AUTH0: 'https://avillachlab.auth0.com/',
       OKTA: process.env.VITE_AUTH_PROVIDER_MODULE_OKTA_URI,
@@ -201,6 +202,84 @@ test.describe('Login page', () => {
       await expect(page).toHaveURL(urlMatcher);
     });
   }
+});
+
+// MOCK leaves for /login/loading itself with a real state, so these run the whole login. An init
+// script on the callback page stands in for whatever happened to the stored state meanwhile.
+test.describe('Login state', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
+
+  let authentications: number;
+  const restartToast = 'Your login could not be completed. Please log in again.';
+
+  test.beforeEach(async ({ page }) => {
+    authentications = 0;
+    await mockApiConfig(page);
+    await page.route('*/**/psama/authentication/mock', (route: Route) => {
+      authentications++;
+      return route.fulfill({ json: picsureUser });
+    });
+    await mockApiSuccess(page, '*/**/psama/user/me?hasToken', picsureUser);
+    await mockApiSuccess(page, '*/**/psama/user/me', picsureUser);
+    await mockApiSuccess(page, '*/**/psama/user/me/consents', { consents: mockConsents });
+  });
+
+  const storedState = (page: Page) => page.evaluate(() => sessionStorage.getItem('loginState'));
+
+  test('A login that comes back with its own state signs the user in', async ({ page }) => {
+    await page.goto('/login');
+    await page.getByTestId('login-provider-mock').click();
+
+    await page.waitForURL('/');
+    await userIsLoggedIn(page);
+    expect(authentications).toBe(1);
+    expect(await storedState(page)).toBeNull();
+  });
+
+  test('A callback with another state goes to the login error page', async ({ page }) => {
+    await page.addInitScript(() => {
+      if (location.pathname.startsWith('/login/loading')) {
+        sessionStorage.setItem('loginState', 'f'.repeat(64));
+      }
+    });
+    await page.goto('/login');
+    await page.getByTestId('login-provider-mock').click();
+
+    await page.waitForURL('/login/error');
+    await expect(page.getByText('Something went wrong with your login attempt.')).toBeVisible();
+    expect(authentications).toBe(0);
+    expect(await storedState(page)).toBeNull();
+  });
+
+  test('A callback in a tab whose login state is gone starts the login again', async ({ page }) => {
+    await page.addInitScript(() => {
+      if (location.pathname.startsWith('/login/loading')) {
+        sessionStorage.removeItem('loginState');
+        sessionStorage.setItem('redirect', '/explorer?search=age');
+      }
+    });
+    await page.goto('/login');
+    await page.getByTestId('login-provider-mock').click();
+
+    await expect(page).toHaveURL(
+      '/login?redirectTo=%2Fexplorer%3Fsearch%3Dage&reason=login_restart',
+    );
+    await expect(page.getByTestId('toast-root')).toContainText(restartToast);
+    expect(authentications).toBe(0);
+  });
+
+  test('A callback opened in a tab that started no login starts the login again', async ({
+    page,
+  }) => {
+    // The fixture records an AUTH0 login in every tab; a new tab has none.
+    await page.addInitScript(() => sessionStorage.removeItem('type'));
+
+    await page.goto('/login/loading/?code=abc123&state=' + 'f'.repeat(64)).catch(() => {});
+
+    await expect(page).toHaveURL('/login?redirectTo=%2F&reason=login_restart');
+    await expect(page.getByTestId('toast-root')).toContainText(restartToast);
+    expect(authentications).toBe(0);
+  });
 });
 
 test.describe('Login redirect preserves search state', () => {
