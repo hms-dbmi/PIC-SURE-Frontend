@@ -1,19 +1,6 @@
 import type { LayoutLoad } from './$types';
-import { browser } from '$app/env';
-import { redirect } from '@sveltejs/kit';
-import { user, isTopAdmin } from '#lib/auth/User.ts';
-import { PicsurePrivileges } from '#lib/auth/model/privilege.ts';
-import { get } from 'svelte/store';
+import { ACCESS, requireAccess } from '#lib/auth/access.ts';
 
 export const prerender = false;
 
-export const load: LayoutLoad = async ({ parent }) => {
-  // Wait for the authorized layout to load the user in a fresh tab.
-  await parent();
-  if (browser) {
-    const userPrivileges = get(user)?.privileges || [];
-    if (!get(isTopAdmin) && !userPrivileges.includes(PicsurePrivileges.ADMIN)) {
-      throw redirect(302, '/');
-    }
-  }
-};
+export const load: LayoutLoad = (event) => requireAccess(event, ACCESS.admin);

@@ -1,56 +1,6 @@
 import type { LayoutLoad } from './$types';
-import { browser } from '$app/env';
-import { redirect } from '@sveltejs/kit';
-import { clearSession, hydrateUserFromToken, isTokenExpired, user } from '#lib/auth/User.ts';
-import { loginRedirectPath } from '#lib/auth/loginRedirect.ts';
-import { readToken } from '#lib/auth/token.ts';
-import { BDCPrivileges, PicsurePrivileges } from '#lib/auth/model/privilege.ts';
-import { get } from 'svelte/store';
-import { log, createLog } from '#lib/telemetry/logger.ts';
+import { ACCESS, requireAccess } from '#lib/auth/access.ts';
 
 export const prerender = false;
 
-export const load: LayoutLoad = async ({ url }) => {
-  if (!browser) return;
-
-  const token = readToken();
-  if (!token || token.trim() === '') {
-    log(createLog('AUTH', 'auth.redirect_no_token', { targetUrl: url.pathname }));
-    clearSession();
-    redirect(302, loginRedirectPath(url));
-  }
-  // isTokenExpired handles its own parse errors internally (returns true on failure),
-  // so we don't need a try/catch here — the only other thing that throws is redirect()
-  // itself, which SvelteKit is meant to catch.
-  if (isTokenExpired(token)) {
-    log(createLog('AUTH', 'auth.redirect_token_expired', { targetUrl: url.pathname }));
-    clearSession();
-    redirect(302, loginRedirectPath(url));
-  }
-  // user lives in sessionStorage (tab-scoped), so a fresh tab with a valid token has an
-  // empty user store. Hydrate from PSAMA before the privilege check — otherwise the user
-  // would be bounced to / despite having a valid session.
-  if (!get(user)?.privileges) {
-    try {
-      await hydrateUserFromToken();
-    } catch (error) {
-      console.error('Failed to hydrate user from token:', error);
-      log(createLog('AUTH', 'auth.hydrate_failed', { error: String(error) }));
-      clearSession();
-      redirect(302, loginRedirectPath(url));
-    }
-  }
-  const userPrivileges = get(user)?.privileges || [];
-  if (
-    !userPrivileges.includes(PicsurePrivileges.QUERY) &&
-    !userPrivileges.includes(BDCPrivileges.AUTHORIZED_ACCESS)
-  ) {
-    log(
-      createLog('AUTH', 'auth.redirect_no_privilege', {
-        targetUrl: url.pathname,
-        missingPrivilege: 'QUERY',
-      }),
-    );
-    redirect(302, '/');
-  }
-};
+export const load: LayoutLoad = (event) => requireAccess(event, ACCESS.authorized);

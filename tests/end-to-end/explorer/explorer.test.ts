@@ -884,5 +884,8 @@ test.describe('Explorer for unauthenticated users', () => {
 
     // Then
     await expect(page).toHaveURL(/\/login\?redirectTo=%2Fexplorer/);
+    await expect(page.getByTestId('toast-root')).toContainText(
+      'You must be logged in to access Explore.',
+    );
   });
 });

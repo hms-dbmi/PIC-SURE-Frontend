@@ -10,6 +10,12 @@ describe('loginRedirectPath', () => {
     expect(loginRedirectPath({ pathname, search })).toBe(expected);
   });
 
+  it('adds the reason a guard gives', () => {
+    expect(loginRedirectPath({ pathname: '/explorer', search: '' }, 'explore')).toBe(
+      '/login?redirectTo=%2Fexplorer&reason=explore',
+    );
+  });
+
   it('ignores the hash and origin of a full URL', () => {
     expect(loginRedirectPath(new URL('https://example.org/dataset/1?x=1#top'))).toBe(
       '/login?redirectTo=%2Fdataset%2F1%3Fx%3D1',

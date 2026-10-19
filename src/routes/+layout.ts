@@ -1,20 +1,13 @@
 import type { LayoutLoad } from './$types';
-import { redirect } from '@sveltejs/kit';
-import { browser } from '$app/env';
-import { config, applyConfig } from '#lib/config/config.svelte.ts';
-import { user } from '#lib/auth/User.ts';
-import { loginRedirectPath } from '#lib/auth/loginRedirect.ts';
-import { readToken } from '#lib/auth/token.ts';
+import { applyConfig } from '#lib/config/config.svelte.ts';
+import { ACCESS, requireAccess } from '#lib/auth/access.ts';
 
-export const load: LayoutLoad = ({ url, data }) => {
+export const load: LayoutLoad = async (event) => {
   // Runs on both SSR and the client's hydration-time re-run of this load, off the
   // same serialized data.configCache - so the first server render and the client's
   // initial state agree, avoiding the hydration flash this used to cause.
-  applyConfig(data.configCache);
+  applyConfig(event.data.configCache);
 
-  if (!browser) return;
-  if (!config.features.login.open && !readToken() && !url.pathname.includes('/login')) {
-    user.set({});
-    redirect(302, loginRedirectPath(url));
-  }
+  // The login pages are where a closed deployment sends everyone else.
+  if (!event.url.pathname.includes('/login')) await requireAccess(event, ACCESS.app);
 };

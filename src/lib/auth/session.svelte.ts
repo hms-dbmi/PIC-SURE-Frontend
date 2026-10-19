@@ -3,9 +3,8 @@ import { browser } from '$app/env';
 import { ApiError } from '#lib/api/errors.ts';
 import * as psamaUser from '#lib/api/psama/user.ts';
 import { registerSessionHooks } from '#lib/api/sessionHooks.ts';
-import { isTopAdmin } from '#lib/auth/access.ts';
 import { loginRedirectPath } from '#lib/auth/loginRedirect.ts';
-import type { ConsentsMap, User } from '#lib/auth/model/user.ts';
+import { isTopAdmin, type ConsentsMap, type User } from '#lib/auth/model/user.ts';
 import type AuthProvider from '#lib/auth/providers/AuthProvider.ts';
 import {
   LOGOUT_REASON_KEY,

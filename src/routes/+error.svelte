@@ -3,15 +3,20 @@
   import { resolve } from '$app/paths';
   import { page } from '$app/state';
   import { config } from '#lib/config/config.svelte.ts';
-  import { isUserLoggedIn } from '#lib/auth/User.ts';
+  import { untrack } from 'svelte';
+  import { ACCESS, requiresLogin } from '#lib/auth/access.ts';
+  import { session } from '#lib/auth/session.svelte.ts';
   import Shell from '#lib/shell/Shell.svelte';
   import Navigation from '#lib/shell/Navigation.svelte';
   import SiteBannerRegion from '#lib/banners/components/SiteBannerRegion.svelte';
   import Footer from '#lib/shell/Footer.svelte';
 
   // Only the root layout wraps this page, so it brings the app shell itself. Shell renders
-  // nothing for a logged-out visitor on a closed deployment, who still needs the error.
-  let showShell = $derived(config.features.login.open || isUserLoggedIn());
+  // nothing for a logged-out visitor on a closed deployment, who still needs the error. The
+  // session is read untracked, as Shell reads it.
+  let showShell = $derived(
+    !requiresLogin(ACCESS.app, config.features) || untrack(() => session.isLoggedIn),
+  );
   let notFound = $derived(page.status === 404);
   let title = $derived(notFound ? 'Page not found' : 'Something went wrong');
 </script>

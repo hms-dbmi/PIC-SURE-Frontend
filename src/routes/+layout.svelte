@@ -9,6 +9,7 @@
   import GoogleTracking from '#lib/shell/GoogleTracking.svelte';
   import ExternalLinkWarning from '#lib/shell/ExternalLinkWarning.svelte';
   import TermsDialog from '#lib/shell/TermsDialog.svelte';
+  import { handleAccessReason } from '#lib/auth/accessReason.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
   import { resumeAfterWafCaptcha } from '#lib/api/wafCaptcha.ts';
 
@@ -44,6 +45,8 @@
         type,
       }),
     );
+    // Going back to the page a guard sent the visitor to isn't a new arrival.
+    if (to && type !== 'popstate') handleAccessReason(to.url);
   });
 </script>
 

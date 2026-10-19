@@ -1,6 +1,7 @@
 <script lang="ts">
   import { untrack, type Snippet } from 'svelte';
   import { config } from '#lib/config/config.svelte.ts';
+  import { ACCESS, requiresLogin } from '#lib/auth/access.ts';
   import { session } from '#lib/auth/session.svelte.ts';
 
   interface Props {
@@ -12,7 +13,9 @@
 
   // The session is read untracked: when it ends, the logout navigates to /login, and hiding the
   // shell first would blank the page, leaving nothing to click if another tab signed out.
-  let showShell = $derived(config.features.login.open || untrack(() => session.isLoggedIn));
+  let showShell = $derived(
+    !requiresLogin(ACCESS.app, config.features) || untrack(() => session.isLoggedIn),
+  );
 
   const { header, sidebarRight, pageFooter, children }: Props = $props();
 </script>

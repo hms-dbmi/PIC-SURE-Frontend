@@ -344,7 +344,7 @@ test.describe('Logged Out Landing', () => {
         const redirectTo = encodeURIComponent(new URL(url, 'http://localhost').pathname);
         const escapedUrl = url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         await expect(page).toHaveURL(
-          new RegExp(`(${escapedUrl}|/login\\?redirectTo=${redirectTo})$`),
+          new RegExp(`(${escapedUrl}|/login\\?redirectTo=${redirectTo}(&reason=[a-z_]+)?)$`),
         );
       } else {
         //check if new tab opened
