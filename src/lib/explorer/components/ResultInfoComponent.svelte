@@ -4,6 +4,7 @@
   import Loading from '#lib/ui/Loading.svelte';
   import ShowMoreButton from '#lib/ui/ShowMoreButton.svelte';
   import { config } from '#lib/config/config.svelte.ts';
+  import { cardClass } from '#lib/ui/surface.ts';
 
   type InfoRow = {
     label: string;
@@ -104,7 +105,7 @@
   </div>
 {/snippet}
 
-<div class="card bg-surface-100 min-h-60 p-4">
+<div class="{cardClass} bg-surface-100 min-h-60 p-4">
   <div class="card-body">
     {#await detailPromise}
       <Loading ring size="medium" />

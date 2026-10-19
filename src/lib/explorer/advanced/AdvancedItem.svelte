@@ -8,6 +8,7 @@
   import { useSortable } from '@dnd-kit-svelte/svelte/sortable';
   import { CollisionPriority } from '@dnd-kit/abstract';
   import { slide } from 'svelte/transition';
+  import { cardClass } from '#lib/ui/surface.ts';
 
   interface Props {
     filter: FilterInterface;
@@ -94,7 +95,7 @@
 
   <div
     data-testid="filter-item"
-    class="card flex flex-col gap-2 py-1 px-2 {activeId === filter.uuid && !isOverlay
+    class="{cardClass} flex flex-col gap-2 py-1 px-2 {activeId === filter.uuid && !isOverlay
       ? 'invisible'
       : ''} bg-white"
   >

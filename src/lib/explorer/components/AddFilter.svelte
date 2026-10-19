@@ -16,6 +16,7 @@
 
   import Loading from '#lib/ui/Loading.svelte';
   import OptionsSelectionList from '#lib/ui/OptionsSelectionList.svelte';
+  import { cardClass } from '#lib/ui/surface.ts';
 
   interface Props {
     data?: SearchResult;
@@ -184,7 +185,7 @@
           />
         </div>
       {:else if data?.type === 'Continuous'}
-        <div class="card bg-surface-100 p-3 m-1 w-full">
+        <div class="{cardClass} bg-surface-100 p-3 m-1 w-full">
           <section class="card-body flex grow gap-4" data-testid="filter-numerical">
             <label class="flex-auto flex-col">
               <span>Min: {min}</span>

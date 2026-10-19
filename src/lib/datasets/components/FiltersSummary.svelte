@@ -7,6 +7,7 @@
     AnyRecordOfFilterInterface,
   } from '#lib/query/filter.svelte.ts';
   import { LogicTree } from '#lib/query/logicTree.svelte.ts';
+  import { cardClass } from '#lib/ui/surface.ts';
 
   let {
     filterTree,
@@ -54,7 +55,7 @@
 
 {#snippet filterCard(filter: Filter)}
   <div
-    class="card bg-surface-100 flex flex-col ml-2 p-3 gap-0.5 text-sm"
+    class="{cardClass} bg-surface-100 flex flex-col ml-2 p-3 gap-0.5 text-sm"
     data-testid="dataset-filter-card"
   >
     <p class="font-semibold leading-snug m-0" title={filter.variableName}>

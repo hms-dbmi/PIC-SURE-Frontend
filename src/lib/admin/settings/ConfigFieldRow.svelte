@@ -10,6 +10,7 @@
   } from '#lib/admin/settings/AdminConfiguration.ts';
   import { humanizeKey, truncate, visibleLength } from '#lib/utils/strings.ts';
   import { toaster } from '#lib/ui/toaster.ts';
+  import { cardClass } from '#lib/ui/surface.ts';
 
   interface Props {
     schema: ConfigFieldSchema;
@@ -127,7 +128,7 @@
 </script>
 
 <div
-  class="card border bg-white border-surface-200-800 rounded-xl p-5 shadow-sm {editDisabled
+  class="{cardClass} border bg-white border-surface-200-800 rounded-xl p-5 shadow-sm {editDisabled
     ? 'opacity-55'
     : ''}"
   data-testid={`admin-config-field-row-${schema.name}`}

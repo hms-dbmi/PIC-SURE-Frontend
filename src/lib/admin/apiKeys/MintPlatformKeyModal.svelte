@@ -15,6 +15,7 @@
     type MintedPlatformKey,
     type PlatformKeyExpiry,
   } from '#lib/admin/apiKeys/model.ts';
+  import { cardClass } from '#lib/ui/surface.ts';
 
   let open = $state(false);
   let name = $state('');
@@ -81,7 +82,7 @@
       <div
         role="alert"
         data-testid="admin-api-key-minted-warning"
-        class="card preset-tonal-warning p-3 my-4 font-bold"
+        class="{cardClass} preset-tonal-warning p-3 my-4 font-bold"
       >
         This key is shown only once and cannot be recovered. Copy it now and store it securely.
       </div>

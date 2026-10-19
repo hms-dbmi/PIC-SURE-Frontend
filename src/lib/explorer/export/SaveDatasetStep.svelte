@@ -18,6 +18,7 @@
   } from '#lib/explorer/export/ExportStepperManager.svelte.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
   import { config } from '#lib/config/config.svelte.ts';
+  import { cardClass } from '#lib/ui/surface.ts';
 
   const PROMISE_WAIT_INTERVAL = 7;
   const stepper = getStepper();
@@ -101,7 +102,7 @@
   {#await preparePromise}
     <Loading ring />
   {:then}
-    <div class="w-full h-full m-2 card p-4">
+    <div class="w-full h-full m-2 {cardClass} p-4">
       <header class="card-header">
         Save the information in your final data export by clicking the Save Dataset ID button.
         Navigate to the <a class="anchor" href={resolve('dataset')}>Manage Datasets page</a> to view or

@@ -39,6 +39,7 @@
   } from '#lib/banners/model/schedule.ts';
   import { validateBannerPageTarget } from '#lib/banners/model/pageTargets.ts';
   import { createUnsavedGuard } from '#lib/ui/unsavedGuard.svelte.ts';
+  import { cardClass } from '#lib/ui/surface.ts';
 
   type TargetedPage = Exclude<BannerPageTarget, { kind: 'ALL' }>;
   type EditorTransition = { kind: 'cancel' } | { kind: 'tab'; destination: string };
@@ -464,7 +465,7 @@
 
   <form
     data-testid="banner-editor-form"
-    class="card p-6"
+    class="{cardClass} p-6"
     onsubmit={(event) => {
       event.preventDefault();
       publish();

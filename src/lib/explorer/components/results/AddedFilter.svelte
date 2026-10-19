@@ -20,6 +20,7 @@
   import Dialog from '#lib/ui/dialog/Dialog.svelte';
   import AddFilter from '#lib/explorer/components/AddFilter.svelte';
   import ViewAnyRecordOfFilter from '#lib/explorer/components/ViewAnyRecordOfFilter.svelte';
+  import { cardClass } from '#lib/ui/surface.ts';
 
   let { filter }: { filter: Filter } = $props();
   let open = $state(false);
@@ -61,7 +62,7 @@
 </script>
 
 <div
-  class="flex flex-col card bg-surface-100 p-1 m-1"
+  class="flex flex-col {cardClass} bg-surface-100 p-1 m-1"
   in:scale={{ easing: elasticInOut }}
   out:fade={{ duration: 300 }}
   data-testid="results-filter-item-{filter.id}"

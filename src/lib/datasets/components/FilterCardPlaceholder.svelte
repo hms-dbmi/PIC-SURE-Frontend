@@ -1,5 +1,6 @@
 <script lang="ts">
   import SkeletonBar from '#lib/ui/skeleton/SkeletonBar.svelte';
+  import { cardClass } from '#lib/ui/surface.ts';
 
   interface Props {
     numCards?: number;
@@ -16,7 +17,7 @@
   {#each { length: numCards }, i}
     <div
       data-testid="filter-card-placeholder-item-{i}"
-      class="card bg-surface-100 flex flex-col ml-2 p-3 gap-0.5"
+      class="{cardClass} bg-surface-100 flex flex-col ml-2 p-3 gap-0.5"
     >
       <SkeletonBar class="h-4 {variableNameWidths[i % variableNameWidths.length]}" />
       <SkeletonBar class="h-3 {studyLabelWidths[i % studyLabelWidths.length]} mt-0.5" />

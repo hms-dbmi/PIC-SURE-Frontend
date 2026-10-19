@@ -16,6 +16,7 @@
   import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
   import { CollisionPriority } from '@dnd-kit/abstract';
   import Switch from '#lib/ui/Switch.svelte';
+  import { cardClass } from '#lib/ui/surface.ts';
 
   interface Props {
     group: FilterGroupInterface;
@@ -111,7 +112,7 @@
 
   <div
     data-testid={id === 'root' ? 'filter-root' : 'filter-group'}
-    class="card py-1 px-2 {id === 'root'
+    class="{cardClass} py-1 px-2 {id === 'root'
       ? 'bg-surface-50 shadow-none border-none'
       : activeId === id && !isOverlay
         ? 'invisible'

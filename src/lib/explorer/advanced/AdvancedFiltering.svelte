@@ -22,6 +22,7 @@
   import { Operator, type OperatorType } from '#lib/query/query.ts';
   import { toaster } from '#lib/ui/toaster.ts';
   import LogicTreeSummary from './LogicTreeSummary.svelte';
+  import { cardClass } from '#lib/ui/surface.ts';
 
   type DragOperation =
     | { type: 'canceled' }
@@ -679,7 +680,7 @@
       {/if}
       {#each $genomicFilters as gFilter (gFilter.uuid)}
         <div
-          class="card flex flex-row gap-2 items-center p-4 bg-white opacity-75"
+          class="{cardClass} flex flex-row gap-2 items-center p-4 bg-white opacity-75"
           data-testid="filter-genomic-item"
         >
           <div class="flex items-center">

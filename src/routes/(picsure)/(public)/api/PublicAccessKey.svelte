@@ -9,6 +9,7 @@
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import Loading from '#lib/ui/Loading.svelte';
   import Turnstile from './Turnstile.svelte';
+  import { cardClass } from '#lib/ui/surface.ts';
 
   type View = 'idle' | 'form' | 'revealed' | 'error';
 
@@ -102,7 +103,7 @@
 
 <div
   data-testid="api-public-key"
-  class="card border border-surface-200 bg-surface-50-950 p-6 min-h-80 flex flex-col"
+  class="{cardClass} border border-surface-200 bg-surface-50-950 p-6 min-h-80 flex flex-col"
 >
   <header class="flex items-center gap-4 mb-4">
     <i class="fa-solid fa-globe text-3xl text-primary-500"></i>
@@ -208,7 +209,7 @@
       role="alert"
       tabindex="-1"
       bind:this={warning}
-      class="card preset-tonal-warning flex items-center gap-4 py-2 px-3 mb-4"
+      class="{cardClass} preset-tonal-warning flex items-center gap-4 py-2 px-3 mb-4"
     >
       <i class="fa-solid fa-triangle-exclamation text-3xl" aria-hidden="true"></i>
       <p class="m-0 font-bold">
