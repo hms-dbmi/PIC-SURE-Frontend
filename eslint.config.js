@@ -16,9 +16,7 @@ const boundaryExceptions = [
   'src/lib/ui/datatable/accessories/Rows.svelte',
   'src/lib/ui/datatable/accessories/Search.svelte',
   'src/lib/ui/stepper/Stepper.svelte',
-  'src/lib/ui/tree/RemoteTree.svelte',
   'src/lib/ui/unsavedGuard.svelte.ts',
-  'src/lib/utils/hierarchy.ts',
 ];
 
 const skeletonOnlyInUi = {

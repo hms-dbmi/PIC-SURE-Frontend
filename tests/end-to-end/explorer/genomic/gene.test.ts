@@ -243,6 +243,29 @@ test.describe('Consequnce selection', () => {
     await expect(child).toBeChecked();
     await expect(sibling).not.toBeChecked();
   });
+  test('Consequences can be chosen from the keyboard', async ({ page }) => {
+    // Given
+    await page.getByTestId('explorer-genomic-filter-open').click();
+    await chooseGenomicFilterType(page, 'gene');
+
+    const tree = page.getByTestId('genomic-consequence-panel').getByRole('tree');
+    const parentNode = tree.getByRole('treeitem', { name: 'High Severity' });
+    const child = tree.getByRole('treeitem', { name: 'splice_acceptor_variant' });
+
+    // When
+    await parentNode.focus();
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('Space');
+
+    // Then
+    await expect(child).toBeFocused();
+    await expect(child).toHaveAttribute('aria-checked', 'true');
+    await expect(parentNode).toHaveAttribute('aria-checked', 'mixed');
+    await expect(page.locator('#genomic-summary-consequence')).toContainText(
+      'splice_acceptor_variant',
+    );
+  });
   test('When a gene is not selected, the add filter button is disabled', async ({ page }) => {
     // Given
     await page.getByTestId('explorer-genomic-filter-open').click();
