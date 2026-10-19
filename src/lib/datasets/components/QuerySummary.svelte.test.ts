@@ -1,7 +1,9 @@
 // @vitest-environment happy-dom
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/svelte';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
+import { goto } from '$app/navigation';
+import { toaster } from '#lib/ui/toaster.ts';
 
 import QuerySummary from '#lib/datasets/components/QuerySummary.svelte';
 import { loadQuerySummaryData } from '#lib/query/restore.ts';
@@ -92,6 +94,29 @@ describe('QuerySummary', () => {
 
     expect(screen.getByTestId('dataset-restore-filters-trigger')).toBeEnabled();
     expect(screen.queryByTestId('ui-error-alert')).not.toBeInTheDocument();
+  });
+
+  it('shows the restored toast only once the explorer is reached', async () => {
+    let arrive!: () => void;
+    vi.mocked(goto).mockReturnValue(new Promise<void>((resolve) => (arrive = resolve)));
+    mockLoadQuerySummaryData.mockReturnValue(baseData);
+    render(QuerySummary, { ...baseProps, name: 'cohort' });
+
+    await fireEvent.click(await screen.findByTestId('dataset-restore-filters-trigger'));
+    await fireEvent.click(
+      within(screen.getByTestId('dataset-restore-filters')).getByRole('button', {
+        name: 'Restore Filters',
+      }),
+    );
+    await waitFor(() => expect(goto).toHaveBeenCalled());
+    expect(toaster.success).not.toHaveBeenCalled();
+
+    arrive();
+    await waitFor(() =>
+      expect(toaster.success).toHaveBeenCalledWith({
+        description: 'Filters restored for cohort dataset.',
+      }),
+    );
   });
 
   it('passes a V3 summary through to loadQuerySummaryData without filtering system fields', async () => {

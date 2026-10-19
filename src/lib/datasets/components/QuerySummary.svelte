@@ -58,10 +58,12 @@
     ]);
     exports.set(exportdata);
     filterState.restore(filterdata, genomicData);
+    // Success toasts hide after two seconds; raised before the navigation, it can expire while
+    // the explorer renders.
+    await goto(resolve('explorer'));
     toaster.success({
       description: `Filters restored for ${name ? name + ' dataset' : 'dataset'}.`,
     });
-    goto(resolve('explorer'));
   }
 
   let restoreQueryButton = $derived(
