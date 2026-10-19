@@ -50,6 +50,22 @@ describe('LandingStats', () => {
     expect(stats.auth.map((stat) => stat.snapshot?.count)).toEqual([10]);
   });
 
+  it('reloads the signed-in stats when another user signs in', async () => {
+    const { transport, stats } = setup();
+    vi.spyOn(session, 'ensureConsentsLoaded').mockResolvedValue({});
+    session.setToken('first-user');
+    await stats.load();
+    await counts();
+
+    session.removeToken();
+    session.setToken('second-user');
+    transport.mockResolvedValue(20);
+    await stats.load();
+    await counts();
+
+    expect(stats.auth.map((stat) => stat.snapshot?.count)).toEqual([20]);
+  });
+
   it("ignores a superseded load's late counts", async () => {
     const { transport, stats } = setup();
     let resolveFirst!: (value: number) => void;

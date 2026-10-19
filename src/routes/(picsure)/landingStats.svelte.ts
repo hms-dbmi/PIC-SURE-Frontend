@@ -41,8 +41,12 @@ export class LandingStats {
         loginOpen: config.features.login.open,
       });
 
-      // The open and signed-in lists differ, so signing in reloads and nothing else does.
-      const thisRequest = entries.map(({ auth, key }) => [auth, key].join(',')).join(';');
+      // Reload only when the stat list or the signed-in user changes: the lists differ between
+      // open and signed in, and signed-in counts depend on whose token and consents they use.
+      const thisRequest = [
+        session.token,
+        ...entries.map(({ auth, key }) => [auth, key].join(',')),
+      ].join(';');
       if (this.#lastRequest === thisRequest) return;
       this.#lastRequest = thisRequest;
       const generation = ++this.#generation;
