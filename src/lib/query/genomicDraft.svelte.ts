@@ -8,7 +8,7 @@ import {
 } from '#lib/query/filter.svelte.ts';
 import type { GenomicClause } from '#lib/query/query.ts';
 import { buildRequest } from '#lib/query/build.ts';
-import variantData from '#lib/explorer/genomic/variant-data.json';
+import variantData from '#lib/query/variant-data.json';
 import { assertNoSsrWrite } from '#lib/utils/ssrWrite.ts';
 
 const severityKeys = variantData.map((sev) => sev.key);

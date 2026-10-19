@@ -1,6 +1,6 @@
 <script lang="ts">
   import { genomicDraft } from '#lib/query/genomicDraft.svelte.ts';
-  import variantData from '#lib/explorer/genomic/variant-data.json';
+  import variantData from '#lib/query/variant-data.json';
   import TreeView from '#lib/ui/tree/TreeView.svelte';
   import type { TreeNodeInit } from '#lib/ui/tree/treeModel.svelte.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';

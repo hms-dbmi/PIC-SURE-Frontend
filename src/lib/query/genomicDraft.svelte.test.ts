@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 
 import { GenomicDraft } from '#lib/query/genomicDraft.svelte.ts';
 import { createGenomicFilter } from '#lib/query/filter.svelte.ts';
-import variantData from '#lib/explorer/genomic/variant-data.json';
+import variantData from '#lib/query/variant-data.json';
 
 describe('GenomicDraft', () => {
   it('builds a gene filter without the severity group keys', () => {
