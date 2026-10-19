@@ -1,6 +1,4 @@
-import type { LogicTree } from '#lib/query/logicTree.svelte.ts';
-import type { Filter, FilterInterface } from '#lib/query/filter.svelte.ts';
-import { toQueryFilters, type QueryFilters } from '#lib/query/build.ts';
+import type { QueryFilters } from '#lib/query/build.ts';
 
 /**
  * Plain-data descriptor of a count query. `phenotypicClause` and
@@ -12,15 +10,8 @@ export interface QueryDescriptor extends QueryFilters {
   isOpenAccess: boolean;
 }
 
-export interface DescriptorInputs {
-  isOpenAccess: boolean;
-  filterTree: LogicTree<FilterInterface>;
-  genomicFilters: Filter[];
-}
-
-export function buildDescriptor(inputs: DescriptorInputs): QueryDescriptor {
-  const filters = toQueryFilters(inputs.filterTree, inputs.genomicFilters);
-  return { isOpenAccess: inputs.isOpenAccess, ...($state.snapshot(filters) as QueryFilters) };
+export function buildDescriptor(isOpenAccess: boolean, filters: QueryFilters): QueryDescriptor {
+  return { isOpenAccess, ...($state.snapshot(filters) as QueryFilters) };
 }
 
 // Object keys sorted at every depth so `{a:1,b:2}` and `{b:2,a:1}` hash the

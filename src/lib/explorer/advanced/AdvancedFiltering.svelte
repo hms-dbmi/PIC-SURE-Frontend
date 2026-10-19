@@ -17,7 +17,7 @@
     PointerSensor,
   } from '@dnd-kit-svelte/svelte';
   import { move } from '@dnd-kit/helpers';
-  import { filterTree, genomicFilters } from '#lib/query/filters.ts';
+  import { filterState } from '#lib/query/filters.svelte.ts';
   import { LogicTree } from '#lib/query/logicTree.svelte.ts';
   import { Operator, type OperatorType } from '#lib/query/query.ts';
   import { toaster } from '#lib/ui/toaster.ts';
@@ -50,7 +50,7 @@
 
   const localTree = (() => {
     try {
-      return $filterTree.clone();
+      return filterState.tree.clone();
     } catch (e) {
       console.error('Failed to clone filter tree:', e);
       toaster.error({ description: 'Failed to load saved filter arrangement. Starting fresh.' });
@@ -58,7 +58,7 @@
     }
   })();
 
-  let savedSerialized = $state($filterTree.serialized);
+  let savedSerialized = $state(filterState.tree.serialized);
 
   const sensors = [KeyboardSensor, PointerSensor];
 
@@ -616,7 +616,7 @@
 
   export function applyChanges() {
     localTree.pruneTree();
-    filterTree.set(localTree.clone());
+    filterState.setTree(localTree.clone());
     savedSerialized = localTree.serialized;
   }
 
@@ -629,7 +629,10 @@
   }
 </script>
 
-<LogicTreeSummary root={localTree.root as FilterGroupInterface} genomicFilters={$genomicFilters} />
+<LogicTreeSummary
+  root={localTree.root as FilterGroupInterface}
+  genomicFilters={filterState.genomic}
+/>
 <div class="flex-1 overflow-auto p-2 border border-surface-300 rounded-lg bg-surface-50 w-full">
   <DragDropProvider
     {sensors}
@@ -671,14 +674,14 @@
       {/if}
     </DragOverlay>
   </DragDropProvider>
-  {#if $genomicFilters.length > 0}
+  {#if filterState.genomic.length > 0}
     <div data-testid="filter-genomic-section">
       {#if (localTree.root as FilterGroupInterface).children.length > 0}
         <div class="flex justify-center pb-3" data-testid="filter-genomic-separator">
           <OperatorBadge operator="AND" tone="neutral" />
         </div>
       {/if}
-      {#each $genomicFilters as gFilter (gFilter.uuid)}
+      {#each filterState.genomic as gFilter (gFilter.uuid)}
         <div
           class="{cardClass} flex flex-row gap-2 items-center p-4 bg-white opacity-75"
           data-testid="filter-genomic-item"

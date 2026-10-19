@@ -22,7 +22,7 @@ import { isUserLoggedIn } from '#lib/auth/User.ts';
 import { addConsents } from '#lib/explorer/Dictionary.ts';
 import { getCountResource } from '#lib/explorer/Resources.ts';
 import { buildRequest } from '#lib/query/build.ts';
-import { currentQueryFilters } from '#lib/query/filters.ts';
+import { filterState } from '#lib/query/filters.svelte.ts';
 import { countResult } from '#lib/query/counts/format.ts';
 import { log, createLog } from '#lib/telemetry/logger.ts';
 import { useOpenAccess } from '#lib/explorer/mode.ts';
@@ -86,7 +86,7 @@ async function getConceptCount({ isOpenAccess }: RequestMapOptions): Promise<Pat
 }
 
 function blank({ addFilters, isOpenAccess }: RequestMapOptions): Promise<PatientCount> {
-  const request = buildRequest(addFilters ? currentQueryFilters() : null, 'COUNT');
+  const request = buildRequest(addFilters ? filterState.queryFilters : null, 'COUNT');
   return runSyncQuery(request, { openEndpoint: useOpenAccess(isOpenAccess) }).then(
     rejectIfQueryError,
   );
@@ -126,7 +126,7 @@ const queryMappers = {
 };
 
 async function getOpenPatientCount({ addFilters }: RequestMapOptions): Promise<PatientCount> {
-  const request = buildRequest(addFilters ? currentQueryFilters() : null, 'CROSS_COUNT');
+  const request = buildRequest(addFilters ? filterState.queryFilters : null, 'CROSS_COUNT');
   log(
     createLog('QUERY', 'query.execute', {
       isOpenAccess: true,
@@ -140,7 +140,7 @@ async function getOpenPatientCount({ addFilters }: RequestMapOptions): Promise<P
 }
 
 function getAuthPatientCount({ addFilters }: RequestMapOptions): Promise<PatientCount> {
-  const request = buildRequest(addFilters ? currentQueryFilters() : null, 'COUNT');
+  const request = buildRequest(addFilters ? filterState.queryFilters : null, 'COUNT');
   log(
     createLog('QUERY', 'query.execute', {
       isOpenAccess: false,
@@ -160,7 +160,7 @@ function getCrossCounts(field: string, type: ExpectedResultType) {
     const fields: string[] = getStatFields(field).map((f) => f.conceptPath);
     if (fields.length === 0) return Promise.reject(`${field} feilds were not configured`);
     const mapper = queryMappers.addCrossCountFields(fields);
-    const request = buildRequest(addFilters ? currentQueryFilters() : null, type, mapper);
+    const request = buildRequest(addFilters ? filterState.queryFilters : null, type, mapper);
     log(
       createLog('QUERY', 'query.execute', {
         isOpenAccess,
@@ -189,7 +189,7 @@ function getConsentCount(type: ExpectedResultType) {
     );
 
     const mapper = queryMappers.addCategoryMap(categoryMap);
-    const request = buildRequest(addFilters ? currentQueryFilters() : null, type, mapper);
+    const request = buildRequest(addFilters ? filterState.queryFilters : null, type, mapper);
     return runSyncQuery(request, { openEndpoint: useOpenAccess(isOpenAccess) }).then(
       rejectIfQueryError,
     );

@@ -15,18 +15,11 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 
-vi.mock('#lib/query/GeneFilter.ts', () => ({ populateFromGeneFilter: vi.fn() }));
+vi.mock('#lib/query/genomicDraft.svelte.ts', () => ({
+  genomicDraft: { loadGeneFilter: vi.fn(), loadSnpFilter: vi.fn() },
+}));
 
-vi.mock('#lib/query/SNPFilter.ts', () => ({ populateFromSNPFilter: vi.fn() }));
-
-vi.mock('#lib/query/filters.ts', async () => {
-  const { writable } = await import('svelte/store');
-  return {
-    removeFilter: vi.fn(),
-    activeFilter: writable(undefined),
-    activeSearch: writable(undefined),
-  };
-});
+vi.mock('#lib/query/filters.svelte.ts', () => ({ filterState: { remove: vi.fn() } }));
 
 vi.mock('#lib/explorer/Dictionary.ts', () => ({ getConceptDetails: vi.fn() }));
 

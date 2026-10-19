@@ -2,7 +2,7 @@
   import { resolve } from '$app/paths';
   import type { FilterGroupInterface } from '#lib/query/filter.svelte.ts';
   import { page } from '$app/state';
-  import { filterTree, filters, genomicFilters } from '#lib/query/filters.ts';
+  import { filterState } from '#lib/query/filters.svelte.ts';
   import { exports } from '#lib/explorer/export/Export.ts';
 
   import FilterComponent from '#lib/explorer/components/results/AddedFilter.svelte';
@@ -17,14 +17,14 @@
   let { isDiscoverPage = false }: Props = $props();
 
   let isAdvancedFilteringPage = $derived(page.url.pathname.includes('/advanced-filtering'));
-  let advancedFilteringDisabled = $derived($filters.length <= 1);
+  let advancedFilteringDisabled = $derived(filterState.phenotypic.length <= 1);
 </script>
 
-{#if $filters.length + $genomicFilters.length + $exports.length === 0}
+{#if filterState.phenotypic.length + filterState.genomic.length + $exports.length === 0}
   <p class="text-center">No filters added</p>
 {:else}
   <div class="px-4 mb-1 w-80">
-    {#if $filters.length + $genomicFilters.length > 0}
+    {#if filterState.phenotypic.length + filterState.genomic.length > 0}
       <div class="flex items-center m-1">
         <header class="text-left">Filters</header>
         {#if isAdvancedFilteringPage}
@@ -61,11 +61,11 @@
       </div>
     {/if}
     <section class="py-1">
-      <ResultsFilterGroup group={$filterTree.root as FilterGroupInterface} />
-      {#if $genomicFilters.length > 0 && $filters.length > 0}
+      <ResultsFilterGroup group={filterState.tree.root as FilterGroupInterface} />
+      {#if filterState.genomic.length > 0 && filterState.phenotypic.length > 0}
         <span class="font-semibold text-xs py-0.5">AND</span>
       {/if}
-      {#each $genomicFilters as filter}
+      {#each filterState.genomic as filter (filter.id)}
         <FilterComponent {filter} />
       {/each}
     </section>

@@ -1,6 +1,6 @@
 <script lang="ts">
   import Button from '#lib/ui/Button.svelte';
-  import { selectedSNPs, clearSnpFilters, saveSNP, deleteSNP } from '#lib/query/SNPFilter.ts';
+  import { genomicDraft } from '#lib/query/genomicDraft.svelte.ts';
   import type { SNP } from '#lib/query/genomic.ts';
 
   import Panel from '#lib/explorer/components/Panel.svelte';
@@ -18,7 +18,7 @@
   }
 
   function onsave(snpItem: SNP) {
-    saveSNP(snpItem);
+    genomicDraft.saveSnp(snpItem);
     snp = defaultSnp;
   }
 
@@ -27,7 +27,7 @@
   }
 
   function ondelete(snpItem: SNP) {
-    deleteSNP(snpItem);
+    genomicDraft.deleteSnp(snpItem);
   }
 </script>
 
@@ -46,8 +46,8 @@
       <Button
         variant="outlined-surface"
         size="xs"
-        disabled={$selectedSNPs.length === 0}
-        onclick={clearSnpFilters}>Clear</Button
+        disabled={genomicDraft.snps.length === 0}
+        onclick={() => genomicDraft.clearSnps()}>Clear</Button
       >
     {/snippet}
     <Summary {onedit} {ondelete} />

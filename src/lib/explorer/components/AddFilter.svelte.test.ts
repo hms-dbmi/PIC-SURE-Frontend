@@ -5,7 +5,7 @@ import { fireEvent, render, screen } from '@testing-library/svelte';
 
 import AddFilter from '#lib/explorer/components/AddFilter.svelte';
 import { getConceptDetails } from '#lib/explorer/Dictionary.ts';
-import { addFilter, enrichFilterDetails } from '#lib/query/filters.ts';
+import { filterState } from '#lib/query/filters.svelte.ts';
 import type { SearchResult } from '#lib/explorer/types.ts';
 import { optionsIn } from '../../../../tests/support/helpers';
 
@@ -15,10 +15,8 @@ vi.mock('#lib/explorer/Dictionary.ts', () => ({
   getConceptDetails: vi.fn(),
 }));
 
-vi.mock('#lib/query/filters.ts', () => ({
-  addFilter: vi.fn(),
-  updateFilter: vi.fn(),
-  enrichFilterDetails: vi.fn(),
+vi.mock('#lib/query/filters.svelte.ts', () => ({
+  filterState: { add: vi.fn(), update: vi.fn(), enrich: vi.fn() },
 }));
 
 vi.mock('#lib/ui/toaster.ts', () => ({
@@ -36,8 +34,8 @@ vi.mock('#lib/explorer/panel.ts', async () => {
 });
 
 const mockGetConceptDetails = vi.mocked(getConceptDetails);
-const mockAddFilter = vi.mocked(addFilter);
-const mockEnrichFilterDetails = vi.mocked(enrichFilterDetails);
+const mockAddFilter = vi.mocked(filterState.add);
+const mockEnrichFilterDetails = vi.mocked(filterState.enrich);
 
 const numericSearchResult = {
   conceptPath: '\\test\\concept\\',

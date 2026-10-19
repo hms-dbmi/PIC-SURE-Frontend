@@ -1,12 +1,10 @@
-import { get } from 'svelte/store';
-import type { Unsubscriber } from 'svelte/store';
+import { untrack } from 'svelte';
 
 import { runSyncQuery } from '#lib/api/picsure/query.ts';
 import { log, createLog } from '#lib/telemetry/logger.ts';
 import { isToastShowing, toaster } from '#lib/ui/toaster.ts';
-import { allFilters, filterTree, genomicFilters } from '#lib/query/filters.ts';
+import { filterState } from '#lib/query/filters.svelte.ts';
 import { getCountResource } from '#lib/explorer/Resources.ts';
-import { subscribeOnChange } from '#lib/utils/subscribers.ts';
 import { buildDescriptor, stableHash } from '#lib/query/descriptor.svelte.ts';
 import { resultProviders } from '#lib/query/counts/providers.ts';
 import type { QueryDescriptor } from '#lib/query/descriptor.svelte.ts';
@@ -43,7 +41,9 @@ export class ResultCounts {
   #snapshot = $state.raw<ResultCountSnapshot>(EMPTY_SNAPSHOT);
   #status = $state<ResultCountsStatus>('idle');
   #requestId = 0;
-  #unsubFilters: Unsubscriber | null = null;
+  #stopWatching: (() => void) | null = null;
+  #getIsOpenAccess = $state.raw<() => boolean>(() => false);
+  #descriptor = $derived(buildDescriptor(this.#getIsOpenAccess(), filterState.queryFilters));
 
   constructor(service: QueryCountService) {
     this.#service = service;
@@ -106,23 +106,21 @@ export class ResultCounts {
     this.#service.clear();
   }
 
+  /** Loads the count now and again whenever the filters change, until `stop()`. */
   start(getIsOpenAccess: () => boolean): void {
     this.stop();
-    // Order matters: fire the initial #runLoad BEFORE installing the subscription.
-    // subscribeOnChange skips its initial synchronous fire, so the explicit
-    // #runLoad here is what triggers the first load. Swapping the order would
-    // race the subscription's first invocation against the initial load.
-    void this.#runLoad(getIsOpenAccess);
-    this.#unsubFilters = subscribeOnChange(allFilters, () => {
-      void this.#runLoad(getIsOpenAccess);
+    this.#getIsOpenAccess = getIsOpenAccess;
+    this.#stopWatching = $effect.root(() => {
+      $effect(() => {
+        const descriptor = this.#descriptor;
+        untrack(() => void this.#runLoad(getIsOpenAccess, descriptor));
+      });
     });
   }
 
   stop(): void {
-    if (this.#unsubFilters) {
-      this.#unsubFilters();
-      this.#unsubFilters = null;
-    }
+    this.#stopWatching?.();
+    this.#stopWatching = null;
     // Bump requestId so any in-flight load resolves as stale and doesn't commit.
     this.#requestId++;
     this.#status = 'idle';
@@ -147,11 +145,7 @@ export class ResultCounts {
   }
 
   #buildCurrentDescriptor(isOpenAccess: boolean): QueryDescriptor {
-    return buildDescriptor({
-      isOpenAccess,
-      filterTree: get(filterTree),
-      genomicFilters: get(genomicFilters),
-    });
+    return buildDescriptor(isOpenAccess, filterState.queryFilters);
   }
 
   async #runLoad(
@@ -183,8 +177,8 @@ export class ResultCounts {
 
 // Module-level singleton. Do NOT invoke `load()`, `start()`, `triggerLoad()`,
 // or `ensureLoaded()` from server code without per-request scoping (SvelteKit
-// Context) — `start()` installs a long-lived filter-store subscription on the
-// singleton, and the load paths read filter stores via `get()`.
+// Context) — `start()` installs a long-lived filter watcher on the singleton,
+// and the load paths read the browser-only filter state.
 export const resultCountsState = new ResultCounts(
   createQueryCountService({
     transport: (request, openEndpoint) => runSyncQuery(request, { openEndpoint }),

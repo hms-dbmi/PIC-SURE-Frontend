@@ -5,7 +5,7 @@
   import { config } from '#lib/config/config.svelte.ts';
   import type { ExportRowInterface } from '#lib/explorer/export/ExportRow.ts';
   import { exports } from '#lib/explorer/export/Export.ts';
-  import { currentQueryFilters, filters } from '#lib/query/filters.ts';
+  import { filterState } from '#lib/query/filters.svelte.ts';
   import { resultCountsState } from '#lib/query/counts/resultCounts.svelte.ts';
   import { createDatasetName } from '#lib/api/picsure/datasets.ts';
   import { getQueryStatus } from '#lib/api/picsure/query.ts';
@@ -60,9 +60,11 @@
 
   onMount(async () => {
     setQueryRequest(
-      buildRequest(currentQueryFilters(), 'COUNT', (query) => {
+      buildRequest(filterState.queryFilters, 'COUNT', (query) => {
         // populate selected export columns from filters
-        query.select = [...new Set([...query.select, ...filterConcepts(query, $filters)])];
+        query.select = [
+          ...new Set([...query.select, ...filterConcepts(query, filterState.phenotypic)]),
+        ];
         return query;
       }),
     );
@@ -132,7 +134,7 @@
 
   const MAX_DATA_POINTS_FOR_EXPORT = $derived(config.settings.maxDataPointsForExport || 1000000);
   function dataLimitExceeded(): boolean {
-    const extraVariables = $filters
+    const extraVariables = filterState.phenotypic
       .filter((filter) => filter.filterType === 'AnyRecordOf')
       .reduce((acc, filter) => acc + filter.concepts.length, 0);
     let participantCount: number =
@@ -140,7 +142,7 @@
         ? resultCountsState.total
         : MAX_DATA_POINTS_FOR_EXPORT + 1;
     let totalDataPoints: number =
-      participantCount + ($filters.length + extraVariables) + $exports.length;
+      participantCount + (filterState.phenotypic.length + extraVariables) + $exports.length;
     return totalDataPoints > MAX_DATA_POINTS_FOR_EXPORT;
   }
 </script>

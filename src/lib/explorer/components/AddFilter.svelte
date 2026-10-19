@@ -3,7 +3,7 @@
 
   import { toaster } from '#lib/ui/toaster.ts';
   import type { SearchResult } from '#lib/explorer/types.ts';
-  import { addFilter, updateFilter, enrichFilterDetails } from '#lib/query/filters.ts';
+  import { filterState } from '#lib/query/filters.svelte.ts';
   import { activeRow } from '#lib/explorer/ExpandableRow.ts';
   import {
     type Filter,
@@ -103,11 +103,11 @@
     }
     if (!filter) return; //todo errors
     if (existingFilter) {
-      updateFilter(existingFilter.uuid, filter);
+      filterState.update(existingFilter.uuid, filter);
     } else {
-      addFilter(filter);
+      filterState.add(filter);
     }
-    enrichFilterDetails(filter, data.conceptPath, data.dataset);
+    filterState.enrich(filter, data.conceptPath, data.dataset);
     finish();
   }
 

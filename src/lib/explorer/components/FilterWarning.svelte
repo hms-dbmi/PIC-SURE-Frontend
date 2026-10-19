@@ -4,12 +4,7 @@
   import { goto } from '$app/navigation';
 
   import { panelOpen } from '#lib/explorer/panel.ts';
-  import {
-    removeGenomicFilters,
-    removeUnallowedFilters,
-    removeInvalidFilters,
-    filterWarning,
-  } from '#lib/query/filters.ts';
+  import { filterState } from '#lib/query/filters.svelte.ts';
 
   import AlertDialog from '#lib/ui/dialog/AlertDialog.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
@@ -35,8 +30,8 @@
       path: 'discover',
       back: 'explorer',
       resetQuery: () => {
-        removeGenomicFilters();
-        removeUnallowedFilters();
+        filterState.removeGenomic();
+        filterState.removeUnallowed();
       },
     },
     notAuthorized: {
@@ -45,7 +40,7 @@
       backTo: 'Discover',
       path: 'explorer',
       back: 'discover',
-      resetQuery: () => removeInvalidFilters(),
+      resetQuery: () => filterState.removeInvalid(),
     },
     undefined: {
       message: '',
@@ -56,11 +51,11 @@
     },
   };
 
-  const warning: Warning = $derived(filterWarnings[$filterWarning || 'undefined']);
+  const warning: Warning = $derived(filterWarnings[filterState.warning || 'undefined']);
 
   function goBack() {
     const back = warning.back;
-    filterWarning.set(undefined);
+    filterState.warning = undefined;
     open = false;
     goto(resolve(back));
   }
@@ -69,7 +64,7 @@
     const path = warning.path;
     await warning.resetQuery();
     panelOpen.set(false);
-    filterWarning.set(undefined);
+    filterState.warning = undefined;
     open = false;
     goto(resolve(path));
   }

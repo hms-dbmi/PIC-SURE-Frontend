@@ -17,7 +17,7 @@
   import { ENSURE_MAX_DEPTH, getConceptDetails } from '#lib/explorer/Dictionary.ts';
   import { getConceptTree } from '#lib/api/picsure/dictionary.ts';
 
-  import { genomicFilters, allFilters, setFilterTree } from '#lib/query/filters.ts';
+  import { filterState } from '#lib/query/filters.svelte.ts';
   import { exports } from '#lib/explorer/export/Export.ts';
 
   import FiltersSummary from '#lib/datasets/components/FiltersSummary.svelte';
@@ -41,7 +41,7 @@
   } = $props();
 
   let modal = $state(false);
-  let hasExistingFilters = $derived($allFilters.length > 0);
+  let hasExistingFilters = $derived(filterState.all.length > 0);
   let currentQuery: Query = $derived(
     createQuery(version === QueryVersion.V2 ? queryFromV2(query as QueryV2) : (query as Query)),
   );
@@ -63,8 +63,7 @@
       queryData.genomicFilters,
     ]);
     exports.set(exportdata);
-    setFilterTree(filterdata);
-    genomicFilters.set(genomicData);
+    filterState.restore(filterdata, genomicData);
     toaster.success({
       description: `Filters restored for ${name ? name + ' dataset' : 'dataset'}.`,
     });

@@ -10,7 +10,7 @@
 
   import { config } from '#lib/config/config.svelte.ts';
 
-  import { allFilters, hasGenomicFilter, clearFilters } from '#lib/query/filters.ts';
+  import { filterState } from '#lib/query/filters.svelte.ts';
   import { resultCountsState } from '#lib/query/counts/resultCounts.svelte.ts';
   import { isObfuscatedBelowThreshold } from '#lib/query/counts/format.ts';
   import { exports, clearExports } from '#lib/explorer/export/Export.ts';
@@ -28,7 +28,7 @@
   let modalOpen: boolean = $state(false);
 
   let hasFilterOrExport = $derived(
-    $allFilters.length !== 0 ||
+    filterState.all.length !== 0 ||
       (config.features.explorer.exportsEnableExport && $exports.length !== 0),
   );
 
@@ -40,8 +40,8 @@
   );
 
   let hasValidDistributionFilters = $derived(
-    $allFilters.length !== 0 &&
-      !$allFilters.every(
+    filterState.all.length !== 0 &&
+      !filterState.all.every(
         (filter) =>
           filter.filterType === 'genomic' ||
           filter.filterType === 'snp' ||
@@ -61,7 +61,7 @@
   );
 
   let showVariantExplorer = $derived(
-    !isDiscoverPage && config.features.explorer.variantExplorer && $hasGenomicFilter,
+    !isDiscoverPage && config.features.explorer.variantExplorer && filterState.hasGenomicFilter,
   );
 
   let distributionsDisabled = $derived(
@@ -99,7 +99,7 @@
   confirmLabel="Yes"
   cancelLabel="No"
   onconfirm={() => {
-    clearFilters();
+    filterState.clear();
     clearExports();
   }}
 >

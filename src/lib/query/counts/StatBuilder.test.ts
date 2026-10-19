@@ -11,6 +11,10 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('$app/env', () => ({ browser: false }));
+vi.mock('#lib/utils/ssrWrite.ts', () => ({ assertNoSsrWrite: vi.fn() }));
+vi.mock('#lib/auth/session.svelte.ts', () => ({
+  session: { user: {}, ensureConsentsLoaded: vi.fn() },
+}));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/') } }));
 vi.mock('#lib/api/client.ts', () => ({ request: vi.fn() }));
 vi.mock('#lib/config/config.svelte.ts', () => ({ config: mocks.config }));
@@ -34,8 +38,12 @@ vi.mock('#lib/explorer/Dictionary.ts', () => ({
 }));
 
 import * as api from '#lib/api/client.ts';
-import { createGroup, filterTree, genomicFilters } from '#lib/query/filters.ts';
-import { createRequiredFilter, type FilterInterface } from '#lib/query/filter.svelte.ts';
+import { filterState } from '#lib/query/filters.svelte.ts';
+import {
+  createFilterGroup,
+  createRequiredFilter,
+  type FilterInterface,
+} from '#lib/query/filter.svelte.ts';
 import { LogicTree } from '#lib/query/logicTree.svelte.ts';
 import type { SearchResult } from '#lib/explorer/types.ts';
 import type { StatConfig } from '#lib/config/index.ts';
@@ -110,10 +118,9 @@ beforeEach(() => {
       { label: 'Topmed', id: 'phs2.c1', conceptPath: '\\_topmed_consents\\' },
     ],
   };
-  const tree = new LogicTree<FilterInterface>(createGroup);
+  const tree = new LogicTree<FilterInterface>(createFilterGroup);
   tree.add(createRequiredFilter({ conceptPath: '\\f\\', allowFiltering: true } as SearchResult));
-  filterTree.set(tree);
-  genomicFilters.set([]);
+  filterState.restore(tree, []);
 });
 
 describe('StatBuilder request map', () => {

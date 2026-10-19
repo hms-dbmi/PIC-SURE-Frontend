@@ -11,10 +11,10 @@
   import Content from '#lib/shell/Content.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import VariantExplorer from '#lib/explorer/variant/VariantExplorer.svelte';
-  import { currentQueryFilters } from '#lib/query/filters.ts';
+  import { filterState } from '#lib/query/filters.svelte.ts';
 
   onMount(() => {
-    if (currentQueryFilters().genomicFilters.length === 0) {
+    if (filterState.queryFilters.genomicFilters.length === 0) {
       if (!isToastShowing('no-query')) {
         toaster.error({
           id: 'no-query',

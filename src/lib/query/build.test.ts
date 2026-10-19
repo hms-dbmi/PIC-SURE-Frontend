@@ -1,21 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('$app/env', () => ({ browser: false }));
-vi.mock('#lib/auth/User.ts', async () => {
-  const { writable } = await import('svelte/store');
-  return { user: writable({}), ensureConsentsLoaded: vi.fn(), isUserLoggedIn: vi.fn(() => false) };
-});
+vi.mock('#lib/utils/ssrWrite.ts', () => ({ assertNoSsrWrite: vi.fn() }));
+vi.mock('#lib/auth/session.svelte.ts', () => ({
+  session: { user: {}, ensureConsentsLoaded: vi.fn() },
+}));
 vi.mock('#lib/explorer/Dictionary.ts', () => ({ getConceptDetails: vi.fn() }));
 
-import { get } from 'svelte/store';
+import { filterState } from '#lib/query/filters.svelte.ts';
 import {
-  createGroup,
-  currentQueryFilters,
-  filters,
-  filterTree,
-  genomicFilters,
-} from '#lib/query/filters.ts';
-import {
+  createFilterGroup as createGroup,
   createAnyRecordOfFilter,
   createCategoricalFilter,
   createGenomicFilter,
@@ -42,18 +36,17 @@ function searchResult(conceptPath: string, children: SearchResult[] = []): Searc
   } as unknown as SearchResult;
 }
 
-// The only place that knows filters live in stores; the expectations below are the
+// The only place that knows where the filters live; the expectations below are the
 // request JSON the backend receives.
 function setFilters(nodes: FilterInterface[], genomic: Filter[] = []) {
   const tree = new LogicTree<FilterInterface>(createGroup);
   tree.add(...nodes);
-  filterTree.set(tree);
-  genomicFilters.set(genomic);
+  filterState.restore(tree, genomic);
 }
 
 function requestFor(nodes: FilterInterface[], genomic: Filter[] = []) {
   setFilters(nodes, genomic);
-  return buildRequest(currentQueryFilters());
+  return buildRequest(filterState.queryFilters);
 }
 
 // Every phenotypic tree is wrapped in the root AND group, even a single filter.
@@ -67,7 +60,7 @@ beforeEach(() => setFilters([]));
 
 describe('QueryBuilder request JSON', () => {
   it('sends an empty COUNT query when there are no filters', () => {
-    expect(buildRequest(currentQueryFilters())).toEqual({
+    expect(buildRequest(filterState.queryFilters)).toEqual({
       query: {
         select: [],
         authorizationFilters: [],
@@ -315,7 +308,7 @@ describe('QueryBuilder request JSON', () => {
       [createRequiredFilter(searchResult('\\a\\'))],
       [createGenomicFilter({ Gene_with_variant: ['BRCA1'] })],
     );
-    const mutated = buildRequest(currentQueryFilters(), 'CROSS_COUNT', (query) => {
+    const mutated = buildRequest(filterState.queryFilters, 'CROSS_COUNT', (query) => {
       query.select = queryLeaves(query).map((leaf) => leaf.conceptPath);
       return query;
     });
@@ -357,8 +350,8 @@ describe('QueryBuilder request JSON', () => {
     ]);
 
     // filterConcepts needs the unserialised query, so it runs in the mutator, as in the export step.
-    const request = buildRequest(currentQueryFilters(), 'DATAFRAME', (query) => {
-      query.select = filterConcepts(query, get(filters));
+    const request = buildRequest(filterState.queryFilters, 'DATAFRAME', (query) => {
+      query.select = filterConcepts(query, filterState.phenotypic);
       return query;
     });
     expect(request.query.select).toEqual(['\\a\\', '\\p\\c1\\', '\\p\\c1\\g\\', '\\b\\']);

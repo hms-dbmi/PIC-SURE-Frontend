@@ -6,7 +6,7 @@
   import { getCountResource } from '#lib/explorer/Resources.ts';
   import { getVariantCount, getVariantData } from '#lib/explorer/variant/Variants.ts';
   import { buildRequest } from '#lib/query/build.ts';
-  import { currentQueryFilters } from '#lib/query/filters.ts';
+  import { filterState } from '#lib/query/filters.svelte.ts';
   import { config } from '#lib/config/config.svelte.ts';
 
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
@@ -18,7 +18,7 @@
 
   async function loadVariants() {
     const resource = getCountResource();
-    const queryRequest = buildRequest(currentQueryFilters());
+    const queryRequest = buildRequest(filterState.queryFilters);
     variantResults = [
       {
         name: resource.name,

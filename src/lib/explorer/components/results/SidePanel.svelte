@@ -3,24 +3,23 @@
   import ResultsPanel from '#lib/explorer/components/results/ResultsPanel.svelte';
   import { onDestroy, onMount } from 'svelte';
   import { type Unsubscriber } from 'svelte/store';
-  import { filters } from '#lib/query/filters.ts';
+  import { filterState } from '#lib/query/filters.svelte.ts';
   import { panelOpen } from '#lib/explorer/panel.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
   import Button from '#lib/ui/Button.svelte';
 
-  let unsubFilterStore: Unsubscriber;
   let unsubExportStore: Unsubscriber;
 
   function openPanel() {
     panelOpen.set(true);
   }
 
+  // Open the panel whenever the filters change and there are some to show.
+  $effect(() => {
+    if (filterState.phenotypic.length !== 0) openPanel();
+  });
+
   onMount(() => {
-    unsubFilterStore = filters.subscribe((filterList) => {
-      if (filterList?.length !== 0) {
-        openPanel();
-      }
-    });
     unsubExportStore = exports.subscribe((exportList) => {
       if (exportList?.length !== 0) {
         openPanel();
@@ -29,7 +28,6 @@
   });
 
   onDestroy(() => {
-    unsubFilterStore && unsubFilterStore();
     unsubExportStore && unsubExportStore();
   });
 </script>

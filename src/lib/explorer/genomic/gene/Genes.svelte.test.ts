@@ -2,11 +2,10 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
-import { get } from 'svelte/store';
 
 import Genes from '#lib/explorer/genomic/gene/Genes.svelte';
 import * as api from '#lib/api/client.ts';
-import { selectedGenes } from '#lib/query/GeneFilter.ts';
+import { genomicDraft } from '#lib/query/genomicDraft.svelte.ts';
 import { optionsIn } from '../../../../../tests/support/helpers';
 
 vi.mock('$app/env', () => ({ browser: false }));
@@ -45,7 +44,7 @@ function uncheck(gene: string) {
 describe('Genes', () => {
   beforeEach(() => {
     mockGet.mockReset();
-    selectedGenes.set([]);
+    genomicDraft.genes = [];
     mockGet.mockResolvedValue({ results: GENES, total: GENES.length, page: 1 });
   });
 
@@ -62,7 +61,7 @@ describe('Genes', () => {
 
     await fireEvent.click(screen.getByRole('checkbox', { name: 'BRCA1' }));
 
-    expect(get(selectedGenes)).toEqual(['BRCA1']);
+    expect(genomicDraft.genes).toEqual(['BRCA1']);
     expect(optionsIn('selected')).toEqual(['BRCA1']);
     expect(optionsIn('available')).toEqual(['BRCA2', 'CFTR']);
   });
@@ -74,14 +73,14 @@ describe('Genes', () => {
     await fireEvent.click(screen.getByRole('checkbox', { name: 'BRCA1' }));
     await uncheck('BRCA1');
 
-    expect(get(selectedGenes)).toEqual([]);
+    expect(genomicDraft.genes).toEqual([]);
     expect(optionsIn('selected')).toEqual([]);
     expect(optionsIn('available')).toEqual(GENES);
   });
 
   it('keeps an unchecked gene from a saved filter in the options list', async () => {
     // A saved genomic filter can hold a gene that no page of search results contains.
-    selectedGenes.set(['ZZZ3']);
+    genomicDraft.genes = ['ZZZ3'];
     render(Genes);
     await genesHaveLoaded();
 

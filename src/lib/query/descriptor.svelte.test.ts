@@ -9,6 +9,7 @@ vi.mock('$app/paths', () => ({
 
 import { LogicTree } from '#lib/query/logicTree.svelte.ts';
 import { createFilterGroup, type FilterInterface, type Filter } from '#lib/query/filter.svelte.ts';
+import { toQueryFilters } from '#lib/query/build.ts';
 import { buildDescriptor, stableHash, type QueryDescriptor } from '#lib/query/descriptor.svelte.ts';
 
 function makeEmptyTree(): LogicTree<FilterInterface> {
@@ -17,11 +18,7 @@ function makeEmptyTree(): LogicTree<FilterInterface> {
 
 describe('buildDescriptor', () => {
   it('returns a descriptor with isOpenAccess and a null phenotypicClause for empty filters', () => {
-    const d = buildDescriptor({
-      isOpenAccess: true,
-      filterTree: makeEmptyTree(),
-      genomicFilters: [],
-    });
+    const d = buildDescriptor(true, toQueryFilters(makeEmptyTree(), []));
     expect(d.isOpenAccess).toBe(true);
     expect(d.phenotypicClause).toBeNull();
     expect(d.genomicFilters).toEqual([]);
@@ -36,11 +33,7 @@ describe('buildDescriptor', () => {
       max: '20',
     } as unknown as FilterInterface;
     tree.root.children.push(filter);
-    const d = buildDescriptor({
-      isOpenAccess: false,
-      filterTree: tree,
-      genomicFilters: [],
-    });
+    const d = buildDescriptor(false, toQueryFilters(tree, []));
     expect(d.phenotypicClause).not.toBeNull();
   });
 
@@ -54,11 +47,7 @@ describe('buildDescriptor', () => {
     } as unknown as FilterInterface;
     tree.root.children.push(filter);
 
-    const d = buildDescriptor({
-      isOpenAccess: false,
-      filterTree: tree,
-      genomicFilters: [],
-    });
+    const d = buildDescriptor(false, toQueryFilters(tree, []));
     categoryValues.push('female');
 
     const clause = d.phenotypicClause as { phenotypicClauses?: { values?: string[] }[] };
@@ -71,11 +60,7 @@ describe('buildDescriptor', () => {
       filterType: 'snp',
       snpValues: [{ search: 'rs123', constraint: 'A,C' }],
     } as unknown as Filter;
-    const d = buildDescriptor({
-      isOpenAccess: false,
-      filterTree: makeEmptyTree(),
-      genomicFilters: [snp],
-    });
+    const d = buildDescriptor(false, toQueryFilters(makeEmptyTree(), [snp]));
     expect(d.genomicFilters).toEqual([{ key: 'rs123', values: ['A', 'C'] }]);
   });
 });
@@ -164,11 +149,7 @@ describe('buildDescriptor strips Svelte $state proxies (production-shape guard)'
     } as unknown as FilterInterface;
     tree.root.children.push(filter);
 
-    const descriptor = buildDescriptor({
-      isOpenAccess: false,
-      filterTree: tree,
-      genomicFilters: [],
-    });
+    const descriptor = buildDescriptor(false, toQueryFilters(tree, []));
 
     expect(() => structuredClone(descriptor.phenotypicClause)).not.toThrow();
   });
@@ -182,11 +163,7 @@ describe('buildDescriptor strips Svelte $state proxies (production-shape guard)'
       Variant_frequency_as_text: [],
     } as never;
 
-    const descriptor = buildDescriptor({
-      isOpenAccess: false,
-      filterTree: makeEmptyTree(),
-      genomicFilters: [genomicFilter],
-    });
+    const descriptor = buildDescriptor(false, toQueryFilters(makeEmptyTree(), [genomicFilter]));
 
     expect(() => structuredClone(descriptor.genomicFilters)).not.toThrow();
   });

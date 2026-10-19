@@ -15,19 +15,8 @@
 
   import type { GenomicFilterInterface, SnpFilterInterface } from '#lib/query/filter.svelte.ts';
   import { Option } from '#lib/query/genomic.ts';
-  import {
-    selectedGenes,
-    clearGeneFilters,
-    generateGenomicFilter,
-    populateFromGeneFilter,
-  } from '#lib/query/GeneFilter.ts';
-  import {
-    selectedSNPs,
-    generateSNPFilter,
-    clearSnpFilters,
-    populateFromSNPFilter,
-  } from '#lib/query/SNPFilter.ts';
-  import { addFilter, getFiltersByType } from '#lib/query/filters.ts';
+  import { genomicDraft } from '#lib/query/genomicDraft.svelte.ts';
+  import { filterState } from '#lib/query/filters.svelte.ts';
   import { panelOpen } from '#lib/explorer/panel.ts';
 
   let edit = page.url.searchParams.get('edit') || '';
@@ -40,14 +29,14 @@
   );
 
   function clearFilters() {
-    clearGeneFilters();
-    clearSnpFilters();
+    genomicDraft.clearGenes();
+    genomicDraft.clearSnps();
   }
 
   function onComplete() {
     const filter =
-      selectedOption === Option.Genomic ? generateGenomicFilter() : generateSNPFilter();
-    addFilter(filter);
+      selectedOption === Option.Genomic ? genomicDraft.toGeneFilter() : genomicDraft.toSnpFilter();
+    filterState.add(filter);
     clearFilters();
     $panelOpen = true;
     goto(resolve('explorer'));
@@ -55,11 +44,11 @@
 
   function populateExistingFilters() {
     if (selectedOption === Option.Genomic) {
-      const filters = getFiltersByType('genomic') as GenomicFilterInterface[];
-      filters.length === 1 && populateFromGeneFilter(filters[0]);
+      const filters = filterState.byType('genomic') as GenomicFilterInterface[];
+      filters.length === 1 && genomicDraft.loadGeneFilter(filters[0]);
     } else if (selectedOption === Option.SNP) {
-      const filters = getFiltersByType('snp') as SnpFilterInterface[];
-      filters.length === 1 && populateFromSNPFilter(filters[0]);
+      const filters = filterState.byType('snp') as SnpFilterInterface[];
+      filters.length === 1 && genomicDraft.loadSnpFilter(filters[0]);
     }
   }
 
@@ -71,8 +60,8 @@
   }
 
   let canComplete = $derived(
-    (selectedOption === Option.Genomic && $selectedGenes.length > 0) ||
-      (selectedOption === Option.SNP && $selectedSNPs.length > 0),
+    (selectedOption === Option.Genomic && genomicDraft.genes.length > 0) ||
+      (selectedOption === Option.SNP && genomicDraft.snps.length > 0),
   );
 </script>
 

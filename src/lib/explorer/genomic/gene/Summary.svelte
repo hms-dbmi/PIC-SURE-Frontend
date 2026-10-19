@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { selectedGenes, selectedFrequency, consequences } from '#lib/query/GeneFilter.ts';
+  import { genomicDraft } from '#lib/query/genomicDraft.svelte.ts';
 </script>
 
 <div class="overflow-auto flex">
@@ -8,13 +8,13 @@
   >
     <span class="font-bold">Geneomic Region: </span>
     <div id="genomic-summary-variant" class="text-center break-words">
-      {#each $selectedGenes as gene, index}
+      {#each genomicDraft.genes as gene, index}
         {#if index !== 0}
           <span class="font-bold mx-1 text-primary-500">OR</span>
         {/if}
         {gene}
       {/each}
-      {#if $selectedGenes.length === 0}
+      {#if genomicDraft.genes.length === 0}
         <span class="italic">None</span>
       {/if}
     </div>
@@ -25,13 +25,13 @@
   >
     <span class="font-bold">Calculated Consequence:</span>
     <div id="genomic-summary-consequence" class="text-center break-words">
-      {#each $consequences as cons, index}
+      {#each genomicDraft.consequences as cons, index}
         {#if index !== 0}
           <span class="font-bold mx-1 text-primary-500">OR</span>
         {/if}
         {cons}
       {/each}
-      {#if $consequences.length === 0}
+      {#if genomicDraft.consequences.length === 0}
         <span class="italic">None</span>
       {/if}
     </div>
@@ -42,13 +42,13 @@
   >
     <span class="font-bold">Variant Frequency: </span>
     <div id="genomic-summary-frequency" class="text-center break-words">
-      {#each $selectedFrequency as freq, index}
+      {#each genomicDraft.frequency as freq, index}
         {#if index !== 0}
           <span class="font-bold mx-1 text-primary-500">OR</span>
         {/if}
         {freq}
       {/each}
-      {#if $selectedFrequency.length === 0}
+      {#if genomicDraft.frequency.length === 0}
         <span class="italic">None</span>
       {/if}
     </div>

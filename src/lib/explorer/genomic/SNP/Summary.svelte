@@ -1,7 +1,7 @@
 <script lang="ts">
   import IconButton from '#lib/ui/IconButton.svelte';
   import { GenotypeMap, type SNP } from '#lib/query/genomic.ts';
-  import { selectedSNPs } from '#lib/query/SNPFilter.ts';
+  import { genomicDraft } from '#lib/query/genomicDraft.svelte.ts';
 
   const {
     onedit = () => {},
@@ -13,10 +13,10 @@
 </script>
 
 <div class="flex items-center justify-center">
-  {#if $selectedSNPs.length === 0}
+  {#if genomicDraft.snps.length === 0}
     <p>No filters added.</p>
   {/if}
-  {#each $selectedSNPs as snp, index}
+  {#each genomicDraft.snps as snp, index}
     {#if index !== 0}
       <div class="font-bold flex items-center justify-center p-6">AND</div>
     {/if}

@@ -2,7 +2,7 @@
   import Button from '#lib/ui/Button.svelte';
   import { resolve } from '$app/paths';
   import ExportStepper from '#lib/explorer/export/ExportStepper.svelte';
-  import { allFilters } from '#lib/query/filters.ts';
+  import { filterState } from '#lib/query/filters.svelte.ts';
   import { exports } from '#lib/explorer/export/Export.ts';
   import type { ExportRowInterface } from '#lib/explorer/export/ExportRow.ts';
   import Content from '#lib/shell/Content.svelte';
@@ -20,7 +20,7 @@
       type: exp.searchResult?.type,
     };
   });
-  let filterRows: ExportRowInterface[] = $allFilters.map((filter) => {
+  let filterRows: ExportRowInterface[] = filterState.all.map((filter) => {
     return {
       ref: filter,
       selected: true,
@@ -59,7 +59,7 @@
         >
       </div>
     </div>
-  {:else if $exports.length > 0 || $allFilters.length > 0}
+  {:else if $exports.length > 0 || filterState.all.length > 0}
     <section class="flex justify-center items-center w-full h-full mt-8">
       <ExportStepper rows={[patientIdRow, ...systemFieldRows, ...filterRows, ...exportRows]} />
     </section>

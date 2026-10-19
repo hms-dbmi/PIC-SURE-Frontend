@@ -21,14 +21,9 @@ const mockConfig = vi.hoisted(() => ({
 }));
 vi.mock('#lib/config/config.svelte.ts', () => ({ config: mockConfig }));
 
-vi.mock('#lib/query/filters.ts', async () => {
-  const { writable } = await import('svelte/store');
-  return {
-    allFilters: writable([]),
-    genomicFilters: writable([]),
-    setFilterTree: vi.fn(),
-  };
-});
+vi.mock('#lib/query/filters.svelte.ts', () => ({
+  filterState: { all: [], restore: vi.fn() },
+}));
 
 const mockConceptPath = vi.hoisted(() => vi.fn());
 vi.mock('#lib/explorer/Dictionary.ts', async () => {
