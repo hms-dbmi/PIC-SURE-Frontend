@@ -19,7 +19,7 @@ const PUBLIC = ['/dashboard', '/api', '/help'];
 
 describe('routesFor', () => {
   it.each<[string, User | undefined, Record<string, unknown>, string[]]>([
-    ['signed out', undefined, {}, ['/dashboard', '/explorer', '/api', '/help']],
+    ['signed out', undefined, {}, ['/explorer', '/dashboard', '/api', '/help']],
     [
       'signed out, with Discover',
       undefined,
@@ -91,8 +91,30 @@ describe('showsLink', () => {
       {},
       false,
     ],
-    ['a page under a nav section', '/dataset/1234', signedIn('PIC_SURE_ANY_QUERY'), {}, false],
-    ['a page with a query string', '/explorer?search=age', undefined, { discover: true }, false],
+    // The footer follows Explore's guard, not its nav link.
+    [
+      'Explore, to a signed-in user without query access',
+      '/explorer',
+      signedIn('DICTIONARY'),
+      {},
+      true,
+    ],
+    ['a nav page with a query string', '/explorer?search=age', undefined, {}, false],
+    ['a page below a nav page', '/dataset/1234', signedIn('PIC_SURE_ANY_QUERY'), {}, false],
+    [
+      'a top-admin page below Configuration, to an admin',
+      '/admin/configuration/role/new',
+      signedIn('PIC_SURE_ANY_QUERY', 'ADMIN'),
+      {},
+      false,
+    ],
+    [
+      'a top-admin page below Configuration, to a super admin',
+      '/admin/configuration/role/new',
+      signedIn('PIC_SURE_ANY_QUERY', 'SUPER_ADMIN'),
+      {},
+      true,
+    ],
     ['a page whose feature is off', '/api#docs', undefined, { analyzeApi: false }, false],
     ['a path that only starts like a nav link', '/apis', undefined, { analyzeApi: false }, true],
   ])('%s', (_name, href, user, overrides, shown) => {

@@ -64,7 +64,7 @@
   {/snippet}
   <nav id="app-nav">
     <ul>
-      {#each routes as route (route.path)}
+      {#each routes as route (route)}
         <li>
           <a
             class="nav-link"

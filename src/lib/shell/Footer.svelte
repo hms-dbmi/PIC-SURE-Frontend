@@ -16,7 +16,6 @@
 
   let signedInUser = $derived(session.isLoggedIn ? session.user : undefined);
 
-  // A section shows when the deployment's config allows it and the visitor may open one of its links.
   let sitemap = $derived(
     config.branding.sitemap
       .filter(
@@ -25,24 +24,24 @@
           (!section.feature || config.features[section.feature]),
       )
       .map((section) => ({
-        ...section,
+        section,
         links: section.links.filter(
           (link) =>
             (!link.feature || config.features[link.feature]) &&
             showsLink(link.url, signedInUser, config.features),
         ),
       }))
-      .filter((section) => section.links.length > 0),
+      .filter(({ links }) => links.length > 0),
   );
 </script>
 
 {#if !hideSitemap && sitemap.length > 0}
   <div id="app-footer-sitemap">
     <div class="flex flex-wrap place-content-center">
-      {#each sitemap as section}
+      {#each sitemap as { section, links } (section)}
         <ul class="basis-1/8">
           <li class="font-bold text-center">{section.category}</li>
-          {#each section.links as link}
+          {#each links as link (link)}
             <li class="text-center">
               <a
                 target={link.newTab ? '_blank' : '_self'}

@@ -79,9 +79,8 @@ function holdsPrivileges(policy: Access, user: User): boolean {
 }
 
 /**
- * Whether `policy` lets in a visitor with this profile (`undefined` when signed out). The nav and
- * footer show a link only to these visitors. Token expiry and the terms aren't checked: the guard
- * deals with those when the visitor arrives.
+ * Whether `policy` lets in a visitor with this profile (`undefined` when signed out), leaving out
+ * token expiry and the terms, which the guard deals with when the visitor arrives.
  */
 export function admits(policy: Access, features: Features, user: User | undefined): boolean {
   if (policy.within && !admits(policy.within, features, user)) return false;

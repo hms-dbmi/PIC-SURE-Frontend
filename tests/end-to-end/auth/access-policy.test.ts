@@ -41,7 +41,7 @@ test.describe('A fresh tab', () => {
     expect(profileRequests).toHaveLength(1);
   });
 
-  test('sends no PSAMA request when the pointer moves over the nav links', async ({ page }) => {
+  test('sends no PSAMA request when nav links are hovered or pressed', async ({ page }) => {
     await mockApiConfig(page);
     await freshTab(page, [QUERY, NAMED_DATASET, ADMIN]);
     await page.goto('/help');
@@ -55,8 +55,14 @@ test.describe('A fresh tab', () => {
     });
     const links = page.locator('#app-nav a');
     await expect(links.filter({ hasText: 'Manage Users' })).toBeVisible();
-    for (const link of await links.all()) await link.hover();
+    for (const link of await links.all()) {
+      await link.hover();
+      // A press preloads the page's data (preload-data="tap"), which runs its guards, but only a
+      // click navigates.
+      await link.dispatchEvent('mousedown');
+    }
     await page.waitForLoadState('networkidle');
+    await expect(page).toHaveURL('/help');
 
     expect(psamaRequests).toEqual([]);
   });
@@ -107,7 +113,6 @@ test.describe('A closed deployment', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
 
   test('returns a deep link to a signed-in page after login', async ({ page, browserName }) => {
-    // Same limitation as the login redirect tests in login.test.ts.
     test.skip(
       browserName !== 'chromium',
       'Login callback simulation is chromium-only, see setup.ts',
