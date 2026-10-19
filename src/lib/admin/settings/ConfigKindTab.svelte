@@ -202,7 +202,7 @@
     <ConfirmButton
       label="Invalidate Cache & Refresh"
       variant="tonal-surface"
-      size="third"
+      dialogSize="third"
       data-testid={`admin-config-invalidate-cache-${testIdBase}`}
       title="Invalidate Cache?"
       confirmLabel="Yes"

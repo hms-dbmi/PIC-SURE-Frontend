@@ -4,7 +4,6 @@
     placeholder?: string;
     /** The accessible name; visually hidden. */
     label?: string;
-    size?: 'sm' | 'md';
     /** Wrapper classes; set a width (default `w-full`). */
     class?: string;
     'data-testid'?: string;
@@ -15,13 +14,10 @@
     value = $bindable(''),
     placeholder = 'Search...',
     label = 'Search',
-    size = 'md',
     class: className = 'w-full',
     'data-testid': testid,
     oninput,
   }: Props = $props();
-
-  const sizes = { sm: 'text-sm', md: '' } as const;
 </script>
 
 <label class="relative block {className}">
@@ -32,7 +28,7 @@
   ></i>
   <input
     type="search"
-    class="search-input input w-full {sizes[size]}"
+    class="search-input input w-full"
     {placeholder}
     data-testid={testid}
     bind:value

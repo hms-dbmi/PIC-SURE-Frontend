@@ -5,7 +5,7 @@
 
   type DialogProps = Omit<
     ComponentProps<typeof ConfirmDialog>,
-    'trigger' | 'triggerClass' | 'triggerTitle' | 'triggerKey'
+    'trigger' | 'triggerClass' | 'triggerTitle' | 'triggerKey' | 'size'
   >;
 
   interface Props extends DialogProps {
@@ -14,8 +14,8 @@
     /** Font Awesome classes; renders an icon-only trigger like IconButton. */
     icon?: string;
     variant?: ButtonVariant;
-    /** The trigger's Button size; `size` is the dialog's. */
-    buttonSize?: ButtonSize;
+    size?: ButtonSize;
+    dialogSize?: ComponentProps<typeof ConfirmDialog>['size'];
     /** Keyboard shortcut a table row listens for (data-key). */
     shortcut?: string;
     class?: string;
@@ -26,7 +26,8 @@
     label,
     icon,
     variant = 'filled',
-    buttonSize = 'md',
+    size = 'md',
+    dialogSize,
     shortcut,
     class: className = '',
     children,
@@ -34,13 +35,14 @@
   }: Props = $props();
 
   const triggerClass = $derived(
-    `${icon ? 'btn-icon-color' : buttonClass(variant, buttonSize)} ${className}`,
+    `${icon ? 'btn-icon-color' : buttonClass(variant, size)} ${className}`,
   );
 </script>
 
 <ConfirmDialog
   bind:open
   {...rest}
+  size={dialogSize}
   {triggerClass}
   triggerTitle={icon ? label : undefined}
   triggerKey={shortcut}

@@ -91,7 +91,7 @@
       <ConfirmButton
         label="Restore Filters"
         variant="filled-surface"
-        buttonSize="sm"
+        size="sm"
         class="float-right"
         bind:open={modal}
         title="Restore Filters"

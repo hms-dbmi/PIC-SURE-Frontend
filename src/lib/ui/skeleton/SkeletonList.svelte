@@ -4,8 +4,6 @@
 
   interface Props {
     count: number;
-    /** Width classes, cycled through so the rows look like varied text. */
-    widths?: readonly string[];
     /** Puts a checkbox-sized box before each bar. */
     marker?: boolean;
     /** Fades the rows out towards the end of the list. */
@@ -17,12 +15,14 @@
 
   let {
     count,
-    widths = ['w-32', 'w-28', 'w-36', 'w-24', 'w-40', 'w-30'],
     marker = false,
     fade = false,
     class: className = '',
     'data-testid': testid,
   }: Props = $props();
+
+  // Cycled through so the rows look like varied text.
+  const widths = ['w-32', 'w-28', 'w-36', 'w-24', 'w-40', 'w-30'];
 
   function opacity(index: number): number {
     return fade && count > 1 ? Math.max(0, 1 - (index / (count - 1)) * 0.8) : 1;

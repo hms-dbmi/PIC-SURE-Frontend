@@ -32,6 +32,12 @@ describe('Tabs', () => {
     expect(screen.getAllByRole('tabpanel')).toHaveLength(1);
   });
 
+  it('puts the shown panel in the tab order, for panels with nothing focusable', () => {
+    renderTabs('two');
+
+    expect(screen.getByRole('tabpanel', { name: 'Two' })).toHaveAttribute('tabindex', '0');
+  });
+
   it('keeps hidden panels mounted', () => {
     renderTabs();
 

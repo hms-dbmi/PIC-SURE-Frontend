@@ -28,9 +28,9 @@
 <Modal
   {open}
   onOpenChange={(e) => {
-    const dismissed = open && !e.open;
+    // onclose runs before open changes, like the other dialogs' handlers
+    if (open && !e.open) onclose?.();
     open = e.open;
-    if (dismissed) onclose?.();
   }}
   aria-label={ariaLabel}
   contentBase="bg-surface-50-950 p-4 space-y-4 shadow-xl {widths[size]} h-screen overflow-auto"

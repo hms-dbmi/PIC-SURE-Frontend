@@ -122,6 +122,7 @@
       id="{id}-panel-{index}"
       aria-labelledby="{id}-tab-{index}"
       hidden={tab.value !== value}
+      tabindex="0"
       data-testid="{testid}-panel"
     >
       {@render panel(tab.value)}

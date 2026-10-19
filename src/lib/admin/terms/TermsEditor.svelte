@@ -44,7 +44,7 @@
       variant="tonal"
       class="mt-3"
       title="Publish"
-      size="third"
+      dialogSize="third"
       data-testid="admin-terms-publish"
       disabled={!dirty}
       onconfirm={onCommit}

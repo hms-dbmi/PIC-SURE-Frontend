@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { buttonClass, buttonVariants } from '#lib/ui/button.ts';
+  import { buttonClass } from '#lib/ui/button.ts';
   import Button from '#lib/ui/Button.svelte';
   import { toaster } from '#lib/ui/toaster.ts';
   import { debounce } from '#lib/utils/debounce.ts';
@@ -121,7 +121,7 @@
         <CopyButton
           itemToCopy={$user.token || ''}
           oncopy={() => log(createLog('ACTION', 'token.copy'))}
-          class={buttonVariants.tonal}
+          variant="tonal"
         />
         <ConfirmDialog
           data-testid="user-token-refresh"

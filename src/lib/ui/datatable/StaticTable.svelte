@@ -1,7 +1,7 @@
 <script lang="ts">
   import { TableHandler } from '@vincjo/datatables';
 
-  import { getDefaultRows } from './rowsPerPage';
+  import { getDefaultRows } from './rowsPerPage.ts';
   import type { TableProps } from './types';
   import RemoteTable from './RemoteTable.svelte';
 
