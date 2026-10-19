@@ -11,7 +11,7 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
 
 import { sessionHooks } from '#lib/api/sessionHooks.ts';
 import { session } from '#lib/auth/session.svelte.ts';
-import { registerSignedInUser } from '#lib/telemetry/logger.ts';
+import { createLog, registerSignedInUser } from '#lib/telemetry/logger.ts';
 
 const answer = (body: object) => () => Promise.resolve(new Response(JSON.stringify(body)));
 
@@ -161,5 +161,135 @@ describe('a refreshed token', () => {
 
     expect(session.isLoggedIn).toBe(false);
     expect(localStorage.getItem('token')).toBeNull();
+  });
+});
+
+/** An unsigned JWT for `sub` that expires in an hour. */
+function jwt(sub: string): string {
+  const encode = (part: object) => btoa(JSON.stringify(part)).replace(/=+$/, '');
+  const exp = Math.floor(Date.now() / 1000) + 3600;
+  return `${encode({ alg: 'none' })}.${encode({ sub, exp })}.signature`;
+}
+
+/** Stubs fetch with a profile and consents, and returns the paths it was asked for. */
+function stubPsama(profile: object = { privileges: ['QUERY'] }) {
+  const paths: string[] = [];
+  vi.stubGlobal(
+    'fetch',
+    vi.fn((input: RequestInfo | URL) => {
+      const path = new URL(String(input), 'http://localhost').pathname;
+      paths.push(path);
+      const body = path.endsWith('/consents')
+        ? { consents: { '\\_consents\\': ['phs1'] } }
+        : profile;
+      return Promise.resolve(new Response(JSON.stringify(body)));
+    }),
+  );
+  return paths;
+}
+
+describe('the bootstrap', () => {
+  it('loads the profile and consents once per token', async () => {
+    const paths = stubPsama();
+    session.setToken(jwt('fresh-tab'));
+
+    await Promise.all([session.bootstrap(), session.bootstrap()]);
+    await session.bootstrap();
+    await session.consentsSettled();
+
+    expect(paths.filter((path) => path.endsWith('/me'))).toHaveLength(1);
+    expect(session.privileges).toEqual(['QUERY']);
+    expect(session.consentedStudies).toEqual(['phs1']);
+  });
+
+  it('leaves a tab that already has the profile alone', async () => {
+    const paths = stubPsama();
+    session.setToken(jwt('restored'));
+    session.user = { privileges: ['QUERY'] };
+
+    await session.bootstrap();
+
+    expect(paths).toEqual([]);
+  });
+
+  it('leaves a user who has not accepted the terms to the terms dialog', async () => {
+    const paths = stubPsama();
+    session.setToken(jwt('terms-pending'));
+    session.user = { acceptedTOS: false };
+
+    await session.bootstrap();
+
+    expect(paths).toEqual([]);
+    expect(session.profileFailed).toBe(false);
+  });
+
+  it('records a failed profile request instead of rejecting', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(new Response('', { status: 500 }))),
+    );
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    session.setToken(jwt('psama-down'));
+
+    await expect(session.bootstrap()).resolves.toBeUndefined();
+
+    expect(session.profileFailed).toBe(true);
+    expect(vi.mocked(createLog)).toHaveBeenCalledWith('AUTH', 'auth.hydrate_failed', {
+      error: expect.any(String),
+    });
+  });
+
+  it('makes a consents check wait for it instead of asking twice', async () => {
+    const paths = stubPsama();
+    session.setToken(jwt('early-reader'));
+
+    const booting = session.bootstrap();
+    const consents = await session.ensureConsentsLoaded();
+    await booting;
+
+    expect(consents).toEqual({ '\\_consents\\': ['phs1'] });
+    expect(paths.filter((path) => path.endsWith('/consents'))).toHaveLength(1);
+  });
+});
+
+describe('another tab changing the token', () => {
+  const storeFromAnotherTab = (token: string) => {
+    if (token) localStorage.setItem('token', token);
+    else localStorage.removeItem('token');
+    window.dispatchEvent(new StorageEvent('storage', { key: 'token' }));
+  };
+
+  it('forgets this tab’s profile when the other tab signs out', () => {
+    session.setToken(jwt('signing-out'));
+    session.user = { privileges: ['SUPER_ADMIN'] };
+
+    storeFromAnotherTab('');
+
+    expect(session.user).toEqual({});
+    expect(sessionStorage.getItem('user')).toBe('{}');
+  });
+
+  it('loads the new user’s profile when the other tab signs in as someone else', async () => {
+    const paths = stubPsama({ privileges: ['NAMED_DATASET'] });
+    session.setToken(jwt('user-a'));
+    session.user = { privileges: ['SUPER_ADMIN'], consents: {} };
+
+    storeFromAnotherTab(jwt('user-b'));
+    expect(session.user.privileges).toBeUndefined();
+    await session.bootstrap();
+
+    expect(paths.filter((path) => path.endsWith('/me'))).toHaveLength(1);
+    expect(session.privileges).toEqual(['NAMED_DATASET']);
+  });
+
+  it('keeps the profile when the other tab refreshes the same user’s token', () => {
+    const paths = stubPsama();
+    session.setToken(jwt('refreshing'));
+    session.user = { privileges: ['QUERY'], consents: {} };
+
+    storeFromAnotherTab(jwt('refreshing') + 'x');
+
+    expect(session.privileges).toEqual(['QUERY']);
+    expect(paths).toEqual([]);
   });
 });

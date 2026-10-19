@@ -15,6 +15,7 @@ import {
   isTokenExpired,
   onTokenChange,
   readToken,
+  tokenSubject,
   tokenValidity,
   writeToken,
 } from '#lib/auth/token.ts';
@@ -92,6 +93,8 @@ export class Session {
   // Bumped when the session ends, so profile and long-term token responses requested before
   // then are dropped.
   #generation = 0;
+  // The bootstrap for one token: a profile request, or nothing when the tab had what it needed.
+  #boot: { token: string; done: Promise<void>; failed: boolean } | undefined;
   // A 401 or 403 from PSAMA's logout call makes the API client start another logout, which would
   // navigate to /login a second time, so later calls share the logout already running.
   #pendingLogout: Promise<void> | undefined;
@@ -108,7 +111,16 @@ export class Session {
       this.#token = token;
       this.user = restoreUser();
     }
-    onTokenChange((stored) => (this.#token = stored));
+    onTokenChange((stored) => {
+      // Another tab signed out, or signed in as someone else: this tab's profile isn't theirs.
+      // A refresh keeps the subject, and the profile.
+      if (!stored || tokenSubject(stored) !== tokenSubject(this.#token)) {
+        this.#forgetPendingRequests();
+        this.user = {};
+      }
+      this.#token = stored;
+      if (stored) this.bootstrap();
+    });
   }
 
   connect(shell: SessionShell) {
@@ -247,6 +259,8 @@ export class Session {
   /** Waits for or starts the consent request when access has not been loaded yet. */
   ensureConsentsLoaded(): Promise<ConsentsMap | undefined> {
     return untrack(async () => {
+      // A bootstrap in flight requests the consents once the profile is in.
+      await this.#boot?.done;
       if (this.#user.consents !== undefined) return this.#user.consents;
 
       await this.consentsSettled();
@@ -261,9 +275,34 @@ export class Session {
   }
 
   /**
-   * Fills in the profile from PSAMA for the stored token. Used by the login flow and by the
-   * authorized layout when a fresh tab has a valid token but no profile in sessionStorage.
+   * Loads the profile for the stored token when this tab doesn't have it: a fresh tab (the profile
+   * is in sessionStorage), or another tab signing in. Once per token, so every load may call it.
+   * Leaves a user who hasn't accepted the terms to the terms dialog: PSAMA refuses them until
+   * then. Never rejects; `profileFailed` says whether the profile request failed.
    */
+  bootstrap(): Promise<void> {
+    if (!browser) return Promise.resolve();
+    return untrack(() => {
+      if (this.#boot?.token === this.#token) return this.#boot.done;
+      const boot = { token: this.#token, done: Promise.resolve(), failed: false };
+      if (this.hasValidToken && !this.#user.privileges && this.#user.acceptedTOS !== false) {
+        boot.done = this.hydrate().catch((error: unknown) => {
+          boot.failed = true;
+          console.error('Failed to hydrate user from token:', error);
+          log(createLog('AUTH', 'auth.hydrate_failed', { error: String(error) }));
+        });
+      }
+      this.#boot = boot;
+      return boot.done;
+    });
+  }
+
+  /** The bootstrap couldn't load the profile for the current token. */
+  get profileFailed() {
+    return this.#boot?.token === this.#token && this.#boot.failed;
+  }
+
+  /** Fills in the profile from PSAMA for the stored token. Used by the login flow and `bootstrap`. */
   async hydrate() {
     const generation = this.#generation;
     await this.loadUser(true, false);

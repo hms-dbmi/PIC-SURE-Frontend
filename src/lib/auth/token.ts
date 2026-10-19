@@ -50,6 +50,18 @@ export function decodeJwtPayload(token: string): unknown {
   return JSON.parse(new TextDecoder().decode(bytes));
 }
 
+/** The token's `sub` claim: who it signs in. `undefined` when it has none or can't be read. */
+export function tokenSubject(token: string): string | undefined {
+  try {
+    const payload = decodeJwtPayload(token);
+    return payload && typeof payload === 'object' && 'sub' in payload
+      ? String((payload as { sub: unknown }).sub)
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /** When the token expires, in epoch milliseconds. Throws if it has no finite `exp` claim. */
 export function getTokenExpiration(token: string) {
   if (!token) {
