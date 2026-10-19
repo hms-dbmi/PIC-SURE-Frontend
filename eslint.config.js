@@ -149,6 +149,27 @@ export default [
       'no-restricted-imports': ['error', { patterns: [skeletonOnlyInUi] }],
     },
   },
+  {
+    // Skeleton's class vocabulary stays in ui/ too: call sites use ui/ variant props or the
+    // tables in ui/button.ts and ui/surface.ts. (Test files keep their own no-restricted-syntax.)
+    files: ['src/**/*.{ts,svelte}'],
+    ignores: ['src/lib/ui/**', '**/*.test.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: [
+            'Literal[value=/(^|\\s)([\\w-]+:)?(preset-|btn(-(sm|xs|lg|icon(-(sm|lg|base))?))?(\\s|$))/]',
+            'TemplateElement[value.raw=/(^|\\s)([\\w-]+:)?(preset-|btn(-(sm|xs|lg|icon(-(sm|lg|base))?))?(\\s|$))/]',
+            'SvelteLiteral[value=/(^|\\s)([\\w-]+:)?(preset-|btn(-(sm|xs|lg|icon(-(sm|lg|base))?))?(\\s|$))/]',
+            "SvelteAttribute[key.name='class'] SvelteLiteral[value=/(^|\\s)card(\\s|$)/]",
+          ].join(', '),
+          message:
+            "Skeleton's preset-*, btn and card classes belong in src/lib/ui/; use a ui/ variant prop or ui/button.ts / ui/surface.ts.",
+        },
+      ],
+    },
+  },
   ...importBoundary('ui', ['ui', 'utils']),
   ...importBoundary('utils', ['utils']),
   ...importBoundary('config', ['config', 'api', 'assets', 'ui', 'utils']),
