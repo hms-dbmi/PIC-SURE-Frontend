@@ -1,7 +1,14 @@
-<script lang="ts">
-  import { Toaster } from '@skeletonlabs/skeleton-svelte';
-  import { toastStore } from '#lib/ui/toaster.ts';
+<script module lang="ts">
+  import { Toaster, createToaster } from '@skeletonlabs/skeleton-svelte';
+  import type { Toasts } from '#lib/ui/toaster.ts';
+
+  const store = createToaster({ placement: 'top' });
+
+  export const toaster: Toasts = store;
+
+  export function isToastShowing(id: string): boolean {
+    return store.getVisibleToasts().find((toast) => toast.id === id) !== undefined;
+  }
 </script>
 
-<!-- Renders the toasts raised through `toaster` from #lib/ui/toaster.ts. -->
-<Toaster toaster={toastStore} />
+<Toaster toaster={store} />

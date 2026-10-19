@@ -1,12 +1,11 @@
 <script lang="ts">
   import { Accordion } from '@skeletonlabs/skeleton-svelte';
   import type { Snippet } from 'svelte';
+  import { getCollapsibleVariant } from '#lib/ui/CollapsibleGroup.svelte';
 
   interface Props {
     /** Identifies the panel in its CollapsibleGroup's `value`. */
     value: string;
-    /** Match the CollapsibleGroup's variant. */
-    variant?: keyof typeof variants;
     heading: Snippet;
     children: Snippet;
   }
@@ -28,8 +27,10 @@
     },
   } as const;
 
-  let { value, variant = 'section', heading, children }: Props = $props();
+  let { value, heading, children }: Props = $props();
+
+  const variant = getCollapsibleVariant();
 </script>
 
 <!-- Must sit inside a CollapsibleGroup. -->
-<Accordion.Item {value} {...variants[variant]} control={heading} panel={children} />
+<Accordion.Item {value} {...variants[variant()]} control={heading} panel={children} />

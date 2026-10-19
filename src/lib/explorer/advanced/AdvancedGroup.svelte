@@ -130,18 +130,15 @@
       </div>
       <div class="flex items-center justify-start gap-2 w-full">
         <div>Between {hasSubqueryChildren ? 'subqueries' : 'filters'}:</div>
-        <!-- {#key} forces re-mount because Skeleton's Segment doesn't update its indicator position on prop change -->
-        {#key operatorValue}
-          <div title="Choose logic for the query">
-            <SegmentedControl
-              name="operator"
-              value={operatorValue}
-              options={operatorOptions}
-              tone={operatorValue === Operator.OR ? 'secondary' : 'primary'}
-              onchange={(value) => onOperatorChange(group, value as OperatorType)}
-            />
-          </div>
-        {/key}
+        <div title="Choose logic for the query">
+          <SegmentedControl
+            name="operator"
+            value={operatorValue}
+            options={operatorOptions}
+            tone={operatorValue === Operator.OR ? 'secondary' : 'primary'}
+            onchange={(value) => onOperatorChange(group, value as OperatorType)}
+          />
+        </div>
         {#if id === 'root'}
           <Button
             variant="soft"

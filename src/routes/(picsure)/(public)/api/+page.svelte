@@ -256,7 +256,7 @@
       <CollapsibleGroup value={openWorkflows} onchange={toggleWorkflow} collapsible variant="card">
         {#each workflows as workflow}
           <div id="workflow-{workflow.id}" data-testid="api-workflow-{workflow.id}">
-            <CollapsiblePanel value={workflow.id} variant="card">
+            <CollapsiblePanel value={workflow.id}>
               {#snippet heading()}
                 <span class="flex flex-wrap items-center gap-3">
                   <span class="text-xl font-bold">{workflow.title}</span>

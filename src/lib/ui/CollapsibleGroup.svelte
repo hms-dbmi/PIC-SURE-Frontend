@@ -1,3 +1,12 @@
+<script module lang="ts">
+  import { createContext } from 'svelte';
+
+  export type CollapsibleVariant = 'section' | 'card';
+
+  export const [getCollapsibleVariant, setCollapsibleVariant] =
+    createContext<() => CollapsibleVariant>();
+</script>
+
 <script lang="ts">
   import { Accordion } from '@skeletonlabs/skeleton-svelte';
   import type { Snippet } from 'svelte';
@@ -10,8 +19,8 @@
     multiple?: boolean;
     /** Lets the last open panel close (always true with `multiple`). */
     collapsible?: boolean;
-    /** Give the panels the same variant. */
-    variant?: keyof typeof variants;
+    /** The look of the group and every panel in it. */
+    variant?: CollapsibleVariant;
     children: Snippet;
   }
 
@@ -28,7 +37,7 @@
       open: 'fa-solid fa-angle-up text-xl',
       closed: 'fa-solid fa-angle-down text-xl',
     },
-  };
+  } as const;
 
   let {
     value,
@@ -39,6 +48,7 @@
     children,
   }: Props = $props();
 
+  setCollapsibleVariant(() => variant);
   const look = $derived(variants[variant]);
 </script>
 

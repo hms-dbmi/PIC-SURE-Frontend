@@ -99,7 +99,6 @@
     <Switch
       name="Active"
       tone="success"
-      label="Status"
       checked={active}
       onchange={(checked) => (active = checked)}
     >

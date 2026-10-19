@@ -21,7 +21,6 @@ const boundaryExceptions = [
   'src/lib/utils/hierarchy.ts',
 ];
 
-// Only ui/ imports Skeleton, so dropping or upgrading it touches ui/ alone.
 const skeletonOnlyInUi = {
   group: ['@skeletonlabs/*'],
   message: 'Only src/lib/ui/ may import Skeleton; use or add a ui/ primitive.',

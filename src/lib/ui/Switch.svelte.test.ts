@@ -8,7 +8,7 @@ import Switch from './Switch.svelte';
 describe('Switch', () => {
   it('reports the new state when toggled', async () => {
     const onchange = vi.fn();
-    render(Switch, { name: 'Active', label: 'Status', checked: false, onchange });
+    render(Switch, { name: 'Active', checked: false, onchange });
 
     await fireEvent.click(screen.getByRole('checkbox'));
 

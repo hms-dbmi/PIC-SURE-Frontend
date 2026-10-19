@@ -90,7 +90,7 @@
         <!-- Logout -->
         <Popover data-testid="app-nav-user-menu">
           {#snippet trigger()}
-            <Avatar name={($user.email || 'unknown').toUpperCase()} class="m-3">
+            <Avatar class="m-3">
               {($user.email || '?').toUpperCase().charAt(0)}
             </Avatar>
           {/snippet}

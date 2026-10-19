@@ -1,7 +1,5 @@
-import { createToaster } from '@skeletonlabs/skeleton-svelte';
-
 export interface ToastOptions {
-  /** A toast with the same id replaces the visible one. */
+  /** A toast with the id of a visible one updates it instead of adding another. */
   id?: string;
   title?: string;
   description?: string;
@@ -15,11 +13,5 @@ export interface Toasts {
   error(options: ToastOptions): void;
 }
 
-// Skeleton's toast store. Only Toaster.svelte renders it; everything else goes through `toaster`.
-export const toastStore = createToaster({ placement: 'top' });
-
-export const toaster: Toasts = toastStore;
-
-export function isToastShowing(id: string): boolean {
-  return toastStore.getVisibleToasts().find((toast) => toast.id === id) !== undefined;
-}
+// The toast store lives in Toaster.svelte so that nothing outside it holds Skeleton's API.
+export { toaster, isToastShowing } from '#lib/ui/Toaster.svelte';

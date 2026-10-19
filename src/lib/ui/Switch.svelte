@@ -6,8 +6,6 @@
     name: string;
     checked: boolean;
     onchange: (checked: boolean) => void;
-    /** Accessible name, for a switch without a visible label. */
-    label?: string;
     /** Track colour while checked. */
     tone?: keyof typeof tones;
     /** Visible label, after the switch. */
@@ -21,12 +19,11 @@
     success: 'bg-success-500',
   };
 
-  let { name, checked, onchange, label, tone = 'primary', children, checkedIcon }: Props = $props();
+  let { name, checked, onchange, tone = 'primary', children, checkedIcon }: Props = $props();
 </script>
 
 <Switch
   {name}
-  {label}
   {checked}
   controlActive={tones[tone]}
   onCheckedChange={(e) => onchange(e.checked)}
