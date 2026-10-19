@@ -8,6 +8,7 @@
 
   import { config } from '#lib/config/config.svelte.ts';
   import type { AuthData } from '#lib/auth/providers/AuthProvider.ts';
+  import { LOGOUT_REASON_KEY } from '#lib/auth/token.ts';
   import { toaster } from '#lib/ui/toaster.ts';
 
   import { log, createLog } from '#lib/telemetry/logger.ts';
@@ -26,10 +27,10 @@
 
   onMount(() => {
     if (browser) {
-      logoutReason = sessionStorage.getItem('logout-reason');
+      logoutReason = sessionStorage.getItem(LOGOUT_REASON_KEY);
       if (logoutReason) {
         toaster.error({ title: logoutReason });
-        sessionStorage.removeItem('logout-reason');
+        sessionStorage.removeItem(LOGOUT_REASON_KEY);
       }
     }
   });

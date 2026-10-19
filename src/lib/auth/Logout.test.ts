@@ -2,14 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
-
 vi.mock('$app/env', () => ({ browser: true }));
-vi.mock('$app/navigation', () => ({ goto }));
-vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/explorer') } }));
-vi.mock('$app/paths', () => ({
-  resolve: (path: string) => (path.startsWith('/') ? path : `/${path}`),
-}));
 vi.mock('#lib/telemetry/logger.ts', () => ({
   createLog: vi.fn(),
   log: vi.fn(),
@@ -17,9 +10,17 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
   registerSignedInUser: vi.fn(),
 }));
 
-import { clearSession, hydrateUserFromToken, logout } from '#lib/auth/User.ts';
+import { clearSession, hydrateUserFromToken, logout, setToken } from '#lib/auth/User.ts';
+import { session } from '#lib/auth/session.svelte.ts';
 import { request } from '#lib/api/client.ts';
 import type AuthProvider from '#lib/auth/providers/AuthProvider.ts';
+
+const navigate = vi.fn();
+session.connect({
+  navigate,
+  currentUrl: () => new URL('http://localhost/explorer'),
+  showAccessUnavailable: vi.fn(),
+});
 
 // The PSAMA logout call goes through the real API client, whose 401 and 403 handling starts a
 // logout of its own.
@@ -32,12 +33,12 @@ const psamaLogoutFailures = {
 describe('logout', () => {
   beforeEach(() => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
-    localStorage.setItem('token', 'token');
+    setToken('token');
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
-    goto.mockReset();
+    navigate.mockReset();
     localStorage.clear();
     sessionStorage.clear();
   });
@@ -51,7 +52,7 @@ describe('logout', () => {
     await Promise.all([logout(), logout()]);
 
     expect(fetch).toHaveBeenCalledOnce();
-    expect(goto).toHaveBeenCalledOnce();
+    expect(navigate).toHaveBeenCalledOnce();
   });
 
   describe('the Okta ID token', () => {
@@ -110,8 +111,8 @@ describe('logout', () => {
         await logout();
 
         expect(fetch).toHaveBeenCalledOnce();
-        expect(goto).toHaveBeenCalledOnce();
-        expect(goto).toHaveBeenCalledWith('/login');
+        expect(navigate).toHaveBeenCalledOnce();
+        expect(navigate).toHaveBeenCalledWith('/login');
         expect(localStorage.getItem('token')).toBeNull();
       });
 
@@ -120,8 +121,8 @@ describe('logout', () => {
 
         await logout(provider as unknown as AuthProvider);
 
-        expect(goto).toHaveBeenCalledOnce();
-        expect(goto).toHaveBeenCalledWith('/login');
+        expect(navigate).toHaveBeenCalledOnce();
+        expect(navigate).toHaveBeenCalledWith('/login');
       });
     },
   );
@@ -149,8 +150,8 @@ describe('logout', () => {
 
       await expect(request('picsure/query/sync')).rejects.toMatchObject({ code: 'unauthorized' });
 
-      await vi.waitFor(() => expect(goto).toHaveBeenCalledOnce());
-      expect(goto).toHaveBeenCalledWith('/login?redirectTo=%2Fexplorer');
+      await vi.waitFor(() => expect(navigate).toHaveBeenCalledOnce());
+      expect(navigate).toHaveBeenCalledWith('/login?redirectTo=%2Fexplorer');
       expect(sessionStorage.getItem('logout-reason')).toBe(
         'Your session has timed out. Please log in.',
       );
@@ -161,8 +162,8 @@ describe('logout', () => {
 
       await expect(hydrateUserFromToken()).resolves.toBeUndefined();
 
-      await vi.waitFor(() => expect(goto).toHaveBeenCalledOnce());
-      expect(goto).toHaveBeenCalledWith('/login?redirectTo=%2Fexplorer');
+      await vi.waitFor(() => expect(navigate).toHaveBeenCalledOnce());
+      expect(navigate).toHaveBeenCalledWith('/login?redirectTo=%2Fexplorer');
     });
 
     it('logs out to login and drops any earlier reason on a 403', async () => {
@@ -171,8 +172,8 @@ describe('logout', () => {
 
       await expect(request('picsure/query/sync')).rejects.toMatchObject({ code: 'forbidden' });
 
-      await vi.waitFor(() => expect(goto).toHaveBeenCalledOnce());
-      expect(goto).toHaveBeenCalledWith('/login');
+      await vi.waitFor(() => expect(navigate).toHaveBeenCalledOnce());
+      expect(navigate).toHaveBeenCalledWith('/login');
       expect(sessionStorage.getItem('logout-reason')).toBeNull();
     });
 
@@ -182,6 +183,24 @@ describe('logout', () => {
       await request('picsure/query/sync');
 
       expect(localStorage.getItem('token')).toBe('fresh');
+    });
+
+    it('keeps a refreshed token when reloading the user after it fails', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi
+          .fn()
+          .mockResolvedValueOnce(new Response('{}', { headers: { Authorization: 'Bearer fresh' } }))
+          .mockResolvedValue(new Response('unavailable', { status: 503 })),
+      );
+
+      await request('picsure/query/sync');
+
+      await vi.waitFor(() =>
+        expect(console.error).toHaveBeenCalledWith(expect.stringContaining('token refresh')),
+      );
+      expect(localStorage.getItem('token')).toBe('fresh');
+      expect(navigate).not.toHaveBeenCalled();
     });
   });
 });

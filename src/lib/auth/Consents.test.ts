@@ -5,11 +5,6 @@ const mockApi = vi.hoisted(() => ({ request: vi.fn() }));
 const mockToaster = vi.hoisted(() => ({ error: vi.fn() }));
 
 vi.mock('$app/env', () => ({ browser: false }));
-vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost') } }));
-vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
-vi.mock('$app/paths', () => ({
-  resolve: (path: string) => (path.startsWith('/') ? path : `/${path}`),
-}));
 vi.mock('#lib/config/config.svelte.ts', () => ({
   config: { features: { explorer: { open: false }, login: { open: false } } },
 }));
@@ -23,9 +18,12 @@ import {
   ensureConsentsLoaded,
   getConsents,
   loadConsents,
+  removeToken,
+  setToken,
+  showAccessUnavailable,
   user,
-  tokenStatus,
 } from '#lib/auth/User.ts';
+import { session } from '#lib/auth/session.svelte.ts';
 import { addConsents } from '#lib/explorer/Dictionary.ts';
 import { Psama } from '#lib/api/paths.ts';
 import { ApiError } from '#lib/api/errors.ts';
@@ -39,11 +37,17 @@ const blankRequest = () => ({ facets: [], search: '', consents: [] });
 
 const runOutRetries = () => vi.advanceTimersByTimeAsync(5_000);
 
+session.connect({
+  navigate: vi.fn(),
+  currentUrl: () => new URL('http://localhost'),
+  showAccessUnavailable,
+});
+
 beforeEach(() => {
   mockApi.request.mockReset();
   mockToaster.error.mockReset();
   vi.spyOn(console, 'error').mockImplementation(() => {});
-  tokenStatus.set(true);
+  setToken('token');
   user.set({ consents: {} });
 });
 
@@ -222,7 +226,7 @@ describe('accessUnavailable', () => {
 
   it('is false when logged out, where access is simply not applicable', () => {
     user.set({ consents: undefined });
-    tokenStatus.set(false);
+    removeToken();
 
     expect(get(accessUnavailable)).toBe(false);
   });
@@ -256,7 +260,7 @@ describe('addConsents', () => {
 
   it('sends an empty list when the token is gone but the user blob lingers', async () => {
     user.set({ consents });
-    tokenStatus.set(false);
+    removeToken();
 
     await expect(addConsents(blankRequest())).resolves.toHaveProperty('consents', []);
   });

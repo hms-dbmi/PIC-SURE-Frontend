@@ -5,6 +5,7 @@
   import { beforeNavigate, goto } from '$app/navigation';
   import { clearSession, isTokenExpired } from '#lib/auth/User.ts';
   import { loginRedirectPath } from '#lib/auth/loginRedirect.ts';
+  import { readToken } from '#lib/auth/token.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
 
   let { children }: { children?: Snippet } = $props();
@@ -14,7 +15,7 @@
   // on /explorer). beforeNavigate fires on every navigation attempt, catching that gap.
   beforeNavigate(({ to, cancel }) => {
     if (to && to.url.origin !== location.origin) return;
-    const token = localStorage.getItem('token');
+    const token = readToken();
     if (token && isTokenExpired(token)) {
       cancel();
       log(createLog('AUTH', 'auth.redirect_token_expired', { targetUrl: to?.url.pathname }));

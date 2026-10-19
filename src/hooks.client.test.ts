@@ -3,8 +3,17 @@ import type { NavigationEvent } from '@sveltejs/kit';
 
 const logger = vi.hoisted(() => ({ log: vi.fn(), createLog: vi.fn() }));
 vi.mock('#lib/telemetry/logger.ts', () => logger);
+const { goto, session } = vi.hoisted(() => ({
+  goto: vi.fn(),
+  session: { connect: vi.fn() },
+}));
+vi.mock('$app/navigation', () => ({ goto }));
+vi.mock('$app/paths', () => ({ resolve: (path: string) => `/base/${path}` }));
+vi.mock('$app/state', () => ({ page: { url: new URL('https://picsure.test/explorer?q=1') } }));
+vi.mock('#lib/auth/session.svelte.ts', () => ({ session }));
 
-import { handleError } from './hooks.client';
+import { handleError, init } from './hooks.client';
+import type { SessionShell } from '#lib/auth/session.svelte.ts';
 
 const event = { route: { id: '/explorer' } } as unknown as NavigationEvent;
 
@@ -52,5 +61,17 @@ describe('client handleError', () => {
     expect(
       () => void handleError({ kind: 'unknown', error: new Error('boom'), event }),
     ).not.toThrow();
+  });
+});
+
+describe('client init', () => {
+  it('lets the session navigate within the app and read the page on screen', async () => {
+    await init();
+    const shell: SessionShell = session.connect.mock.calls[0][0];
+
+    shell.navigate('/login?redirectTo=%2Fexplorer');
+
+    expect(goto).toHaveBeenCalledWith('/base/login?redirectTo=%2Fexplorer');
+    expect(shell.currentUrl()).toMatchObject({ pathname: '/explorer', search: '?q=1' });
   });
 });

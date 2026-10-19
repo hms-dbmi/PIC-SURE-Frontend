@@ -4,6 +4,7 @@ import { browser } from '$app/env';
 import { config, applyConfig } from '#lib/config/config.svelte.ts';
 import { user } from '#lib/auth/User.ts';
 import { loginRedirectPath } from '#lib/auth/loginRedirect.ts';
+import { readToken } from '#lib/auth/token.ts';
 
 export const load: LayoutLoad = ({ url, data }) => {
   // Runs on both SSR and the client's hydration-time re-run of this load, off the
@@ -12,11 +13,7 @@ export const load: LayoutLoad = ({ url, data }) => {
   applyConfig(data.configCache);
 
   if (!browser) return;
-  if (
-    !config.features.login.open &&
-    !localStorage.getItem('token') &&
-    !url.pathname.includes('/login')
-  ) {
+  if (!config.features.login.open && !readToken() && !url.pathname.includes('/login')) {
     user.set({});
     redirect(302, loginRedirectPath(url));
   }

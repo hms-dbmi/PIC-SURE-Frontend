@@ -5,13 +5,7 @@ import { get } from 'svelte/store';
 const mockApi = vi.hoisted(() => ({ request: vi.fn() }));
 
 vi.mock('$app/env', () => ({ browser: true }));
-vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost') } }));
-vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
-vi.mock('$app/paths', () => ({
-  resolve: (path: string) => (path.startsWith('/') ? path : `/${path}`),
-}));
 vi.mock('#lib/api/client.ts', () => mockApi);
-vi.mock('#lib/ui/toaster.ts', () => ({ toaster: { error: vi.fn() }, isToastShowing: () => false }));
 vi.mock('#lib/telemetry/logger.ts', () => ({
   log: vi.fn(),
   createLog: vi.fn(() => ({})),
@@ -28,7 +22,7 @@ vi.mock('#lib/config/config.svelte.ts', () => ({
   },
 }));
 
-import { getUser, user, userRoutes } from '#lib/auth/User.ts';
+import { getUser, setToken, user, userRoutes } from '#lib/auth/User.ts';
 
 // What the three baseline roles carry in the BDC auth schema, plus AUTHORIZED_ACCESS on
 // MANUAL_ROLE_AUTH_ACCESS. Every authenticated BDC user holds exactly this.
@@ -48,7 +42,7 @@ const navPaths = () => get(userRoutes).map((r) => r.path);
 
 beforeEach(() => {
   mockApi.request.mockReset();
-  localStorage.setItem('token', 'fake-token');
+  setToken('fake-token');
   user.set({});
 });
 

@@ -29,7 +29,7 @@ vi.mock('#lib/config/config.svelte.ts', () => ({
 }));
 
 import Navigation from '#lib/shell/Navigation.svelte';
-import { user } from '#lib/auth/User.ts';
+import { removeToken, setToken, user } from '#lib/auth/User.ts';
 import { PicsurePrivileges } from '#lib/auth/model/privilege.ts';
 
 const { QUERY, NAMED_DATASET, API_ACCESS, ADMIN, SUPER } = PicsurePrivileges;
@@ -70,10 +70,10 @@ const roles = {
 
 function signIn(privileges?: string[]) {
   if (privileges) {
-    localStorage.setItem('token', 'token');
+    setToken('token');
     user.set({ email: 'test@pic-sure.org', privileges });
   } else {
-    localStorage.removeItem('token');
+    removeToken();
     user.set({});
   }
 }

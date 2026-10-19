@@ -1,5 +1,6 @@
 import { browser } from '$app/env';
 import { Internal } from '#lib/api/paths.ts';
+import { sessionHooks } from '#lib/api/sessionHooks.ts';
 import type { LogEvent } from '#lib/telemetry/types.ts';
 import { get } from 'svelte/store';
 import { v4 as uuidv4 } from 'uuid';
@@ -13,7 +14,7 @@ export function registerAssociatedStudies(store: import('svelte/store').Readable
   _associatedStudies = store;
 }
 
-// Registered by auth/User.ts, which imports the API client, which logs through here
+// Registered by the session, which imports the API client, which logs through here
 let signedInUser: () => User | undefined = () => undefined;
 export function registerSignedInUser(provider: () => User | undefined) {
   signedInUser = provider;
@@ -57,7 +58,7 @@ export function sanitizeLocation(): { url: string; query_string: string } {
 export function log(event: LogEvent, opts?: { keepalive?: boolean }): void {
   if (!browser) return;
 
-  const token = localStorage.getItem('token');
+  const token = sessionHooks().getToken();
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;

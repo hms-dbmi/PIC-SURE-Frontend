@@ -1,5 +1,7 @@
 // @vitest-environment happy-dom
 
+import { flushSync } from 'svelte';
+import { get } from 'svelte/store';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const environment = vi.hoisted(() => ({ browser: true }));
@@ -102,16 +104,15 @@ describe('hasValidToken', () => {
     vi.useRealTimers();
   });
 
-  it('does not read browser storage during a server-side subscription', () => {
+  it('is false on the server, which never reads browser storage', async () => {
     setToken(makeToken(Math.floor(Date.now() / 1000) + 60));
     environment.browser = false;
     const readStorage = vi.spyOn(localStorage, 'getItem');
-    let valid = true;
-    const unsubscribe = hasValidToken.subscribe((value) => (valid = value));
+    vi.resetModules();
+    const server = await import('#lib/auth/User.ts');
 
-    expect(valid).toBe(false);
+    expect(get(server.hasValidToken)).toBe(false);
     expect(readStorage).not.toHaveBeenCalled();
-    unsubscribe();
   });
 
   it('is false when a stored token has expired', () => {
@@ -147,6 +148,7 @@ describe('hasValidToken', () => {
     expect(vi.getTimerCount()).toBe(1);
 
     vi.advanceTimersByTime(2_001);
+    flushSync();
 
     expect(valid).toBe(false);
     expect(vi.getTimerCount()).toBe(0);
@@ -165,12 +167,15 @@ describe('hasValidToken', () => {
 
     vi.advanceTimersByTime(1_000);
     setToken(makeToken(Math.floor(Date.now() / 1000) + 10));
+    flushSync();
     expect(valid).toBe(true);
     expect(vi.getTimerCount()).toBe(1);
 
     vi.advanceTimersByTime(2_000);
+    flushSync();
     expect(valid).toBe(true);
     unsubscribe();
+    flushSync();
     expect(vi.getTimerCount()).toBe(0);
   });
 });

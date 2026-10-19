@@ -1,6 +1,6 @@
 /**
- * How the API client reaches the signed-in session without importing it. The session module
- * registers these when it loads; until then every request goes as an anonymous visitor.
+ * How the API client and the logger reach the signed-in session without importing it. The session
+ * module registers these when it loads; until then every request goes as an anonymous visitor.
  */
 export interface SessionHooks {
   /** The signed-in user's bearer token; empty or null when nobody is signed in. */

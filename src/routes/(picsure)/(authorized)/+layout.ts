@@ -3,6 +3,7 @@ import { browser } from '$app/env';
 import { redirect } from '@sveltejs/kit';
 import { clearSession, hydrateUserFromToken, isTokenExpired, user } from '#lib/auth/User.ts';
 import { loginRedirectPath } from '#lib/auth/loginRedirect.ts';
+import { readToken } from '#lib/auth/token.ts';
 import { BDCPrivileges, PicsurePrivileges } from '#lib/auth/model/privilege.ts';
 import { get } from 'svelte/store';
 import { log, createLog } from '#lib/telemetry/logger.ts';
@@ -12,7 +13,7 @@ export const prerender = false;
 export const load: LayoutLoad = async ({ url }) => {
   if (!browser) return;
 
-  const token = localStorage.getItem('token');
+  const token = readToken();
   if (!token || token.trim() === '') {
     log(createLog('AUTH', 'auth.redirect_no_token', { targetUrl: url.pathname }));
     clearSession();

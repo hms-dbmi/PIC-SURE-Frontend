@@ -3,6 +3,7 @@ import type { AuthData } from '#lib/auth/providers/AuthProvider.ts';
 import AuthProvider from '#lib/auth/providers/AuthProvider.ts';
 import * as psamaUser from '#lib/api/psama/user.ts';
 import type { OktaUser } from '#lib/auth/model/user.ts';
+import { OKTA_ID_TOKEN_KEY } from '#lib/auth/token.ts';
 
 export interface OktaBaseData extends AuthData {
   uri: string;
@@ -63,7 +64,7 @@ abstract class OktaBaseProvider extends AuthProvider implements OktaBaseData {
 
     const newUser = await psamaUser.authenticate<OktaUser>(this.psamaProvider, { code });
     if (newUser && newUser?.oktaIdToken) {
-      newUser.oktaIdToken && localStorage.setItem('oktaIdToken', newUser.oktaIdToken);
+      newUser.oktaIdToken && localStorage.setItem(OKTA_ID_TOKEN_KEY, newUser.oktaIdToken);
       return newUser;
     }
 
@@ -91,7 +92,7 @@ abstract class OktaBaseProvider extends AuthProvider implements OktaBaseData {
 
   protected abstract get logoutRedirectUri(): string;
   protected get oktaLogoutRedirectURI(): string {
-    const oktaIdToken = localStorage.getItem('oktaIdToken');
+    const oktaIdToken = localStorage.getItem(OKTA_ID_TOKEN_KEY);
     return (
       this.oktalogouturl +
       `?id_token_hint=${oktaIdToken}` +

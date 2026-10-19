@@ -1,5 +1,21 @@
-import type { HandleClientError } from '@sveltejs/kit/hooks';
+import type { ClientInit, HandleClientError } from '@sveltejs/kit/hooks';
+import { goto } from '$app/navigation';
+import { resolve } from '$app/paths';
+import { page } from '$app/state';
+import { appPath } from '#lib/api/paths.ts';
+import { showAccessUnavailable } from '#lib/auth/accessUnavailable.ts';
+import { session } from '#lib/auth/session.svelte.ts';
 import { log, createLog } from '#lib/telemetry/logger.ts';
+
+// Here rather than in a layout because loads run first, and a 401 while the authorized layout
+// loads the profile has to reach the login page.
+export const init: ClientInit = () => {
+  session.connect({
+    navigate: (path) => void goto(resolve(appPath(path))),
+    currentUrl: () => page.url,
+    showAccessUnavailable,
+  });
+};
 
 // SvelteKit requires handleError never to throw.
 export const handleError: HandleClientError = ({ kind, error, event }) => {
