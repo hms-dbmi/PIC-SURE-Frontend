@@ -18,7 +18,7 @@
   }: Props = $props();
 
   // When enabled, High priority ensures it wins over group sortables
-  // Self-drop protection is handled in handleGroupDropZone
+  // filterTreeOps refuses drops of a group into itself
   // Disable in overlay mode to prevent duplicate sortable IDs
   const zone = createDroppable({
     get id() {

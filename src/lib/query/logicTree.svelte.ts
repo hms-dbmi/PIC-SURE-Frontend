@@ -234,6 +234,25 @@ export class LogicTree<T extends LogicNode<T>> {
     this.pruneTree();
   }
 
+  // Detaches `node` from its parent, then inserts it into `group` at `index` (counted after the
+  // detach), or at the end. Unlike remove(), it never prunes. Moving a group into itself or a
+  // descendant detaches it from the tree; callers check isDescendant first.
+  moveNode(node: T, group: T & LogicGroup<T>, index?: number) {
+    const from = node.parent;
+    if (from) from.children = from.children.filter((child) => child !== node);
+    node.parent = group;
+    const at = index ?? group.children.length;
+    group.children = [...group.children.slice(0, at), node, ...group.children.slice(at)];
+  }
+
+  // Whether `node` sits somewhere below `ancestor` (a node is not its own descendant).
+  isDescendant(node: T, ancestor: LogicNode<T>): boolean {
+    for (let group = node.parent; group; group = group.parent) {
+      if (group === ancestor) return true;
+    }
+    return false;
+  }
+
   find(searchMethod: (node: T) => boolean): T | undefined {
     const search = (node: T): T | undefined => {
       if (searchMethod(node)) return node;
