@@ -61,6 +61,8 @@
           ),
         );
       } else {
+        // So a refusal of the profile request isn't taken for the terms (see `holdForTerms`).
+        if (user.acceptedTOS) session.user = { acceptedTOS: true };
         // Load the profile before logging so createLog reads user_id/email/roles from the
         // session; without it the event is logged blank.
         await session.login(user.token);

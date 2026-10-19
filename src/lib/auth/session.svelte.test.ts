@@ -1,5 +1,5 @@
 import { flushSync } from 'svelte';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/env', () => ({ browser: true }));
 vi.mock('#lib/telemetry/logger.ts', () => ({
@@ -13,6 +13,7 @@ import { sessionHooks } from '#lib/api/sessionHooks.ts';
 import { ACCESS } from '#lib/auth/access.ts';
 import { requireAccess } from '#lib/auth/guard.ts';
 import { session } from '#lib/auth/session.svelte.ts';
+import { config } from '#lib/config/config.svelte.ts';
 import { createLog, registerSignedInUser } from '#lib/telemetry/logger.ts';
 
 const answer = (body: object) => () => Promise.resolve(new Response(JSON.stringify(body)));
@@ -173,6 +174,22 @@ function jwt(sub: string): string {
   return `${encode({ alg: 'none' })}.${encode({ sub, exp })}.signature`;
 }
 
+/**
+ * Stubs fetch the way PSAMA answers a user who has not accepted the terms: a 403 with an empty body.
+ * Returns the paths it was asked for.
+ */
+function refuseUntilTermsAccepted() {
+  const paths: string[] = [];
+  vi.stubGlobal(
+    'fetch',
+    vi.fn((input: RequestInfo | URL) => {
+      paths.push(new URL(String(input), 'http://localhost').pathname);
+      return Promise.resolve(new Response('', { status: 403 }));
+    }),
+  );
+  return paths;
+}
+
 /** Stubs fetch with a profile and consents, and returns the paths it was asked for. */
 function stubPsama(profile: object = { privileges: ['QUERY'] }) {
   const paths: string[] = [];
@@ -266,6 +283,86 @@ describe('the bootstrap', () => {
 
     expect(consents).toEqual({ '\\_consents\\': ['phs1'] });
     expect(paths.filter((path) => path.endsWith('/consents'))).toHaveLength(1);
+  });
+});
+
+describe('a refusal that may mean the user has not accepted the terms', () => {
+  // The flags the terms dialog checks; with either off, the app never asks for the terms.
+  const askForTerms = (on: boolean) => {
+    config.features.termsOfService = on;
+    config.features.enforceTermsOfService = on;
+  };
+  beforeEach(() => askForTerms(true));
+  afterEach(() => askForTerms(false));
+
+  it('opens the terms dialog instead of failing the bootstrap', async () => {
+    const paths = refuseUntilTermsAccepted();
+    vi.mocked(createLog).mockClear();
+    session.setToken(jwt('fresh-tab-terms-pending'));
+
+    await session.bootstrap();
+
+    expect(session.isLoggedIn).toBe(true);
+    expect(session.user.acceptedTOS).toBe(false);
+    expect(session.profileFailed).toBe(false);
+    expect(vi.mocked(createLog)).not.toHaveBeenCalledWith(
+      'AUTH',
+      'auth.hydrate_failed',
+      expect.anything(),
+    );
+    expect(paths).toEqual(['/psama/user/me']);
+  });
+
+  it('ends the session of a user who has accepted the terms', () => {
+    const token = jwt('accepted');
+    session.setToken(token);
+    session.user = { privileges: ['QUERY'], acceptedTOS: true };
+
+    expect(sessionHooks().onTermsRefusal(token)).toBe(false);
+  });
+
+  it('ends the session where the app does not ask for the terms', () => {
+    askForTerms(false);
+    const token = jwt('terms-off');
+    session.setToken(token);
+
+    expect(sessionHooks().onTermsRefusal(token)).toBe(false);
+    expect(session.user.acceptedTOS).toBeUndefined();
+  });
+
+  it('changes nothing when it answered a token this tab has replaced', () => {
+    session.setToken(jwt('signed-in-elsewhere'));
+    session.user = { privileges: ['QUERY'], acceptedTOS: true };
+
+    expect(sessionHooks().onTermsRefusal(jwt('replaced'))).toBe(true);
+    expect(session.user.acceptedTOS).toBe(true);
+  });
+
+  it('means no consents are asked for until the user accepts', async () => {
+    const paths = refuseUntilTermsAccepted();
+    session.setToken(jwt('terms-pending-consents'));
+    session.user = { acceptedTOS: false };
+
+    await expect(session.ensureConsentsLoaded()).resolves.toBeUndefined();
+
+    expect(paths).toEqual([]);
+  });
+
+  it('of the consents is neither retried nor reported as unavailable access', async () => {
+    const paths = refuseUntilTermsAccepted();
+    const showAccessUnavailable = vi.fn();
+    session.connect({
+      navigate: vi.fn(),
+      currentUrl: () => new URL('http://localhost/'),
+      showAccessUnavailable,
+    });
+    session.setToken(jwt('terms-pending-refused'));
+
+    await session.loadConsents();
+
+    expect(paths).toEqual(['/psama/user/me/consents']);
+    expect(showAccessUnavailable).not.toHaveBeenCalled();
+    expect(session.user.acceptedTOS).toBe(false);
   });
 });
 

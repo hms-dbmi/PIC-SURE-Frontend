@@ -18,6 +18,7 @@ import {
   tokenValidity,
   writeToken,
 } from '#lib/auth/token.ts';
+import { config } from '#lib/config/config.svelte.ts';
 import { log, createLog, registerSignedInUser } from '#lib/telemetry/logger.ts';
 import { assertNoSsrWrite } from '#lib/utils/ssrWrite.ts';
 
@@ -42,6 +43,11 @@ const disconnected: SessionShell = {
 const sessionEndedBy = (error: unknown) =>
   error instanceof ApiError && error.code === 'unauthorized';
 
+// PSAMA refuses the user until they accept the terms, and the terms dialog is asking them to.
+// Retrying or reporting the failure won't help before then.
+const awaitingTerms = (error: unknown) =>
+  error instanceof ApiError && error.code === 'terms_not_accepted';
+
 /** Delay before each attempt. Retry once straight away, then back off for a real outage. */
 const CONSENTS_RETRY_DELAYS_MS = [0, 0, 3_000];
 
@@ -57,7 +63,7 @@ export async function getConsents(): Promise<ConsentsMap> {
       const res = await psamaUser.consents();
       return res?.consents || {};
     } catch (error) {
-      if (sessionEndedBy(error)) throw error;
+      if (sessionEndedBy(error) || awaitingTerms(error)) throw error;
       if (attempt === CONSENTS_RETRY_DELAYS_MS.length - 1) {
         console.error(`Error fetching user consents after ${attempt + 1} attempts: ` + error);
         throw error;
@@ -246,7 +252,11 @@ export class Session {
           if (this.#consentsRequest === request) this.user = { ...this.#user, consents };
         })
         .catch((error: unknown) => {
-          if (this.#consentsRequest === request && !sessionEndedBy(error)) {
+          if (
+            this.#consentsRequest === request &&
+            !sessionEndedBy(error) &&
+            !awaitingTerms(error)
+          ) {
             this.#shell.showAccessUnavailable();
           }
         });
@@ -261,6 +271,8 @@ export class Session {
       // A bootstrap in flight requests the consents once the profile is in.
       await this.#boot?.done;
       if (this.#user.consents !== undefined) return this.#user.consents;
+      // PSAMA refuses the request until the user accepts the terms; accepting loads them.
+      if (this.#user.acceptedTOS === false) return undefined;
 
       await this.consentsSettled();
       if (this.#user.consents === undefined) await this.loadConsents();
@@ -277,7 +289,8 @@ export class Session {
    * Loads the profile for the stored token when this tab doesn't have it: a fresh tab (the profile
    * is in sessionStorage), or another tab signing in. Once per token, so every load may call it.
    * Leaves a user who hasn't accepted the terms to the terms dialog: PSAMA refuses them until
-   * then. Never rejects; `profileFailed` says whether the profile request failed.
+   * then, and a refusal opens the dialog. Never rejects; `profileFailed` says whether the profile
+   * request failed for another reason.
    */
   bootstrap(): Promise<void> {
     if (!browser) return Promise.resolve();
@@ -286,6 +299,7 @@ export class Session {
       const boot = { token: this.#token, done: Promise.resolve(), failed: false };
       if (this.hasValidToken && !this.#user.privileges && this.#user.acceptedTOS !== false) {
         boot.done = this.hydrate().catch((error: unknown) => {
+          if (awaitingTerms(error)) return;
           boot.failed = true;
           console.error('Failed to hydrate user from token:', error);
           log(createLog('AUTH', 'auth.hydrate_failed', { error: String(error) }));
@@ -293,6 +307,25 @@ export class Session {
       }
       this.#boot = boot;
       return boot.done;
+    });
+  }
+
+  /**
+   * PSAMA refused a request sent with `token` in a way that may mean the user has yet to accept the
+   * terms. Where the app asks for them (the flags the terms dialog checks), holds the user for the
+   * dialog unless they have already accepted: records it in the profile, which opens the dialog, and
+   * accepting reloads the profile. A refusal for a replaced token changes nothing. Returns false
+   * when the refusal ends the session instead.
+   */
+  holdForTerms(token: string): boolean {
+    assertNoSsrWrite('session');
+    return untrack(() => {
+      const { termsOfService, enforceTermsOfService } = config.features;
+      if (!termsOfService || !enforceTermsOfService) return false;
+      if (token !== this.#token) return true;
+      if (this.#user.acceptedTOS === true) return false;
+      if (this.#user.acceptedTOS !== false) this.user = { ...this.#user, acceptedTOS: false };
+      return true;
     });
   }
 
@@ -386,6 +419,7 @@ registerSessionHooks({
     }
     session.logout(undefined, true);
   },
+  onTermsRefusal: (token) => session.holdForTerms(token),
   onForbidden: () => {
     if (browser) sessionStorage.removeItem(LOGOUT_REASON_KEY);
     session.logout(undefined, false);

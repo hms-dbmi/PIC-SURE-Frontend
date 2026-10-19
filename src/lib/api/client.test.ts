@@ -119,6 +119,7 @@ async function settles(promise: Promise<unknown>): Promise<boolean> {
 let fetchMock: Mock;
 let token: string | null;
 const onUnauthorized = vi.fn();
+const onTermsRefusal = vi.fn<(token: string) => boolean>();
 const onForbidden = vi.fn();
 const onTokenRefreshed = vi.fn();
 
@@ -133,7 +134,13 @@ beforeEach(() => {
   mockRecoverOpenSession.mockResolvedValue(null);
 
   token = null;
-  registerSessionHooks({ getToken: () => token, onUnauthorized, onForbidden, onTokenRefreshed });
+  registerSessionHooks({
+    getToken: () => token,
+    onUnauthorized,
+    onTermsRefusal,
+    onForbidden,
+    onTokenRefreshed,
+  });
 
   fetchMock = vi.fn().mockResolvedValue(mockFetchResponse({}));
   vi.stubGlobal('fetch', fetchMock);
@@ -412,6 +419,78 @@ describe('request', () => {
       expect(e).toMatchObject({ status: 403, code: 'consent_denied', body });
       expect(e.message).toBe('Consent for phs000007 was withdrawn');
       expect(onForbidden).not.toHaveBeenCalled();
+    });
+
+    describe('a 403 that may be PSAMA refusing a user who has not accepted the terms', () => {
+      const forbidden = (body: string) =>
+        fetchMock.mockResolvedValue(mockFetchResponse({ ok: false, status: 403, body }));
+
+      beforeEach(() => {
+        token = 'my-token';
+        onTermsRefusal.mockReturnValue(true);
+      });
+
+      it.each([
+        ['the empty body it normally has', ''],
+        [
+          "Spring Boot's error JSON, without the message by default",
+          '{"timestamp":"2026-10-19T12:00:00.000+00:00","status":403,"error":"Forbidden","path":"/auth/user/me"}',
+        ],
+        [
+          'a body with the message',
+          '{"timestamp":"2026-10-19T12:00:00.000+00:00","status":403,"error":"Forbidden","message":"User must accept terms of service","path":"/auth/user/me"}',
+        ],
+      ])('keeps the session when the session takes %s as the terms', async (_, body) => {
+        forbidden(body);
+
+        const e = await rejection(request('psama/user/me'));
+
+        expect(e).toMatchObject({ status: 403, code: 'terms_not_accepted' });
+        expect(onTermsRefusal).toHaveBeenCalledExactlyOnceWith('my-token');
+        expect(onForbidden).not.toHaveBeenCalled();
+        expect(mockCreateLog).toHaveBeenCalledWith('AUTH', 'session.terms_required', undefined, {
+          status: 403,
+        });
+      });
+
+      it('ends the session when the session does not take it as the terms', async () => {
+        onTermsRefusal.mockReturnValue(false);
+        forbidden('');
+
+        const e = await rejection(request('psama/user/me'));
+
+        expect(e.code).toBe('forbidden');
+        expect(onForbidden).toHaveBeenCalledTimes(1);
+      });
+
+      it.each([
+        [
+          "PSAMA's own refusal",
+          'psama/user',
+          '{"message":"You do not have permission to perform this operation","content":"Access Denied"}',
+        ],
+        ['an empty 403 from outside PSAMA', 'picsure/query/sync', ''],
+        // PSAMA leaves /tos/accept out of the terms check
+        ['an empty 403 to the terms acceptance', 'psama/tos/accept', ''],
+      ])('ends the session on %s', async (_, path, body) => {
+        forbidden(body);
+
+        const e = await rejection(request(path, { method: 'POST' }));
+
+        expect(e.code).toBe('forbidden');
+        expect(onForbidden).toHaveBeenCalledTimes(1);
+        expect(onTermsRefusal).not.toHaveBeenCalled();
+      });
+
+      it("ends the session on an empty PSAMA 403 to a request without the user's token", async () => {
+        token = null;
+        forbidden('');
+
+        const e = await rejection(request('psama/user/me'));
+
+        expect(e.code).toBe('forbidden');
+        expect(onTermsRefusal).not.toHaveBeenCalled();
+      });
     });
   });
 

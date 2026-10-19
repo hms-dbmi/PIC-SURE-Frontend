@@ -3,11 +3,18 @@ export const CONSENT_DENIED_MESSAGE = 'You no longer have consent for this saved
 /**
  * - `consent_denied`: a 403 for a saved result the user no longer has consent for; the session stays.
  * - `unauthorized`: a 401; the session has been ended.
- * - `forbidden`: a 403 that isn't a consent denial; the session has been ended.
+ * - `terms_not_accepted`: PSAMA refuses the user until they accept the terms of service; the session
+ *   stays, and the terms dialog asks them to.
+ * - `forbidden`: a 403 that is neither a consent denial nor the terms; the session has been ended.
  * - `http`: every other failure, including a 401 on an anonymous `open` request, which ends
  *   nothing.
  */
-export type ApiErrorCode = 'consent_denied' | 'unauthorized' | 'forbidden' | 'http';
+export type ApiErrorCode =
+  | 'consent_denied'
+  | 'unauthorized'
+  | 'terms_not_accepted'
+  | 'forbidden'
+  | 'http';
 
 export class ApiError extends Error {
   override readonly name = 'ApiError';

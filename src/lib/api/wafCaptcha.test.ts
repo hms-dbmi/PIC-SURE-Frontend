@@ -71,6 +71,7 @@ describe('wafCaptcha', () => {
     (await import('#lib/api/sessionHooks.ts')).registerSessionHooks({
       getToken: () => mockToken,
       onUnauthorized: vi.fn(),
+      onTermsRefusal: vi.fn(),
       onForbidden: vi.fn(),
       onTokenRefreshed: vi.fn(),
     });

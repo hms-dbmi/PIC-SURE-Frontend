@@ -274,6 +274,13 @@ describe('addConsents', () => {
     );
   });
 
+  it('throws without toasting while the terms dialog asks the user to accept', async () => {
+    user.set({ acceptedTOS: false });
+
+    await expect(addConsents(blankRequest())).rejects.toThrow(ACCESS_UNAVAILABLE_MESSAGE);
+    expect(mockToaster.error).not.toHaveBeenCalled();
+  });
+
   it('stays closed after a reload, where no fetch is in flight to wait on', async () => {
     // Reload keeps privileges, so the layout skips re-hydrating and nothing is in flight.
     user.set(JSON.parse(JSON.stringify({ privileges: ['QUERY'], consents: undefined })));

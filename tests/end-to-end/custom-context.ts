@@ -90,6 +90,41 @@ export function mockHTMLBodySuccess(context: Page, path: string | RegExp, body: 
   return context.route(path, async (route: Route) => route.fulfill({ body }));
 }
 
+/**
+ * Answers PSAMA the way it answers a signed-in user who hasn't accepted the latest terms: a 403 with
+ * an empty body (see `termsRefusal` in src/lib/api/client.ts) to every request that carries their
+ * token, except `/tos/accept` and `/logout` (which Spring Security's logout filter answers first).
+ * After `/tos/accept`, PSAMA requests fall through to the test's routes.
+ */
+export function mockTermsNotAccepted(context: BrowserContext | Page) {
+  let accepted = false;
+  return context.route('*/**/psama/**', (route: Route) => {
+    const { pathname } = new URL(route.request().url());
+    if (pathname.endsWith('/psama/tos/accept')) {
+      accepted = true;
+      return route.fulfill({ status: 200, body: '' });
+    }
+    const carriesToken = route.request().headers()['authorization'] !== undefined;
+    if (accepted || !carriesToken || pathname.endsWith('/psama/logout')) return route.fallback();
+    return route.fulfill({ status: 403, body: '' });
+  });
+}
+
+/**
+ * A saved login state without its stored profile, so the app starts from the token alone, as in a
+ * fresh tab. Read when the test runs: the setup project writes the file after test modules load.
+ */
+export function tokenOnlyState(file: string) {
+  // eslint-disable-next-line no-empty-pattern -- Playwright fixtures must destructure their first argument
+  return async ({}, use: (state: StorageState) => Promise<void>) => {
+    const state = JSON.parse(readFileSync(file, 'utf-8')) as StorageState;
+    for (const origin of state.origins) {
+      origin.localStorage = origin.localStorage.filter(({ name }) => name !== 'user');
+    }
+    await use(state);
+  };
+}
+
 // SSR resolves config server-side (see src/routes/+layout.server.ts), so it's no
 // longer visible to Playwright as a browser-level fetch to mock. Instead, seed a
 // cookie that +layout.server.ts reads (only in test mode) to override the config

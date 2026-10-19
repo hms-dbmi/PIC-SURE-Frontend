@@ -7,7 +7,12 @@ export interface SessionHooks {
   getToken(): string | null;
   /** A 401 rejected the user's token: end the session and send them back to log in. */
   onUnauthorized(): void;
-  /** A 403 that isn't a consent denial: end the session. */
+  /**
+   * PSAMA refused a request sent with `token` in a way that may mean the user has yet to accept the
+   * terms of service. Returns false to end the session like any other 403.
+   */
+  onTermsRefusal(token: string): boolean;
+  /** A 403 that is neither a consent denial nor the terms: end the session. */
   onForbidden(): void;
   /** A successful response carried a refreshed token in its Authorization header. */
   onTokenRefreshed(token: string): void;
@@ -16,6 +21,7 @@ export interface SessionHooks {
 const anonymous: SessionHooks = {
   getToken: () => null,
   onUnauthorized: () => {},
+  onTermsRefusal: () => false,
   onForbidden: () => {},
   onTokenRefreshed: () => {},
 };

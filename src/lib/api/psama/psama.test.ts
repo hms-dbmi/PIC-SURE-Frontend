@@ -167,6 +167,7 @@ describe('PSAMA requests', () => {
     registerSessionHooks({
       getToken: () => 'user-token',
       onUnauthorized: vi.fn(),
+      onTermsRefusal: vi.fn(),
       onForbidden: vi.fn(),
       onTokenRefreshed: vi.fn(),
     });

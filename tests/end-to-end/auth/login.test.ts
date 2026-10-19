@@ -1,8 +1,15 @@
-import { expect, type Route } from '@playwright/test';
-import { test, mockHTMLBodySuccess, mockApiConfig, mockApiSuccess } from '../custom-context';
+import { expect, type Page, type Route } from '@playwright/test';
+import {
+  test,
+  mockHTMLBodySuccess,
+  mockApiConfig,
+  mockApiSuccess,
+  mockTermsNotAccepted,
+} from '../custom-context';
 import type { Branding } from '#lib/config/branding.ts';
 import brandingJson from '../../../src/lib/assets/configuration.json' with { type: 'json' };
 import {
+  datasets,
   mockBanner,
   mockConsents,
   mockToken,
@@ -346,5 +353,80 @@ test.describe('Login with the terms of service enforced', () => {
     await page.waitForURL('/');
     await userIsLoggedIn(page);
     expect(termsRequested).toBe(false);
+  });
+
+  test('An accepted user PSAMA refuses for another reason is signed out', async ({ page }) => {
+    // Given: an empty 403, which PSAMA also sends for an ended session
+    await mockApiSuccess(page, '*/**/psama/authentication', picsureUser);
+    await mockApiSuccess(page, '*/**/psama/authentication/auth0', picsureUser);
+    await page.route('*/**/psama/user/me', (route) => route.fulfill({ status: 403, body: '' }));
+    await mockApiSuccess(page, '*/**/psama/logout', {});
+
+    // When
+    await page.goto(loginCallback).catch(() => {});
+
+    // Then
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('token'))).toBeNull();
+    await expect(page.getByTestId('terms-accept')).not.toBeVisible();
+  });
+
+  test.describe('when PSAMA refuses them until they accept', () => {
+    const storedToken = (page: Page) => page.evaluate(() => localStorage.getItem('token'));
+
+    test.beforeEach(async ({ page }) => {
+      const notAccepted = { ...picsureUser, acceptedTOS: 'false' };
+      await mockApiSuccess(page, '*/**/psama/authentication', notAccepted);
+      await mockApiSuccess(page, '*/**/psama/authentication/auth0', notAccepted);
+      await mockApiSuccess(page, '*/**/psama/user/me', picsureUser);
+      await mockTermsNotAccepted(page);
+    });
+
+    test('The landing page holds them with the terms until they accept', async ({ page }) => {
+      // Given
+      let consentsRequested = false;
+      page.on('request', (request) => {
+        if (request.url().includes('/psama/user/me/consents')) consentsRequested = true;
+      });
+
+      // When
+      await page.goto(loginCallback).catch(() => {});
+
+      // Then: the stats load without asking PSAMA for consents it refuses
+      await page.waitForURL('/');
+      await expect(page.getByTestId('terms-accept')).toBeVisible();
+      await expect(page.getByTestId(/^landing-stat-auth-/).first()).toBeVisible();
+      expect(consentsRequested).toBe(false);
+
+      // When
+      await page.getByTestId('terms-accept').click();
+
+      // Then
+      await expect(page.locator('#terms-of-service')).not.toBeVisible();
+      await userIsLoggedIn(page);
+      await expect(page).toHaveURL('/');
+      expect(await storedToken(page)).toBe(mockToken);
+    });
+
+    test('An authorized page they return to holds them with the terms', async ({ page }) => {
+      // Given
+      await mockApiSuccess(page, '*/**/picsure/operations/dataset/named', datasets);
+      await page.addInitScript(() => sessionStorage.setItem('redirect', '/dataset'));
+
+      // When
+      await page.goto(loginCallback).catch(() => {});
+
+      // Then
+      await page.waitForURL('/dataset');
+      await expect(page.getByTestId('terms-accept')).toBeVisible();
+
+      // When
+      await page.getByTestId('terms-accept').click();
+
+      // Then
+      await expect(page.locator('#terms-of-service')).not.toBeVisible();
+      await userIsLoggedIn(page);
+      await expect(page).toHaveURL('/dataset');
+      expect(await storedToken(page)).toBe(mockToken);
+    });
   });
 });

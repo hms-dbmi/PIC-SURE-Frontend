@@ -1,6 +1,11 @@
-import { readFileSync } from 'node:fs';
-import { expect, type BrowserContext } from '@playwright/test';
-import { test, mockApiSuccess, mockApiFail, mockApiConfig } from '../custom-context';
+import { expect } from '@playwright/test';
+import {
+  test,
+  mockApiSuccess,
+  mockApiFail,
+  mockApiConfig,
+  tokenOnlyState,
+} from '../custom-context';
 import {
   searchResults as mockSearchResults,
   searchResultPath,
@@ -153,21 +158,7 @@ test.describe('Landing page', () => {
       });
 
     test.describe('with only the login token restored', () => {
-      // The generalUser state minus its stored user, so the fixture has no user to put in
-      // sessionStorage and the app starts from the token alone. Read when the test runs:
-      // the setup project writes the file after this module has loaded.
-      test.use({
-        // eslint-disable-next-line no-empty-pattern -- Playwright fixtures must destructure their first argument
-        storageState: async ({}, use) => {
-          const tokenOnlyState = JSON.parse(
-            readFileSync('tests/end-to-end/.auth/generalUser.json', 'utf-8'),
-          ) as Awaited<ReturnType<BrowserContext['storageState']>>;
-          for (const origin of tokenOnlyState.origins) {
-            origin.localStorage = origin.localStorage.filter(({ name }) => name !== 'user');
-          }
-          await use(tokenOnlyState);
-        },
-      });
+      test.use({ storageState: tokenOnlyState('tests/end-to-end/.auth/generalUser.json') });
 
       test('Loads authenticated stats', async ({ page }) => {
         await mockApiSuccess(page, '*/**/psama/user/me?hasToken', picsureUser);

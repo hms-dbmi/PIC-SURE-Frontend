@@ -82,9 +82,11 @@ async function send(path: string, opts: RequestOptions): Promise<unknown> {
   // an anonymous request with the open-access session as its bearer, if it got one
   let openRequest = false;
   let sessionToken: string | null = null;
+  let userToken: string | null = null;
   if (browser) {
     const token = auth === 'user' || auth === 'open' ? sessionHooks().getToken() : null;
     if (token) {
+      userToken = token;
       headers['Authorization'] = `${BEARER}${token}`;
       headers['request-source'] = 'Authorized';
     } else {
@@ -127,7 +129,7 @@ async function send(path: string, opts: RequestOptions): Promise<unknown> {
     }
   }
 
-  return await handleResponse(res, { openRequest, softFail });
+  return await handleResponse(res, { path, userToken, openRequest, softFail });
 }
 
 function withQuery(path: string, query: RequestOptions['query']): string {
@@ -164,7 +166,12 @@ async function errorType(res: Response): Promise<unknown> {
 
 async function handleResponse(
   res: Response,
-  { openRequest, softFail }: { openRequest: boolean; softFail: boolean },
+  {
+    path,
+    userToken,
+    openRequest,
+    softFail,
+  }: { path: string; userToken: string | null; openRequest: boolean; softFail: boolean },
 ): Promise<unknown> {
   if (res.ok) {
     if (!softFail) refreshToken(res);
@@ -197,6 +204,10 @@ async function handleResponse(
     const body = parseBody(text);
     const consentMessage = consentDenial(body);
     if (consentMessage) throw new ApiError(403, 'consent_denied', body, consentMessage);
+    if (userToken && termsRefusal(path, text, body) && sessionHooks().onTermsRefusal(userToken)) {
+      log(createLog('AUTH', 'session.terms_required', undefined, { status: 403 }));
+      throw new ApiError(403, 'terms_not_accepted', body, text);
+    }
     log(createLog('AUTH', 'session.forbidden', undefined, { status: 403 }));
     sessionHooks().onForbidden();
     throw failure(403, 'forbidden', text);
@@ -222,6 +233,22 @@ function consentDenial(body: unknown): string | undefined {
   const { errorType, message } = body as { errorType?: unknown; message?: unknown };
   if (errorType !== 'consent_denied') return undefined;
   return typeof message === 'string' && message ? message : CONSENT_DENIED_MESSAGE;
+}
+
+/**
+ * Whether a 403 may be PSAMA's JWTFilter refusing a user who hasn't accepted the latest terms, which
+ * it does on every path except `/tos/accept` with `sendError(403, "User must accept terms of
+ * service")`. The servlet container forwards that to Spring Boot's `/error` page, which Spring
+ * Security refuses as well, so the 403 normally arrives with an empty body; were `/error` reachable,
+ * it would be Spring Boot's error JSON (`timestamp`, `path`), with the message only if configured to.
+ * The filter's other refusals (an ended session, a deactivated user) reach the browser the same way,
+ * so the session decides (`onTermsRefusal`). PSAMA's controllers refuse with `{ message, content }`.
+ */
+function termsRefusal(path: string, text: string, body: unknown): boolean {
+  const [route] = path.replace(/^\/+/, '').split('?');
+  if (!route.startsWith('psama/') || route.endsWith('/tos/accept')) return false;
+  if (text.trim() === '' || /must accept terms of service/i.test(text)) return true;
+  return typeof body === 'object' && body !== null && 'timestamp' in body && 'path' in body;
 }
 
 function refreshToken(res: Response) {
