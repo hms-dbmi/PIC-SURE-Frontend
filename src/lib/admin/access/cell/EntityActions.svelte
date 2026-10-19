@@ -7,12 +7,12 @@
   import { isTopAdmin } from '#lib/auth/User.ts';
   import { toaster } from '#lib/ui/toaster.ts';
   import * as admin from '#lib/admin/entities.ts';
+  import type { AccessKind } from '#lib/admin/access/model/kind.ts';
 
-  type Kind = 'connection' | 'privilege' | 'role';
   type Row = { name?: string; label?: string };
 
   interface Props {
-    kind: Kind;
+    kind: AccessKind;
     /** The table's cell contract: `cell` is the row's uuid. */
     data: { cell: string; row: Row };
   }
@@ -25,42 +25,32 @@
       name: (row: Row) => row.label,
       resource: admin.connections,
       inUseBy: 'an application or user',
-      editHref: (uuid: string) =>
-        resolve(
-          '/(picsure)/(authorized)/(admin)/admin/configuration/(top-admin)/connection/[uuid]/edit',
-          { uuid },
-        ),
     },
     privilege: {
       title: 'Delete Privilege?',
       name: (row: Row) => row.name,
       resource: admin.privileges,
       inUseBy: 'a role',
-      editHref: (uuid: string) =>
-        resolve(
-          '/(picsure)/(authorized)/(admin)/admin/configuration/(top-admin)/privilege/[uuid]/edit',
-          { uuid },
-        ),
     },
     role: {
       title: 'Delete Role?',
       name: (row: Row) => row.name,
       resource: admin.roles,
       inUseBy: 'a user',
-      editHref: (uuid: string) =>
-        resolve(
-          '/(picsure)/(authorized)/(admin)/admin/configuration/(top-admin)/role/[uuid]/edit',
-          { uuid },
-        ),
     },
-  } satisfies Record<Kind, unknown>;
+  } satisfies Record<AccessKind, unknown>;
 
   const config = $derived(KINDS[kind]);
   const name = $derived(config.name(data.row) ?? '');
 
   function edit(event: Event) {
     event.stopPropagation();
-    goto(config.editHref(data.cell));
+    goto(
+      resolve(
+        '/(picsure)/(authorized)/(admin)/admin/configuration/(top-admin)/[kind=accessKind]/[uuid]/edit',
+        { kind, uuid: data.cell },
+      ),
+    );
   }
 
   async function remove() {

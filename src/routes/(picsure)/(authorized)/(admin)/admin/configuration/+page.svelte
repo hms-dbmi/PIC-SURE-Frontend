@@ -198,7 +198,10 @@
                 <Button
                   variant="tonal"
                   data-testid="admin-role-add"
-                  href={resolve('admin/configuration/role/new')}
+                  href={resolve(
+                    '/(picsure)/(authorized)/(admin)/admin/configuration/(top-admin)/[kind=accessKind]/new',
+                    { kind: 'role' },
+                  )}
                 >
                   + Add Role
                 </Button>
@@ -230,7 +233,10 @@
                 <Button
                   variant="tonal"
                   data-testid="admin-privilege-add"
-                  href={resolve('admin/configuration/privilege/new')}
+                  href={resolve(
+                    '/(picsure)/(authorized)/(admin)/admin/configuration/(top-admin)/[kind=accessKind]/new',
+                    { kind: 'privilege' },
+                  )}
                 >
                   + Add Privilege
                 </Button>
@@ -262,7 +268,10 @@
                 <Button
                   variant="tonal"
                   data-testid="admin-connection-add"
-                  href={resolve('admin/configuration/connection/new')}
+                  href={resolve(
+                    '/(picsure)/(authorized)/(admin)/admin/configuration/(top-admin)/[kind=accessKind]/new',
+                    { kind: 'connection' },
+                  )}
                 >
                   + Add Connection
                 </Button>
