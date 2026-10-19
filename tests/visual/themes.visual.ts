@@ -213,6 +213,7 @@ const shots: Shot[] = [
 
 async function mockAdmin(page: Page) {
   await mockApiSuccess(page, '*/**/psama/user', users);
+  await mockApiSuccess(page, `*/**/psama/user/${users[0].uuid}`, users[0]);
   await mockApiSuccess(page, '*/**/psama/role', roles);
   await mockApiSuccess(page, '*/**/psama/connection', connections);
   await mockApiSuccess(page, '*/**/psama/privilege', privileges);

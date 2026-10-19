@@ -17,7 +17,6 @@
   interface Props {
     fields: KindedField[];
     testIdBase: string;
-    /** Renders one field. */
     field: Snippet<[KindedField]>;
     /** Tab-level controls, shown at the end of the search row. */
     actions: Snippet;
@@ -39,8 +38,8 @@
     return groups
       .map((g) => ({
         ...g,
-        fields: g.fields.filter((field) =>
-          `${humanizeKey(field.name)} ${field.name} ${field.description} ${g.groupLabel}`
+        fields: g.fields.filter((f) =>
+          `${humanizeKey(f.name)} ${f.name} ${f.description} ${g.groupLabel}`
             .toLowerCase()
             .includes(normalizedQuery),
         ),
