@@ -1,29 +1,22 @@
 <script lang="ts">
-  import { page } from '$app/state';
-
   import { config } from '#lib/config/config.svelte.ts';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import Content from '#lib/shell/Content.svelte';
   import UserForm from '#lib/admin/users/UserForm.svelte';
 
-  import type { ExtendedUser } from '#lib/auth/model/user.ts';
   import * as admin from '#lib/admin/entities.ts';
   import Loading from '#lib/ui/Loading.svelte';
+  import type { PageProps } from './$types';
 
-  let user: ExtendedUser = $state({
-    connection: '',
-    generalMetadata: '',
-    active: false,
-    roles: [],
-  });
+  let { params }: PageProps = $props();
 
-  async function load() {
-    await admin.users.load();
-    if (page.params?.uuid) {
-      user = await admin.users.get(page.params.uuid);
-    }
-    await admin.roles.load();
-    await admin.connections.load();
+  async function load(uuid: string) {
+    const [user] = await Promise.all([
+      admin.users.get(uuid),
+      admin.roles.load(),
+      admin.connections.load(),
+    ]);
+    return user;
   }
 </script>
 
@@ -32,15 +25,15 @@
 </svelte:head>
 
 <Content title="Edit User" backUrl="/admin/users" backTitle="Back to Users">
-  {#await load()}
+  {#await load(params.uuid)}
     <Loading />
-  {:then}
+  {:then user}
     <section id="admin-user-edit">
       <UserForm connections={admin.connections.items} roleList={admin.roles.options} {user} />
     </section>
   {:catch}
     <ErrorAlert title="API Error">
-      An error occurred while retrieving user {page.params.uuid}.
+      An error occurred while retrieving user {params.uuid}.
     </ErrorAlert>
   {/await}
 </Content>

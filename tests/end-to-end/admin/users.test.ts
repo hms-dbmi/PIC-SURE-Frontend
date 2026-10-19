@@ -216,4 +216,39 @@ test.describe('users', () => {
     await page.waitForURL(`**/admin/users/${mockUsers[0].uuid}/edit`);
     expect(page.url()).toContain(`/admin/users/${mockUsers[0].uuid}/edit`);
   });
+  test.describe('a user opened by URL', () => {
+    const [user] = mockUsers;
+    let listRequests = 0;
+
+    test.beforeEach(async ({ page }) => {
+      listRequests = 0;
+      page.on('request', (request) => {
+        if (new URL(request.url()).pathname.endsWith('/psama/user')) listRequests++;
+      });
+      await mockApiSuccess(page, `*/**/psama/user/${user.uuid}`, user);
+    });
+
+    test('Summary fetches the user by uuid', async ({ page }) => {
+      // When
+      await page.goto(`/admin/users/${user.uuid}`);
+      await userIsLoggedIn(page);
+
+      // Then
+      const summary = page.locator('#admin-user-view');
+      await expect(summary).toContainText(user.email);
+      await expect(summary).toContainText(user.connection.label);
+      await expect(summary).toContainText(user.roles[0].name);
+      expect(listRequests).toBe(0);
+    });
+
+    test('Edit form fetches the user by uuid', async ({ page }) => {
+      // When
+      await page.goto(`/admin/users/${user.uuid}/edit`);
+      await userIsLoggedIn(page);
+
+      // Then
+      await expect(page.getByLabel('Email:')).toHaveValue(user.email);
+      expect(listRequests).toBe(0);
+    });
+  });
 });

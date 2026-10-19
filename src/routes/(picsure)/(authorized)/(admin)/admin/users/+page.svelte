@@ -62,15 +62,12 @@
     uuid: Actions,
   };
 
-  async function load() {
-    await admin.connections.load();
-    await admin.roles.load();
-    await admin.users.load();
-  }
+  const load = () =>
+    Promise.all([admin.connections.load(), admin.roles.load(), admin.users.load()]);
 
   const rowClickHandler = (row: Indexable) => {
     const uuid = row?.uuid;
-    goto(resolve(`admin/users/${uuid}/edit`));
+    goto(resolve('/(picsure)/(authorized)/(admin)/admin/users/[uuid]/edit', { uuid }));
   };
 </script>
 
@@ -81,7 +78,11 @@
   {#await load()}<Loading />{:then}
     <div class="flex gap-4 mb-6">
       <div class="flex-auto">
-        <Button variant="tonal" data-testid="admin-user-add" href={resolve('admin/users/new')}>
+        <Button
+          variant="tonal"
+          data-testid="admin-user-add"
+          href={resolve('/(picsure)/(authorized)/(admin)/admin/users/new')}
+        >
           + Add User
         </Button>
       </div>

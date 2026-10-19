@@ -1,32 +1,26 @@
 <script lang="ts">
-  import { page } from '$app/state';
   import { config } from '#lib/config/config.svelte.ts';
 
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import Content from '#lib/shell/Content.svelte';
-  import type { ExtendedUser } from '#lib/auth/model/user.ts';
-  import type { Role } from '#lib/auth/model/role.ts';
-  import type { Connection } from '#lib/auth/model/connection.ts';
 
   import * as admin from '#lib/admin/entities.ts';
   import Loading from '#lib/ui/Loading.svelte';
+  import type { PageProps } from './$types';
 
-  let user: ExtendedUser = $state({
-    connection: '',
-    generalMetadata: '',
-    active: false,
-    roles: [],
-  });
-  let roles: Role[] = $state([]);
-  let connection: Connection | string = $state('');
+  let { params }: PageProps = $props();
 
-  async function load() {
-    await admin.users.load();
-    if (page.params?.uuid) {
-      user = await admin.users.get(page.params.uuid);
-      connection = (await admin.connections.get(user.connection)) || '';
-      roles = await Promise.all(user.roles.map((uuid) => admin.roles.get(uuid)));
-    }
+  async function load(uuid: string) {
+    const [user] = await Promise.all([
+      admin.users.get(uuid),
+      admin.connections.load(),
+      admin.roles.load(),
+    ]);
+    return {
+      user,
+      connection: await admin.connections.get(user.connection),
+      roles: await Promise.all(user.roles.map((role) => admin.roles.get(role))),
+    };
   }
 </script>
 
@@ -35,9 +29,9 @@
 </svelte:head>
 
 <Content title="User Summary" backUrl="/admin/users" backTitle="Back to Users">
-  {#await load()}
+  {#await load(params.uuid)}
     <Loading />
-  {:then}
+  {:then { user, connection, roles }}
     <section id="admin-user-view">
       <table class="table">
         <tbody>
@@ -61,7 +55,7 @@
           {/if}
           <tr>
             <td>Connection:</td>
-            <td>{typeof connection !== 'string' ? connection.label : user.connection}</td>
+            <td>{connection.label}</td>
           </tr>
           <tr>
             <td>Roles:</td>
@@ -72,7 +66,7 @@
     </section>
   {:catch}
     <ErrorAlert title="API Error">
-      An error occurred while retrieving user {page.params.uuid}.
+      An error occurred while retrieving user {params.uuid}.
     </ErrorAlert>
   {/await}
 </Content>

@@ -33,8 +33,8 @@ for (const { url, failing, entity } of [
     failing: '*/**/psama/connection/**',
     entity: 'connection',
   },
-  { url: `/admin/users/${UUID}`, failing: '*/**/psama/user', entity: 'user' },
-  { url: `/admin/users/${UUID}/edit`, failing: '*/**/psama/user', entity: 'user' },
+  { url: `/admin/users/${UUID}`, failing: '*/**/psama/user/**', entity: 'user' },
+  { url: `/admin/users/${UUID}/edit`, failing: '*/**/psama/user/**', entity: 'user' },
 ]) {
   test(`${url} names the ${entity} it failed to load`, async ({ page }) => {
     // Given

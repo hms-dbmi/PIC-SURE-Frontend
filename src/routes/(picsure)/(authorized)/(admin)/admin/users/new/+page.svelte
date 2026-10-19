@@ -7,10 +7,7 @@
   import * as admin from '#lib/admin/entities.ts';
   import Loading from '#lib/ui/Loading.svelte';
 
-  async function load() {
-    await admin.connections.load();
-    await admin.roles.load();
-  }
+  const load = () => Promise.all([admin.connections.load(), admin.roles.load()]);
 </script>
 
 <svelte:head>
