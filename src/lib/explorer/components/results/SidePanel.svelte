@@ -14,12 +14,8 @@
     panelOpen.set(true);
   }
 
-  // Open the panel whenever the filters change and there are some to show.
-  $effect(() => {
-    if (filterState.phenotypic.length !== 0) openPanel();
-  });
-
   onMount(() => {
+    if (filterState.phenotypic.length !== 0) openPanel();
     unsubExportStore = exports.subscribe((exportList) => {
       if (exportList?.length !== 0) {
         openPanel();

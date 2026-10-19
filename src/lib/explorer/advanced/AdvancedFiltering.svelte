@@ -681,7 +681,7 @@
           <OperatorBadge operator="AND" tone="neutral" />
         </div>
       {/if}
-      {#each filterState.genomic as gFilter (gFilter.uuid)}
+      {#each filterState.genomic as gFilter (gFilter.id)}
         <div
           class="{cardClass} flex flex-row gap-2 items-center p-4 bg-white opacity-75"
           data-testid="filter-genomic-item"

@@ -42,8 +42,6 @@ export class ResultCounts {
   #status = $state<ResultCountsStatus>('idle');
   #requestId = 0;
   #stopWatching: (() => void) | null = null;
-  #getIsOpenAccess = $state.raw<() => boolean>(() => false);
-  #descriptor = $derived(buildDescriptor(this.#getIsOpenAccess(), filterState.queryFilters));
 
   constructor(service: QueryCountService) {
     this.#service = service;
@@ -109,11 +107,11 @@ export class ResultCounts {
   /** Loads the count now and again whenever the filters change, until `stop()`. */
   start(getIsOpenAccess: () => boolean): void {
     this.stop();
-    this.#getIsOpenAccess = getIsOpenAccess;
     this.#stopWatching = $effect.root(() => {
+      const descriptor = $derived(buildDescriptor(getIsOpenAccess(), filterState.queryFilters));
       $effect(() => {
-        const descriptor = this.#descriptor;
-        untrack(() => void this.#runLoad(getIsOpenAccess, descriptor));
+        const current = descriptor;
+        untrack(() => void this.#runLoad(getIsOpenAccess, current));
       });
     });
   }

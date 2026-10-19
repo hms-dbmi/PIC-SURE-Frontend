@@ -22,7 +22,7 @@
       value: child,
       label: child,
       payload: child,
-      selected: genomicDraft.consequence.includes(child),
+      selected: genomicDraft.consequenceSelection.includes(child),
     }));
     return {
       name: 'severity',

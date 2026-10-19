@@ -8,7 +8,7 @@ import * as api from '#lib/api/client.ts';
 import { genomicDraft } from '#lib/query/genomicDraft.svelte.ts';
 import { optionsIn } from '../../../../../tests/support/helpers';
 
-vi.mock('$app/env', () => ({ browser: false }));
+vi.mock('$app/env', () => ({ browser: true }));
 
 vi.mock('#lib/api/client.ts', () => ({
   request: vi.fn(),

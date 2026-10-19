@@ -9,19 +9,49 @@ import {
 import type { GenomicClause } from '#lib/query/query.ts';
 import { buildRequest } from '#lib/query/build.ts';
 import variantData from '#lib/explorer/genomic/variant-data.json';
+import { assertNoSsrWrite } from '#lib/utils/ssrWrite.ts';
 
 const severityKeys = variantData.map((sev) => sev.key);
 
 /** The genomic filter page's unsaved selections, before they become a filter. */
 export class GenomicDraft {
-  genes: string[] = $state([]);
-  frequency: string[] = $state([]);
+  #genes: string[] = $state([]);
+  #frequency: string[] = $state([]);
+  #consequenceSelection: string[] = $state([]);
+  #snps: SNP[] = $state([]);
+  #consequences = $derived(
+    this.#consequenceSelection.filter((cons) => !severityKeys.includes(cons)),
+  );
+
+  get genes(): string[] {
+    return this.#genes;
+  }
+  set genes(genes: string[]) {
+    assertNoSsrWrite('genomicDraft');
+    this.#genes = genes;
+  }
+  get frequency(): string[] {
+    return this.#frequency;
+  }
+  set frequency(frequency: string[]) {
+    assertNoSsrWrite('genomicDraft');
+    this.#frequency = frequency;
+  }
   /** Selected consequences, including the severity group keys that select them. */
-  consequence: string[] = $state([]);
-  snps: SNP[] = $state([]);
-
-  #consequences = $derived(this.consequence.filter((cons) => !severityKeys.includes(cons)));
-
+  get consequenceSelection(): string[] {
+    return this.#consequenceSelection;
+  }
+  set consequenceSelection(selection: string[]) {
+    assertNoSsrWrite('genomicDraft');
+    this.#consequenceSelection = selection;
+  }
+  get snps(): SNP[] {
+    return this.#snps;
+  }
+  set snps(snps: SNP[]) {
+    assertNoSsrWrite('genomicDraft');
+    this.#snps = snps;
+  }
   /** The selected consequences without the severity group keys. */
   get consequences(): string[] {
     return this.#consequences;
@@ -44,7 +74,7 @@ export class GenomicDraft {
 
   loadGeneFilter(filter: GenomicFilterInterface) {
     this.genes = [...(filter?.Gene_with_variant || [])];
-    this.consequence = [...(filter?.Variant_consequence_calculated || [])];
+    this.consequenceSelection = [...(filter?.Variant_consequence_calculated || [])];
     this.frequency = [...(filter?.Variant_frequency_as_text || [])];
   }
 
@@ -55,7 +85,7 @@ export class GenomicDraft {
   clearGenes() {
     this.genes = [];
     this.frequency = [];
-    this.consequence = [];
+    this.consequenceSelection = [];
   }
 
   clearSnps() {
@@ -63,17 +93,17 @@ export class GenomicDraft {
   }
 
   addConsequence(consequence: string) {
-    this.consequence.push(consequence);
+    this.consequenceSelection = [...this.#consequenceSelection, consequence];
   }
 
   removeConsequence(consequence: string) {
-    this.consequence = this.consequence.filter((cons) => cons !== consequence);
+    this.consequenceSelection = this.#consequenceSelection.filter((cons) => cons !== consequence);
   }
 
   saveSnp(newSNP: SNP) {
     const index = this.snps.findIndex((snp) => snp.search === newSNP.search);
-    if (index >= 0) this.snps[index] = newSNP;
-    else this.snps.push(newSNP);
+    if (index >= 0) this.snps = this.snps.with(index, newSNP);
+    else this.snps = [...this.snps, newSNP];
   }
 
   deleteSnp(trash: SNP) {

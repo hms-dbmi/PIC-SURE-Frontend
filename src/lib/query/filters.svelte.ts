@@ -60,8 +60,7 @@ export class FilterState {
   #tree = $state.raw(restoreFilterTree());
   #genomic: Filter[] = $state(restoreGenomicFilters());
 
-  /** Set by the navigation guard; FilterWarning shows the matching dialog. */
-  warning: FilterWarningKind | undefined = $state();
+  #warning: FilterWarningKind | undefined = $state();
 
   // leafNodes returns FilterInterface[], narrow to the Filter union
   #phenotypic = $derived(this.#tree.leafNodes as Filter[]);
@@ -70,10 +69,18 @@ export class FilterState {
     $state.snapshot(toQueryFilters(this.#tree, this.#genomic)) as QueryFilters,
   );
 
+  /** The dialog FilterWarning shows. */
+  get warning(): FilterWarningKind | undefined {
+    return this.#warning;
+  }
+  set warning(kind: FilterWarningKind | undefined) {
+    assertNoSsrWrite('filters');
+    this.#warning = kind;
+  }
+
   get tree(): LogicTree<FilterInterface> {
     return this.#tree;
   }
-  /** The tree's leaves, in order. */
   get phenotypic(): Filter[] {
     return this.#phenotypic;
   }
@@ -242,14 +249,14 @@ export class FilterState {
       log(createLog('FILTER', 'filter.clear', { count, pageContext: getPageContext() }));
   }
 
-  /** Replaces the phenotypic tree (advanced filtering's Apply). */
+  /** Replaces the phenotypic tree. */
   setTree(tree: LogicTree<FilterInterface>) {
     assertNoSsrWrite('filters');
     this.#tree = tree;
     this.#persist();
   }
 
-  /** Replaces every filter (a dataset's Restore Filters). */
+  /** Replaces every filter. */
   restore(tree: LogicTree<FilterInterface>, genomic: Filter[]) {
     assertNoSsrWrite('filters');
     this.#tree = tree;
