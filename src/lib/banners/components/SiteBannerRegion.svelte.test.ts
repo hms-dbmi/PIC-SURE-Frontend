@@ -10,7 +10,6 @@ const navigation = vi.hoisted(() => ({
 }));
 const authentication = vi.hoisted(() => ({
   setHasValidToken: undefined as unknown as (value: boolean) => void,
-  setTokenStatus: undefined as unknown as (value: boolean) => void,
 }));
 
 vi.mock('$app/navigation', () => ({
@@ -27,14 +26,18 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
   getSessionId: () => 'session-1',
 }));
 
-// Keep token presence separate from validity to cover expired sessions on public routes.
-vi.mock('#lib/auth/User.ts', async () => {
-  const { writable } = await import('svelte/store');
+vi.mock('#lib/auth/session.svelte.ts', async () => {
+  const { fromStore, writable } = await import('svelte/store');
   const hasValidToken = writable(false);
-  const tokenStatus = writable(false);
+  const validity = fromStore(hasValidToken);
   authentication.setHasValidToken = (value) => hasValidToken.set(value);
-  authentication.setTokenStatus = (value) => tokenStatus.set(value);
-  return { hasValidToken, tokenStatus };
+  return {
+    session: {
+      get hasValidToken() {
+        return validity.current;
+      },
+    },
+  };
 });
 
 import SiteBannerRegion from '#lib/banners/components/SiteBannerRegion.svelte';
@@ -71,7 +74,6 @@ beforeEach(() => {
   vi.mocked(log).mockClear();
   vi.mocked(createLog).mockClear();
   authentication.setHasValidToken(false);
-  authentication.setTokenStatus(false);
   sessionStorage.clear();
 });
 
@@ -397,7 +399,6 @@ describe('SiteBannerRegion', () => {
 
   it('shows a changed hash only when its signed-in audience and parameterized page also match', async () => {
     authentication.setHasValidToken(true);
-    authentication.setTokenStatus(true);
     const targeted = {
       ...banner,
       audience: 'SIGNED_IN',
@@ -534,7 +535,6 @@ describe('SiteBannerRegion audience targeting', () => {
     'renders %s when signed in is %s: %s',
     async (audience, signedIn, rendered) => {
       authentication.setHasValidToken(signedIn);
-      authentication.setTokenStatus(signedIn);
       fetchMock.mockResolvedValue(
         new Response(JSON.stringify([{ ...banner, audience }]), { status: 200 }),
       );
@@ -672,7 +672,6 @@ describe('SiteBannerRegion audience targeting', () => {
 
   it('keeps filtering the same records after a later navigation', async () => {
     authentication.setHasValidToken(true);
-    authentication.setTokenStatus(true);
     fetchMock.mockResolvedValue(
       new Response(JSON.stringify([{ ...banner, audience: 'SIGNED_OUT' }]), { status: 200 }),
     );
@@ -689,7 +688,6 @@ describe('SiteBannerRegion audience targeting', () => {
 
   it('re-evaluates the rendered records when the session ends without refetching', async () => {
     authentication.setHasValidToken(true);
-    authentication.setTokenStatus(true);
     fetchMock.mockResolvedValue(
       new Response(
         JSON.stringify([
@@ -710,7 +708,6 @@ describe('SiteBannerRegion audience targeting', () => {
     expect(screen.getByRole('region', { name: 'For signed-in users' })).toBeInTheDocument();
 
     authentication.setHasValidToken(false);
-    authentication.setTokenStatus(false);
 
     await waitFor(() =>
       expect(screen.getByRole('region', { name: 'For signed-out visitors' })).toBeInTheDocument(),
@@ -720,7 +717,6 @@ describe('SiteBannerRegion audience targeting', () => {
   });
 
   it('treats a present but expired token as signed out', async () => {
-    authentication.setTokenStatus(true);
     authentication.setHasValidToken(false);
     fetchMock.mockResolvedValue(
       new Response(

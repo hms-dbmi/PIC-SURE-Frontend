@@ -3,14 +3,13 @@
   import Button from '#lib/ui/Button.svelte';
   import { slide } from 'svelte/transition';
   import ConfirmDialog from '#lib/ui/dialog/ConfirmDialog.svelte';
+  import { BANNER_AUDIENCE_LABELS, type ManagementRecord } from '#lib/banners/model/banner.ts';
   import {
-    BANNER_APPEARANCE_DETAILS,
-    BANNER_AUDIENCE_LABELS,
-    type ManagementRecord,
-  } from '#lib/banners/model/banner.ts';
+    BANNER_APPEARANCE_PRESENTATION,
+    BANNER_LIFECYCLE_PRESENTATION,
+  } from '#lib/banners/components/presentation.ts';
   import { truncate } from '#lib/utils/strings.ts';
   import { useSortable } from '@dnd-kit-svelte/svelte/sortable';
-  import { tones } from '#lib/ui/surface.ts';
 
   interface Props {
     banner: ManagementRecord;
@@ -65,21 +64,7 @@
     },
   });
   const noopAttachment = () => {};
-  const lifecycleLabels = {
-    ACTIVE: 'Active',
-    SCHEDULED: 'Scheduled',
-    SAVED: 'Saved',
-    DISABLED: 'Disabled',
-    EXPIRED: 'Expired',
-  } as const;
-  const lifecycleBadgeClasses = {
-    ACTIVE: tones['tonal-success'],
-    SCHEDULED: 'bg-surface-200',
-    SAVED: tones['tonal-primary'],
-    DISABLED: 'bg-surface-200',
-    EXPIRED: 'bg-surface-200',
-  } as const;
-
+  const lifecycle = $derived(BANNER_LIFECYCLE_PRESENTATION[banner.lifecycle]);
   const panelId = $derived(`banner-${banner.uuid}-details`);
   const editable = $derived(banner.lifecycle === 'SAVED' || banner.status === 'PUBLISHED');
   const disableable = $derived(banner.lifecycle === 'ACTIVE' || banner.lifecycle === 'SCHEDULED');
@@ -150,15 +135,11 @@
           {banner.excerpt}
         </p>
         <div class="mt-2 flex flex-wrap items-center gap-2 text-sm text-surface-600">
-          <span
-            class="rounded-full px-2 py-1 font-bold uppercase {lifecycleBadgeClasses[
-              banner.lifecycle
-            ]}"
-          >
-            {lifecycleLabels[banner.lifecycle]}
+          <span class="rounded-full px-2 py-1 font-bold uppercase {lifecycle.badgeClass}">
+            {lifecycle.label}
           </span>
           <span
-            >{BANNER_APPEARANCE_DETAILS[banner.appearance].label} · {banner.dismissible
+            >{BANNER_APPEARANCE_PRESENTATION[banner.appearance].label} · {banner.dismissible
               ? 'Dismissible'
               : 'Permanent'}</span
           >
@@ -240,8 +221,9 @@
       </section>
     {/if}
     <span
-      class="banner-appearance-bar block h-1 w-full {BANNER_APPEARANCE_DETAILS[banner.appearance]
-        .swatchClass}"
+      class="banner-appearance-bar block h-1 w-full {BANNER_APPEARANCE_PRESENTATION[
+        banner.appearance
+      ].swatchClass}"
       aria-hidden="true"
     ></span>
   </article>

@@ -1,13 +1,9 @@
 <script lang="ts">
-  import type {
-    BannerAppearance,
-    BannerIcon,
-    BannerPresentation,
-  } from '#lib/banners/model/banner.ts';
-  import { BANNER_LABEL_LENGTH } from '#lib/banners/model/banner.ts';
+  import type { BannerIcon, BannerPresentation } from '#lib/banners/model/banner.ts';
+  import { BANNER_LABEL_LENGTH } from '#lib/banners/model/limits.ts';
+  import { BANNER_APPEARANCE_PRESENTATION } from '#lib/banners/components/presentation.ts';
   import { sanitizeBannerHTML } from '#lib/banners/model/html.ts';
   import { truncate } from '#lib/utils/strings.ts';
-  import { tones } from '#lib/ui/surface.ts';
 
   let {
     banner,
@@ -22,16 +18,6 @@
   } = $props();
 
   const titleId = $props.id();
-
-  const toneClasses: Record<BannerAppearance, string> = {
-    PRIMARY: `${tones['tonal-primary']} border-primary-500`,
-    SECONDARY: `${tones['tonal-secondary']} border-secondary-500`,
-    TERTIARY: `${tones['tonal-tertiary']} border-tertiary-500`,
-    SUCCESS: `${tones['tonal-success']} border-success-500`,
-    WARNING: `${tones['tonal-warning']} border-warning-500`,
-    ERROR: `${tones['tonal-error']} border-error-500`,
-    SURFACE: `${tones['tonal-surface']} border-surface-500`,
-  };
 
   const iconClasses: Record<BannerIcon, string | undefined> = {
     NONE: undefined,
@@ -50,7 +36,8 @@
   aria-labelledby={banner.title ? titleId : undefined}
   aria-label={banner.title ? undefined : untitledName}
   data-testid="banner-item"
-  class="w-full border-b-4 px-4 py-1.5 {toneClasses[banner.appearance]}"
+  class="w-full border-b-4 px-4 py-1.5 {BANNER_APPEARANCE_PRESENTATION[banner.appearance]
+    .toneClass}"
 >
   <div
     class="site-banner-layout mx-auto grid w-full items-center gap-3"

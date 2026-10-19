@@ -5,32 +5,19 @@
   import { truncate } from '#lib/utils/strings.ts';
   import { createLog, log } from '#lib/telemetry/logger.ts';
   import type { ActiveBanner, BannerAudience } from '#lib/banners/model/banner.ts';
-  import {
-    BANNER_APPEARANCES,
-    BANNER_AUDIENCES,
-    BANNER_ICONS,
-    BANNER_LABEL_LENGTH,
-  } from '#lib/banners/model/banner.ts';
+  import { BANNER_LABEL_LENGTH } from '#lib/banners/model/limits.ts';
+  import { parseBannerFeed } from '#lib/banners/model/feed.ts';
   import { getActiveBanners } from '#lib/api/picsure/banners.ts';
-  import { hasValidToken } from '#lib/auth/User.ts';
+  import { session } from '#lib/auth/session.svelte.ts';
   import SiteBanner from '#lib/banners/components/SiteBanner.svelte';
   import LiveRegion from '#lib/ui/LiveRegion.svelte';
   import { createAnnouncer } from '#lib/ui/announcer.svelte.ts';
-  import {
-    matchesBannerPageTargets,
-    parseBannerPageTargets,
-  } from '#lib/banners/model/pageTargets.ts';
+  import { matchesBannerPageTargets } from '#lib/banners/model/pageTargets.ts';
   import {
     readBannerDismissals,
     writeBannerDismissals,
     type BannerDismissals,
   } from '#lib/banners/model/dismissal.ts';
-
-  const appearances = new Set<unknown>(BANNER_APPEARANCES);
-  const icons = new Set<unknown>(BANNER_ICONS);
-  const audiences = new Set<unknown>(BANNER_AUDIENCES);
-
-  type BannerFeedRecord = Omit<ActiveBanner, 'placement'> & { placement: string };
 
   type PresentedBanner = ActiveBanner & { plainText: string };
 
@@ -46,7 +33,7 @@
 
   let dismissals: BannerDismissals = $state(readBannerDismissals());
 
-  // Public routes do not hydrate the user store, so use token validity for audience filtering.
+  // Public routes don't load the user profile, so audience filtering goes by token validity.
   const visibleBanners = $derived(
     banners.filter(
       (banner) =>
@@ -57,8 +44,8 @@
   );
 
   function matchesAudience(audience: BannerAudience): boolean {
-    if (audience === 'SIGNED_IN') return $hasValidToken;
-    if (audience === 'SIGNED_OUT') return !$hasValidToken;
+    if (audience === 'SIGNED_IN') return session.hasValidToken;
+    if (audience === 'SIGNED_OUT') return !session.hasValidToken;
     return true;
   }
 
@@ -118,30 +105,6 @@
     }
   }
 
-  function normalizeBannerFeedRecord(value: unknown): BannerFeedRecord | null {
-    if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
-    const banner = value as Record<string, unknown>;
-    const pageTargets = parseBannerPageTargets(banner.pageTargets);
-
-    if (
-      typeof banner.uuid === 'string' &&
-      typeof banner.htmlContent === 'string' &&
-      (banner.title === null || typeof banner.title === 'string') &&
-      appearances.has(banner.appearance) &&
-      icons.has(banner.icon) &&
-      typeof banner.dismissible === 'boolean' &&
-      audiences.has(banner.audience) &&
-      typeof banner.placement === 'string' &&
-      pageTargets !== null &&
-      typeof banner.priority === 'number' &&
-      Number.isFinite(banner.priority) &&
-      typeof banner.presentationHash === 'string'
-    ) {
-      return { ...banner, pageTargets } as BannerFeedRecord;
-    }
-    return null;
-  }
-
   async function refreshBanners(currentPathname: string, pageLoad: boolean): Promise<void> {
     fallbackText = '';
     pathname = currentPathname;
@@ -149,21 +112,19 @@
     try {
       const feed = await getActiveBanners();
       if (revision !== refreshRevision) return;
-      if (!Array.isArray(feed)) throw new Error('Banner feed returned an invalid response');
-
-      const validRecords = feed.map(normalizeBannerFeedRecord).filter((record) => record !== null);
-      banners = validRecords
-        .filter((banner): banner is ActiveBanner => banner.placement === 'SITE_TOP')
-        .map((banner) => ({ ...banner, plainText: bannerPlainText(banner.htmlContent) }));
+      const parsed = parseBannerFeed(feed);
+      banners = parsed.banners.map((banner) => ({
+        ...banner,
+        plainText: bannerPlainText(banner.htmlContent),
+      }));
 
       if (pageLoad) {
         for (const banner of visibleBanners) announced[banner.uuid] = banner.presentationHash;
       }
-      const malformedRecords = feed.length - validRecords.length;
-      if (malformedRecords > 0) {
+      if (parsed.malformed > 0) {
         log(
           createLog('ERROR', 'banner.feed_malformed_records', {
-            malformedRecords,
+            malformedRecords: parsed.malformed,
           }),
         );
       }

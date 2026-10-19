@@ -1,9 +1,9 @@
-import {
-  BANNER_LABEL_LENGTH,
-  type BannerLifecycle,
-  type ManagedBanner,
-  type ManagementRecord,
+import type {
+  BannerLifecycle,
+  ManagedBanner,
+  ManagementRecord,
 } from '#lib/banners/model/banner.ts';
+import { BANNER_EXCERPT_LENGTH, BANNER_LABEL_LENGTH } from '#lib/banners/model/limits.ts';
 import { bannerPlainText } from '#lib/banners/model/html.ts';
 import { isAllPagesBannerTarget } from '#lib/banners/model/pageTargets.ts';
 import { truncate } from '#lib/utils/strings.ts';
@@ -16,11 +16,9 @@ export interface BannerListState {
   savedOrderUuids: string[];
 }
 
-const MAX_EXCERPT_LENGTH = 160;
-
 export function presentBanner(banner: ManagedBanner): ManagementRecord {
   const plainText = bannerPlainText(banner.htmlContent);
-  return { ...banner, plainText, excerpt: truncate(plainText, MAX_EXCERPT_LENGTH) };
+  return { ...banner, plainText, excerpt: truncate(plainText, BANNER_EXCERPT_LENGTH) };
 }
 
 export function bannerActionLabels(records: ManagementRecord[]): Map<string, string> {

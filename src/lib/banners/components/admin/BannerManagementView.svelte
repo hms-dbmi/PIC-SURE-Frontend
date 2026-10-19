@@ -6,27 +6,9 @@
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import Loading from '#lib/ui/Loading.svelte';
   import ConfirmDialog from '#lib/ui/dialog/ConfirmDialog.svelte';
-  import type { ManagedBanner, ManagementRecord } from '#lib/banners/model/banner.ts';
-  import {
-    archiveBanner,
-    disableBanner,
-    getManagedBanners,
-    reorderBanners,
-  } from '#lib/api/picsure/banners.ts';
-  import {
-    adoptCanonicalBannerOrder,
-    bannerActionLabels,
-    broadBannerOverlapCount,
-    initialBannerListState,
-    lifecycleTabCounts,
-    lifecycleTabFor,
-    reconcileBannerArchived,
-    reconcileBannerDisabled,
-    reconcileBannerSuccess,
-    visibleBannerRecords,
-    type BannerListState,
-    type LifecycleTab,
-  } from '#lib/banners/model/list.ts';
+  import type { ManagedBanner } from '#lib/banners/model/banner.ts';
+  import type { LifecycleTab } from '#lib/banners/model/list.ts';
+  import { BannerQueue } from '#lib/banners/queue.svelte.ts';
   import {
     Accessibility,
     defaultPreset,
@@ -39,7 +21,6 @@
   import Tabs from '#lib/ui/Tabs.svelte';
   import { createAnnouncer } from '#lib/ui/announcer.svelte.ts';
   import { createUnsavedGuard } from '#lib/ui/unsavedGuard.svelte.ts';
-  import { toaster } from '#lib/ui/toaster.ts';
   import {
     DragDropProvider,
     DragOverlay,
@@ -70,39 +51,28 @@
     ontabchangerequestresolve = () => {},
   }: Props = $props();
 
-  let records: ManagementRecord[] = $state([]);
-  let loading = $state(true);
-  let failed = $state(false);
-  let activeTab: LifecycleTab = $state('orderable');
+  const queue = new BannerQueue();
   let lifecycleTabList: ReturnType<typeof Tabs<LifecycleTab>> | undefined = $state();
-  let search = $state('');
   let openUuid: string | null = $state(null);
   let mode: 'list' | 'create' | 'edit' | 'restore' = $state('list');
   let editingBanner: ManagedBanner | null = $state(null);
   let arrivalUuid: string | null = $state(null);
   let arrivalTimeout: number | undefined;
-  let orderUuids: string[] = $state([]);
-  let savedOrderUuids: string[] = $state([]);
   let activeDragUuid: string | null = $state(null);
   let dragStartOrder: string[] = [];
   let dragTargetUuid: string | null = null;
-  let savingOrder = $state(false);
   const sensors = [KeyboardSensor, PointerSensor];
-  const orderDirty = $derived(orderUuids.join() !== savedOrderUuids.join());
   let editorDirty = $state(false);
-  let disablingUuid: string | null = $state(null);
-  let archivingUuid: string | null = $state(null);
-  const orderGuard = createUnsavedGuard<OrderTransition>(() => mode === 'list' && orderDirty);
+  const orderGuard = createUnsavedGuard<OrderTransition>(() => mode === 'list' && queue.orderDirty);
 
-  const actionLabels = $derived(bannerActionLabels(records));
-  function reorderDescription(uuid: string, position = orderUuids.indexOf(uuid) + 1): string {
-    return `${actionLabels.get(uuid) ?? 'banner'}. Position ${position} of ${orderUuids.length}.`;
+  function reorderDescription(uuid: string, position = queue.orderUuids.indexOf(uuid) + 1): string {
+    return `${queue.actionLabels.get(uuid) ?? 'banner'}. Position ${position} of ${queue.orderUuids.length}.`;
   }
 
   function announceMove({ operation: { source, target } }: Parameters<DragOverEvent>[0]) {
     if (!source || !target || source.id === target.id || String(target.id) === dragTargetUuid)
       return;
-    const destination = orderUuids.indexOf(String(target.id));
+    const destination = queue.orderUuids.indexOf(String(target.id));
     if (destination < 0) return;
     // The plugin runs before handleDragOver applies the destination to the working order.
     return `Moved ${reorderDescription(String(source.id), destination + 1)}`;
@@ -118,7 +88,7 @@
             dragend: ({ operation: { source }, canceled }: Parameters<DragEndEvent>[0]) =>
               source
                 ? canceled
-                  ? `Reordering ${actionLabels.get(String(source.id)) ?? 'banner'} canceled.`
+                  ? `Reordering ${queue.actionLabels.get(String(source.id)) ?? 'banner'} canceled.`
                   : `Dropped ${reorderDescription(String(source.id))}`
                 : undefined,
           },
@@ -126,14 +96,10 @@
       : plugin,
   );
 
-  const counts = $derived(lifecycleTabCounts(records));
-  const broadOverlapCount = $derived(broadBannerOverlapCount({ records, orderUuids }));
-  const visibleRecords = $derived(visibleBannerRecords({ records, orderUuids }, activeTab, search));
-
   const searchAnnouncer = createAnnouncer({ delay: 250 });
   $effect(() => {
-    const query = search.trim();
-    const count = visibleRecords.length;
+    const query = queue.search.trim();
+    const count = queue.visible.length;
     void searchAnnouncer.announce(
       `${count} ${count === 1 ? 'banner' : 'banners'} ${
         query ? (count === 1 ? 'matches this search.' : 'match this search.') : 'in this section.'
@@ -141,25 +107,7 @@
     );
   });
 
-  function applyList(next: BannerListState) {
-    records = next.records;
-    orderUuids = next.orderUuids;
-    savedOrderUuids = next.savedOrderUuids;
-  }
-
-  function currentList(): BannerListState {
-    return { records, orderUuids, savedOrderUuids };
-  }
-
-  onMount(async () => {
-    try {
-      applyList(initialBannerListState(await getManagedBanners()));
-    } catch {
-      failed = true;
-    } finally {
-      loading = false;
-    }
-  });
+  onMount(() => queue.load());
 
   onDestroy(() => {
     if (arrivalTimeout !== undefined) window.clearTimeout(arrivalTimeout);
@@ -167,7 +115,7 @@
   });
 
   $effect(() => {
-    ondirtychange(mode === 'list' ? orderDirty : editorDirty);
+    ondirtychange(mode === 'list' ? queue.orderDirty : editorDirty);
   });
 
   $effect(() => {
@@ -177,7 +125,7 @@
   });
 
   function createBanner() {
-    if (savingOrder) return;
+    if (queue.savingOrder) return;
     if (orderGuard.intercept({ kind: 'create' })) return;
     openCreateEditor();
   }
@@ -188,7 +136,7 @@
   }
 
   function editBanner(banner: ManagedBanner) {
-    if (savingOrder) return;
+    if (queue.savingOrder) return;
     if (orderGuard.intercept({ kind: 'edit', banner })) return;
     openEditor(banner);
   }
@@ -202,19 +150,19 @@
     // A pending order save still has a follow-up getManagedBanners() in flight. Letting a
     // restore commit underneath it would let that older response replace the authoritative
     // restore reconciliation with the archived source and drop the new occurrence.
-    if (savingOrder) return;
+    if (queue.savingOrder) return;
     editingBanner = banner;
     mode = 'restore';
   }
 
   function selectLifecycleTab(tab: LifecycleTab, focus = false) {
-    if (tab === activeTab) return;
+    if (tab === queue.tab) return;
     if (orderGuard.intercept({ kind: 'lifecycle-tab', tab, focus })) return;
     applyLifecycleTab(tab, focus);
   }
 
   function applyLifecycleTab(tab: LifecycleTab, focus = false) {
-    activeTab = tab;
+    queue.tab = tab;
     openUuid = null;
     if (focus) lifecycleTabList?.focusTab(tab);
   }
@@ -226,7 +174,7 @@
 
   async function discardOrderChanges() {
     const transition = orderGuard.take();
-    orderUuids = [...savedOrderUuids];
+    queue.discardOrderChanges();
     if (!transition) return;
 
     if (transition.kind === 'configuration-tab') {
@@ -243,42 +191,17 @@
   }
 
   async function disable(uuid: string) {
-    if (savingOrder || disablingUuid) return;
-    disablingUuid = uuid;
-    try {
-      const disabled = await disableBanner(uuid);
-      applyList(reconcileBannerDisabled(currentList(), disabled));
-      if (openUuid === disabled.uuid) openUuid = null;
-      toaster.success({ title: 'Banner disabled' });
-    } catch {
-      toaster.error({
-        title: 'Banner could not be disabled',
-        description: 'The banner is unchanged. Check your connection and try again.',
-      });
-    } finally {
-      disablingUuid = null;
-    }
+    const disabled = await queue.disable(uuid);
+    if (disabled && openUuid === disabled.uuid) openUuid = null;
   }
 
   async function archive(uuid: string) {
-    if (savingOrder || archivingUuid) return;
-    archivingUuid = uuid;
-    try {
-      const archived = await archiveBanner(uuid);
-      applyList(reconcileBannerArchived(currentList(), archived.uuid));
-      if (openUuid === archived.uuid) openUuid = null;
-      if (editingBanner?.uuid === archived.uuid) {
-        mode = 'list';
-        editingBanner = null;
-      }
-      toaster.success({ title: 'Banner archived' });
-    } catch {
-      toaster.error({
-        title: 'Banner could not be archived',
-        description: 'The banner is unchanged. Check your connection and try again.',
-      });
-    } finally {
-      archivingUuid = null;
+    const archived = await queue.archive(uuid);
+    if (!archived) return;
+    if (openUuid === archived) openUuid = null;
+    if (editingBanner?.uuid === archived) {
+      mode = 'list';
+      editingBanner = null;
     }
   }
 
@@ -297,9 +220,7 @@
     sourceUuid: string | null = null,
     openDetails = false,
   ) {
-    applyList(reconcileBannerSuccess(currentList(), banner, sourceUuid));
-    activeTab = lifecycleTabFor(banner.lifecycle);
-    search = '';
+    queue.adopt(banner, sourceUuid);
     openUuid = openDetails ? banner.uuid : null;
     mode = 'list';
     editingBanner = null;
@@ -316,57 +237,31 @@
 
   function handleDragStart(event: Parameters<DragStartEvent>[0]) {
     const source = event?.operation?.source;
-    if (!source || savingOrder || activeTab !== 'orderable' || search.trim()) return;
+    if (!source || queue.savingOrder || !queue.ordering) return;
     activeDragUuid = String(source.id);
-    dragStartOrder = [...orderUuids];
+    dragStartOrder = [...queue.orderUuids];
     dragTargetUuid = activeDragUuid;
   }
 
   function handleDragOver(event: Parameters<DragOverEvent>[0]) {
-    if (savingOrder || !activeDragUuid) return;
+    if (queue.savingOrder || !activeDragUuid) return;
     const targetUuid = event?.operation?.target?.id;
     if (!targetUuid || targetUuid === activeDragUuid || targetUuid === dragTargetUuid) return;
-    const sourceIndex = orderUuids.indexOf(activeDragUuid);
-    const targetIndex = orderUuids.indexOf(String(targetUuid));
+    const sourceIndex = queue.orderUuids.indexOf(activeDragUuid);
+    const targetIndex = queue.orderUuids.indexOf(String(targetUuid));
     if (sourceIndex < 0 || targetIndex < 0) return;
-    const next = [...orderUuids];
+    const next = [...queue.orderUuids];
     const [moved] = next.splice(sourceIndex, 1);
     next.splice(targetIndex, 0, moved);
-    orderUuids = next;
+    queue.orderUuids = next;
     dragTargetUuid = String(targetUuid);
   }
 
   function handleDragEnd(event: Parameters<DragEndEvent>[0]) {
-    if (event.canceled) orderUuids = dragStartOrder;
+    if (event.canceled) queue.orderUuids = dragStartOrder;
     activeDragUuid = null;
     dragTargetUuid = null;
     dragStartOrder = [];
-  }
-
-  async function saveOrder() {
-    if (savingOrder || disablingUuid || archivingUuid) return;
-    savingOrder = true;
-    try {
-      const authoritative = await reorderBanners(orderUuids);
-      applyList(adoptCanonicalBannerOrder(currentList(), authoritative));
-      try {
-        applyList(initialBannerListState(await getManagedBanners()));
-      } catch {
-        // The reorder already committed. Keep its canonical response instead of reporting a false mutation failure.
-      }
-      toaster.success({ title: 'Banner order saved' });
-    } catch {
-      toaster.error({
-        title: 'Banner order could not be saved',
-        description: 'The order was not saved. Review the current queue and try again.',
-      });
-    } finally {
-      savingOrder = false;
-    }
-  }
-
-  function cancelOrderChanges() {
-    orderUuids = [...savedOrderUuids];
   }
 </script>
 
@@ -407,25 +302,25 @@
         <h2 id="banner-management-title" class="m-0">Site banners</h2>
         <p class="m-0">Create and manage announcements across PIC-SURE.</p>
       </div>
-      <Button disabled={savingOrder} onclick={createBanner}>+ Create banner</Button>
+      <Button disabled={queue.savingOrder} onclick={createBanner}>+ Create banner</Button>
     </header>
 
-    {#if broadOverlapCount >= 4}
+    {#if queue.broadOverlapCount >= 4}
       <div class="mt-5">
         <ErrorAlert
           data-testid="banner-overlap-warning"
           title="Broad banner overlap"
           color="warning"
         >
-          {broadOverlapCount} published banners currently target Everyone and All pages. They may appear
-          together.
+          {queue.broadOverlapCount} published banners currently target Everyone and All pages. They may
+          appear together.
         </ErrorAlert>
       </div>
     {/if}
 
-    {#if loading}
+    {#if queue.loading}
       <Loading />
-    {:else if failed}
+    {:else if queue.failed}
       <div class="mt-6">
         <ErrorAlert title="API Error">Site banners could not be loaded.</ErrorAlert>
       </div>
@@ -437,16 +332,22 @@
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        {#if activeTab === 'orderable' && !search.trim() && (orderDirty || savingOrder)}
+        {#if queue.ordering && (queue.orderDirty || queue.savingOrder)}
           <div class="mt-5 flex justify-end gap-3">
-            <Button variant="tint" disabled={savingOrder} onclick={cancelOrderChanges}>
+            <Button
+              variant="tint"
+              disabled={queue.savingOrder}
+              onclick={() => queue.discardOrderChanges()}
+            >
               Cancel order changes
             </Button>
             <Button
-              disabled={savingOrder || disablingUuid !== null || archivingUuid !== null}
-              onclick={saveOrder}
+              disabled={queue.savingOrder ||
+                queue.disablingUuid !== null ||
+                queue.archivingUuid !== null}
+              onclick={() => queue.saveOrder()}
             >
-              {savingOrder ? 'Saving order...' : 'Save order'}
+              {queue.savingOrder ? 'Saving order...' : 'Save order'}
             </Button>
           </div>
         {/if}
@@ -456,35 +357,37 @@
           label="Banner lifecycle states"
           data-testid="banner-lifecycle-tabs"
           tabs={lifecycleTabs}
-          value={activeTab}
+          value={queue.tab}
           onchange={(tab, { focus }) => selectLifecycleTab(tab, focus)}
           bind:this={lifecycleTabList}
         >
           {#snippet tab({ value, label })}
             {label}
-            <span class="ml-1 rounded-full bg-surface-200 px-2 py-1 text-xs">{counts[value]}</span>
+            <span class="ml-1 rounded-full bg-surface-200 px-2 py-1 text-xs"
+              >{queue.counts[value]}</span
+            >
           {/snippet}
           {#snippet panel(tab)}
-            {#if tab === activeTab}
+            {#if tab === queue.tab}
               <SearchInput
                 class="mt-5 w-full max-w-sm"
                 placeholder="Search banner text"
                 label="Search banner text"
                 data-testid="banner-search"
-                bind:value={search}
+                bind:value={queue.search}
               />
 
               <LiveRegion message={searchAnnouncer.message} aria-label="Banner search results" />
 
               <div class="mt-5 grid min-w-0 gap-3">
-                {#if visibleRecords.length === 0}
+                {#if queue.visible.length === 0}
                   <p class="rounded border border-surface-300 p-6 text-center text-surface-600">
-                    {search.trim()
+                    {queue.search.trim()
                       ? 'No banners match this search.'
                       : 'No banners in this section.'}
                   </p>
                 {:else}
-                  {#each visibleRecords as banner (banner.uuid)}
+                  {#each queue.visible as banner (banner.uuid)}
                     <div
                       data-banner-row={banner.uuid}
                       class="min-w-0"
@@ -492,28 +395,28 @@
                     >
                       <BannerManagementRow
                         {banner}
-                        actionLabel={actionLabels.get(banner.uuid)!}
+                        actionLabel={queue.actionLabels.get(banner.uuid)!}
                         open={openUuid === banner.uuid}
                         ontoggle={() => (openUuid = openUuid === banner.uuid ? null : banner.uuid)}
                         onedit={() => editBanner(banner)}
                         ondisable={() => disable(banner.uuid)}
                         onarchive={() => archive(banner.uuid)}
                         onrestore={() => restoreBanner(banner)}
-                        orderable={activeTab === 'orderable' &&
-                          !search.trim() &&
-                          !savingOrder &&
-                          orderUuids.includes(banner.uuid)}
-                        position={activeTab === 'orderable' && orderUuids.includes(banner.uuid)
-                          ? orderUuids.indexOf(banner.uuid) + 1
+                        orderable={queue.ordering &&
+                          !queue.savingOrder &&
+                          queue.orderUuids.includes(banner.uuid)}
+                        position={queue.tab === 'orderable' &&
+                        queue.orderUuids.includes(banner.uuid)
+                          ? queue.orderUuids.indexOf(banner.uuid) + 1
                           : null}
-                        index={orderUuids.indexOf(banner.uuid)}
+                        index={queue.orderUuids.indexOf(banner.uuid)}
                         activeId={activeDragUuid}
-                        busy={savingOrder ||
-                          archivingUuid === banner.uuid ||
-                          disablingUuid === banner.uuid}
-                        disableDisabled={disablingUuid !== null}
-                        restoreDisabled={savingOrder}
-                        archiveDisabled={archivingUuid !== null}
+                        busy={queue.savingOrder ||
+                          queue.archivingUuid === banner.uuid ||
+                          queue.disablingUuid === banner.uuid}
+                        disableDisabled={queue.disablingUuid !== null}
+                        restoreDisabled={queue.savingOrder}
+                        archiveDisabled={queue.archivingUuid !== null}
                       />
                     </div>
                   {/each}
@@ -524,11 +427,11 @@
         </Tabs>
         <DragOverlay>
           {#if activeDragUuid}
-            {@const activeBanner = records.find((banner) => banner.uuid === activeDragUuid)}
+            {@const activeBanner = queue.records.find((banner) => banner.uuid === activeDragUuid)}
             {#if activeBanner}
               <BannerManagementRow
                 banner={activeBanner}
-                actionLabel={actionLabels.get(activeBanner.uuid)!}
+                actionLabel={queue.actionLabels.get(activeBanner.uuid)!}
                 open={false}
                 ontoggle={() => {}}
                 onedit={() => {}}
@@ -536,8 +439,8 @@
                 onarchive={() => {}}
                 onrestore={() => {}}
                 orderable={true}
-                position={orderUuids.indexOf(activeBanner.uuid) + 1}
-                index={orderUuids.indexOf(activeBanner.uuid)}
+                position={queue.orderUuids.indexOf(activeBanner.uuid) + 1}
+                index={queue.orderUuids.indexOf(activeBanner.uuid)}
                 isOverlay={true}
               />
             {/if}
