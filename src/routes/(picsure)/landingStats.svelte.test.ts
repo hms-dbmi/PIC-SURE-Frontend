@@ -24,6 +24,8 @@ function setup() {
   return { transport, stats: new LandingStats(createQueryCountService({ transport })) };
 }
 
+const jwt = (sub: string) => `header.${btoa(JSON.stringify({ sub }))}.signature`;
+
 const counts = () => new Promise((resolve) => setTimeout(resolve));
 
 afterEach(() => session.removeToken());
@@ -53,17 +55,33 @@ describe('LandingStats', () => {
   it('reloads the signed-in stats when another user signs in', async () => {
     const { transport, stats } = setup();
     vi.spyOn(session, 'ensureConsentsLoaded').mockResolvedValue({});
-    session.setToken('first-user');
+    session.setToken(jwt('first-user'));
     await stats.load();
     await counts();
 
     session.removeToken();
-    session.setToken('second-user');
+    session.setToken(jwt('second-user'));
     transport.mockResolvedValue(20);
     await stats.load();
     await counts();
 
     expect(stats.auth.map((stat) => stat.snapshot?.count)).toEqual([20]);
+  });
+
+  it("drops the previous user's counts before the next user's consents load", async () => {
+    const { stats } = setup();
+    vi.spyOn(session, 'ensureConsentsLoaded').mockResolvedValue({});
+    session.setToken(jwt('first-user'));
+    await stats.load();
+    await counts();
+
+    session.removeToken();
+    session.setToken(jwt('second-user'));
+    vi.spyOn(session, 'ensureConsentsLoaded').mockReturnValue(new Promise(() => {}));
+    void stats.load();
+    await counts();
+
+    expect(stats.auth.map((stat) => stat.snapshot)).toEqual([undefined]);
   });
 
   it("ignores a superseded load's late counts", async () => {

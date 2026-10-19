@@ -1,6 +1,7 @@
 import { isToastShowing, toaster } from '#lib/ui/toaster.ts';
 import { config } from '#lib/config/config.svelte.ts';
 import { session } from '#lib/auth/session.svelte.ts';
+import { tokenSubject } from '#lib/auth/token.ts';
 import { runSyncQuery } from '#lib/api/picsure/query.ts';
 import { buildDescriptor } from '#lib/query/descriptor.svelte.ts';
 import { isCountValueEqual } from '#lib/query/counts/format.ts';
@@ -33,7 +34,7 @@ export class LandingStats {
   }
 
   async load() {
-    assertNoSsrWrite('LandingStats');
+    assertNoSsrWrite('landingStats');
     try {
       const loggedIn = session.isLoggedIn;
       const entries = statEntries(config.branding.landing.stats || [], {
@@ -42,14 +43,15 @@ export class LandingStats {
       });
 
       // Reload only when the stat list or the signed-in user changes: the lists differ between
-      // open and signed in, and signed-in counts depend on whose token and consents they use.
+      // open and signed in, and signed-in counts depend on whose consents they're sent with.
       const thisRequest = [
-        session.token,
+        tokenSubject(session.token) ?? '',
         ...entries.map(({ auth, key }) => [auth, key].join(',')),
       ].join(';');
       if (this.#lastRequest === thisRequest) return;
       this.#lastRequest = thisRequest;
       const generation = ++this.#generation;
+      this.#stats = entries.map(({ key, label, auth }) => ({ key, label, auth }));
 
       if (loggedIn) {
         const consents = await session.ensureConsentsLoaded();
@@ -61,7 +63,6 @@ export class LandingStats {
 
       // Every reload asks again: the dictionary stats depend on whose consents they're sent with.
       this.#service.clear();
-      this.#stats = entries.map(({ key, label, auth }) => ({ key, label, auth }));
       entries.forEach(({ auth, provider }, i) => {
         this.#service.getCount(buildDescriptor(!auth, NO_FILTERS), provider).then((snapshot) => {
           if (generation !== this.#generation) return;
