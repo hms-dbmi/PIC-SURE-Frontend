@@ -23,7 +23,7 @@
   import BannerManagementView from '#lib/banners/components/admin/BannerManagementView.svelte';
   import ApiKeysPanel from '#lib/admin/apiKeys/ApiKeysPanel.svelte';
 
-  import * as admin from '#lib/admin/resources.ts';
+  import * as admin from '#lib/admin/entities.ts';
   import { isTopAdmin } from '#lib/auth/User.ts';
 
   import Loading from '#lib/ui/Loading.svelte';

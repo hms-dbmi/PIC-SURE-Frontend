@@ -19,14 +19,23 @@ const empty = (): Record<AdminConfigKind, ConfigObject[]> => ({
 class AdminConfig {
   #rows = $state.raw(empty());
   #loaded = new Set<AdminConfigKind>();
+  // Bumped by reset, so a response requested before the session ended doesn't refill the rows.
+  #generation = 0;
 
   rows(kind: AdminConfigKind): readonly ConfigObject[] {
     return this.#rows[kind];
   }
 
-  #set(kind: AdminConfigKind, rows: ConfigObject[]) {
+  /** Writes a kind's rows unless the session ended since `generation` was read. */
+  #set(
+    generation: number,
+    kind: AdminConfigKind,
+    rows: (current: ConfigObject[]) => ConfigObject[],
+  ) {
+    if (generation !== this.#generation) return false;
     assertNoSsrWrite('admin config rows');
-    this.#rows = { ...this.#rows, [kind]: rows };
+    this.#rows = { ...this.#rows, [kind]: rows(this.#rows[kind]) };
+    return true;
   }
 
   async load(kind: AdminConfigKind, force = false): Promise<void> {
@@ -34,7 +43,11 @@ class AdminConfig {
 
     // Without the API a kind has no rows. Nothing is written then: the page calls this from
     // an {#await}, where a synchronous state write is unsafe.
-    if (isApiAvailable(kind)) this.#set(kind, await api.getConfigRows(CONFIG_API_KIND[kind]));
+    if (isApiAvailable(kind)) {
+      const generation = this.#generation;
+      const rows = await api.getConfigRows(CONFIG_API_KIND[kind]);
+      if (!this.#set(generation, kind, () => rows)) return;
+    }
     this.#loaded.add(kind);
   }
 
@@ -44,36 +57,34 @@ class AdminConfig {
     value: string,
     description?: string,
   ): Promise<ConfigObject> {
+    const generation = this.#generation;
     const created = await api.createConfigRow({
       name,
       kind: CONFIG_API_KIND[kind],
       value,
       description,
     });
-    this.#set(kind, [...this.#rows[kind].filter((row) => row.name !== name), created]);
+    this.#set(generation, kind, (rows) => [...rows.filter((row) => row.name !== name), created]);
     return created;
   }
 
   async update(kind: AdminConfigKind, row: ConfigObject): Promise<ConfigObject> {
     const { uuid } = row;
     if (!uuid) throw new Error(`Config row ${row.name} has not been saved yet`);
+    const generation = this.#generation;
     const updated = await api.updateConfigRow({ ...row, uuid });
-    this.#set(
-      kind,
-      this.#rows[kind].map((r) => (r.uuid === updated.uuid ? updated : r)),
-    );
+    this.#set(generation, kind, (rows) => rows.map((r) => (r.uuid === updated.uuid ? updated : r)));
     return updated;
   }
 
   async remove(kind: AdminConfigKind, uuid: string): Promise<void> {
+    const generation = this.#generation;
     await api.deleteConfigRow(uuid);
-    this.#set(
-      kind,
-      this.#rows[kind].filter((r) => r.uuid !== uuid),
-    );
+    this.#set(generation, kind, (rows) => rows.filter((r) => r.uuid !== uuid));
   }
 
   reset() {
+    this.#generation++;
     this.#rows = empty();
     this.#loaded.clear();
   }

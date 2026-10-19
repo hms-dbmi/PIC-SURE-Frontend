@@ -4,7 +4,7 @@
   import Content from '#lib/shell/Content.svelte';
   import RoleForm from '#lib/admin/access/RoleForm.svelte';
 
-  import * as admin from '#lib/admin/resources.ts';
+  import * as admin from '#lib/admin/entities.ts';
   import Loading from '#lib/ui/Loading.svelte';
 </script>
 

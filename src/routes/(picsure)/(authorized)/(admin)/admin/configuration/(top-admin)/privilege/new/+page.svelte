@@ -4,7 +4,7 @@
   import Content from '#lib/shell/Content.svelte';
   import PrivilegeForm from '#lib/admin/access/PrivilegeForm.svelte';
 
-  import * as admin from '#lib/admin/resources.ts';
+  import * as admin from '#lib/admin/entities.ts';
   import Loading from '#lib/ui/Loading.svelte';
 </script>
 

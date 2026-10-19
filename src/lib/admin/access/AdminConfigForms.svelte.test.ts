@@ -14,7 +14,7 @@ vi.mock('#lib/auth/User.ts', async () => {
   const { readable } = await import('svelte/store');
   return { isTopAdmin: readable(true) };
 });
-vi.mock('#lib/admin/resources.ts', () => {
+vi.mock('#lib/admin/entities.ts', () => {
   const saves = () => ({ add: vi.fn(), update: vi.fn() });
   return { connections: saves(), privileges: saves(), roles: saves() };
 });

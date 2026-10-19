@@ -43,7 +43,6 @@ export const roles = createResource({
   label: (role) => role.name,
 });
 
-// Saved from a request that nests the user's connection and roles whole.
 export const users = createResource({
   name: 'User',
   list: async () => (await access.users.list()).map(mapUser),
@@ -53,7 +52,7 @@ export const users = createResource({
     mapUser(await access.users.update({ uuid, email, active, generalMetadata, connection, roles })),
 });
 
-// Read-only, and only ever looked up in the loaded list (`find`).
+// Only ever looked up in the loaded list (`find`).
 export const applications = createResource({
   name: 'Application',
   list: access.applications.list,

@@ -12,7 +12,7 @@
   import Actions from '#lib/admin/users/cell/Actions.svelte';
   import Status from '#lib/admin/users/cell/Status.svelte';
 
-  import * as admin from '#lib/admin/resources.ts';
+  import * as admin from '#lib/admin/entities.ts';
   import Loading from '#lib/ui/Loading.svelte';
 
   interface UserRow {

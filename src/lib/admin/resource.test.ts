@@ -26,6 +26,24 @@ describe('createResource', () => {
     expect(resource.options).toEqual([['Second admin', 'b']]);
   });
 
+  it('drops a list that arrives after the session ended', async () => {
+    let answer: (items: { uuid: string }[]) => void = () => {};
+    const list = vi
+      .fn<() => Promise<{ uuid: string }[]>>()
+      .mockImplementationOnce(() => new Promise((resolve) => (answer = resolve)))
+      .mockResolvedValueOnce([{ uuid: 'b' }]);
+    const resource = createResource({ name: 'Thing', list });
+
+    const loading = resource.load();
+    endSession();
+    answer([{ uuid: 'a' }]);
+    await loading;
+    expect(resource.items).toEqual([]);
+
+    await resource.load();
+    expect(resource.items).toEqual([{ uuid: 'b' }]);
+  });
+
   it('refuses operations its config does not define', async () => {
     const resource = createResource<{ uuid?: string }>({ name: 'Thing', list: async () => [] });
     await expect(resource.add({})).rejects.toThrow('Thing does not support add.');

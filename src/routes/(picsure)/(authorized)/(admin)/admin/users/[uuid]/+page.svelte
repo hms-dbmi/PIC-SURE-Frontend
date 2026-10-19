@@ -8,7 +8,7 @@
   import type { Role } from '#lib/auth/model/role.ts';
   import type { Connection } from '#lib/auth/model/connection.ts';
 
-  import * as admin from '#lib/admin/resources.ts';
+  import * as admin from '#lib/admin/entities.ts';
   import Loading from '#lib/ui/Loading.svelte';
 
   let user: ExtendedUser = $state({

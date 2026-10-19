@@ -7,7 +7,7 @@
   import PrivilegeForm from '#lib/admin/access/PrivilegeForm.svelte';
 
   import type { Privilege } from '#lib/auth/model/privilege.ts';
-  import * as admin from '#lib/admin/resources.ts';
+  import * as admin from '#lib/admin/entities.ts';
   import Loading from '#lib/ui/Loading.svelte';
 
   let privilege: Privilege = $state({

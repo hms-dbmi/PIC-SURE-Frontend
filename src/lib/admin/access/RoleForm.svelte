@@ -4,7 +4,7 @@
   import { goto } from '$app/navigation';
 
   import { type Role } from '#lib/auth/model/role.ts';
-  import * as admin from '#lib/admin/resources.ts';
+  import * as admin from '#lib/admin/entities.ts';
   import { isTopAdmin } from '#lib/auth/User.ts';
   import { toaster } from '#lib/ui/toaster.ts';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';

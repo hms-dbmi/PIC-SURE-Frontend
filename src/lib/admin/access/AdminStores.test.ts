@@ -30,7 +30,7 @@ const calls = () => ({
 // Each resource keeps a module-level "loaded" flag, so every test gets fresh modules.
 async function stores() {
   vi.resetModules();
-  return await import('#lib/admin/resources.ts');
+  return await import('#lib/admin/entities.ts');
 }
 
 beforeEach(() => {

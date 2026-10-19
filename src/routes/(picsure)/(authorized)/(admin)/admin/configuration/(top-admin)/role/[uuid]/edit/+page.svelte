@@ -7,7 +7,7 @@
   import RoleForm from '#lib/admin/access/RoleForm.svelte';
 
   import type { Role } from '#lib/auth/model/role.ts';
-  import * as admin from '#lib/admin/resources.ts';
+  import * as admin from '#lib/admin/entities.ts';
   import Loading from '#lib/ui/Loading.svelte';
 
   let role: Role = $state({

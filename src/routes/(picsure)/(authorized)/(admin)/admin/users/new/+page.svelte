@@ -4,7 +4,7 @@
   import Content from '#lib/shell/Content.svelte';
   import UserForm from '#lib/admin/users/UserForm.svelte';
 
-  import * as admin from '#lib/admin/resources.ts';
+  import * as admin from '#lib/admin/entities.ts';
   import Loading from '#lib/ui/Loading.svelte';
 
   async function load() {

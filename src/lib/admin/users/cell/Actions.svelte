@@ -4,7 +4,7 @@
   import { goto } from '$app/navigation';
 
   import { toaster } from '#lib/ui/toaster.ts';
-  import * as admin from '#lib/admin/resources.ts';
+  import * as admin from '#lib/admin/entities.ts';
 
   import ConfirmButton from '#lib/ui/ConfirmButton.svelte';
 

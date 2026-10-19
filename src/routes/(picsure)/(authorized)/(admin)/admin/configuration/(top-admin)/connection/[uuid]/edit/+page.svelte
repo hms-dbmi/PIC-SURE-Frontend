@@ -4,7 +4,7 @@
   import { config } from '#lib/config/config.svelte.ts';
 
   import { type Connection } from '#lib/auth/model/connection.ts';
-  import * as admin from '#lib/admin/resources.ts';
+  import * as admin from '#lib/admin/entities.ts';
 
   import Content from '#lib/shell/Content.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';

@@ -58,20 +58,16 @@
   let availableAPIKinds: AdminConfigKind[] = $derived(kinds.filter((kind) => isApiAvailable(kind)));
   let activeConfigMode: ConfigMode = $derived(getConfigMode());
 
-  let rowsByKind: Partial<Record<AdminConfigKind, readonly ConfigObject[]>> = $derived(
-    Object.fromEntries(kinds.map((kind) => [kind, adminConfig.rows(kind)])),
-  );
-
   // Built once per kind here (not once per field in ConfigFieldRow) and handed down,
   // since every field row in a kind resolves its origin against the same two maps.
   let apiMapByKind: Partial<Record<AdminConfigKind, ConfigMap>> = $derived(
-    Object.fromEntries(kinds.map((kind) => [kind, apiConfigMap(rowsByKind[kind] ?? [])])),
+    Object.fromEntries(kinds.map((kind) => [kind, apiConfigMap(adminConfig.rows(kind))])),
   );
   let envMap: ConfigMap = $derived(envConfigMap());
 
   let deprecated = $derived(
     kinds.flatMap((kind) =>
-      deprecatedApiRows(kind, rowsByKind[kind] ?? []).map((row) => ({ kind, row })),
+      deprecatedApiRows(kind, adminConfig.rows(kind)).map((row) => ({ kind, row })),
     ),
   );
 

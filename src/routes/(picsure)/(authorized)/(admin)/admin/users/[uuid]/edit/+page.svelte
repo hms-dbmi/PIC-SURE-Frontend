@@ -7,7 +7,7 @@
   import UserForm from '#lib/admin/users/UserForm.svelte';
 
   import type { ExtendedUser } from '#lib/auth/model/user.ts';
-  import * as admin from '#lib/admin/resources.ts';
+  import * as admin from '#lib/admin/entities.ts';
   import Loading from '#lib/ui/Loading.svelte';
 
   let user: ExtendedUser = $state({

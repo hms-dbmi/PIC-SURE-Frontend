@@ -7,7 +7,7 @@
   import type { ExtendedUser, UserRequest } from '#lib/auth/model/user.ts';
   import type { Connection } from '#lib/auth/model/connection.ts';
 
-  import * as admin from '#lib/admin/resources.ts';
+  import * as admin from '#lib/admin/entities.ts';
   import { toaster } from '#lib/ui/toaster.ts';
 
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
