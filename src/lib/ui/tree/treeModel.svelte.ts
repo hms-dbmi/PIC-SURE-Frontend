@@ -2,7 +2,7 @@ export type TreeSelection = 'multi' | 'single';
 
 /** A node as callers describe it. Without `children` it is a leaf; with `lazy` its children load on first use. */
 export interface TreeNodeInit<T> {
-  /** `name` and `value` only feed the testids. */
+  /** What's shown is `label`; `name` and `value` go into testids and the inputs' attributes. */
   name: string;
   value: string;
   label: string;
@@ -95,14 +95,20 @@ export class TreeNode<T> {
     !this.isLeaf && !this.hasLoading && (this.childrenLoaded || !this.disabled),
   );
 
+  /** Like the checkbox: not while anything below is still loading. */
+  canSelect: boolean = $derived(!this.allDisabled && !this.hasLoading);
+
+  // A parent that's still loading has a select or open in flight; a second one would find no
+  // children yet and select the parent itself.
   async select(): Promise<void> {
-    if (this.disabled) return;
+    if (this.disabled || this.loading) return;
     if (this.#model.selection === 'single') {
       this.#model.selectOnly(this);
       return;
     }
     if (!this.isLeaf) {
       await this.#loadChildren();
+      if (this.error) return;
       if (this.children.length > 0) {
         await Promise.all(this.children.map((child) => child.select()));
         if (this.#model.expandOnSelect) this.open = true;
@@ -114,9 +120,10 @@ export class TreeNode<T> {
   }
 
   async unselect(): Promise<void> {
-    if (this.disabled) return;
+    if (this.disabled || this.loading) return;
     if (!this.isLeaf) {
       await this.#loadChildren();
+      if (this.error) return;
       if (this.children.length > 0) {
         await Promise.all(this.children.map((child) => child.unselect()));
         return;
@@ -126,7 +133,6 @@ export class TreeNode<T> {
     this.#model.onunselect?.(this.payload);
   }
 
-  /** Multi select toggles every leaf below; single select chooses this node. */
   async toggleSelected(): Promise<void> {
     if (this.#model.selection === 'multi' && this.allSelected) {
       await this.unselect();
@@ -191,7 +197,6 @@ export class TreeModel<T> {
     return this.#keys++;
   }
 
-  /** Nodes a user can see, in display order. */
   visible: TreeNode<T>[] = $derived.by(() => {
     const out: TreeNode<T>[] = [];
     const walk = (nodes: TreeNode<T>[]) => {
@@ -245,17 +250,17 @@ export class TreeModel<T> {
         }
         return node.children[0] ?? node;
       case 'ArrowLeft':
-        if (node.open) {
+        if (node.open && !node.isLeaf) {
           node.open = false;
           return node;
         }
         return node.parent ?? node;
       case ' ':
-        if (!node.allDisabled) void node.toggleSelected();
+        if (node.canSelect) void node.toggleSelected();
         return node;
       case 'Enter':
         if (node.isLeaf) {
-          if (!node.allDisabled) void node.toggleSelected();
+          if (node.canSelect) void node.toggleSelected();
         } else {
           void node.toggleOpen();
         }

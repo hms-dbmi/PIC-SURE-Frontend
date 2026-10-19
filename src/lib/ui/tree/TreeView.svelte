@@ -10,7 +10,10 @@
   } from '#lib/ui/tree/treeModel.svelte.ts';
 
   interface Props {
-    /** Rebuilds the tree, and drops its selection and expansion, when it changes. */
+    /**
+     * The tree is rebuilt, dropping its selection and expansion, when `nodes`, `selection`,
+     * `loadChildren` or `expandOnSelect` change.
+     */
     nodes: TreeNodeInit<T>[];
     /** The tree's accessible name. */
     label: string;
@@ -42,7 +45,7 @@
       nodes,
       selection,
       expandOnSelect,
-      loadChildren: loadChildren && ((payload) => loadChildren(payload)),
+      loadChildren,
       onselect: (payload) => onselect?.(payload),
       onunselect: (payload) => onunselect?.(payload),
     }),
@@ -72,10 +75,19 @@
     const node = model.active;
     if (!node || owners.get(event.target as Element) !== node) return;
     if (event.altKey || event.ctrlKey || event.metaKey) return;
+    // Like a checkbox, a held key selects once.
+    if (event.repeat && (event.key === ' ' || event.key === 'Enter')) {
+      event.preventDefault();
+      return;
+    }
     const next = model.keydown(event.key, node);
     if (!next) return;
     event.preventDefault();
     if (next !== node) focusNode(next);
+  }
+
+  function onfocus(event: FocusEvent) {
+    if (event.target === event.currentTarget && model.tabStop) focusNode(model.tabStop);
   }
 
   // A click on an item's row acts like one on its name: a parent opens or closes, a leaf toggles
@@ -87,21 +99,24 @@
     if (!node || !item.firstElementChild?.contains(target)) return;
     if (!target.closest('input, button')) {
       if (!node.isLeaf) void node.toggleOpen();
-      else if (!node.allDisabled) void node.toggleSelected();
+      else if (node.canSelect) void node.toggleSelected();
     }
     focusNode(node);
   }
 </script>
 
-<!-- Focus goes to the items (roving tabindex); -1 only keeps the container out of the tab order. -->
+<!-- Svelte wants a tabindex on role=tree; -1 adds no tab stop, and focus that lands on the
+     container (a click on its blank space) moves on to the tree's tab stop. -->
 <div
   role="tree"
   aria-label={label}
+  aria-multiselectable={selection === 'multi'}
   class={className}
   data-testid={testid}
   tabindex={-1}
   {onkeydown}
   {onclick}
+  {onfocus}
 >
   {#each model.roots as node, index (node.key)}
     <TreeItem

@@ -9,7 +9,7 @@
     model: TreeModel<T>;
     node: TreeNode<T>;
     register: (node: TreeNode<T>) => Attachment<HTMLElement>;
-    /** Prefixes the item ids and groups the radios of one single-select tree. */
+    /** Prefixes the label ids and names the radio group of a single-select tree. */
     treeId: string;
     posinset: number;
     setsize: number;
@@ -95,7 +95,7 @@
         value={node.value}
         checked={node.checked === true}
         indeterminate={node.checked === 'mixed'}
-        disabled={node.allDisabled}
+        disabled={!node.canSelect}
         onclick={() => node.toggleSelected()}
       />
     {/if}

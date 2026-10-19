@@ -36,7 +36,10 @@ describe('TreeView', () => {
       label: 'Tree',
     });
 
-    expect(screen.getByRole('tree', { name: 'Tree' })).toBeTruthy();
+    expect(screen.getByRole('tree', { name: 'Tree' })).toHaveAttribute(
+      'aria-multiselectable',
+      'true',
+    );
     expect(item('High')).toHaveAttribute('aria-expanded', 'true');
     expect(item('High')).toHaveAttribute('aria-level', '1');
     expect(item('stop_lost')).toHaveAttribute('aria-level', '2');
@@ -162,14 +165,17 @@ describe('TreeView', () => {
 
   describe('single select', () => {
     const chain = () => [
-      parent('Root', [parent('Middle', [leaf('Variable', { selected: true })], { open: true })], {
-        open: true,
-      }),
+      parent(
+        'Root',
+        [parent('Middle', [leaf('Variable', { selected: true, open: true })], { open: true })],
+        { open: true },
+      ),
     ];
 
     it('names every radio, parents included', () => {
       render(TreeView, { nodes: chain(), label: 'Tree', selection: 'single' });
 
+      expect(screen.getByRole('tree')).toHaveAttribute('aria-multiselectable', 'false');
       expect(screen.getByRole('radio', { name: 'Root' })).toBeTruthy();
       expect(screen.getByRole('radio', { name: 'Variable' })).toBeTruthy();
     });
@@ -202,6 +208,15 @@ describe('TreeView', () => {
       expect(item('Middle')).toHaveAttribute('aria-checked', 'true');
       expect(item('Variable')).toHaveAttribute('aria-checked', 'false');
       expect(item('Root')).toHaveAttribute('aria-checked', 'false');
+    });
+
+    it('moves from the selected leaf to its parent with one Left', async () => {
+      render(TreeView, { nodes: chain(), label: 'Tree', selection: 'single' });
+      item('Variable').focus();
+
+      await press('ArrowLeft');
+
+      expect(document.activeElement).toBe(item('Middle'));
     });
   });
 
@@ -241,6 +256,67 @@ describe('TreeView', () => {
       await fireEvent.click(screen.getByTestId('ui-tree-toggle-study-study'));
 
       await waitFor(() => expect(item('study')).not.toHaveAttribute('aria-expanded'));
+    });
+
+    it('selects only the loaded leaves when Space is pressed again during the load', async () => {
+      const onselect = vi.fn();
+      let resolve!: (children: TreeNodeInit<string>[]) => void;
+      const loadChildren = vi.fn(() => new Promise<TreeNodeInit<string>[]>((r) => (resolve = r)));
+      render(TreeView, { nodes: folder(), label: 'Tree', loadChildren, onselect });
+      item('study').focus();
+
+      await press(' ');
+      await press(' ');
+      resolve([leaf('age')]);
+
+      await waitFor(() => expect(item('study')).toHaveAttribute('aria-checked', 'true'));
+      expect(onselect).toHaveBeenCalledExactlyOnceWith('age');
+      expect(loadChildren).toHaveBeenCalledOnce();
+    });
+
+    it('selects nothing when the children fail to load', async () => {
+      const onselect = vi.fn();
+      const loadChildren = vi.fn().mockRejectedValue(new Error('500'));
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      render(TreeView, { nodes: folder(), label: 'Tree', loadChildren, onselect });
+
+      await fireEvent.click(screen.getByTestId('ui-tree-checkbox-study-study'));
+
+      await waitFor(() => expect(loadChildren).toHaveBeenCalledOnce());
+      await waitFor(() => expect(screen.getByTestId('ui-tree-checkbox-study-study')).toBeEnabled());
+      expect(onselect).not.toHaveBeenCalled();
+      expect(item('study')).toHaveAttribute('aria-checked', 'false');
+    });
+
+    it('never loads the children of a disabled node', async () => {
+      const loadChildren = vi.fn().mockResolvedValue([leaf('age')]);
+      render(TreeView, {
+        nodes: [parent('study', [], { lazy: true, disabled: true })],
+        label: 'Tree',
+        loadChildren,
+      });
+      item('study').focus();
+
+      await press('ArrowRight');
+      await press(' ');
+      await press('Enter');
+      await fireEvent.click(screen.getByText('study'));
+
+      expect(screen.getByTestId('ui-tree-toggle-study-study')).toBeDisabled();
+      expect(screen.getByTestId('ui-tree-checkbox-study-study')).toBeDisabled();
+      expect(loadChildren).not.toHaveBeenCalled();
+    });
+
+    it('still opens a disabled node whose children are loaded', async () => {
+      render(TreeView, {
+        nodes: [parent('study', [leaf('age', { disabled: true })], { disabled: true })],
+        label: 'Tree',
+      });
+
+      await fireEvent.click(screen.getByTestId('ui-tree-toggle-study-study'));
+
+      expect(item('study')).toHaveAttribute('aria-expanded', 'true');
+      expect(item('age')).toHaveAttribute('aria-disabled', 'true');
     });
 
     it('shows a fixed message, never the error text, when children fail to load', async () => {
