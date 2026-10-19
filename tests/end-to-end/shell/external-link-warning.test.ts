@@ -80,13 +80,14 @@ test.describe('External link warning', () => {
     await page.locator('#app-footer').getByRole('link', { name: externalLink.title }).click();
     const dialog = page.getByRole('dialog', { name: expectedTitle });
     await expect(dialog).toBeVisible();
-    // The dialog starts listening for outside clicks a frame after it opens, and moves focus
-    // inside only after that
-    await expect(dialog.locator(':focus')).toHaveCount(1);
     // When
-    await page.mouse.click(5, 5);
+    // The dialog starts listening for outside clicks a little after it opens (in WebKit, after
+    // focus has moved inside), and a click before that does nothing, so click until it closes
+    await expect(async () => {
+      await page.mouse.click(5, 5);
+      await expect(dialog).not.toBeVisible({ timeout: 500 });
+    }).toPass();
     // Then
-    await expect(dialog).not.toBeVisible();
     await expect(page).toHaveURL('/');
     await expect
       .poll(() => logged)
