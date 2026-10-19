@@ -1119,4 +1119,20 @@ test.describe('Advanced Query Builder - Drag interactions', () => {
     await expect(afPage.getDropPreviews()).toHaveCount(0);
     await expect(afPage.listedFilterNames).toHaveText([a, b, c, d]);
   });
+
+  test('AF-DND-021: Dropping outside after passing another filter keeps the order it reached', async ({
+    page,
+  }) => {
+    const { startX } = await afPage.pickUp(handleOf(a));
+    const target = await afPage.getFilterCard(b).boundingBox();
+    expect(target).not.toBeNull();
+    const targetY = target!.y + target!.height / 2;
+    await page.mouse.move(startX, targetY, { steps: 20 });
+    await expect(afPage.listedFilterNames).toHaveText([b, a, c, d]);
+    await page.mouse.move(startX - 300, targetY, { steps: 10 });
+    await page.mouse.up();
+
+    await expect(afPage.getDropPreviews()).toHaveCount(0);
+    await expect(afPage.listedFilterNames).toHaveText([b, a, c, d]);
+  });
 });

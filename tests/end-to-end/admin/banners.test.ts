@@ -1305,6 +1305,18 @@ test.describe('Admins cancel and touch-drag banner reorders', () => {
     expect(box).not.toBeNull();
     return { x: box!.x + box!.width / 2, y: box!.y + box!.height / 2 };
   }
+  // Each row's uuid starts with its title's position in `titles`, plus one.
+  async function expectRowsInOwnWrappers(page: Page) {
+    const pairs = await page
+      .locator('[data-banner-row]')
+      .evaluateAll((wrappers) =>
+        wrappers.map((wrapper) => [
+          wrapper.getAttribute('data-banner-row')!.charAt(0),
+          wrapper.querySelector('p.font-bold')?.textContent?.trim(),
+        ]),
+      );
+    expect(pairs.map(([digit, title]) => titles[Number(digit) - 1] === title)).not.toContain(false);
+  }
 
   test.beforeEach(async ({ page }) => {
     await mockApiConfig(page);
@@ -1386,6 +1398,36 @@ test.describe('Admins cancel and touch-drag banner reorders', () => {
     await expect(page.getByTestId('banner-drop-preview')).toHaveCount(0);
     await expect(rows(page)).toHaveText(titles);
     await expect(page.getByRole('button', { name: 'Save order' })).toHaveCount(0);
+  });
+
+  test('dropping outside after passing another banner keeps the order it reached', async ({
+    page,
+  }) => {
+    const start = await centre(handle(page, 'First notice'));
+    const target = await centre(handle(page, 'Second notice'));
+    await page.mouse.move(start.x, start.y);
+    await page.mouse.down();
+    await expect(page.getByTestId('banner-drop-preview')).toBeVisible();
+    await page.mouse.move(start.x, target.y, { steps: 10 });
+    await expect(rows(page)).toHaveText(['Second notice', 'First notice', 'Third notice']);
+    await page.mouse.move(start.x, 5, { steps: 10 });
+    await page.mouse.up();
+
+    await expect(page.getByTestId('banner-drop-preview')).toHaveCount(0);
+    await expect(rows(page)).toHaveText(['Second notice', 'First notice', 'Third notice']);
+    await expectRowsInOwnWrappers(page);
+    await expect(page.getByRole('button', { name: 'Save order' })).toBeVisible();
+  });
+
+  test('a keyboard reorder moves each row with its wrapper', async ({ page }) => {
+    await handle(page, 'First notice').focus();
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+
+    await expect(rows(page)).toHaveText(['Second notice', 'First notice', 'Third notice']);
+    await expectRowsInOwnWrappers(page);
+    await expect(page.getByRole('button', { name: 'Save order' })).toBeVisible();
   });
 
   test('a touch drag reorders banners', async ({ page }) => {
