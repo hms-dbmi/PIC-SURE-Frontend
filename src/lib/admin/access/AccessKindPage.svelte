@@ -7,9 +7,6 @@
   import PrivilegeForm from '#lib/admin/access/PrivilegeForm.svelte';
   import RoleForm from '#lib/admin/access/RoleForm.svelte';
 
-  import type { Connection } from '#lib/auth/model/connection.ts';
-  import type { Privilege } from '#lib/auth/model/privilege.ts';
-  import type { Role } from '#lib/auth/model/role.ts';
   import type { AccessKind } from '#lib/admin/access/model/kind.ts';
   import * as admin from '#lib/admin/entities.ts';
 
@@ -21,40 +18,41 @@
 
   let { kind, uuid }: Props = $props();
 
-  type List = { load(): Promise<void> };
+  // Each `load` fetches the record and the lists its form offers as options, and tags the
+  // result with its kind so the template can narrow `entity`.
+  const KINDS = {
+    connection: {
+      label: 'Connection',
+      editTitle: 'Edit Connection Configuration',
+      // A new connection has nothing to fetch: answer synchronously so the form renders
+      // straight away, without the spinner.
+      load: (uuid?: string) =>
+        uuid
+          ? admin.connections.get(uuid).then((entity) => ({ kind: 'connection' as const, entity }))
+          : { kind: 'connection' as const, entity: undefined },
+    },
+    privilege: {
+      label: 'Privilege',
+      load: async (uuid?: string) => {
+        const entity = uuid ? await admin.privileges.get(uuid) : undefined;
+        await admin.applications.load();
+        return { kind: 'privilege' as const, entity };
+      },
+    },
+    role: {
+      label: 'Role',
+      load: async (uuid?: string) => {
+        const entity = uuid ? await admin.roles.get(uuid) : undefined;
+        await admin.privileges.load();
+        return { kind: 'role' as const, entity };
+      },
+    },
+  } satisfies Record<AccessKind, { label: string; editTitle?: string; load: unknown }>;
 
-  // `lists` are the resources the form's options come from.
-  const KINDS: Record<AccessKind, { label: string; editTitle?: string; lists: List[] }> = {
-    connection: { label: 'Connection', editTitle: 'Edit Connection Configuration', lists: [] },
-    privilege: { label: 'Privilege', lists: [admin.applications] },
-    role: { label: 'Role', lists: [admin.privileges] },
-  };
-  const RESOURCES = {
-    connection: admin.connections,
-    privilege: admin.privileges,
-    role: admin.roles,
-  } satisfies Record<AccessKind, unknown>;
-
-  type Entities = { connection: Connection; privilege: Privilege; role: Role };
-  type Loaded = { [K in AccessKind]: { kind: K; entity?: Entities[K] } }[AccessKind];
-
-  const descriptor = $derived(KINDS[kind]);
+  const descriptor: { label: string; editTitle?: string } = $derived(KINDS[kind]);
   const action = $derived(uuid ? 'Edit' : 'New');
   const title = $derived(`${action} ${descriptor.label}`);
   const pageTitle = $derived((uuid && descriptor.editTitle) || title);
-
-  // Nothing to fetch (a new connection) renders the form straight away, without the spinner.
-  function load(): Loaded | Promise<Loaded> {
-    if (!uuid && descriptor.lists.length === 0) return { kind } as Loaded;
-    return fetchEntity(kind, uuid, descriptor.lists);
-  }
-
-  async function fetchEntity(kind: AccessKind, uuid: string | undefined, lists: List[]) {
-    const entity = uuid ? await RESOURCES[kind].get(uuid) : undefined;
-    for (const list of lists) await list.load();
-    // `entity` came from RESOURCES[kind], so it matches `kind`; TS can't correlate the two.
-    return { kind, entity } as Loaded;
-  }
 </script>
 
 <svelte:head>
@@ -62,7 +60,7 @@
 </svelte:head>
 
 <Content {title} backUrl="/admin/configuration" backTitle="Back to Configuration">
-  {#await load()}
+  {#await KINDS[kind].load(uuid)}
     <Loading />
   {:then loaded}
     <section id="admin-{kind}-{action.toLowerCase()}">
