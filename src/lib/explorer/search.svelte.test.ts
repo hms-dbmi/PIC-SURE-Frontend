@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('$app/env', () => ({ browser: true }));
-vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/explorer') } }));
 
 const mockState = vi.hoisted(() => ({
   searchDictionarySpy: vi.fn(),
