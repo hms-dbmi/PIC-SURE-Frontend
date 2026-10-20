@@ -1027,6 +1027,40 @@ test.describe('Advanced Query Builder - Drag interactions', () => {
     await expect(afPage.getMoveHereZones()).toHaveCount(0);
   });
 
+  test('AF-DND-023: A subquery dropped onto an empty subquery inside it stays where it was', async ({
+    page,
+  }) => {
+    await afPage.closeModal();
+    await afPage.injectTwoGroups(page);
+    await page.evaluate(() => {
+      const tree = JSON.parse(sessionStorage.getItem('filterTree')!);
+      tree.children[0].children.push({ children: [], operator: 'AND', uuid: 'test-inner' });
+      sessionStorage.setItem('filterTree', JSON.stringify(tree));
+    });
+    await page.goto('/explorer?search=somedata');
+    await expect(page.locator('#results-panel')).toBeVisible();
+    await afPage.openModal();
+    const groups = afPage.getGroupCards();
+    await expect(groups).toHaveCount(3);
+    const before = (await afPage.logicTreeText.textContent())!;
+
+    // The dragged subquery stays in place but invisible, under its overlay copy, so aim at its
+    // inner zone's box rather than at a visible element
+    const innerZone = groups.first().getByText(/^Drop (items )?here$/);
+    const { startX } = await afPage.pickUp(afPage.getGroupDragHandle(0));
+    await page.waitForFunction(() => document.getAnimations().length === 0);
+    const box = (await innerZone.boundingBox())!;
+    const y = box.y + box.height / 2;
+    await page.mouse.move(startX, y, { steps: 10 });
+    await page.mouse.move(startX, y + 2);
+    await page.mouse.move(startX, y);
+    await page.mouse.up();
+    await expect(afPage.getDropPreviews()).toHaveCount(0);
+    await expect(groups).toHaveCount(3);
+    await expect(groups.first().getByTestId('filter-name')).toHaveText([a, b]);
+    await expect(afPage.logicTreeText).toHaveText(before);
+  });
+
   test('AF-DND-022: The keyboard moves a subquery above the one before it', async ({ page }) => {
     await afPage.closeModal();
     await afPage.injectTwoGroups(page);
