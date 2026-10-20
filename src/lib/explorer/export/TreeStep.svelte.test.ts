@@ -5,10 +5,19 @@ import { flushSync } from 'svelte';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 
 const dictionary = vi.hoisted(() => ({ getInitialTree: vi.fn(), getConceptTree: vi.fn() }));
+const counts = vi.hoisted(() => ({ total: 10 }));
 
 vi.mock('$app/env', () => ({ browser: true }));
 vi.mock('#lib/explorer/Dictionary.ts', () => dictionary);
 vi.mock('#lib/explorer/export/Summary.svelte', () => ({ default: () => {} }));
+vi.mock('#lib/query/counts/resultCounts.svelte.ts', () => ({
+  resultCountsState: {
+    get total() {
+      return counts.total;
+    },
+    snapshot: { summary: { hasError: false } },
+  },
+}));
 
 import TreeStep from '#lib/explorer/export/TreeStep.svelte';
 import { exportState, mapSearchResultAsExport } from '#lib/explorer/export/export.svelte.ts';
@@ -26,6 +35,7 @@ const deep = concept('\\ds\\a\\b\\c\\');
 const tree = [concept('\\ds\\', [concept('\\ds\\a\\', [concept('\\ds\\a\\b\\', [])])])];
 
 afterEach(() => {
+  counts.total = 10;
   exportState.clear();
   vi.clearAllMocks();
 });
@@ -62,5 +72,18 @@ describe('TreeStep', () => {
     render(TreeStep);
 
     expect(await screen.findByText(/couldn't load the variables/)).toBeVisible();
+  });
+
+  it('warns when a selection takes the export over the limit', async () => {
+    dictionary.getInitialTree.mockResolvedValue(tree);
+    counts.total = 600000;
+    render(TreeStep);
+    await screen.findByRole('treeitem', { name: 'ds' });
+    exportState.add(mapSearchResultAsExport(concept('\\ds\\x\\')));
+    expect(screen.queryByTestId('export-tree-error')).toBeNull();
+
+    exportState.add(mapSearchResultAsExport(deep));
+
+    expect(await screen.findByTestId('export-tree-error')).toBeVisible();
   });
 });

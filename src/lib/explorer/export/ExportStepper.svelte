@@ -48,7 +48,7 @@
     }
   });
 
-  async function onNextHandler(step: number, stepName: string): Promise<void> {
+  function onNextHandler(step: number, stepName: string) {
     log(createLog('EXPORT', 'export.stepper_next', { step, stepName }));
     if (stepName === 'start') {
       saveDatasetPromise = exportState.saveDataset().then(() => {
@@ -85,7 +85,7 @@
     <ReviewStep query={exportState.request} {rows} />
   </Step>
   {#if config.features.explorer.showTreeStep}
-    <Step name="select-variables">
+    <Step name="select-variables" locked={exportState.dataLimitExceeded}>
       {#snippet header()}Finalize Data:{/snippet}
       <TreeStep />
     </Step>
@@ -139,7 +139,7 @@
             title="An error occurred while saving your dataset. Please try again. If this problem persists, please
           contact an administrator."
           >
-            <!-- The dataset API rejects an invalid name with a message to show as it is. -->
+            <!-- createDatasetName refuses an invalid name with a message to show as it is. -->
             {#if typeof e === 'string'}
               <p>{e}</p>
             {/if}

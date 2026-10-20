@@ -102,12 +102,13 @@ class ExportState {
     if (variables.length !== 0) explorerPanel.show();
   }
 
-  /** Columns per participant: the filters' variables and the added ones. */
   get variableCount(): number {
-    return exportVariableCount(filterState.all, this.#variables.length);
+    return exportVariableCount(filterState.phenotypic, this.#variables.length);
   }
 
+  /** Unknown while the participant count is loading, failed or obfuscated. */
   get dataPoints(): number | undefined {
+    if (resultCountsState.snapshot.summary.hasError) return undefined;
     return dataPoints(resultCountsState.total, this.variableCount);
   }
 
@@ -135,7 +136,6 @@ class ExportState {
     return this.#datasetName;
   }
 
-  /** A dataset can be saved once it has an id and a name longer than two characters. */
   get canSave(): boolean {
     return (this.#datasetName?.length ?? 0) > 2 && (this.#datasetId?.length ?? 0) > 0;
   }
@@ -176,7 +176,6 @@ class ExportState {
     this.#downloadLocked = locked;
   }
 
-  /** Saves the dataset under the name entered. */
   async saveDataset(): Promise<void> {
     if (!this.#datasetId) throw new Error('No dataset ID provided');
     await createDatasetName(this.#datasetId, this.#datasetName ?? '');

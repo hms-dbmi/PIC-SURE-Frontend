@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   getQueryStatus: vi.fn(),
   createDatasetName: vi.fn(),
   total: 100 as unknown,
+  countFailed: false,
   filters: [] as unknown[],
   settings: { maxDataPointsForExport: 0 },
 }));
@@ -37,11 +38,14 @@ vi.mock('#lib/query/counts/resultCounts.svelte.ts', () => ({
     get total() {
       return mocks.total;
     },
+    get snapshot() {
+      return { summary: { hasError: mocks.countFailed } };
+    },
   },
 }));
 vi.mock('#lib/query/filters.svelte.ts', () => ({
   filterState: {
-    get all() {
+    get phenotypic() {
       return mocks.filters;
     },
   },
@@ -70,6 +74,7 @@ const variable = (conceptPath: string, studyId?: string) => ({
 
 beforeEach(() => {
   mocks.total = 100;
+  mocks.countFailed = false;
   mocks.filters = [];
   mocks.settings.maxDataPointsForExport = 0;
 });
@@ -130,6 +135,14 @@ describe('the data limit', () => {
 
   it('is exceeded while the participant count is unknown', () => {
     mocks.total = '< 10';
+
+    expect(exportState.dataLimitExceeded).toBe(true);
+  });
+
+  // A failed count is stored as a total of 0 with an error flag.
+  it('is exceeded when the participant count failed', () => {
+    mocks.total = 0;
+    mocks.countFailed = true;
 
     expect(exportState.dataLimitExceeded).toBe(true);
   });

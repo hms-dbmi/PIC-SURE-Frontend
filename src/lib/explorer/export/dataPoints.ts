@@ -3,20 +3,23 @@ import type { Filter } from '#lib/query/filter.svelte.ts';
 export const DEFAULT_MAX_DATA_POINTS = 1000000;
 
 /**
- * Columns an export adds per participant: one per filter, one per concept of an any-record-of
- * filter instead of one for the filter, and one per added variable.
+ * The variables a user chose to export: one per phenotypic filter (one per concept for an
+ * any-record-of filter) and one per added variable. Genomic filters add no column, and the patient
+ * ID and system fields every export has are left out.
  */
-export function exportVariableCount(filters: readonly Filter[], addedVariables: number): number {
-  return filters.reduce(
+export function exportVariableCount(
+  phenotypicFilters: readonly Filter[],
+  addedVariables: number,
+): number {
+  return phenotypicFilters.reduce(
     (count, filter) => count + (filter.filterType === 'AnyRecordOf' ? filter.concepts.length : 1),
     addedVariables,
   );
 }
 
 /**
- * Participants times variables: the cells of the export's table. HPDS sizes an export the same
- * way (row width times rows) and refuses one that won't fit. Undefined while the participant
- * count isn't a number (still loading, failed, or obfuscated).
+ * Participants times variables, the cells of the export's table. HPDS's own limit has the same
+ * shape (rows times row width); MAX_DATA_POINTS_FOR_EXPORT is checked only here.
  */
 export function dataPoints(participants: unknown, variables: number): number | undefined {
   return typeof participants === 'number' ? participants * variables : undefined;

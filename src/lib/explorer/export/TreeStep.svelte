@@ -3,6 +3,7 @@
   import { getInitialTree, getConceptTree } from '#lib/explorer/Dictionary.ts';
   import { exportState, mapSearchResultAsExport } from '#lib/explorer/export/export.svelte.ts';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
+  import DataLimitWarning from './DataLimitWarning.svelte';
   import Loading from '#lib/ui/Loading.svelte';
   import TreeView from '#lib/ui/tree/TreeView.svelte';
   import { toConceptNodes } from '#lib/explorer/export/conceptTree.ts';
@@ -77,6 +78,9 @@
       Select <strong>additional variables</strong> you would like to be included in your final data export.
     </header>
     <hr />
+    {#if exportState.dataLimitExceeded}
+      <DataLimitWarning data-testid="export-tree-error" />
+    {/if}
     <div class="card-body p-4">
       {#await initialTree}
         <Loading ring size="small" />

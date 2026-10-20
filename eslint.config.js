@@ -204,8 +204,8 @@ export default [
   ...importBoundary('utils', ['utils']),
   ...importBoundary('config', ['config', 'api', 'assets', 'ui', 'utils']),
   ...importBoundary('auth', ['auth', 'api', 'config', 'telemetry', 'ui', 'utils']),
-  // query/ sits below the explorer, but still reads its concept lookup, consent rule and
-  // explore mode at run time.
+  // query/ sits below the explorer but still imports its concept lookup, consent rule and explore
+  // mode. Moving them below query/ (or injecting them) is left for after the refactor.
   ...importBoundary('query', ['query', 'api', 'auth', 'config', 'telemetry', 'ui', 'utils'], {
     'query/filters.svelte.ts': ['explorer/Dictionary.ts'],
     'query/counts/providers.ts': ['explorer/mode.ts'],

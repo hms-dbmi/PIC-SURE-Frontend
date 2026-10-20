@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { resolve } from '$app/paths';
-  import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
 
   import { config } from '#lib/config/config.svelte.ts';
@@ -14,7 +12,7 @@
   import { toaster } from '#lib/ui/toaster.ts';
 
   import Summary from './Summary.svelte';
-  import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
+  import DataLimitWarning from './DataLimitWarning.svelte';
   import Loading from '#lib/ui/Loading.svelte';
   import ClientTable from '#lib/ui/datatable/ClientTable.svelte';
   import type { Column } from '#lib/ui/datatable/types.ts';
@@ -160,19 +158,11 @@
 <div id="export-review-step" class="flex flex-col w-full h-full items-center">
   <Summary />
   <section class="w-full">
+    <!-- The table and the sample-ID box stay, so ticking the box can be undone. -->
     {#if exportState.dataLimitExceeded}
-      <ErrorAlert
-        data-testid="export-review-error"
-        title="Warning"
-        color="warning"
-        closeText="Back"
-        onclose={() => goto(resolve('explorer'))}
-      >
-        Warning: Your selected data exceeds {exportState.maxDataPoints.toLocaleString('en-US')} estimated
-        data points, which is too large to export. Please reduce the data selection or the number of selected
-        participants.
-      </ErrorAlert>
-    {:else if !loadingSampleIds}
+      <DataLimitWarning data-testid="export-review-error" />
+    {/if}
+    {#if !loadingSampleIds}
       <ClientTable
         tableName="ExportSummary"
         data-testid="export-summary-table"

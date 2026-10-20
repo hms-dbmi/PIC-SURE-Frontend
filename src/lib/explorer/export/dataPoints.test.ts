@@ -12,16 +12,13 @@ describe('exportVariableCount', () => {
       filter('Categorical'),
       filter('numeric'),
       filter('AnyRecordOf', ['\\a\\', '\\b\\', '\\c\\']),
-      filter('genomic'),
     ];
 
-    expect(exportVariableCount(filters, 2)).toBe(1 + 1 + 3 + 1 + 2);
+    expect(exportVariableCount(filters, 2)).toBe(1 + 1 + 3 + 2);
   });
 });
 
 describe('dataPoints', () => {
-  // HPDS sizes an export as rows times row width, so the estimate multiplies; the old review-step
-  // check added participants and variables and let far larger exports through.
   it('is participants times variables', () => {
     expect(dataPoints(9999, 3)).toBe(29997);
   });
