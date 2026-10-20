@@ -107,7 +107,10 @@ test.describe('Filter warning navigation', () => {
     { seed: seedDeniedFilter, from: '/discover', to: 'explorer', back: 'Back to Discover' },
     { seed: seedGenomicFilter, from: '/explorer', to: 'discover', back: 'Back to Explore' },
   ].forEach(({ seed, from, to, back }) => {
-    test(`does not leave the ${to} link highlighted after choosing ${back}`, async ({ page }) => {
+    test(`does not leave the ${to} link highlighted after choosing ${back}`, async ({
+      page,
+      browserName,
+    }) => {
       await seed(page);
 
       await page.goto(from);
@@ -119,6 +122,8 @@ test.describe('Filter warning navigation', () => {
       await page.getByRole('button', { name: back }).click();
 
       await expect(page.getByTestId('sendfilter-warning')).toBeHidden();
+      // WebKit doesn't focus links on click, so the dialog has no link to return focus to.
+      if (browserName !== 'webkit') await expect(link).toBeFocused();
       await page.mouse.move(0, 0);
       await expect(link).toHaveCSS('background-color', unselectedBackground);
     });
