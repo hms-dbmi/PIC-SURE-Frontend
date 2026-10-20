@@ -45,8 +45,6 @@ const categoricalSearchResult = {
   values,
 } as SearchResult;
 
-// Await the loaded values themselves: the filter renders from the incoming prop, before
-// getConceptDetails resolves, so waiting on the container would not prove it is populated.
 function valuesHaveLoaded() {
   return screen.findByRole('checkbox', { name: values[0] });
 }

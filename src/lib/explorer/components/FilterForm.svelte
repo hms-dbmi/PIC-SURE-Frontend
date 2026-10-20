@@ -24,8 +24,7 @@
   const bound = (value: number | string | undefined | null) =>
     value !== undefined && value !== null ? value.toString() : '';
 
-  // The form edits a draft: the existing filter's values, or nothing for a new filter. Each
-  // starts over when the concept or the filter changes.
+  // Writable deriveds: the user edits a draft that starts over when the concept or filter changes.
   let initialSelection: string[] = $derived.by(() => {
     if (existingFilter?.filterType !== 'Categorical') return noSelection;
     return existingFilter.categoryValues.length === 0
@@ -35,7 +34,6 @@
   let selectedOptions = $derived(initialSelection);
   let unselectedOptions: string[] = $derived.by(() => {
     const unselected = (concept.values || []).filter((value) => !initialSelection.includes(value));
-    // Long lists start with one page; scrolling loads the rest.
     return unselected.length >= 50 ? unselected.slice(0, pageSize) : unselected;
   });
   let minFormValue = $derived(
@@ -63,7 +61,6 @@
 
     loading = true;
     if (search !== lastSearchTerm) {
-      // new search
       unselectedOptions = [];
       lastSearchTerm = search;
     }

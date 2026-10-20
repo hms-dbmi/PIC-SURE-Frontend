@@ -15,7 +15,7 @@
   import { filterState } from '#lib/query/filters.svelte.ts';
   import { genomicDraft } from '#lib/query/genomicDraft.svelte.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
-  import { explorerPanel } from '#lib/explorer/panel.svelte.ts';
+  import { saveFilter } from '#lib/explorer/saveFilter.ts';
 
   import Dialog from '#lib/ui/dialog/Dialog.svelte';
   import AddFilter from '#lib/explorer/components/AddFilter.svelte';
@@ -54,11 +54,8 @@
   };
 
   function saveEdit(edited: Filter) {
-    filterState.update(filter.uuid, edited);
-    filterState.enrich(edited, edited.id, edited.dataset);
+    saveFilter(edited, { replacing: filter.uuid });
     filterModal = false;
-    explorerPanel.closeRow();
-    explorerPanel.show();
   }
 
   const deleteFilter = function () {

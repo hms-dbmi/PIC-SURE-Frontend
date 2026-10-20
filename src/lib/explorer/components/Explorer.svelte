@@ -13,7 +13,7 @@
   import type { SearchResult } from '#lib/explorer/types.ts';
   import type { Indexable } from '#lib/utils/objects.ts';
   import type { Filter } from '#lib/query/filter.svelte.ts';
-  import { filterState } from '#lib/query/filters.svelte.ts';
+  import { saveFilter } from '#lib/explorer/saveFilter.ts';
   import { explorerPanel } from '#lib/explorer/panel.svelte.ts';
 
   import Actions from '#lib/explorer/components/cell/Actions.svelte';
@@ -67,20 +67,9 @@
     goto(path);
   }
 
-  function showAddedFilter() {
-    explorerPanel.closeRow();
-    explorerPanel.show();
-  }
-
-  function addFilter(filter: Filter) {
-    filterState.add(filter);
-    filterState.enrich(filter, filter.id, filter.dataset);
-    showAddedFilter();
-  }
-
-  function addHierarchyFilter(filter: Filter) {
-    filterState.add(filter);
-    showAddedFilter();
+  // An any-record-of filter keeps the labels of the row it was built from.
+  function addAnyRecordOfFilter(filter: Filter) {
+    saveFilter(filter, { enrich: false });
   }
 
   function scrollToSearchResults() {
@@ -114,9 +103,9 @@
 
 {#snippet expandedRow(row: Indexable)}
   {#if explorerPanel.activeView === 'filter'}
-    <AddFilter data={row as SearchResult} onadded={addFilter} />
+    <AddFilter data={row as SearchResult} onadded={(filter) => saveFilter(filter)} />
   {:else if explorerPanel.activeView === 'hierarchy'}
-    <HierarchyComponent data={row as SearchResult} onadded={addHierarchyFilter} />
+    <HierarchyComponent data={row as SearchResult} onadded={addAnyRecordOfFilter} />
   {:else}
     <ResultInfoComponent data={row as SearchResult} />
   {/if}
