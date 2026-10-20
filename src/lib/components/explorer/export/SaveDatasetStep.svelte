@@ -69,7 +69,6 @@
           }
         });
       });
-      await datasetIdPromise;
     } catch (error) {
       $stepperState.current--;
       console.error('Error in submitQuery', error);
