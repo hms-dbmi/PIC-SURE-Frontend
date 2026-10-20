@@ -56,10 +56,10 @@
       {@const exporting = exportingIndex === index}
       <button
         disabled={exportingIndex !== null}
-        aria-busy={exporting}
+        aria-busy={exporting || undefined}
         aria-label={exporting ? `Exporting to ${exportLink.title}` : undefined}
         class="flex-initial w-64 btn preset-filled-primary-500 border border-primary-500 {exporting
-          ? 'disabled:opacity-100 cursor-wait'
+          ? 'disabled:opacity-100'
           : 'disabled:preset-tonal-primary'}"
         onclick={() => {
           log(

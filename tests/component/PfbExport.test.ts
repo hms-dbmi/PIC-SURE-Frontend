@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 
 const { get } = vi.hoisted(() => ({ get: vi.fn() }));
@@ -36,6 +36,10 @@ describe('PfbExport', () => {
     vi.spyOn(window, 'open').mockReturnValue(null);
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it.each(platforms)(
     'shows the loading state only on the clicked $clicked button',
     async ({ clicked, other }) => {
@@ -50,17 +54,20 @@ describe('PfbExport', () => {
       expect(busy).toBeDisabled();
 
       const idle = screen.getByRole('button', { name: `Export to ${other}` });
-      expect(idle).toHaveAttribute('aria-busy', 'false');
+      expect(idle).not.toHaveAttribute('aria-busy');
       expect(idle).not.toHaveTextContent('Exporting');
       expect(idle).toBeDisabled();
     },
   );
 
   it('restores both buttons once the export finishes', async () => {
-    get.mockResolvedValue({ signedUrl: 'https://signed.example/file.avro' });
+    let resolveSignedUrl: (value: { signedUrl: string }) => void = () => {};
+    get.mockReturnValue(new Promise((resolve) => (resolveSignedUrl = resolve)));
     render(PfbExport);
 
     await fireEvent.click(screen.getByRole('button', { name: 'Export to Terra' }));
+    expect(screen.getByRole('button', { name: 'Exporting to Terra' })).toBeDisabled();
+    resolveSignedUrl({ signedUrl: 'https://signed.example/file.avro' });
 
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Export to Terra' })).toBeEnabled(),
