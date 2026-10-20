@@ -180,6 +180,78 @@ test.describe('Explorer for authenticated users', () => {
     expect(currentPageScroll.before).toBeGreaterThan(0);
     expect(currentPageScroll.after).toBe(currentPageScroll.before);
   });
+  test('Logs row clicks and page changes from the results table', async ({ page }) => {
+    // Given
+    const pageResults = (pageNumber: number, pageSize = 10) => ({
+      ...mockData,
+      totalPages: Math.ceil(20 / pageSize),
+      totalElements: 20,
+      numberOfElements: pageSize,
+      number: pageNumber,
+      first: pageNumber === 0,
+      last: (pageNumber + 1) * pageSize >= 20,
+      pageable: { ...mockData.pageable, pageNumber, pageSize, offset: pageNumber * pageSize },
+      content: Array.from({ length: pageSize }, (_, index) => ({
+        ...mockData.content[index % mockData.content.length],
+        conceptPath: `\\test\\page-${pageNumber}-result-${index}\\`,
+        name: `page-${pageNumber}-result-${index}`,
+      })),
+    });
+    await page.route(searchResultPath, async (route: Route) =>
+      route.fulfill({ json: pageResults(0) }),
+    );
+    await page.route(
+      searchResultPath.replace('page_number=0', 'page_number=1'),
+      async (route: Route) => route.fulfill({ json: pageResults(1) }),
+    );
+    await page.route(
+      searchResultPath.replace('page_size=10', 'page_size=20'),
+      async (route: Route) => route.fulfill({ json: pageResults(0, 20) }),
+    );
+    await page.route('*/**/picsure/hpds/auth/query/sync', async (route: Route) =>
+      route.fulfill({ body: '9999' }),
+    );
+    await page.route(
+      '*/**/picsure/dictionary/concepts/detail/' + mockData.content[0].dataset,
+      async (route: Route) => route.fulfill({ json: detailResponseCat }),
+    );
+    const logs: { action?: string; metadata?: Record<string, unknown> }[] = [];
+    await page.route('**/api/v1/log', (route) => {
+      const { action, metadata } = route.request().postDataJSON() ?? {};
+      if (action?.startsWith('search_result.')) logs.push({ action, metadata });
+      return route.fulfill({ status: 202, json: { result: 'accepted' } });
+    });
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+    const firstRow = page.locator('#explorer-table-row-0');
+    await expect(firstRow).toContainText('page-0-result-0');
+
+    // When
+    await firstRow.click();
+    await page.getByLabel('Next', { exact: true }).click();
+    await expect(firstRow).toContainText('page-1-result-0');
+    await firstRow.focus();
+    await page.keyboard.press('ArrowUp');
+    await expect(firstRow).toContainText('page-0-result-0');
+    await page.getByLabel('Rows per page').selectOption('20');
+
+    // Then
+    await expect
+      .poll(() => logs)
+      .toEqual([
+        {
+          action: 'search_result.row_click',
+          metadata: {
+            variable: '\\test\\page-0-result-0\\',
+            open: true,
+            pageContext: expect.anything(),
+          },
+        },
+        { action: 'search_result.page_change', metadata: { pageNumber: 2 } },
+        { action: 'search_result.page_change', metadata: { pageNumber: 1 } },
+        { action: 'search_result.page_size_change', metadata: { pageSize: 20 } },
+      ]);
+  });
   test('Error message on api error', async ({ page }) => {
     // Given
     await mockApiFail(page, searchResultPath, 'accessdenied');
