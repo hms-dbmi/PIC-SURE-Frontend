@@ -13,6 +13,9 @@ vi.mock('$app/state', () => ({
     get url() {
       return new URL(`http://localhost${mockPathname}`);
     },
+    get data() {
+      return { mode: mockPathname.startsWith('/discover') ? 'discover' : 'explorer' };
+    },
   },
 }));
 let mockToken: string | null = null;

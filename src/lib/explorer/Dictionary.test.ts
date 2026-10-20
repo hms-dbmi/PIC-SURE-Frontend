@@ -2,7 +2,19 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { get } from 'svelte/store';
 
 vi.mock('$app/env', () => ({ browser: true }));
-vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/explorer') } }));
+// The explorer and discover layouts return { mode }; the URL is kept so the same tests pinned the
+// path sniffing these replaced.
+let mockMode: 'explorer' | 'discover' = 'explorer';
+vi.mock('$app/state', () => ({
+  page: {
+    get url() {
+      return new URL(`http://localhost/${mockMode}`);
+    },
+    get data() {
+      return { mode: mockMode };
+    },
+  },
+}));
 
 const mockState = vi.hoisted(() => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -80,6 +92,9 @@ beforeEach(() => {
   hiddenFacets.set({});
   openFacets.set([]);
   resetFacetState();
+  mockMode = 'explorer';
+  mockState.consentsSettledSpy.mockClear();
+  mockState.consentedStudiesStore.set(['phs000001']);
 });
 afterEach(() => {
   vi.mocked(console.log).mockRestore();
@@ -223,5 +238,47 @@ describe('searchDictionary', () => {
       'picsure/dictionary/concepts',
       expect.objectContaining({ signal: undefined }),
     );
+  });
+});
+
+describe('consents follow the explore mode', () => {
+  it('sends the consented studies from explorer', async () => {
+    mockState.requestSpy
+      .mockResolvedValueOnce({ content: [], totalElements: 0 })
+      .mockResolvedValueOnce([]);
+
+    await searchDictionary('age', [], { pageNumber: 0, pageSize: 10 });
+    await updateFacetsFromSearch();
+
+    expect(mockState.requestSpy.mock.calls.map(([, opts]) => opts.body.consents)).toEqual([
+      ['phs000001'],
+      ['phs000001'],
+    ]);
+  });
+
+  it('never sends consents from discover, even for a signed-in user', async () => {
+    mockMode = 'discover';
+    mockState.requestSpy
+      .mockResolvedValueOnce({ content: [], totalElements: 0 })
+      .mockResolvedValueOnce([]);
+
+    await searchDictionary('age', [], { pageNumber: 0, pageSize: 10 });
+    await updateFacetsFromSearch();
+
+    expect(mockState.requestSpy).toHaveBeenCalledTimes(2);
+    for (const [, opts] of mockState.requestSpy.mock.calls) {
+      expect(opts.body).not.toHaveProperty('consents');
+    }
+    expect(mockState.consentsSettledSpy).not.toHaveBeenCalled();
+  });
+
+  it('fails closed in explorer when access is unavailable instead of sending no consents', async () => {
+    mockState.accessUnavailableStore.set(true);
+    try {
+      await expect(updateFacetsFromSearch()).rejects.toThrow('Access unavailable');
+      expect(mockState.requestSpy).not.toHaveBeenCalled();
+    } finally {
+      mockState.accessUnavailableStore.set(false);
+    }
   });
 });
