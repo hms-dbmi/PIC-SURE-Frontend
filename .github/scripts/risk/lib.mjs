@@ -142,20 +142,37 @@ function evaluateBot(pr, files, cfg) {
       continue;
     }
     const { added, removed } = parsePatch(f.patch);
-    // The lockfile can't be matched line by line (resolutions, integrity hashes), so only
-    // flag packages that appear in the new lock and not the old one.
+    // The lockfile can't be matched line by line (resolutions, integrity hashes), so compare
+    // package entries by name: new packages, version moves beyond maxBump, and tarball URLs are flagged.
     if (rule.lock === 'pnpm') {
-      const names = (lines) =>
-        new Set(
-          lines
-            .map((l) => PNPM_ENTRY.exec(typeof l === 'string' ? l : l.text))
-            .filter(Boolean)
-            .map((m) => m[1]),
-        );
-      const before = names(removed);
-      const fresh = [...names(added)].filter((n) => !before.has(n));
+      const versionsByName = (lines) => {
+        const byName = new Map();
+        for (const l of lines) {
+          const m = PNPM_ENTRY.exec(typeof l === 'string' ? l : l.text);
+          if (m) byName.set(m[1], (byName.get(m[1]) ?? new Set()).add(m[2]));
+        }
+        return byName;
+      };
+      const before = versionsByName(removed);
+      const after = versionsByName(added);
+      const fresh = [...after.keys()].filter((n) => !before.has(n));
       if (fresh.length)
         reasons.push(`${f.filename} introduces new package(s): ${fresh.slice(0, 5).join(', ')}`);
+      for (const [name, versions] of after) {
+        const olds = [...(before.get(name) ?? [])].filter((v) => !versions.has(v));
+        for (const to of [...versions].filter(
+          (v) => before.get(name) && !before.get(name).has(v),
+        )) {
+          const levels = olds.map((from) => bumpLevel(from, to));
+          if (!levels.some((lv) => RANK[lv] <= RANK[cfg.maxBump || 'patch']))
+            reasons.push(
+              `${f.filename} moves ${name} to ${to} (from ${olds.join(', ') || 'nothing'}), beyond a ${cfg.maxBump || 'patch'} bump`,
+            );
+        }
+      }
+      const tarball = [...added.map((a) => a.text), ...removed].find((l) => /\btarball:/.test(l));
+      if (tarball)
+        reasons.push(`${f.filename} changes a tarball URL (e.g. "${tarball.trim().slice(0, 60)}")`);
       continue;
     }
     const lineRe = new RegExp(rule.lineRegex);
@@ -364,7 +381,7 @@ export function evaluate({ pr, files, policy }) {
     const sample = [...new Set(fs)].slice(0, 4).join(', ');
     block(
       `category:${cat.id}`,
-      `${cat.reason} (${fs.length} file${fs.length === 1 ? '' : 's'}: ${sample}${fs.length > 4 ? ', ...' : ''})`,
+      `${cat.reason.replace('{lowRiskMaxLines}', cat.lowRiskMaxLines)} (${fs.length} file${fs.length === 1 ? '' : 's'}: ${sample}${fs.length > 4 ? ', ...' : ''})`,
     );
   }
 

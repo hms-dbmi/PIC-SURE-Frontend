@@ -96,9 +96,16 @@ test('small UI changes are low risk; larger ones, svg and unknown static files n
   const small = run([file('src/lib/components/Button.svelte', ['<p>x</p>'])]);
   assert.equal(small.risk, 'low', JSON.stringify(small.findings));
   assert.ok(
-    rules(run([file('src/lib/a.ts', Array(61).fill('const a = 1;'))])).includes(
-      'category:ui-source',
-    ),
+    rules(
+      run([
+        file(
+          'src/lib/a.ts',
+          Array(policy.categories.find((c) => c.id === 'ui-source').lowRiskMaxLines + 1).fill(
+            'const a = 1;',
+          ),
+        ),
+      ]),
+    ).includes('category:ui-source'),
   );
   assert.ok(rules(run([file('static/logo.svg', ['<svg/>'])])).includes('category:other'));
   assert.ok(rules(run([file('static/config.json', ['{}'])])).includes('category:other'));
@@ -185,7 +192,11 @@ test('hardcoded secret is flagged', () => {
 });
 
 test('size limits, draft, fork', () => {
-  assert.ok(rules(run([file('README.md', Array(200).fill('l'))])).includes('size'));
+  assert.ok(
+    rules(run([file('README.md', Array(policy.limits.maxChangedLines + 1).fill('l'))])).includes(
+      'size',
+    ),
+  );
   assert.ok(rules(run([file('README.md', ['x'])], { draft: true })).includes('draft'));
   assert.ok(
     rules(run([file('README.md', ['x'])], { head: { repo: { full_name: 'evil/repo' } } })).includes(
@@ -222,6 +233,27 @@ test('dependabot bump that adds a new transitive package needs review', () => {
   const r = run([pkgBump('vite', '5.4.1', '5.4.2'), lock], bot('Bump vite from 5.4.1 to 5.4.2'));
   assert.ok(rules(r).includes('bot-bump'));
   assert.match(JSON.stringify(r.findings), /evil-pkg/);
+});
+
+test('dependabot lockfile that moves a transitive package past a patch bump needs review', () => {
+  const lock = file(
+    'pnpm-lock.yaml',
+    ['  vite@5.4.2:', '  lodash@5.0.0:'],
+    ['  vite@5.4.1:', '  lodash@4.17.21:'],
+  );
+  const r = run([pkgBump('vite', '5.4.1', '5.4.2'), lock], bot('Bump vite from 5.4.1 to 5.4.2'));
+  assert.ok(rules(r).includes('bot-bump'));
+  assert.match(JSON.stringify(r.findings), /lodash/);
+});
+
+test('dependabot lockfile that changes a tarball URL needs review', () => {
+  const lock = file(
+    'pnpm-lock.yaml',
+    ['  vite@5.4.2:', '    resolution: {tarball: https://evil.example/vite.tgz}'],
+    ['  vite@5.4.1:', '    resolution: {integrity: sha512-old}'],
+  );
+  const r = run([pkgBump('vite', '5.4.1', '5.4.2'), lock], bot('Bump vite from 5.4.1 to 5.4.2'));
+  assert.match(JSON.stringify(r.findings), /tarball/);
 });
 
 test('dependabot minor bump, renamed dependency, or extra files need review', () => {

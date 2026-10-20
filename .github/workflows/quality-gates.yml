@@ -28,6 +28,9 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          # The pulls/files API reports line numbers in the PR head, so measure that revision, not the merge commit.
+          ref: ${{ github.event.pull_request.head.sha }}
       - name: Use PNPM 10
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
         with:
@@ -82,7 +85,7 @@ jobs:
         run: >-
           .github/scripts/risk/node_modules/.bin/jscpd
           --pattern 'src/**/*.{ts,js,svelte}'
-          --ignore '**/*.{test,spec}.{ts,js},**/*.d.ts,**/.svelte-kit/**,**/node_modules/**'
+          --ignore '**/*.test.ts,**/*.test.js,**/*.spec.ts,**/*.spec.js,**/*.d.ts,**/.svelte-kit/**,**/node_modules/**'
           --min-lines 6 --min-tokens 60
           --baseline-from-ref "origin/${BASE_REF}"
           --fail-on-new-clones 0

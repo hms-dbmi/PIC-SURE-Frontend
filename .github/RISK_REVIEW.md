@@ -40,7 +40,7 @@ A PR is `risk:needs-review` if **any** of the following is true. If none is, it 
 ### Needs review (any one of these)
 
 1. **A changed file is not docs, tests, static assets or application source.** That means anything under `.github/`, build and dependency files (`package.json`, `pnpm-lock.yaml`, vite/svelte/tsconfig/eslint configs, Dockerfiles, scripts, `.env*`), server-side SvelteKit code (`+server`, `*.server`, hooks, `lib/server`), or any other path.
-2. **Application source is too large.** More than `lowRiskMaxLines` changed lines (60 now) across `src/**/*.{svelte,ts,js}`.
+2. **Application source is too large.** More than `lowRiskMaxLines` changed lines (set in `policy.json`) across `src/**/*.{svelte,ts,js}`.
 3. **The PR is too large overall.** More than `limits.maxChangedLines` changed lines (150 now) or `limits.maxFiles` files (10 now), counting every file except `pnpm-lock.yaml`.
 4. **The PR is a draft, or comes from a fork.**
 5. **A path looks sensitive.** Auth, token, session, crypto, consent and similar words in the name.
