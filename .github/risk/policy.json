@@ -97,7 +97,7 @@
       "id": "ui-source",
       "lowRisk": false,
       "lowRiskMaxLines": 300,
-      "reason": "Application source change larger than the 60-line low-risk allowance",
+      "reason": "Application source change larger than the {lowRiskMaxLines}-line low-risk allowance",
       "globs": ["src/**/*.{svelte,ts,js}"]
     }
   ],
