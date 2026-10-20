@@ -1,7 +1,52 @@
-import { expect } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 
 import { test, mockApiConfig, mockApiSuccess } from '../custom-context';
 import { facetResultPath, facetsResponse, searchResultPath, searchResults } from '../mock-data';
+
+async function seedDeniedFilter(page: Page) {
+  await page.addInitScript(() => {
+    sessionStorage.setItem(
+      'filterTree',
+      JSON.stringify({
+        uuid: 'root',
+        operator: 'AND',
+        children: [
+          {
+            uuid: 'denied-filter',
+            id: '\\denied-study\\variable\\',
+            filterType: 'Categorical',
+            displayType: 'restrict',
+            variableName: 'Denied variable',
+            allowFiltering: true,
+            dataset: 'denied-study',
+            categoryValues: ['Yes'],
+          },
+        ],
+      }),
+    );
+  });
+}
+
+async function seedGenomicFilter(page: Page) {
+  await page.addInitScript(() => {
+    sessionStorage.setItem(
+      'genomicFilters',
+      JSON.stringify([
+        {
+          uuid: 'standalone-genomic-filter',
+          id: 'genomic',
+          filterType: 'genomic',
+          displayType: 'any',
+          variableName: 'Genomic Filter',
+          description: 'Gene with variant: BRCA1',
+          allowFiltering: true,
+          dataset: '',
+          Gene_with_variant: ['BRCA1'],
+        },
+      ]),
+    );
+  });
+}
 
 test.describe('Filter warning navigation', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
@@ -20,27 +65,7 @@ test.describe('Filter warning navigation', () => {
   test('warns before moving from Discover to Explore with an unconsented filter', async ({
     page,
   }) => {
-    await page.addInitScript(() => {
-      sessionStorage.setItem(
-        'filterTree',
-        JSON.stringify({
-          uuid: 'root',
-          operator: 'AND',
-          children: [
-            {
-              uuid: 'denied-filter',
-              id: '\\denied-study\\variable\\',
-              filterType: 'Categorical',
-              displayType: 'restrict',
-              variableName: 'Denied variable',
-              allowFiltering: true,
-              dataset: 'denied-study',
-              categoryValues: ['Yes'],
-            },
-          ],
-        }),
-      );
-    });
+    await seedDeniedFilter(page);
 
     await page.goto('/discover');
     await page.locator('#nav-link-explorer').click();
@@ -53,68 +78,10 @@ test.describe('Filter warning navigation', () => {
     );
   });
 
-  test('does not leave the Explore link highlighted after going back to Discover', async ({
-    page,
-  }) => {
-    await page.addInitScript(() => {
-      sessionStorage.setItem(
-        'filterTree',
-        JSON.stringify({
-          uuid: 'root',
-          operator: 'AND',
-          children: [
-            {
-              uuid: 'denied-filter',
-              id: '\\denied-study\\variable\\',
-              filterType: 'Categorical',
-              displayType: 'restrict',
-              variableName: 'Denied variable',
-              allowFiltering: true,
-              dataset: 'denied-study',
-              categoryValues: ['Yes'],
-            },
-          ],
-        }),
-      );
-    });
-
-    await page.goto('/discover');
-    const exploreLink = page.locator('#nav-link-explorer');
-    const unselectedBackground = await exploreLink.evaluate(
-      (el) => getComputedStyle(el).backgroundColor,
-    );
-    await exploreLink.click();
-    await page.getByRole('button', { name: 'Back to Discover' }).click();
-
-    await expect(page.getByTestId('sendfilter-warning')).toBeHidden();
-    await page.mouse.move(0, 0);
-    await expect(exploreLink).toHaveCSS('background-color', unselectedBackground);
-  });
-
   test('warns after leaving Discover before moving to Explore with an unconsented filter', async ({
     page,
   }) => {
-    await page.addInitScript(() => {
-      sessionStorage.setItem(
-        'filterTree',
-        JSON.stringify({
-          uuid: 'root',
-          operator: 'AND',
-          children: [
-            {
-              uuid: 'denied-filter',
-              id: '\\denied-study\\variable\\',
-              filterType: 'Categorical',
-              displayType: 'restrict',
-              variableName: 'Denied variable',
-              allowFiltering: true,
-              dataset: 'denied-study',
-              categoryValues: ['Yes'],
-            },
-          ],
-        }),
-      );
-    });
+    await seedDeniedFilter(page);
 
     await page.goto('/discover');
     await page.locator('#nav-link-api').click();
@@ -127,29 +94,33 @@ test.describe('Filter warning navigation', () => {
   });
 
   test('warns for a standalone genomic filter without consent', async ({ page }) => {
-    await page.addInitScript(() => {
-      sessionStorage.setItem(
-        'genomicFilters',
-        JSON.stringify([
-          {
-            uuid: 'standalone-genomic-filter',
-            id: 'genomic',
-            filterType: 'genomic',
-            displayType: 'any',
-            variableName: 'Genomic Filter',
-            description: 'Gene with variant: BRCA1',
-            allowFiltering: true,
-            dataset: '',
-            Gene_with_variant: ['BRCA1'],
-          },
-        ]),
-      );
-    });
+    await seedGenomicFilter(page);
 
     await page.goto('/discover');
     await page.locator('#nav-link-explorer').click();
 
     await expect(page).toHaveURL(/\/discover$/);
     await expect(page.getByTestId('sendfilter-warning')).toBeVisible();
+  });
+
+  [
+    { seed: seedDeniedFilter, from: '/discover', to: 'explorer', back: 'Back to Discover' },
+    { seed: seedGenomicFilter, from: '/explorer', to: 'discover', back: 'Back to Explore' },
+  ].forEach(({ seed, from, to, back }) => {
+    test(`does not leave the ${to} link highlighted after choosing ${back}`, async ({ page }) => {
+      await seed(page);
+
+      await page.goto(from);
+      const link = page.locator(`#nav-link-${to}`);
+      const unselectedBackground = await link.evaluate(
+        (el) => getComputedStyle(el).backgroundColor,
+      );
+      await link.click();
+      await page.getByRole('button', { name: back }).click();
+
+      await expect(page.getByTestId('sendfilter-warning')).toBeHidden();
+      await page.mouse.move(0, 0);
+      await expect(link).toHaveCSS('background-color', unselectedBackground);
+    });
   });
 });
