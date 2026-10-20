@@ -1,7 +1,7 @@
 <script lang="ts">
   import { config } from '#lib/config/config.svelte.ts';
   import Content from '#lib/shell/Content.svelte';
-  import Datatable from '#lib/ui/datatable/StaticTable.svelte';
+  import ClientTable from '#lib/ui/datatable/ClientTable.svelte';
   import DashboardLink from './DashboardLink.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
 
@@ -14,11 +14,12 @@
 
   const tableName = 'ExplorerTable';
 
-  const cellOverides = {
-    additional_info_link: DashboardLink,
-  };
-
   const dashboard = new Dashboard();
+  const columns = $derived(
+    dashboard.columns.map((column) =>
+      column.dataElement === 'additional_info_link' ? { ...column, cell: moreInfo } : column,
+    ),
+  );
   const dataLoadPromise = dashboard.load();
 
   let drawerOpen = $state(false);
@@ -31,6 +32,10 @@
   }
 </script>
 
+{#snippet moreInfo(row: DashboardRow)}
+  <DashboardLink {row} />
+{/snippet}
+
 <svelte:head>
   <title>{config.branding.applicationName}</title>
 </svelte:head>
@@ -39,14 +44,13 @@
     {#await dataLoadPromise}
       <Loading />
     {:then}
-      <Datatable
+      <ClientTable
         {tableName}
         data-testid="dashboard-table"
         id="dashboard-table"
         ariaLabel="Data dashboard"
-        data={dashboard.rows}
-        columns={dashboard.columns}
-        {cellOverides}
+        rows={dashboard.rows}
+        {columns}
         showPagination={false}
         searchable={false}
         stickyHeader

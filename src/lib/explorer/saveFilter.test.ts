@@ -15,7 +15,7 @@ describe('saveFilter', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     explorerPanel.hide();
-    explorerPanel.toggleRow('\\demo\\age\\', { view: 'filter', table: 'ExplorerTable' });
+    explorerPanel.toggleRow('\\demo\\age\\', 'filter');
   });
 
   it('adds the filter, fills in its labels, and shows it in the open panel', () => {

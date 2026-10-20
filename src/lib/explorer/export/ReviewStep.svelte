@@ -21,7 +21,8 @@
   import Summary from './Summary.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import Loading from '#lib/ui/Loading.svelte';
-  import Datatable from '#lib/ui/datatable/StaticTable.svelte';
+  import ClientTable from '#lib/ui/datatable/ClientTable.svelte';
+  import type { Column } from '#lib/ui/datatable/types.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
   import type { QueryRequest } from '#lib/api/picsure/query.types.ts';
 
@@ -35,7 +36,7 @@
 
   let { query, rows, dataLimitExceeded, maxDataPoints }: PrepareProps = $props();
 
-  const columns = [
+  const columns: Column<ExportRowInterface>[] = [
     { dataElement: 'name', label: 'Variable Name', sort: true },
     { dataElement: 'description', label: 'Variable Description', sort: true },
     { dataElement: 'type', label: 'Type', sort: true, class: 'text-center' },
@@ -184,12 +185,12 @@
         which is too large to export. Please reduce the data selection or the number of selected participants.
       </ErrorAlert>
     {:else if !loadingSampleIds}
-      <Datatable
+      <ClientTable
         tableName="ExportSummary"
         data-testid="export-summary-table"
         id="export-summary-table"
         ariaLabel="Export summary"
-        data={activeRows}
+        rows={activeRows}
         {columns}
       />
       {#if config.features.explorer.enableSampleIdCheckbox}

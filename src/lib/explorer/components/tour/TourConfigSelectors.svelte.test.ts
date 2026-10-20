@@ -32,8 +32,9 @@ vi.mock('#lib/explorer/mode.ts', () => ({
   isOpenAccess: vi.fn(() => false),
 }));
 
-import RemoteTable from '#lib/ui/datatable/RemoteTable.svelte';
-import Actions from '#lib/explorer/components/cell/Actions.svelte';
+import ExplorerResultsTable from '../../../../../tests/support/fixtures/ExplorerResultsTable.svelte';
+import type { Column } from '#lib/ui/datatable/types.ts';
+import type { SearchResult } from '#lib/explorer/types.ts';
 import { explorerPanel } from '#lib/explorer/panel.svelte.ts';
 import { isOpenAccess } from '#lib/explorer/mode.ts';
 
@@ -49,7 +50,7 @@ afterEach(() => {
 // Mirrors Explorer.svelte's real columns: default branding columns (Dataset, Variable
 // Name) plus the Actions column it always appends. The tour's "row-0-col-2" selectors
 // assume Actions lands at index 2 - this fixture is what pins that assumption down.
-const columns = [
+const columns: Column<SearchResult>[] = [
   { label: 'Dataset', dataElement: 'dataset' },
   { label: 'Variable Name', dataElement: 'name' },
   { dataElement: 'id', label: 'Actions' },
@@ -62,7 +63,7 @@ function makeRow(i: number) {
     dataset: `Dataset ${i}`,
     name: `Variable ${i}`,
     display: `Variable ${i}`,
-  };
+  } as unknown as SearchResult;
 }
 
 function renderExplorerTable() {
@@ -71,17 +72,9 @@ function renderExplorerTable() {
 
   // Row 0 is expanded, as it is by the time the tour reaches its
   // "active-row"/"row-0-col-2" steps (it drives the row open first).
-  explorerPanel.toggleRow(rows[0].conceptPath, { table: 'ExplorerTable' });
+  explorerPanel.toggleRow(rows[0].conceptPath);
 
-  return render(RemoteTable, {
-    tableName: 'ExplorerTable',
-    id: 'explorer-table',
-    handler,
-    columns,
-    cellOverides: { id: Actions },
-    isClickable: true,
-    expandedRow,
-  });
+  return render(ExplorerResultsTable, { handler, columns, expandedRow });
 }
 
 // Mirrors ExplorerTour.svelte's findAndSetFirstNonStigmatizedAvailableFilterThenNext
@@ -134,15 +127,7 @@ describe('markFirstRowNonStigmatized under open access', () => {
     ];
     const handler = new TableHandler(rows, { rowsPerPage: 10 });
 
-    const { container } = render(RemoteTable, {
-      tableName: 'ExplorerTable',
-      id: 'explorer-table',
-      handler,
-      columns,
-      cellOverides: { id: Actions },
-      isClickable: true,
-      expandedRow,
-    });
+    const { container } = render(ExplorerResultsTable, { handler, columns, expandedRow });
 
     markFirstRowNonStigmatized(container);
 

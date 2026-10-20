@@ -5,49 +5,63 @@ import { createRawSnippet, type Snippet } from 'svelte';
 import { fireEvent, render, waitFor } from '@testing-library/svelte';
 import { TableHandler } from '@vincjo/datatables';
 
-vi.mock('#lib/telemetry/logger.ts', () => ({
-  log: vi.fn(),
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  createLog: vi.fn((...args: any[]) => args),
-  getPageContext: vi.fn(() => 'test-context'),
-}));
-
 import { TableHandler as ServerTableHandler } from '@vincjo/datatables/server';
 
-import RemoteTable from '#lib/ui/datatable/RemoteTable.svelte';
+import DataTable from '#lib/ui/datatable/DataTable.svelte';
 import { isTextEntryField } from '#lib/ui/datatable/keyboard.ts';
-import type { Indexable } from '#lib/utils/objects.ts';
-import { explorerPanel } from '#lib/explorer/panel.svelte.ts';
-import KeyButtonCell from '../../../../tests/support/fixtures/KeyButtonCell.svelte';
+import type { Column, RowExpansion } from '#lib/ui/datatable/types.ts';
 
-const columns = [
+interface TestRow {
+  name: string;
+  id: string;
+  onAction?: () => void;
+}
+
+function makeRows(count: number, onAction?: () => void): TestRow[] {
+  return Array.from({ length: count }, (_, i) => ({ name: `Row ${i}`, id: `ds-${i}`, onAction }));
+}
+
+const keyButton = createRawSnippet((row: () => TestRow) => ({
+  render: () => '<button type="button" data-key="x" title="Act (x)">Act</button>',
+  setup: (button) => {
+    button.addEventListener('click', (event) => {
+      event.stopPropagation();
+      row().onAction?.();
+    });
+  },
+}));
+
+const columns: Column<TestRow>[] = [
   { dataElement: 'name', label: 'Name' },
-  { dataElement: 'id', label: 'Actions' },
+  { dataElement: 'id', label: 'Actions', cell: keyButton },
 ];
 
-function makeRows(count: number, onAction?: () => void) {
-  return Array.from({ length: count }, (_, i) => ({
-    name: `Row ${i}`,
-    dataset_id: `ds-${i}`,
-    id: `ds-${i}`,
-    onAction,
-  }));
+class Expansion implements RowExpansion {
+  activeRow = $state('');
+  toggleRow = (key: string) => {
+    this.activeRow = this.activeRow === key ? '' : key;
+  };
+  closeRow = () => {
+    this.activeRow = '';
+  };
 }
+let expansion = new Expansion();
 
 const panel = createRawSnippet(() => ({ render: () => '<div>panel</div>' }));
 const panelWithInput = createRawSnippet(() => ({
   render: () => '<input type="text" aria-label="panel-input" />',
 }));
 
-function renderTable(rowCount = 7, onAction?: () => void, expandedRow?: Snippet<[Indexable]>) {
+function renderTable(rowCount = 7, onAction?: () => void, expandedRow?: Snippet<[TestRow]>) {
   const handler = new TableHandler(makeRows(rowCount, onAction), { rowsPerPage: 5 });
-  const result = render(RemoteTable, {
+  const result = render(DataTable<TestRow>, {
     tableName: 'KbdTest',
     id: 'KbdTest',
     handler,
     columns,
-    cellOverides: { id: KeyButtonCell },
     isClickable: true,
+    rowKey: 'id',
+    expansion,
     expandedRow,
   });
   return { handler, ...result };
@@ -59,7 +73,7 @@ function rows(container: HTMLElement): HTMLTableRowElement[] {
 
 afterEach(() => {
   vi.clearAllMocks();
-  explorerPanel.closeRow();
+  expansion = new Expansion();
 });
 
 describe('Datatable keyboard navigation', () => {
@@ -189,12 +203,11 @@ describe('Datatable keyboard navigation', () => {
     });
     handler.invalidate();
 
-    const { container, rerender } = render(RemoteTable, {
+    const { container, rerender } = render(DataTable<TestRow>, {
       tableName: 'KbdTest',
       id: 'KbdTest',
       handler,
       columns,
-      cellOverides: { id: KeyButtonCell },
       isClickable: true,
       isLoading: false,
     });
@@ -222,49 +235,49 @@ describe('Datatable keyboard navigation', () => {
 
   it('closes an expanded row with Escape and keeps focus on the opener row', async () => {
     const { container } = renderTable(7, undefined, panel);
-    explorerPanel.toggleRow('ds-0', { table: 'KbdTest' });
+    expansion.toggleRow('ds-0');
 
     await waitFor(() => expect(container.querySelector('tr.expandable-row')).not.toBeNull());
     const pageRows = rows(container);
     pageRows[0].focus();
 
     await fireEvent.keyDown(pageRows[0], { key: 'Escape' });
-    expect(explorerPanel.activeRow).toBe('');
+    expect(expansion.activeRow).toBe('');
     expect(document.activeElement?.id).toBe('KbdTest-row-0');
   });
 
   it('Escape from a text field steps back to the owner row first, then closes on repeat', async () => {
     const { container } = renderTable(7, undefined, panelWithInput);
-    explorerPanel.toggleRow('ds-0', { table: 'KbdTest' });
+    expansion.toggleRow('ds-0');
 
     await waitFor(() => expect(container.querySelector('tr.expandable-row input')).not.toBeNull());
     const input = container.querySelector<HTMLInputElement>('tr.expandable-row input')!;
     input.focus();
 
     await fireEvent.keyDown(input, { key: 'Escape' });
-    expect(explorerPanel.activeRow).toBe('ds-0');
+    expect(expansion.activeRow).toBe('ds-0');
     expect(document.activeElement?.id).toBe('KbdTest-row-0');
 
     await fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
-    expect(explorerPanel.activeRow).toBe('');
+    expect(expansion.activeRow).toBe('');
   });
 
   it('leaves focus alone when Escape closes a panel owned by a different row', async () => {
     const { container } = renderTable(7, undefined, panel);
-    explorerPanel.toggleRow('ds-0', { table: 'KbdTest' });
+    expansion.toggleRow('ds-0');
 
     await waitFor(() => expect(container.querySelector('tr.expandable-row')).not.toBeNull());
     const pageRows = rows(container);
     pageRows[2].focus();
 
     await fireEvent.keyDown(pageRows[2], { key: 'Escape' });
-    expect(explorerPanel.activeRow).toBe('');
+    expect(expansion.activeRow).toBe('');
     expect(document.activeElement?.id).toBe('KbdTest-row-2');
   });
 
   it("leaves focus alone when Escape arrives from another row's action button", async () => {
     const { container } = renderTable(7, undefined, panel);
-    explorerPanel.toggleRow('ds-0', { table: 'KbdTest' });
+    expansion.toggleRow('ds-0');
 
     await waitFor(() => expect(container.querySelector('tr.expandable-row')).not.toBeNull());
     const pageRows = rows(container);
@@ -274,8 +287,45 @@ describe('Datatable keyboard navigation', () => {
     expect(action.tagName).toBe('BUTTON');
 
     await fireEvent.keyDown(action, { key: 'Escape' });
-    expect(explorerPanel.activeRow).toBe('');
+    expect(expansion.activeRow).toBe('');
     expect(document.activeElement).toBe(action);
+  });
+});
+
+describe('Datatable rows', () => {
+  it("expands a clicked row through the owner's expansion, and collapses it on a second click", async () => {
+    const { container } = renderTable(7, undefined, panel);
+    const first = rows(container)[0];
+
+    await fireEvent.click(first);
+    expect(expansion.activeRow).toBe('ds-0');
+    await waitFor(() => expect(container.querySelector('#KbdTest-active-row-0')).not.toBeNull());
+    expect(first.getAttribute('aria-expanded')).toBe('true');
+
+    await fireEvent.click(first);
+    expect(expansion.activeRow).toBe('');
+  });
+
+  it('reports a search term once typing pauses', async () => {
+    vi.useFakeTimers();
+    const onsearch = vi.fn();
+    const handler = new TableHandler(makeRows(3), { rowsPerPage: 5 });
+    const { getByLabelText } = render(DataTable<TestRow>, {
+      tableName: 'SearchTest',
+      handler,
+      columns,
+      searchable: true,
+      onsearch,
+    });
+    const input = getByLabelText('Search table');
+
+    await fireEvent.input(input, { target: { value: 'Ro' } });
+    await fireEvent.input(input, { target: { value: 'Row 1' } });
+    expect(onsearch).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(500);
+
+    expect(onsearch).toHaveBeenCalledExactlyOnceWith('Row 1');
+    vi.useRealTimers();
   });
 });
 

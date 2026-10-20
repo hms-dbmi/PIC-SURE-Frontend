@@ -1,23 +1,23 @@
-<script lang="ts">
-  import { TableHandler } from '@vincjo/datatables';
-  import { TableHandler as RemoteTableHandler } from '@vincjo/datatables/server';
+<script lang="ts" generics="T extends Row">
+  import type { AnyTableHandler, Row } from '../types.ts';
+  import { getTableEvents, hasTableEvents } from '../context.ts';
 
   import { setDefaultRows } from '../rowsPerPage.ts';
-  import { log, createLog } from '#lib/telemetry/logger.ts';
 
   interface Props {
     tableName: string;
-    handler: TableHandler | RemoteTableHandler;
+    handler: AnyTableHandler<T>;
     options?: number[];
     class?: string;
   }
 
   let { tableName, handler, options = [5, 10, 20, 50], class: className = '' }: Props = $props();
+  const events = hasTableEvents() ? getTableEvents() : undefined;
 
   const setRowsPerPage = () => {
     setDefaultRows(tableName, handler.rowsPerPage);
     handler.setPage(1);
-    log(createLog('ACTION', 'search_result.page_size_change', { pageSize: handler.rowsPerPage }));
+    events?.pageSizeChange(handler.rowsPerPage);
   };
 </script>
 

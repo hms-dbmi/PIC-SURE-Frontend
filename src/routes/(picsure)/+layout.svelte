@@ -4,6 +4,8 @@
   import { beforeNavigate } from '$app/navigation';
 
   import Toaster from '#lib/ui/Toaster.svelte';
+  import { setTableEvents } from '#lib/ui/datatable/context.ts';
+  import { tableEvents } from '#lib/telemetry/tableEvents.ts';
 
   import { filterState } from '#lib/query/filters.svelte.ts';
   import { exploreMode, routeMode } from '#lib/explorer/mode.ts';
@@ -17,6 +19,7 @@
 
   let { children }: { children?: Snippet } = $props();
   let filterWarningModal: boolean = $state(false);
+  setTableEvents(tableEvents);
 
   onMount(() => {
     document.body.classList.add('started');

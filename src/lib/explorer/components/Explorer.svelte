@@ -11,7 +11,6 @@
   import { explorerSearch as search } from '#lib/explorer/search.svelte.ts';
   import type { TourDataType } from '#lib/explorer/components/tour/types.ts';
   import type { SearchResult } from '#lib/explorer/types.ts';
-  import type { Indexable } from '#lib/utils/objects.ts';
   import type { Filter } from '#lib/query/filter.svelte.ts';
   import { saveFilter } from '#lib/explorer/saveFilter.ts';
   import { explorerPanel } from '#lib/explorer/panel.svelte.ts';
@@ -20,12 +19,12 @@
   import AddFilter from '#lib/explorer/components/AddFilter.svelte';
   import HierarchyComponent from '#lib/explorer/components/HierarchyComponent.svelte';
   import ResultInfoComponent from '#lib/explorer/components/ResultInfoComponent.svelte';
-  import SearchDatatable from '#lib/ui/datatable/RemoteTable.svelte';
+  import DataTable from '#lib/ui/datatable/DataTable.svelte';
   import Searchbox from '#lib/ui/Searchbox.svelte';
   import FacetSideBar from '#lib/explorer/components/facets/FacetSideBar.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import ExplorerTour from '#lib/explorer/components/tour/ExplorerTour.svelte';
-  import { log, createLog } from '#lib/telemetry/logger.ts';
+  import { log, createLog, getPageContext } from '#lib/telemetry/logger.ts';
   import { exploreMode } from '#lib/explorer/mode.ts';
 
   let { tourConfig }: { tourConfig: TourDataType } = $props();
@@ -35,11 +34,10 @@
   // The tour's steps select this table and its rows by id.
   const tableId = 'explorer-table';
   const tableColumns = $derived(config.branding.explorePage.columns || []);
-  const columns: Column[] = $derived([
+  const columns: Column<SearchResult>[] = $derived([
     ...tableColumns,
-    { dataElement: 'id', label: 'Actions', class: 'w-36 text-center' },
+    { dataElement: 'id', label: 'Actions', class: 'w-36 text-center', cell: actionsCell },
   ]);
-  const cellOverides = { id: Actions };
   const genomicFeaturesEnabled = $derived(
     config.features.enableGENEQuery || config.features.enableSNPQuery,
   );
@@ -72,6 +70,16 @@
     saveFilter(filter, { enrich: false });
   }
 
+  function logRowClick(row: SearchResult) {
+    log(
+      createLog('ACTION', 'search_result.row_click', {
+        variable: row.conceptPath,
+        open: !explorerPanel.isExpanded(row.conceptPath),
+        pageContext: getPageContext(),
+      }),
+    );
+  }
+
   function scrollToSearchResults() {
     document.getElementById(tableId)?.scrollIntoView({ block: 'start' });
   }
@@ -101,13 +109,17 @@
   onDestroy(() => releaseHandler?.());
 </script>
 
-{#snippet expandedRow(row: Indexable)}
+{#snippet actionsCell(row: SearchResult)}
+  <Actions {row} />
+{/snippet}
+
+{#snippet expandedRow(row: SearchResult)}
   {#if explorerPanel.activeView === 'filter'}
-    <AddFilter data={row as SearchResult} onadded={(filter) => saveFilter(filter)} />
+    <AddFilter data={row} onadded={(filter) => saveFilter(filter)} />
   {:else if explorerPanel.activeView === 'hierarchy'}
-    <HierarchyComponent data={row as SearchResult} onadded={addAnyRecordOfFilter} />
+    <HierarchyComponent data={row} onadded={addAnyRecordOfFilter} />
   {:else}
-    <ResultInfoComponent data={row as SearchResult} />
+    <ResultInfoComponent data={row} />
   {/if}
 {/snippet}
 
@@ -145,7 +157,7 @@
         {search.error}
       </ErrorAlert>
     {:else if search.hasCriteria}
-      <SearchDatatable
+      <DataTable
         isClickable
         ariaLabel="Search results"
         {tableName}
@@ -153,10 +165,11 @@
         data-testid="explorer-results-table"
         handler={search.table}
         {columns}
-        {cellOverides}
         isLoading={search.loading}
+        rowKey="conceptPath"
+        expansion={explorerPanel}
         {expandedRow}
-        rowClickLogAction="search_result.row_click"
+        rowClickHandler={logRowClick}
         onPageChange={scrollToSearchResults}
       />
     {/if}

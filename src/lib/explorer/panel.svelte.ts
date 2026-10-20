@@ -1,21 +1,17 @@
+import type { RowExpansion } from '#lib/ui/datatable/types.ts';
 import { assertNoSsrWrite } from '#lib/utils/ssrWrite.ts';
 
 /** What an expanded search-result row shows under it. */
 export type RowView = 'info' | 'filter' | 'hierarchy';
 
-/** The explorer's results side panel, and the one table row expanded at a time. */
-class ExplorerPanel {
+/** The explorer's results side panel, and the one search-result row expanded at a time. */
+class ExplorerPanel implements RowExpansion {
   #open = $state(false);
-  #table = $state('');
   #row = $state('');
   #view: RowView = $state('info');
 
   get open() {
     return this.#open;
-  }
-
-  get activeTable() {
-    return this.#table;
   }
 
   get activeRow() {
@@ -43,24 +39,21 @@ class ExplorerPanel {
     return this.#open;
   }
 
-  isExpanded(table: string, row: string | undefined): boolean {
-    return !!row && this.#table === table && this.#row === row;
+  isExpanded(row: string | undefined): boolean {
+    return !!row && this.#row === row;
   }
 
   /**
-   * Expands `row`, or collapses it when it's already expanded with the same view and table.
-   * Without a `view` a row shows its info; without a `table` the active table is kept.
+   * Expands `row`, or collapses it when it's already expanded with the same view. Without a
+   * `view` a row shows its info.
    */
-  toggleRow(row: string, { view, table }: { view?: RowView; table?: string } = {}) {
+  toggleRow(row: string, view?: RowView) {
     assertNoSsrWrite('explorerPanel');
-    const sameView = !view || this.#view === view;
-    const sameTable = !table || this.#table === table;
-    if (this.#row === row && sameView && sameTable) {
+    if (this.#row === row && (!view || this.#view === view)) {
       this.closeRow();
       return;
     }
     this.#row = row;
-    if (table) this.#table = table;
     this.#view = view ?? 'info';
   }
 

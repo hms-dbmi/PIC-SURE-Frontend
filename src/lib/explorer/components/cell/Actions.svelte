@@ -13,23 +13,23 @@
   import { log, createLog, getPageContext } from '#lib/telemetry/logger.ts';
 
   interface Props {
-    data: { row: SearchResult; tableName?: string };
+    row: SearchResult;
   }
 
-  let { data }: Props = $props();
-  let exportItem = $derived(mapSearchResultAsExport(data.row));
+  let { row }: Props = $props();
+  let exportItem = $derived(mapSearchResultAsExport(row));
 
   function updateActiveRow(view: RowView) {
     return (event: Event) => {
       event.stopPropagation();
       log(
         createLog('ACTION', `search_result.${view}`, {
-          variable: data.row.display || data.row.name,
-          conceptPath: data.row.conceptPath,
+          variable: row.display || row.name,
+          conceptPath: row.conceptPath,
           pageContext: getPageContext(),
         }),
       );
-      explorerPanel.toggleRow(data.row.conceptPath, { view, table: data.tableName });
+      explorerPanel.toggleRow(row.conceptPath, view);
     };
   }
 
@@ -42,8 +42,8 @@
     if (isExported) {
       log(
         createLog('ACTION', 'search_result.export_remove', {
-          variable: data.row.display || data.row.name,
-          conceptPath: data.row.conceptPath,
+          variable: row.display || row.name,
+          conceptPath: row.conceptPath,
           pageContext: getPageContext(),
         }),
       );
@@ -51,8 +51,8 @@
     } else {
       log(
         createLog('ACTION', 'search_result.export_add', {
-          variable: data.row.display || data.row.name,
-          conceptPath: data.row.conceptPath,
+          variable: row.display || row.name,
+          conceptPath: row.conceptPath,
           pageContext: getPageContext(),
         }),
       );
@@ -64,7 +64,7 @@
   let isExported = $derived(
     $exports.map((exp) => exp.conceptPath).includes(exportItem.conceptPath),
   );
-  let shouldDisableFilter = $derived(isOpenAccess() && !data.row.allowFiltering);
+  let shouldDisableFilter = $derived(isOpenAccess() && !row.allowFiltering);
 </script>
 
 <IconButton

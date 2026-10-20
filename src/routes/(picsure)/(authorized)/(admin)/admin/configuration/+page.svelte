@@ -4,19 +4,16 @@
   import { resolve } from '$app/paths';
   import { afterNavigate, beforeNavigate, goto, replaceState } from '$app/navigation';
   import { page } from '$app/state';
-  import { appPath } from '#lib/api/paths.ts';
 
-  import type { Indexable } from '#lib/utils/objects.ts';
   import { config } from '#lib/config/config.svelte.ts';
 
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import Content from '#lib/shell/Content.svelte';
-  import Datatable from '#lib/ui/datatable/StaticTable.svelte';
+  import ClientTable from '#lib/ui/datatable/ClientTable.svelte';
+  import type { Column } from '#lib/ui/datatable/types.ts';
   import Tabs from '#lib/ui/Tabs.svelte';
   import TermsEditor from '#lib/admin/terms/TermsEditor.svelte';
-  import RoleActions from '#lib/admin/access/cell/RoleActions.svelte';
-  import PrivilegeActions from '#lib/admin/access/cell/PrivilegeActions.svelte';
-  import ConnectionActions from '#lib/admin/access/cell/ConnectionActions.svelte';
+  import EntityActions from '#lib/admin/access/cell/EntityActions.svelte';
   import Application from '#lib/admin/access/cell/Application.svelte';
   import RequiredFields from '#lib/admin/access/cell/RequiredFields.svelte';
   import ConfigKindTab from '#lib/admin/settings/ConfigKindTab.svelte';
@@ -24,6 +21,10 @@
   import ApiKeysPanel from '#lib/admin/apiKeys/ApiKeysPanel.svelte';
 
   import * as admin from '#lib/admin/entities.ts';
+  import type { AccessKind } from '#lib/admin/access/model/kind.ts';
+  import type { Role } from '#lib/auth/model/role.ts';
+  import type { Privilege } from '#lib/auth/model/privilege.ts';
+  import type { Connection } from '#lib/auth/model/connection.ts';
   import { session } from '#lib/auth/session.svelte.ts';
 
   import Loading from '#lib/ui/Loading.svelte';
@@ -84,55 +85,63 @@
     if (type !== 'enter' && leftBannersOpen && tabSet === 'Site banners') bannerViewKey += 1;
   });
 
-  const roleTable = {
-    columns: [
-      { dataElement: 'name', label: 'Name', sort: true },
-      { dataElement: 'description', label: 'Description', sort: true },
-      { dataElement: 'uuid', label: 'Actions', class: 'text-center' },
-    ],
-    overrides: { uuid: RoleActions },
-  };
+  const roleColumns: Column<Role>[] = [
+    { dataElement: 'name', label: 'Name', sort: true },
+    { dataElement: 'description', label: 'Description', sort: true },
+    { dataElement: 'uuid', label: 'Actions', class: 'text-center', cell: roleActions },
+  ];
 
-  const privilegesTable = {
-    columns: [
-      { dataElement: 'name', label: 'Name', sort: true },
-      { dataElement: 'description', label: 'Description', sort: true },
-      { dataElement: 'application', label: 'Application Name', sort: true },
-      { dataElement: 'uuid', label: 'Actions', class: 'text-center' },
-    ],
-    overrides: {
-      uuid: PrivilegeActions,
-      application: Application,
-    },
-  };
+  const privilegeColumns: Column<Privilege>[] = [
+    { dataElement: 'name', label: 'Name', sort: true },
+    { dataElement: 'description', label: 'Description', sort: true },
+    { dataElement: 'application', label: 'Application Name', sort: true, cell: application },
+    { dataElement: 'uuid', label: 'Actions', class: 'text-center', cell: privilegeActions },
+  ];
 
-  const connectionTable = {
-    columns: [
-      { dataElement: 'label', label: 'Label', sort: true },
-      { dataElement: 'id', label: 'ID', sort: true },
-      { dataElement: 'subPrefix', label: 'Sub prefix', sort: true },
-      { dataElement: 'requiredFields', label: 'Required fields' },
-      { dataElement: 'uuid', label: 'Actions', class: 'text-center' },
-    ],
-    overrides: {
-      uuid: ConnectionActions,
-      requiredFields: RequiredFields,
-    },
-  };
+  const connectionColumns: Column<Connection>[] = [
+    { dataElement: 'label', label: 'Label', sort: true },
+    { dataElement: 'id', label: 'ID', sort: true },
+    { dataElement: 'subPrefix', label: 'Sub prefix', sort: true },
+    { dataElement: 'requiredFields', label: 'Required fields', cell: requiredFields },
+    { dataElement: 'uuid', label: 'Actions', class: 'text-center', cell: connectionActions },
+  ];
 
   async function loadAppsAndPriv() {
     await admin.privileges.load();
     await admin.applications.load();
   }
 
-  const rowClickHandler = (path: string) => (row: Indexable) => {
-    const uuid = row?.uuid;
-    goto(resolve(appPath(`admin/configuration/${path}/${uuid}/edit`)));
-  };
-  const roleRowCLick = rowClickHandler('role');
-  const privilegeRowClick = rowClickHandler('privilege');
-  const connectionRowClick = rowClickHandler('connection');
+  const editOnClick =
+    (kind: AccessKind) =>
+    ({ uuid }: { uuid?: string }) => {
+      goto(
+        resolve(
+          '/(picsure)/(authorized)/(admin)/admin/configuration/(top-admin)/[kind=accessKind]/[uuid]/edit',
+          { kind, uuid: uuid ?? '' },
+        ),
+      );
+    };
 </script>
+
+{#snippet roleActions(row: Role)}
+  <EntityActions kind="role" uuid={row.uuid ?? ''} {row} />
+{/snippet}
+
+{#snippet privilegeActions(row: Privilege)}
+  <EntityActions kind="privilege" uuid={row.uuid ?? ''} {row} />
+{/snippet}
+
+{#snippet connectionActions(row: Connection)}
+  <EntityActions kind="connection" uuid={row.uuid ?? ''} {row} />
+{/snippet}
+
+{#snippet application(row: Privilege)}
+  <Application application={row.application} />
+{/snippet}
+
+{#snippet requiredFields(row: Connection)}
+  <RequiredFields requiredFields={row.requiredFields} />
+{/snippet}
 
 <svelte:head>
   <title>{config.branding.applicationName} | Configuration</title>
@@ -183,14 +192,13 @@
                 </Button>
               </div>
             </div>
-            <Datatable
+            <ClientTable
               tableName="Roles"
               data-testid="admin-role-table"
               id="admin-role-table"
-              data={admin.roles.items}
-              columns={roleTable.columns}
-              cellOverides={roleTable.overrides}
-              rowClickHandler={roleRowCLick}
+              rows={admin.roles.items}
+              columns={roleColumns}
+              rowClickHandler={editOnClick('role')}
               isClickable
             />
           {:catch}
@@ -218,14 +226,13 @@
                 </Button>
               </div>
             </div>
-            <Datatable
+            <ClientTable
               tableName="Privileges"
               data-testid="admin-privilege-table"
               id="admin-privilege-table"
-              data={admin.privileges.items}
-              columns={privilegesTable.columns}
-              cellOverides={privilegesTable.overrides}
-              rowClickHandler={privilegeRowClick}
+              rows={admin.privileges.items}
+              columns={privilegeColumns}
+              rowClickHandler={editOnClick('privilege')}
               isClickable
             />
           {:catch}
@@ -253,14 +260,13 @@
                 </Button>
               </div>
             </div>
-            <Datatable
+            <ClientTable
               tableName="Connections"
               data-testid="admin-connection-table"
               id="admin-connection-table"
-              data={admin.connections.items}
-              columns={connectionTable.columns}
-              cellOverides={connectionTable.overrides}
-              rowClickHandler={connectionRowClick}
+              rows={admin.connections.items}
+              columns={connectionColumns}
+              rowClickHandler={editOnClick('connection')}
               isClickable
             />
           {:catch}

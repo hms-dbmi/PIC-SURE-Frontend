@@ -1,6 +1,10 @@
 <script lang="ts">
   import { tones } from '#lib/ui/surface.ts';
-  let { data = { cell: '', row: {} } } = $props();
+  interface Props {
+    status: string;
+  }
+
+  let { status }: Props = $props();
 
   const statusTones: { [status: string]: string } = {
     Active: tones['filled-success'],
@@ -9,6 +13,6 @@
   };
 </script>
 
-<span class="badge last:p-1 rounded-sm {statusTones[data.cell] || tones['tonal-surface']}"
-  >{data.cell}</span
+<span class="badge last:p-1 rounded-sm {statusTones[status] || tones['tonal-surface']}"
+  >{status}</span
 >

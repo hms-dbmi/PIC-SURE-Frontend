@@ -1,22 +1,21 @@
-<script lang="ts">
-  import { TableHandler } from '@vincjo/datatables';
-  import { TableHandler as RemoteTableHandler } from '@vincjo/datatables/server';
+<script lang="ts" generics="T extends Row">
+  import { TableHandler as ServerTableHandler } from '@vincjo/datatables/server';
+  import type { AnyTableHandler, Row } from '../types.ts';
 
   interface Props {
-    handler: TableHandler | RemoteTableHandler;
-    filterBy: string;
+    handler: AnyTableHandler<T>;
+    filterBy: Extract<keyof T, string>;
     class?: string;
   }
 
   let { handler, filterBy, class: className = '' }: Props = $props();
 
-  // svelte-ignore state_referenced_locally
-  const filter = $state(handler.createFilter(filterBy));
+  const filter = $derived(handler.createFilter(filterBy));
   let timeout: ReturnType<typeof setTimeout>;
 
   const setFilter = () => {
     filter.set();
-    if (handler instanceof RemoteTableHandler) {
+    if (handler instanceof ServerTableHandler) {
       clearTimeout(timeout);
       timeout = setTimeout(() => {
         handler.invalidate();

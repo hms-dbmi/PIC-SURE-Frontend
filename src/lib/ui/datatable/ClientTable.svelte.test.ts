@@ -4,23 +4,22 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, within } from '@testing-library/svelte';
 
 vi.mock('$app/env', () => ({ browser: true }));
-vi.mock('#lib/telemetry/logger.ts', () => ({
-  log: vi.fn(),
-  createLog: vi.fn(),
-  getPageContext: vi.fn(),
-}));
-
-import StaticTable from '#lib/ui/datatable/StaticTable.svelte';
+import ClientTable from '#lib/ui/datatable/ClientTable.svelte';
 
 const data = Array.from({ length: 30 }, (_, i) => ({ name: `Row ${i}` }));
-const columns = [{ dataElement: 'name', label: 'Name' }];
+const columns = [{ dataElement: 'name' as const, label: 'Name', sort: true }];
 
 function renderTable(tableName: string) {
-  const { container } = render(StaticTable, { tableName, data, columns, showPagination: true });
+  const { container } = render(ClientTable, {
+    tableName,
+    rows: data,
+    columns,
+    showPagination: true,
+  });
   return within(container as HTMLElement);
 }
 
-describe('StaticTable rows per page', () => {
+describe('ClientTable rows per page', () => {
   beforeEach(() => localStorage.clear());
   afterEach(() => vi.restoreAllMocks());
 
@@ -67,5 +66,20 @@ describe('StaticTable rows per page', () => {
     localStorage.setItem('datatableSettings', 'null');
 
     expect(renderTable('First').getAllByRole('row')).toHaveLength(11);
+  });
+});
+
+describe('ClientTable rows', () => {
+  it('keeps its sort when the rows change', async () => {
+    const view = render(ClientTable, { tableName: 'Sorted', rows: data, columns });
+    const table = within(view.container as HTMLElement);
+    await fireEvent.click(table.getByRole('button', { name: /Name/ }));
+    await fireEvent.click(table.getByRole('button', { name: /Name/ }));
+    expect(table.getAllByRole('row')[1]).toHaveTextContent('Row 9');
+
+    await view.rerender({ rows: [...data, { name: 'Row 99' }] });
+
+    expect(table.getAllByRole('row')[1]).toHaveTextContent('Row 99');
+    expect(table.getAllByRole('row')[2]).toHaveTextContent('Row 9');
   });
 });

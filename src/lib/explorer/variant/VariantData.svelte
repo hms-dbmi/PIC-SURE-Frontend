@@ -6,7 +6,7 @@
 
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import Loading from '#lib/ui/Loading.svelte';
-  import Datatable from '#lib/ui/datatable/StaticTable.svelte';
+  import ClientTable from '#lib/ui/datatable/ClientTable.svelte';
   import { log, createLog } from '#lib/telemetry/logger.ts';
   import { buttonClass } from '#lib/ui/button.ts';
 
@@ -46,16 +46,16 @@
         {config.settings.variantExplorer.maxCount} variants.
       </ErrorAlert>
     {:else if count > 0 && !!varData && varData.rows.length > 0}
-      <Datatable
+      <ClientTable
         tableName="variant-explorer"
         data-testid="explorer-variant-table"
         id="explorer-variant-table"
         ariaLabel="Variant data"
-        data={varData.rows}
+        rows={varData.rows}
         columns={varData.columns}
         fullWidth
         searchable
-        searchLogAction="variant.search_table"
+        onsearch={(term) => log(createLog('ACTION', 'variant.search_table', { term }))}
       >
         {#snippet tableActions()}
           {#if varData.downloadUrl}
@@ -91,7 +91,7 @@
             </div>
           {/if}
         {/snippet}
-      </Datatable>
+      </ClientTable>
     {:else}
       <div data-testid="explorer-variant-count" class="flex-none w-full">
         {count.toLocaleString()} variants found

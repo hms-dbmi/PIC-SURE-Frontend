@@ -10,11 +10,6 @@ import globals from 'globals';
 const boundaryExceptions = [
   'src/lib/ui/OptionsSelectionList.svelte',
   'src/lib/ui/PlotlyPlot.svelte',
-  'src/lib/ui/datatable/RemoteTable.svelte',
-  'src/lib/ui/datatable/Row.svelte',
-  'src/lib/ui/datatable/accessories/Pagination.svelte',
-  'src/lib/ui/datatable/accessories/Rows.svelte',
-  'src/lib/ui/datatable/accessories/Search.svelte',
   'src/lib/ui/stepper/Stepper.svelte',
   'src/lib/ui/unsavedGuard.svelte.ts',
 ];

@@ -30,7 +30,7 @@ describe('search result row actions', () => {
 
   it('removes an export that was added somewhere else', async () => {
     addExport(mapSearchResultAsExport({ ...row }));
-    render(Actions, { data: { row } });
+    render(Actions, { row });
 
     await fireEvent.click(screen.getByRole('button', { name: 'Remove from Analysis (e)' }));
 

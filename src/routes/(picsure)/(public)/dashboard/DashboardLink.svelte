@@ -2,10 +2,16 @@
   import Button from '#lib/ui/Button.svelte';
   import { log, createLog } from '#lib/telemetry/logger.ts';
 
-  let { data = { row: { additional_info_link: '', consentGranted: false } } } = $props();
-  let link = $derived(data.row.additional_info_link as string);
-  let consentGranted = $derived(data.row.consentGranted);
-  let dataset = $derived(data.row.dataset_id as string);
+  import type { DashboardRow } from './dashboard.svelte.ts';
+
+  interface Props {
+    row: DashboardRow;
+  }
+
+  let { row }: Props = $props();
+  let link = $derived(row.additional_info_link as string);
+  let consentGranted = $derived(row.consentGranted);
+  let dataset = $derived(row.dataset_id as string);
 </script>
 
 {#if consentGranted}
