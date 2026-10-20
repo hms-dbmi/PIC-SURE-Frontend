@@ -1,7 +1,5 @@
 import { get, writable, type Writable } from 'svelte/store';
 
-import { page } from '$app/state';
-
 import * as dictionary from '#lib/api/picsure/dictionary.ts';
 import { isAbortError } from '#lib/api/errors.ts';
 import type { Facet, SearchResult } from '#lib/explorer/types.ts';
@@ -18,6 +16,7 @@ import {
   consentsSettled,
   showAccessUnavailable,
 } from '#lib/auth/User.ts';
+import { exploreMode } from '#lib/explorer/mode.ts';
 import { searchTerm, selectedFacets } from '#lib/explorer/Search.ts';
 import { log, createLog } from '#lib/telemetry/logger.ts';
 
@@ -54,7 +53,7 @@ export async function searchDictionary(
   options?: { signal?: AbortSignal },
 ): Promise<DictionaryConceptResult> {
   let request: DictionarySearchRequest = { facets, search: searchTerm };
-  if (!page.url.pathname.includes('/discover')) {
+  if (exploreMode() !== 'discover') {
     request = await addConsents(request);
   }
   return dictionary.searchConcepts(request, pageable, { signal: options?.signal });
@@ -89,7 +88,7 @@ export async function updateFacetsFromSearch(options?: {
   const search = get(searchTerm);
   const facets = get(selectedFacets);
   let request: DictionarySearchRequest = { facets: facets, search: search };
-  if (!page.url.pathname.includes('/discover')) {
+  if (exploreMode() !== 'discover') {
     request = await addConsents(request);
   }
 

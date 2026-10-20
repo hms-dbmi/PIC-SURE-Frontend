@@ -18,7 +18,7 @@
   import Loading from '#lib/ui/Loading.svelte';
   import { toaster } from '#lib/ui/toaster.ts';
   import AlertDialog from '#lib/ui/dialog/AlertDialog.svelte';
-  import { page } from '$app/state';
+  import { exploreMode } from '#lib/explorer/mode.ts';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import { sortHierarchyDeepestFirst } from '#lib/utils/hierarchy.ts';
   import { log, createLog, getPageContext } from '#lib/telemetry/logger.ts';
@@ -32,9 +32,7 @@
   let modalOpen: boolean = $state(false);
   let selectedNode: string | undefined = $state(undefined);
   let isLoading = $state(false);
-  let disableAddFilter: boolean = $derived(
-    !data?.allowFiltering && page.url.pathname.includes('/discover'),
-  );
+  let disableAddFilter: boolean = $derived(!data?.allowFiltering && exploreMode() === 'discover');
 
   async function getHierarchy(): Promise<TreeNodeInit<string>[]> {
     if (!data?.dataset || !data?.conceptPath) {

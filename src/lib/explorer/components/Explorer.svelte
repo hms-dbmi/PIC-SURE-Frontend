@@ -29,6 +29,7 @@
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import ExplorerTour from '#lib/explorer/components/tour/ExplorerTour.svelte';
   import { log, createLog } from '#lib/telemetry/logger.ts';
+  import { exploreMode } from '#lib/explorer/mode.ts';
 
   let { tourConfig }: { tourConfig: TourDataType } = $props();
 
@@ -45,7 +46,7 @@
   const genomicFeaturesEnabled = $derived(
     config.features.enableGENEQuery || config.features.enableSNPQuery,
   );
-  let isDiscoverPage = $derived(page.url.pathname.includes('/discover'));
+  let isDiscoverPage = $derived(exploreMode() === 'discover');
   let path = $derived(isDiscoverPage ? '/discover' : '/explorer');
   let allowGenomicFiltering = $derived(genomicFeaturesEnabled && !isDiscoverPage);
 

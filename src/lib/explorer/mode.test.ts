@@ -20,7 +20,7 @@ vi.mock('$app/state', () => ({
 vi.mock('#lib/auth/User.ts', () => ({ isUserLoggedIn: () => mockState.loggedIn }));
 vi.mock('#lib/config/config.svelte.ts', () => ({ config: { features: mockState.features } }));
 
-import { isOpenAccess, useOpenAccess } from '#lib/explorer/mode.ts';
+import { isOpenAccess, routeMode, useOpenAccess } from '#lib/explorer/mode.ts';
 
 beforeEach(() => {
   mockState.mode = undefined;
@@ -64,5 +64,18 @@ describe('useOpenAccess', () => {
   it('takes an explicit mode over the page', () => {
     mockState.mode = 'discover';
     expect(useOpenAccess(false)).toBe(false);
+  });
+});
+
+describe('routeMode', () => {
+  it.each([
+    ['/(picsure)/(public)/explorer', 'explorer'],
+    ['/(picsure)/(public)/explorer/export', 'explorer'],
+    ['/(picsure)/(public)/discover', 'discover'],
+    ['/(picsure)/(public)/discover/distributions', 'discover'],
+    ['/(picsure)/(public)/api', undefined],
+    [null, undefined],
+  ] as const)('maps %s to %s', (routeId, mode) => {
+    expect(routeMode(routeId)).toBe(mode);
   });
 });

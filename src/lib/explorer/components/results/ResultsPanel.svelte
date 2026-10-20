@@ -14,6 +14,7 @@
   import { resultCountsState } from '#lib/query/counts/resultCounts.svelte.ts';
   import { isObfuscatedBelowThreshold } from '#lib/query/counts/format.ts';
   import { exports, clearExports } from '#lib/explorer/export/Export.ts';
+  import { exploreMode } from '#lib/explorer/mode.ts';
 
   import Filters from '#lib/explorer/components/results/Filters.svelte';
   import ExportedVariable from '#lib/explorer/components/results/ExportedVariable.svelte';
@@ -24,7 +25,8 @@
   import Button from '#lib/ui/Button.svelte';
 
   let currentPage: string = $state(page.url.pathname);
-  let isDiscoverPage = $derived(currentPage.includes('/discover'));
+  let currentMode = $state(exploreMode());
+  let isDiscoverPage = $derived(currentMode === 'discover');
   let modalOpen: boolean = $state(false);
 
   let hasFilterOrExport = $derived(
@@ -81,6 +83,7 @@
   $effect(() => {
     if (!page.url.pathname.startsWith(currentPage)) {
       currentPage = page.url.pathname;
+      currentMode = exploreMode();
       resultCountsState.start(getIsOpenAccess);
     }
   });
