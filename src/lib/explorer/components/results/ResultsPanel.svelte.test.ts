@@ -4,7 +4,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, cleanup } from '@testing-library/svelte';
 import { flushSync } from 'svelte';
 
-const mockState = vi.hoisted(() => ({ startSpy: vi.fn(), stopSpy: vi.fn() }));
+const mockState = vi.hoisted(() => ({
+  startSpy: vi.fn(),
+  stopSpy: vi.fn(),
+  afterNavigate: [] as (() => void)[],
+}));
 
 // Reactive, so the panel sees client-side navigation between the two trees.
 const mockPage = $state({
@@ -15,6 +19,7 @@ function navigate(path: string, mode: 'explorer' | 'discover') {
   mockPage.url = new URL(`http://localhost${path}`);
   mockPage.data = { mode };
   flushSync();
+  mockState.afterNavigate.forEach((callback) => callback());
 }
 
 vi.mock('$app/state', () => ({
@@ -22,7 +27,10 @@ vi.mock('$app/state', () => ({
     return mockPage;
   },
 }));
-vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
+vi.mock('$app/navigation', () => ({
+  goto: vi.fn(),
+  afterNavigate: (callback: () => void) => mockState.afterNavigate.push(callback),
+}));
 vi.mock('$app/env', () => ({ browser: true }));
 vi.mock('$app/paths', () => ({ resolve: (path: string) => `/${path}` }));
 vi.mock('#lib/config/config.svelte.ts', () => ({
@@ -56,7 +64,10 @@ beforeEach(() => {
   mockState.startSpy.mockClear();
   navigate('/explorer', 'explorer');
 });
-afterEach(() => cleanup());
+afterEach(() => {
+  cleanup();
+  mockState.afterNavigate.length = 0;
+});
 
 describe('ResultsPanel counts', () => {
   it('counts against the authorized endpoint in explorer', () => {
@@ -90,5 +101,15 @@ describe('ResultsPanel counts', () => {
 
     expect(mockState.startSpy).toHaveBeenCalledTimes(1);
     expect(lastStartIsOpenAccess()).toBe(true);
+  });
+
+  it('keeps counting while navigating within the page it counted for', () => {
+    render(ResultsPanel);
+    mockState.startSpy.mockClear();
+
+    navigate('/explorer/distributions', 'explorer');
+    navigate('/explorer', 'explorer');
+
+    expect(mockState.startSpy).not.toHaveBeenCalled();
   });
 });

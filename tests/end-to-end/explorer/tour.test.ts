@@ -55,8 +55,8 @@ async function walkTourAssertingRealHighlights(page: Page) {
     );
     const before = current;
     await page.keyboard.press('ArrowRight');
-    // Wait for the step to advance. Some steps (applyFilterThenNext -> clickFilterOption in
-    // ExplorerTour.svelte) advance via an internal 200ms setTimeout; if the press landed during
+    // Wait for the step to advance. Some steps (a categorical row in tourActions.ts's
+    // applyFilterThenNext) advance via an internal 200ms setTimeout; if the press landed during
     // an animation and was ignored, the loop presses again.
     await expect
       .poll(async () => (await readProgress()).current, { timeout: 1000 })
@@ -95,6 +95,25 @@ test('startTour=true opens the tour instructions on load', async ({ page }) => {
 
   // Then
   await expect(page.getByRole('dialog').getByRole('button', { name: 'Start Tour' })).toBeVisible();
+});
+test('startTour=true opens the tour instructions only once', async ({ page }) => {
+  // Given
+  await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+  await page.goto('/explorer?startTour=true');
+  await userIsLoggedIn(page);
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
+  await expect(dialog).toBeHidden();
+
+  // When a search hides the tour button and a reset brings it back
+  await page.locator('#explorer-search-box').fill('somedata');
+  await page.locator('#explorer-search-box').press('Enter');
+  await expect(page.getByTestId('explorer-tour-start')).toBeHidden();
+  await page.getByRole('button', { name: 'You are on the reset button' }).click();
+
+  // Then
+  await expect(page.getByTestId('explorer-tour-start')).toBeVisible();
+  await expect(dialog).toBeHidden();
 });
 test('Learn How opens the tour instructions after a search hid the tour button', async ({
   page,

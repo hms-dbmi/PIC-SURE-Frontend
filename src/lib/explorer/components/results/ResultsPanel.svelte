@@ -6,15 +6,15 @@
   import { slide, scale } from 'svelte/transition';
 
   import { page } from '$app/state';
-  import { goto } from '$app/navigation';
+  import { afterNavigate, goto } from '$app/navigation';
 
   import { config } from '#lib/config/config.svelte.ts';
 
   import { filterState } from '#lib/query/filters.svelte.ts';
   import { resultCountsState } from '#lib/query/counts/resultCounts.svelte.ts';
-  import { isObfuscatedBelowThreshold } from '#lib/query/counts/format.ts';
   import { exports, clearExports } from '#lib/explorer/export/Export.ts';
   import { exploreMode } from '#lib/explorer/mode.ts';
+  import { resultsPanelRules } from '#lib/explorer/resultsPanelRules.ts';
 
   import Filters from '#lib/explorer/components/results/Filters.svelte';
   import ExportedVariable from '#lib/explorer/components/results/ExportedVariable.svelte';
@@ -24,65 +24,30 @@
   import { log, createLog } from '#lib/telemetry/logger.ts';
   import Button from '#lib/ui/Button.svelte';
 
-  let currentPage: string = $state(page.url.pathname);
-  let isDiscoverPage = $derived(exploreMode() === 'discover');
+  const isDiscoverPage = $derived(exploreMode() === 'discover');
   let modalOpen: boolean = $state(false);
 
-  let hasFilterOrExport = $derived(
-    filterState.all.length !== 0 ||
-      (config.features.explorer.exportsEnableExport && $exports.length !== 0),
-  );
-
-  let showExportButton = $derived(
-    config.features.explorer.allowExport &&
-      !isDiscoverPage &&
-      hasFilterOrExport &&
-      (resultCountsState.loading || resultCountsState.hasNonZero),
-  );
-
-  let hasValidDistributionFilters = $derived(
-    filterState.all.length !== 0 &&
-      !filterState.all.every(
-        (filter) =>
-          filter.filterType === 'genomic' ||
-          filter.filterType === 'snp' ||
-          filter.filterType === 'AnyRecordOf',
-      ),
-  );
-
-  let showExplorerDistributions = $derived(
-    !isDiscoverPage && config.features.explorer.distributionExplorer && hasValidDistributionFilters,
-  );
-
-  let showDiscoverDistributions = $derived(
-    isDiscoverPage &&
-      config.features.discover &&
-      config.features.explorer.distributionExplorer &&
-      hasValidDistributionFilters,
-  );
-
-  let showVariantExplorer = $derived(
-    !isDiscoverPage && config.features.explorer.variantExplorer && filterState.hasGenomicFilter,
-  );
-
-  let distributionsDisabled = $derived(
-    resultCountsState.loading ||
-      (isDiscoverPage
-        ? isObfuscatedBelowThreshold(resultCountsState.total)
-        : resultCountsState.total === 0),
+  const rules = $derived(
+    resultsPanelRules({
+      mode: exploreMode(),
+      features: config.features,
+      filterTypes: filterState.all.map((filter) => filter.filterType),
+      hasGenomicFilter: filterState.hasGenomicFilter,
+      exportCount: $exports.length,
+      counts: resultCountsState,
+    }),
   );
 
   // Untracked, so a change of mode reruns the count only through the restart below.
   const getIsOpenAccess = () => untrack(() => isDiscoverPage);
 
-  // The destroy/mount method is not called on page navigation if the page we're navigating to
-  // has this same component. This can cause requests that may be pending on one page
-  // to load on the next page. Example discover results displaying on explorer page.
-  // To fix this, we restart on page navigation with the correct isOpenAccess flag,
-  // dropping the previous results and sending a new request.
-  $effect(() => {
-    if (!page.url.pathname.startsWith(currentPage)) {
-      currentPage = page.url.pathname;
+  // A navigation that keeps this panel mounted (explorer to discover, say) would otherwise let a
+  // count still pending for the old page land on the new one. Leaving the page the panel counted
+  // for restarts the count with the new mode, dropping the old result.
+  let countedPage = page.url.pathname;
+  afterNavigate(() => {
+    if (!page.url.pathname.startsWith(countedPage)) {
+      countedPage = page.url.pathname;
       resultCountsState.start(getIsOpenAccess);
     }
   });
@@ -113,7 +78,7 @@
   transition:slide={{ axis: 'x' }}
 >
   <Counts />
-  {#if showExportButton}
+  {#if rules.showExportButton}
     <div class="h-11 mt-4">
       <button
         id="results-export-open"
@@ -134,7 +99,7 @@
     <hr />
     <div class="flex content-center items-center mt-6">
       <h5 class="flex-auto ml-9 mr-2 mb-2 pt-1">Filtered Data Summary</h5>
-      {#if hasFilterOrExport}
+      {#if rules.hasFilterOrExport}
         <Button
           data-testid="results-reset"
           variant="tonal-error"
@@ -167,34 +132,23 @@
       </div>
     {/if}
   </div>
-  {#if showExplorerDistributions || showDiscoverDistributions || showVariantExplorer}
+  {#if rules.distributionsPage || rules.showVariantExplorer}
     <div class="flex flex-col items-center mt-7">
       <hr />
       <h5 class="text-center mt-7">Tool Suite</h5>
       <div class="flex flex-row flex-wrap justify-items-center gap-4 w-80 justify-center">
-        {#if showExplorerDistributions}
+        {#if rules.distributionsPage}
           <CardButton
-            href={resolve('explorer/distributions')}
+            href={resolve(rules.distributionsPage)}
             id="results-distributions-open"
             data-testid="results-distributions-open"
             title="Variable Distributions"
             icon="fa-solid fa-chart-pie"
             size="md"
-            disabled={distributionsDisabled}
+            disabled={rules.distributionsDisabled}
           />
         {/if}
-        {#if showDiscoverDistributions}
-          <CardButton
-            href={resolve('discover/distributions')}
-            id="results-distributions-open"
-            data-testid="results-distributions-open"
-            title="Variable Distributions"
-            icon="fa-solid fa-chart-pie"
-            size="md"
-            disabled={distributionsDisabled}
-          />
-        {/if}
-        {#if showVariantExplorer}
+        {#if rules.showVariantExplorer}
           <CardButton
             href={resolve('explorer/variant')}
             data-testid="results-variant-explorer-open"

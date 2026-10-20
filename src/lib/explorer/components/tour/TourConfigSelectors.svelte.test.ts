@@ -32,7 +32,8 @@ vi.mock('#lib/explorer/mode.ts', () => ({
   isOpenAccess: vi.fn(() => false),
 }));
 
-import ExplorerResultsTable from '../../../../../tests/support/fixtures/ExplorerResultsTable.svelte';
+import ResultsTable from '#lib/explorer/components/ResultsTable.svelte';
+import { markFirstFilterableRow } from '#lib/explorer/components/tour/tourActions.ts';
 import type { Column } from '#lib/ui/datatable/types.ts';
 import type { SearchResult } from '#lib/explorer/types.ts';
 import { explorerPanel } from '#lib/explorer/panel.svelte.ts';
@@ -47,13 +48,11 @@ afterEach(() => {
   explorerPanel.closeRow();
 });
 
-// Mirrors Explorer.svelte's real columns: default branding columns (Dataset, Variable
-// Name) plus the Actions column it always appends. The tour's "row-0-col-2" selectors
-// assume Actions lands at index 2 - this fixture is what pins that assumption down.
+// The default branding columns (Dataset, Variable Name). The tour's "row-0-col-2" selectors
+// assume the Actions column ResultsTable appends lands at index 2.
 const columns: Column<SearchResult>[] = [
   { label: 'Dataset', dataElement: 'dataset' },
   { label: 'Variable Name', dataElement: 'name' },
-  { dataElement: 'id', label: 'Actions' },
 ];
 
 function makeRow(i: number) {
@@ -74,18 +73,7 @@ function renderExplorerTable() {
   // "active-row"/"row-0-col-2" steps (it drives the row open first).
   explorerPanel.toggleRow(rows[0].conceptPath);
 
-  return render(ExplorerResultsTable, { handler, columns, expandedRow });
-}
-
-// Mirrors ExplorerTour.svelte's findAndSetFirstNonStigmatizedAvailableFilterThenNext
-// hook (find the first row with a filter button, mark it non-stigmatized) - reproduced
-// here since the hook is inline in that component and isn't exported.
-function markFirstRowNonStigmatized(container: HTMLElement) {
-  const table = container.querySelector('#explorer-table') as HTMLTableElement;
-  const row = Array.from(table.querySelectorAll('tr')).find((tr) =>
-    tr.querySelector('button.row-action-filter:not(:disabled)'),
-  );
-  row?.classList.add('non-stigmatized-row');
+  return render(ResultsTable, { handler, columns, expandedRow });
 }
 
 type Tour = { steps: { element: string }[] };
@@ -110,14 +98,14 @@ describe('TourConfiguration.json selectors against the real datatable markup', (
     '"%s" resolves against a rendered ExplorerTable',
     (selector) => {
       const { container } = renderExplorerTable();
-      markFirstRowNonStigmatized(container);
+      markFirstFilterableRow();
 
       expect(container.querySelector(selector)).not.toBeNull();
     },
   );
 });
 
-describe('markFirstRowNonStigmatized under open access', () => {
+describe('markFirstFilterableRow under open access', () => {
   it('skips row 0 when its filter button is disabled and marks row 1 instead', () => {
     vi.mocked(isOpenAccess).mockReturnValue(true);
 
@@ -127,9 +115,9 @@ describe('markFirstRowNonStigmatized under open access', () => {
     ];
     const handler = new TableHandler(rows, { rowsPerPage: 10 });
 
-    const { container } = render(ExplorerResultsTable, { handler, columns, expandedRow });
+    const { container } = render(ResultsTable, { handler, columns, expandedRow });
 
-    markFirstRowNonStigmatized(container);
+    markFirstFilterableRow();
 
     expect(container.querySelector('#explorer-table-row-0')).not.toHaveClass('non-stigmatized-row');
     expect(container.querySelector('#explorer-table-row-1')).toHaveClass('non-stigmatized-row');

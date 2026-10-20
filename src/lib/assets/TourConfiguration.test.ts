@@ -1,19 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import tourConfig from '#lib/assets/TourConfiguration.json';
+import { tourHooks } from '#lib/explorer/components/tour/tourActions.ts';
 
-// Hook names wired up in ExplorerTour.svelte's `functionMap`. An unmapped name here
-// silently drops that step's custom behavior (falls back to default next/highlight
-// handling) instead of erroring - keep this list in sync with that component.
-const VALID_HOOKS = new Set([
-  'disablePrevious',
-  'clickElement',
-  'clickElementThenNext',
-  'addHighlightClass',
-  'removeHighlightClass',
-  'resetSearch',
-  'applyFilterThenNext',
-  'findAndSetFirstNonStigmatizedAvailableFilterThenNext',
-]);
+// A name tourHooks() doesn't define silently drops that step's custom behavior (falls back to
+// default next/highlight handling) instead of erroring.
+const VALID_HOOKS = new Set(
+  Object.keys(
+    tourHooks(
+      () => {},
+      () => {},
+    ),
+  ),
+);
 
 // The datatable only ever mints ids of these shapes (see Row.svelte /
 // DataTable.svelte), always prefixed with the table's id ("explorer-table"
@@ -34,7 +32,7 @@ const STATIC_IDS: Record<string, string> = {
 };
 
 // Classes the row/action-button markup actually renders (Row.svelte, Actions.svelte).
-// `non-stigmatized-row` is the exception: added at runtime by ExplorerTour.svelte's
+// `non-stigmatized-row` is the exception: added at runtime by tourActions.ts's
 // findAndSetFirstNonStigmatizedAvailableFilterThenNext hook, not by markup.
 const KNOWN_CLASSES = new Set([
   'expandable-row',
@@ -141,10 +139,9 @@ describe('TourConfiguration.json', () => {
           step.popover.onNextClick,
         ].filter((name): name is string => Boolean(name));
         for (const name of referenced) {
-          expect(
-            VALID_HOOKS.has(name),
-            `"${name}" is not in ExplorerTour.svelte's functionMap`,
-          ).toBe(true);
+          expect(VALID_HOOKS.has(name), `"${name}" is not one of tourActions.ts's tourHooks`).toBe(
+            true,
+          );
         }
       },
     );

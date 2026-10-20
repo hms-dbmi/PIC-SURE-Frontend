@@ -7,7 +7,6 @@
   import { goto } from '$app/navigation';
 
   import { config } from '#lib/config/config.svelte.ts';
-  import type { Column } from '#lib/ui/datatable/types.ts';
   import { explorerSearch as search } from '#lib/explorer/search.svelte.ts';
   import type { TourDataType } from '#lib/explorer/components/tour/types.ts';
   import type { SearchResult } from '#lib/explorer/types.ts';
@@ -15,29 +14,22 @@
   import { saveFilter } from '#lib/explorer/saveFilter.ts';
   import { explorerPanel } from '#lib/explorer/panel.svelte.ts';
 
-  import Actions from '#lib/explorer/components/cell/Actions.svelte';
   import AddFilter from '#lib/explorer/components/AddFilter.svelte';
   import HierarchyComponent from '#lib/explorer/components/HierarchyComponent.svelte';
   import ResultInfoComponent from '#lib/explorer/components/ResultInfoComponent.svelte';
-  import DataTable from '#lib/ui/datatable/DataTable.svelte';
+  import ResultsTable from '#lib/explorer/components/ResultsTable.svelte';
   import Searchbox from '#lib/ui/Searchbox.svelte';
   import FacetSideBar from '#lib/explorer/components/facets/FacetSideBar.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import ExplorerTour from '#lib/explorer/components/tour/ExplorerTour.svelte';
-  import { log, createLog, getPageContext } from '#lib/telemetry/logger.ts';
+  import { log, createLog } from '#lib/telemetry/logger.ts';
   import { exploreMode } from '#lib/explorer/mode.ts';
 
   let { tourConfig }: { tourConfig: TourDataType } = $props();
 
-  let searchInput = $state(page.url.searchParams.get('search') || search.term);
-  const tableName = 'ExplorerTable';
-  // The tour's steps select this table and its rows by id.
-  const tableId = 'explorer-table';
+  const initialSearch = page.url.searchParams.get('search') || search.term;
+  let searchInput = $state(initialSearch);
   const tableColumns = $derived(config.branding.explorePage.columns || []);
-  const columns: Column<SearchResult>[] = $derived([
-    ...tableColumns,
-    { dataElement: 'id', label: 'Actions', class: 'w-36 text-center', cell: actionsCell },
-  ]);
   const genomicFeaturesEnabled = $derived(
     config.features.enableGENEQuery || config.features.enableSNPQuery,
   );
@@ -48,6 +40,15 @@
       : resolve('/(picsure)/(public)/explorer'),
   );
   let allowGenomicFiltering = $derived(genomicFeaturesEnabled && !isDiscoverPage);
+  // ?startTour=true (the export page's "Learn How") opens the tour's instructions. A first search
+  // with criteria hides the tour, so then the tour waits for that search to settle.
+  let tourStart: 'none' | 'pending' | 'autostart' = $state(
+    page.url.searchParams.get('startTour') !== 'true'
+      ? 'none'
+      : initialSearch || search.selectedFacets.length > 0 || !search.tour
+        ? 'pending'
+        : 'autostart',
+  );
 
   function update() {
     search.clearError();
@@ -70,20 +71,6 @@
     saveFilter(filter, { enrich: false });
   }
 
-  function logRowClick(row: SearchResult) {
-    log(
-      createLog('ACTION', 'search_result.row_click', {
-        variable: row.conceptPath,
-        open: !explorerPanel.isExpanded(row.conceptPath),
-        pageContext: getPageContext(),
-      }),
-    );
-  }
-
-  function scrollToSearchResults() {
-    document.getElementById(tableId)?.scrollIntoView({ block: 'start' });
-  }
-
   let releaseHandler: (() => void) | undefined;
 
   onMount(async () => {
@@ -94,24 +81,20 @@
       // reload table and facets
       search.table.invalidate();
     }
-    if (page.url.searchParams.get('startTour') === 'true') {
-      // A load with a search term hides the tour, so let the one started above finish first
+    if (tourStart === 'pending') {
       await search.nextSettled();
       search.showTour();
+      tourStart = 'autostart';
+    }
+    if (tourStart === 'autostart') {
+      // Only a tour mounted by now opens itself; one remounted after a later reset doesn't.
       await tick();
-      const tourBtn = document.querySelector('#explorer-tour-start');
-      if (tourBtn) {
-        (tourBtn as HTMLElement).click();
-      }
+      tourStart = 'none';
     }
   });
 
   onDestroy(() => releaseHandler?.());
 </script>
-
-{#snippet actionsCell(row: SearchResult)}
-  <Actions {row} />
-{/snippet}
 
 {#snippet expandedRow(row: SearchResult)}
   {#if explorerPanel.activeView === 'filter'}
@@ -157,25 +140,16 @@
         {search.error}
       </ErrorAlert>
     {:else if search.hasCriteria}
-      <DataTable
-        isClickable
-        ariaLabel="Search results"
-        {tableName}
-        id={tableId}
-        data-testid="explorer-results-table"
+      <ResultsTable
         handler={search.table}
-        {columns}
+        columns={tableColumns}
         isLoading={search.loading}
-        rowKey="conceptPath"
-        expansion={explorerPanel}
         {expandedRow}
-        rowClickHandler={logRowClick}
-        onPageChange={scrollToSearchResults}
       />
     {/if}
-    {#if config.features.explorer.enableTour && search.tour}
+    {#if config.features.explorer.enableTour && search.tour && tourStart !== 'pending'}
       <div id="explorer-tour" class="text-center mt-4">
-        <ExplorerTour {tourConfig} />
+        <ExplorerTour {tourConfig} autostart={tourStart === 'autostart'} />
       </div>
     {/if}
   </div>
