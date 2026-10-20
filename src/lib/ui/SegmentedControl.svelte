@@ -8,6 +8,7 @@
   }
 
   interface Props {
+    /** Prefix of the radios' name; each control gets a name of its own. */
     name: string;
     value: string;
     options: Option[];
@@ -22,6 +23,11 @@
   };
 
   let { name, value, options, onchange, tone = 'primary' }: Props = $props();
+
+  // Radios that share a name are one group to the browser: arrow keys would walk from one control
+  // into the next, and only one of them would be reachable by Tab.
+  const uid = $props.id();
+  const groupName = $derived(`${name}-${uid}`);
 
   let root: HTMLElement;
 
@@ -40,7 +46,7 @@
 <div class="contents" bind:this={root}>
   {#key value}
     <Segment
-      {name}
+      name={groupName}
       {value}
       onValueChange={(e) => {
         if (e.value != null) pick(e.value);

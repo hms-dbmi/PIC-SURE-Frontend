@@ -218,6 +218,27 @@ test.describe('Advanced Query Builder - Global Combiner', () => {
     await afPage.expectBadgeText('AND');
     await expect(afPage.getRootOperatorRadio('AND')).toBeFocused();
   });
+
+  test('AF-COMBINER-007: Arrow keys on the top-level AND/OR control leave subqueries alone', async ({
+    page,
+  }) => {
+    await afPage.closeModal();
+    await afPage.injectTwoGroups(page);
+    await page.goto('/explorer?search=somedata');
+    await expect(page.locator('#results-panel')).toBeVisible();
+    await afPage.openModal();
+    await afPage.getRootOperatorRadio('AND').focus();
+
+    await page.keyboard.press('ArrowRight');
+    await expect(afPage.getRootOperatorRadio('OR')).toBeFocused();
+    // Past the control's last option: Chromium and Firefox wrap to its first, WebKit stays put
+    await page.keyboard.press('ArrowRight');
+
+    await expect(afPage.rootAndOrSegment.locator(':focus')).toHaveCount(1);
+    // Both subqueries keep AND
+    await expect(afPage.getAllAndRadios().nth(1)).toBeChecked();
+    await expect(afPage.getAllAndRadios().nth(2)).toBeChecked();
+  });
 });
 
 test.describe('Advanced Query Builder - Drag and Drop', () => {

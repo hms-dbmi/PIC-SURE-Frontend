@@ -36,4 +36,12 @@ describe('SegmentedControl', () => {
     await waitFor(() => expect(screen.getByRole('radio', { name: 'OR' })).toBeChecked());
     await waitFor(() => expect(screen.getByRole('radio', { name: 'OR' })).toHaveFocus());
   });
+
+  it('gives each control its own radio group', () => {
+    render(SegmentedControl, { name: 'operator', value: 'AND', options, onchange: vi.fn() });
+    render(SegmentedControl, { name: 'operator', value: 'AND', options, onchange: vi.fn() });
+
+    const [first, second] = screen.getAllByRole('radio', { name: 'AND' }) as HTMLInputElement[];
+    expect(first.name).not.toBe(second.name);
+  });
 });
