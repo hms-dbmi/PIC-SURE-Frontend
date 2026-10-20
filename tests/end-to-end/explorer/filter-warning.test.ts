@@ -144,12 +144,11 @@ test.describe('Filter warning navigation', () => {
     });
 
     await page.goto('/explorer');
-    const warning = page.getByTestId('explorer-filter-warning');
-    await expect(async () => {
-      await page.locator('#app-nav-link-discover').click();
-      await expect(warning).toBeVisible({ timeout: 1000 });
-    }).toPass();
+    await page.locator('#app-nav-link-discover').click();
+
     await expect(page).toHaveURL(/\/explorer$/);
+    const warning = page.getByTestId('explorer-filter-warning');
+    await expect(warning).toBeVisible();
 
     await page.getByRole('button', { name: 'Remove Invalid Filters' }).click();
 
