@@ -1,0 +1,25 @@
+# Paths here need approval from the named owner (enable "Require review from Code Owners" in the
+# branch ruleset). The risk classifier already sends these paths to human review; CODEOWNERS makes
+# sure the RIGHT humans review them.
+# Keep this list to sensitive paths only: a catch-all "*" owner would force owner review on
+# risk:low PRs too and defeat the review waiver.
+
+# The LAST matching line wins (owners are not combined), so specific paths go below general ones.
+# CODEOWNERS does not support [ ] character ranges.
+/.github/                         @JamesPeck @ramari16 @TDeSain @srpiatt @sharra44 @Gcolon021
+/package.json                     @JamesPeck @ramari16 @TDeSain @srpiatt @sharra44 @Gcolon021
+/pnpm-lock.yaml                   @JamesPeck @ramari16 @TDeSain @srpiatt @sharra44 @Gcolon021
+/Dockerfile*                      @JamesPeck @ramari16 @TDeSain @srpiatt @sharra44 @Gcolon021
+/.env*                            @JamesPeck @ramari16 @TDeSain @srpiatt @sharra44 @Gcolon021
+/*.config.*                       @JamesPeck @ramari16 @TDeSain @srpiatt @sharra44 @Gcolon021
+
+# Server-side SvelteKit code
+/src/hooks.*                      @JamesPeck @ramari16 @TDeSain @srpiatt @sharra44 @Gcolon021
+/src/lib/server/                  @JamesPeck @ramari16 @TDeSain @srpiatt @sharra44 @Gcolon021
+/src/routes/**/+server.*          @JamesPeck @ramari16 @TDeSain @srpiatt @sharra44 @Gcolon021
+/src/routes/**/*.server.*         @JamesPeck @ramari16 @TDeSain @srpiatt @sharra44 @Gcolon021
+
+# Auth and token handling
+/src/lib/auth/                    @JamesPeck @ramari16 @TDeSain @srpiatt @sharra44 @Gcolon021
+/src/routes/(authentication)/     @JamesPeck @ramari16 @TDeSain @srpiatt @sharra44 @Gcolon021
+/src/lib/AuthProviderRegistry.ts @JamesPeck @ramari16 @TDeSain @srpiatt @sharra44 @Gcolon021
