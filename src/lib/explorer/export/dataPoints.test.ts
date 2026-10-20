@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { dataPoints, exceedsLimit, exportVariableCount } from '#lib/explorer/export/dataPoints.ts';
+import { checkSize, dataPoints, exportVariableCount } from '#lib/explorer/export/dataPoints.ts';
 import type { Filter } from '#lib/query/filter.svelte.ts';
 
 const filter = (filterType: string, concepts?: string[]) =>
@@ -29,13 +29,20 @@ describe('dataPoints', () => {
   });
 });
 
-describe('exceedsLimit', () => {
+describe('checkSize', () => {
+  const counted = { pending: false, failed: false };
+
   it('is over only above the limit', () => {
-    expect(exceedsLimit(1000, 1000)).toBe(false);
-    expect(exceedsLimit(1001, 1000)).toBe(true);
+    expect(checkSize(counted, 1000, 1000)).toBe('ok');
+    expect(checkSize(counted, 1001, 1000)).toBe('over');
   });
 
-  it('treats an unknown size as over the limit', () => {
-    expect(exceedsLimit(undefined, 1000)).toBe(true);
+  it('waits for the participant count', () => {
+    expect(checkSize({ pending: true, failed: false }, 0, 1000)).toBe('pending');
+  });
+
+  it('is unknown when the count failed or is not a number', () => {
+    expect(checkSize({ pending: false, failed: true }, 0, 1000)).toBe('unknown');
+    expect(checkSize(counted, undefined, 1000)).toBe('unknown');
   });
 });

@@ -10,16 +10,16 @@
   import { session } from '#lib/auth/session.svelte.ts';
   import { goto } from '$app/navigation';
 
-  let exportRows: ExportRowInterface[] = exportState.variables.map((exp) => {
-    return {
+  const exportRows: ExportRowInterface[] = $derived(
+    exportState.variables.map((exp) => ({
       ref: exp,
       selected: true,
       variableId: exp.conceptPath,
       name: exp.display || exp.searchResult?.display || exp.searchResult?.name,
       description: exp.searchResult?.description,
       type: exp.searchResult?.type,
-    };
-  });
+    })),
+  );
   let filterRows: ExportRowInterface[] = filterState.all.map((filter) => {
     return {
       ref: filter,

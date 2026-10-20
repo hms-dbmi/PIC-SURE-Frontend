@@ -32,10 +32,10 @@
     { dataElement: 'type', label: 'Type', sort: true, class: 'text-center' },
   ];
 
-  let activeRows: ExportRowInterface[] = $derived(rows);
   let loadingSampleIds = $state(false);
   let sampleIds = $state(false);
-  let lastExports: ExportRowInterface[] = $state([]);
+  // The sample identifiers the box added, so unticking it removes them.
+  let lastExports: ExportInterface[] = $state.raw([]);
   let checkingSampleIds = $state(false);
 
   onMount(async () => {
@@ -51,14 +51,7 @@
       );
       sampleIds = genomicConcepts.length > 0 && matchingSampleIds.length === genomicConcepts.length;
       if (sampleIds) {
-        lastExports = matchingSampleIds.map((item) => ({
-          ref: item,
-          variableId: item.conceptPath,
-          variableName: item.display,
-          description: item.searchResult?.description,
-          type: item.searchResult?.type,
-          selected: true,
-        })) as ExportRowInterface[];
+        lastExports = matchingSampleIds;
       }
     } catch (error) {
       // The box stays unticked; ticking it runs the lookup again and reports a failure.
@@ -107,41 +100,15 @@
     try {
       loadingSampleIds = true;
       if (!sampleIds) {
-        const exportsToRemove: ExportInterface[] = lastExports?.map(
-          (e) => e.ref,
-        ) as ExportInterface[];
-        exportState.removeAll(exportsToRemove || []);
-        activeRows = activeRows.filter(
-          (r) => !lastExports.some((le) => le.variableId === r.variableId),
-        );
+        exportState.removeAll(lastExports);
         return;
       }
 
       const genomicConcepts = await getGenomicConcepts();
 
-      // Create new exports for each concept
       const newExports = genomicConcepts.map(mapSearchResultAsExport);
-
-      // Add exports and create corresponding rows
       exportState.addAll(newExports);
-      const newRows = newExports.map(
-        (e) =>
-          ({
-            ref: e,
-            variableId: e?.searchResult?.conceptPath,
-            variableName: e?.display,
-            description: e?.searchResult?.description,
-            type: e?.searchResult?.type,
-            selected: true,
-          }) as ExportRowInterface,
-      );
-      //Remove duplicates
-      activeRows = Array.from(
-        [...activeRows, ...newRows]
-          .reduce((map, row) => map.set(row.variableId, row), new Map())
-          .values(),
-      );
-      lastExports = newRows;
+      lastExports = newExports;
     } catch (error) {
       console.error('Error in toggleSampleIds', error);
       toaster.error({
@@ -159,16 +126,14 @@
   <Summary />
   <section class="w-full">
     <!-- The table and the sample-ID box stay, so ticking the box can be undone. -->
-    {#if exportState.dataLimitExceeded}
-      <DataLimitWarning data-testid="export-review-error" />
-    {/if}
+    <DataLimitWarning data-testid="export-review-error" />
     {#if !loadingSampleIds}
       <ClientTable
         tableName="ExportSummary"
         data-testid="export-summary-table"
         id="export-summary-table"
         ariaLabel="Export summary"
-        rows={activeRows}
+        {rows}
         {columns}
       />
       {#if config.features.explorer.enableSampleIdCheckbox}

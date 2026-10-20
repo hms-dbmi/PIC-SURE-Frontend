@@ -80,12 +80,12 @@
   onback={onBackHandler}
   buttonCompleteLabel="Done"
 >
-  <Step name="review" locked={exportState.dataLimitExceeded}>
+  <Step name="review" locked={exportState.sizeCheck !== 'ok'}>
     {#snippet header()}Review Cohort Details:{/snippet}
     <ReviewStep query={exportState.request} {rows} />
   </Step>
   {#if config.features.explorer.showTreeStep}
-    <Step name="select-variables" locked={exportState.dataLimitExceeded}>
+    <Step name="select-variables" locked={exportState.sizeCheck !== 'ok'}>
       {#snippet header()}Finalize Data:{/snippet}
       <TreeStep />
     </Step>

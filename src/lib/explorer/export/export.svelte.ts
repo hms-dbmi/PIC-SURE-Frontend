@@ -5,8 +5,8 @@ import { config } from '#lib/config/config.svelte.ts';
 import { explorerPanel } from '#lib/explorer/panel.svelte.ts';
 import {
   DEFAULT_MAX_DATA_POINTS,
+  checkSize,
   dataPoints,
-  exceedsLimit,
   exportVariableCount,
 } from '#lib/explorer/export/dataPoints.ts';
 import type { ExportInterface } from '#lib/explorer/export/types.ts';
@@ -106,9 +106,7 @@ class ExportState {
     return exportVariableCount(filterState.phenotypic, this.#variables.length);
   }
 
-  /** Unknown while the participant count is loading, failed or obfuscated. */
   get dataPoints(): number | undefined {
-    if (resultCountsState.snapshot.summary.hasError) return undefined;
     return dataPoints(resultCountsState.total, this.variableCount);
   }
 
@@ -116,8 +114,15 @@ class ExportState {
     return config.settings.maxDataPointsForExport || DEFAULT_MAX_DATA_POINTS;
   }
 
-  get dataLimitExceeded(): boolean {
-    return exceedsLimit(this.dataPoints, this.maxDataPoints);
+  get sizeCheck() {
+    const { loading, snapshot } = resultCountsState;
+    // An empty descriptor key is the snapshot before any count. A failed count keeps its key and
+    // stores a total of 0, so its error flag is what marks it.
+    const count = {
+      pending: loading || snapshot.descriptorKey === '',
+      failed: snapshot.summary.hasError,
+    };
+    return checkSize(count, this.dataPoints, this.maxDataPoints);
   }
 
   get request(): QueryRequest {

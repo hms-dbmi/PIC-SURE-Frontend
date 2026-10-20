@@ -19,13 +19,25 @@ export function exportVariableCount(
 
 /**
  * Participants times variables, the cells of the export's table. HPDS's own limit has the same
- * shape (rows times row width); MAX_DATA_POINTS_FOR_EXPORT is checked only here.
+ * shape (rows times row width), but MAX_DATA_POINTS_FOR_EXPORT is checked only in the UI.
  */
 export function dataPoints(participants: unknown, variables: number): number | undefined {
   return typeof participants === 'number' ? participants * variables : undefined;
 }
 
-/** An unknown size counts as over the limit, so an export can't start before it's known. */
-export function exceedsLimit(points: number | undefined, max: number): boolean {
-  return points === undefined || points > max;
+/**
+ * Whether an export of this size may go ahead: `pending` while the participant count loads,
+ * `unknown` when it failed or isn't a number, then `over` or `ok` against the limit. Only `ok`
+ * lets the export through.
+ */
+export type SizeCheck = 'pending' | 'unknown' | 'over' | 'ok';
+
+export function checkSize(
+  count: { pending: boolean; failed: boolean },
+  points: number | undefined,
+  max: number,
+): SizeCheck {
+  if (count.pending) return 'pending';
+  if (count.failed || points === undefined) return 'unknown';
+  return points > max ? 'over' : 'ok';
 }

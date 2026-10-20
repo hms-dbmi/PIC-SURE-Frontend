@@ -31,7 +31,6 @@ vi.mock('#lib/query/counts/resultCounts.svelte.ts', () => ({
     get total() {
       return 100;
     },
-    snapshot: { summary: { hasError: false } },
     ensureLoaded: mockState.ensureLoadedSpy,
   },
 }));

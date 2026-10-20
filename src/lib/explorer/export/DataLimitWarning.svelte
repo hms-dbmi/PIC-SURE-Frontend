@@ -7,13 +7,22 @@
   let { 'data-testid': testId }: { 'data-testid': string } = $props();
 </script>
 
-<ErrorAlert
-  data-testid={testId}
-  title="Warning"
-  color="warning"
-  closeText="Back"
-  onclose={() => goto(resolve('explorer'))}
->
-  Warning: Your selected data exceeds {exportState.maxDataPoints.toLocaleString('en-US')} estimated data
-  points, which is too large to export. Please reduce the data selection or the number of selected participants.
-</ErrorAlert>
+<!-- Nothing while the participant count loads; the step stays locked meanwhile. -->
+{#if exportState.sizeCheck === 'over' || exportState.sizeCheck === 'unknown'}
+  <ErrorAlert
+    data-testid={testId}
+    title="Warning"
+    color="warning"
+    closeText="Back"
+    onclose={() => goto(resolve('explorer'))}
+  >
+    {#if exportState.sizeCheck === 'over'}
+      Warning: Your selected data exceeds {exportState.maxDataPoints.toLocaleString('en-US')} estimated
+      data points, which is too large to export. Please reduce the data selection or the number of selected
+      participants.
+    {:else}
+      We couldn't count the participants in your cohort, so the size of this export can't be
+      checked. Please try again later.
+    {/if}
+  </ErrorAlert>
+{/if}

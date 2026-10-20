@@ -187,6 +187,34 @@ test.describe('Export Page', () => {
     await expect(page.getByTestId('ui-stepper-next')).toBeDisabled();
   });
 
+  test('a variable selected in the tree that takes the export over the limit locks the tree step', async ({
+    page,
+  }) => {
+    // Given - 9999 participants: the filter and the added variable fit under 25,000, a third doesn't
+    await mockApiConfig(page, {
+      features: baseExportFeatures,
+      settings: [...baseExportSettings, { name: 'MAX_DATA_POINTS_FOR_EXPORT', value: '25000' }],
+    });
+    await setupExportPageAndAddFilterAndExport(page);
+    const other = { ...mockDataWithChildren, conceptPath: '\\OTHER\\', name: 'other' };
+    await mockApiSuccess(page, `${conceptTreePath}?depth=4`, [
+      mockDataWithChildren,
+      { ...other, children: undefined },
+    ]);
+    await page.getByTestId('ui-stepper-next').click();
+    await expect(page.getByTestId('ui-tree-checkbox-other-other')).toBeVisible();
+    await expect(page.getByTestId('export-tree-error')).toBeHidden();
+
+    // When
+    await page.getByTestId('ui-tree-checkbox-other-other').click();
+
+    // Then
+    await expect(page.getByTestId('export-tree-error')).toContainText(
+      'exceeds 25,000 estimated data points',
+    );
+    await expect(page.getByTestId('ui-stepper-next')).toBeDisabled();
+  });
+
   test('Export page renders expected data', async ({ page }) => {
     await setupExportPageAndAddFilterAndExport(page);
     await expect(page).toHaveURL('/explorer/export');

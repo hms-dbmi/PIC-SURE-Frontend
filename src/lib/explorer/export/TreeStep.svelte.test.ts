@@ -15,7 +15,8 @@ vi.mock('#lib/query/counts/resultCounts.svelte.ts', () => ({
     get total() {
       return counts.total;
     },
-    snapshot: { summary: { hasError: false } },
+    loading: false,
+    snapshot: { descriptorKey: 'key', summary: { hasError: false } },
   },
 }));
 
@@ -80,6 +81,7 @@ describe('TreeStep', () => {
     render(TreeStep);
     await screen.findByRole('treeitem', { name: 'ds' });
     exportState.add(mapSearchResultAsExport(concept('\\ds\\x\\')));
+    flushSync();
     expect(screen.queryByTestId('export-tree-error')).toBeNull();
 
     exportState.add(mapSearchResultAsExport(deep));

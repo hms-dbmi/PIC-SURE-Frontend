@@ -78,9 +78,7 @@
       Select <strong>additional variables</strong> you would like to be included in your final data export.
     </header>
     <hr />
-    {#if exportState.dataLimitExceeded}
-      <DataLimitWarning data-testid="export-tree-error" />
-    {/if}
+    <DataLimitWarning data-testid="export-tree-error" />
     <div class="card-body p-4">
       {#await initialTree}
         <Loading ring size="small" />

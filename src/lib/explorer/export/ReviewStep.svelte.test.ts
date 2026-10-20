@@ -22,7 +22,8 @@ vi.mock('#lib/query/counts/resultCounts.svelte.ts', () => ({
     get total() {
       return mocks.total;
     },
-    snapshot: { summary: { hasError: false } },
+    loading: false,
+    snapshot: { descriptorKey: 'key', summary: { hasError: false } },
   },
 }));
 vi.mock('#lib/config/config.svelte.ts', () => ({

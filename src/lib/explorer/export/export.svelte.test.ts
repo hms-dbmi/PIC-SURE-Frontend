@@ -4,7 +4,7 @@ const mocks = vi.hoisted(() => ({
   getQueryStatus: vi.fn(),
   createDatasetName: vi.fn(),
   total: 100 as unknown,
-  countFailed: false,
+  countStatus: 'loaded',
   filters: [] as unknown[],
   settings: { maxDataPointsForExport: 0 },
 }));
@@ -38,8 +38,14 @@ vi.mock('#lib/query/counts/resultCounts.svelte.ts', () => ({
     get total() {
       return mocks.total;
     },
+    get loading() {
+      return mocks.countStatus === 'loading';
+    },
     get snapshot() {
-      return { summary: { hasError: mocks.countFailed } };
+      return {
+        descriptorKey: mocks.countStatus === 'idle' ? '' : 'key',
+        summary: { hasError: mocks.countStatus === 'error' },
+      };
     },
   },
 }));
@@ -74,7 +80,7 @@ const variable = (conceptPath: string, studyId?: string) => ({
 
 beforeEach(() => {
   mocks.total = 100;
-  mocks.countFailed = false;
+  mocks.countStatus = 'loaded';
   mocks.filters = [];
   mocks.settings.maxDataPointsForExport = 0;
 });
@@ -122,29 +128,33 @@ describe('the data limit', () => {
 
     expect(exportState.variableCount).toBe(3);
     expect(exportState.dataPoints).toBe(300);
-    expect(exportState.dataLimitExceeded).toBe(false);
+    expect(exportState.sizeCheck).toBe('ok');
 
     exportState.add(variable('\\b\\'));
 
-    expect(exportState.dataLimitExceeded).toBe(true);
+    expect(exportState.sizeCheck).toBe('over');
   });
 
   it('is a million when not configured', () => {
     expect(exportState.maxDataPoints).toBe(1000000);
   });
 
-  it('is exceeded while the participant count is unknown', () => {
+  it('is unknown when the participant count is not a number', () => {
     mocks.total = '< 10';
 
-    expect(exportState.dataLimitExceeded).toBe(true);
+    expect(exportState.sizeCheck).toBe('unknown');
   });
 
-  // A failed count is stored as a total of 0 with an error flag.
-  it('is exceeded when the participant count failed', () => {
+  it('holds the export until a participant count arrives, and after one failed', () => {
     mocks.total = 0;
-    mocks.countFailed = true;
+    mocks.countStatus = 'idle';
+    expect(exportState.sizeCheck).toBe('pending');
 
-    expect(exportState.dataLimitExceeded).toBe(true);
+    mocks.countStatus = 'loading';
+    expect(exportState.sizeCheck).toBe('pending');
+
+    mocks.countStatus = 'error';
+    expect(exportState.sizeCheck).toBe('unknown');
   });
 });
 
