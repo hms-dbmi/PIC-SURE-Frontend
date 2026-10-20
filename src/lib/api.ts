@@ -1,5 +1,6 @@
 import { error, isHttpError, type NumericRange } from '@sveltejs/kit';
 import { logout, login } from '$lib/stores/User';
+import { reportAccessDenied } from '$lib/accessDenied';
 import { browser } from '$app/environment';
 import { log, createLog, getSessionId } from '$lib/logger';
 import { config } from '$lib/configuration.svelte';
@@ -212,26 +213,16 @@ async function handleResponse(res: Response, openRequest = false) {
       error(res.status, { message: consentMessage, errorType: CONSENT_DENIED });
     }
     log(createLog('AUTH', 'session.forbidden', undefined, { status: 403 }));
-    browser && sessionStorage.removeItem('logout-reason');
-    const loggedOut = logout(undefined, false);
-    // filters restored after re-login could repeat a filter-driven denial
-    if (browser) void clearDeniedFilters(loggedOut);
+    if (browser) {
+      sessionStorage.removeItem('logout-reason');
+      // an anonymous request has no login to come back through
+      if (!openRequest) reportAccessDenied();
+    }
+    logout(undefined, false);
     fail(res.status, resText);
   }
 
   fail(res.status, await res.text());
-}
-
-// Imported lazily: a static import closes an api → Filter → User → api cycle that breaks SSR module init.
-async function clearDeniedFilters(loggedOut: ReturnType<typeof logout>) {
-  const filters = await import('$lib/stores/Filter');
-  // storage first: the logout can leave by a full page load, and then its navigation never settles
-  filters.forgetStoredFilters();
-  // the stores only once the page has gone, or the mounted explorer reruns its count query
-  await (
-    await loggedOut
-  )?.navigation;
-  filters.clearFilters();
 }
 
 function fail(status: number, resText: string): never {
