@@ -197,15 +197,15 @@ on('POST', path(Picsure.Query), ({ res }) => {
   json(res, { ...newDatasetResponse, picsureResultId: nextId() });
 });
 
-on('POST', path(`${Picsure.Query}/:id/status`), ({ res }) => {
+on('GET', path(`${Picsure.Query}/:id/status`), ({ res }) => {
   json(res, availableDatasetResponse);
 });
 
-on('POST', path(`${Picsure.Query}/:id/result`), ({ res }) => {
+on('GET', path(`${Picsure.Query}/:id/result`), ({ res }) => {
   text(res, variantDataAggregate);
 });
 
-on('POST', path(`${Picsure.Query}/:id/signed-url`), ({ res }) => {
+on('GET', path(`${Picsure.Query}/:id/signed-url`), ({ res }) => {
   json(res, { signedUrl: 'https://example.invalid/mock-export/signed-url' });
 });
 

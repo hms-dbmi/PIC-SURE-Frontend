@@ -1,5 +1,5 @@
 import { expect, type Route, type Page } from '@playwright/test';
-import { test, mockApiSuccess, mockApiConfig } from '../../custom-context';
+import { test, mockApiSuccess, mockApiSuccessByMethod, mockApiConfig } from '../../custom-context';
 import {
   conceptTreePath,
   conceptsDetailPath,
@@ -305,9 +305,10 @@ test.describe('Export Page', () => {
     await expect(page.locator('div#dataset-id')).toHaveText(newDatasetResponse.picsureResultId);
     await expect(nextButton).not.toBeDisabled();
     await mockApiSuccess(page, `*/**/picsure/operations/dataset/named`, newDatasetResponse);
-    await mockApiSuccess(
+    await mockApiSuccessByMethod(
       page,
       `${queryPath}/${newDatasetResponse.picsureResultId}/status`,
+      'GET',
       availableDatasetResponse,
     );
     await mockApiSuccess(page, '*/**/psama/user/me?hasToken', picsureUser);
@@ -419,7 +420,7 @@ test.describe('Export Page', () => {
     expect(capturedQuery!.query.select).toContain('\\_consents\\');
   });
 
-  test('Sample IDs checkbox adds genomic concepts to exports and query', async ({ page }) => {
+  async function setupExportPageWithSampleIdMocks(page: Page) {
     // Mock data for genomic concepts
     const genomicConceptsResponse = {
       totalPages: 1,
@@ -472,7 +473,6 @@ test.describe('Export Page', () => {
       '\\GENOMIC\\SAMPLE_ID\\Study2\\': 150,
     };
 
-    // First set up the page
     await setupExportPageAndAddFilterAndExport(page);
     await expect(page).toHaveURL('/explorer/export');
 
@@ -493,6 +493,10 @@ test.describe('Export Page', () => {
     await page.route(searchResultPathForSampleIds, async (route) => {
       await route.fulfill({ json: genomicConceptsResponse });
     });
+  }
+
+  test('Sample IDs checkbox adds genomic concepts to exports and query', async ({ page }) => {
+    await setupExportPageWithSampleIdMocks(page);
 
     // Find and click the sample IDs checkbox
     const sampleIdsCheckbox = page.getByTestId('sample-ids-checkbox');
@@ -543,6 +547,56 @@ test.describe('Export Page', () => {
     expect(capturedQuery!.query.select).toContain('\\GENOMIC\\SAMPLE_ID\\Study2\\');
   });
 
+  test('Sample ID rows persist after navigating forward and back', async ({ page }) => {
+    await setupExportPageWithSampleIdMocks(page);
+    const sampleIdsCheckbox = page.getByTestId('sample-ids-checkbox');
+    await sampleIdsCheckbox.click();
+    await expect(sampleIdsCheckbox).toBeChecked();
+    const tableBody = page.locator('tbody');
+    await expect(tableBody.getByText('Sample ID - Study 1')).toBeVisible();
+
+    await page.getByTestId('next-btn').click();
+    await expect(sampleIdsCheckbox).toBeHidden();
+    await page.getByRole('button', { name: 'Back', exact: true }).click();
+
+    await expect(sampleIdsCheckbox).toBeChecked();
+    await expect(tableBody.getByText('Sample ID - Study 1')).toBeVisible();
+    await expect(tableBody.getByText('Sample ID - Study 2')).toBeVisible();
+
+    await sampleIdsCheckbox.click();
+    await expect(sampleIdsCheckbox).not.toBeChecked();
+    await expect(tableBody.getByRole('cell', { name: 'Patient ID', exact: true })).toBeVisible();
+    await expect(tableBody.getByText('Sample ID - Study 1')).toBeHidden();
+    await expect(tableBody.getByText('Sample ID - Study 2')).toBeHidden();
+  });
+
+  test('Unchecked sample ID rows stay removed after navigating forward and back', async ({
+    page,
+  }) => {
+    await setupExportPageWithSampleIdMocks(page);
+    const sampleIdsCheckbox = page.getByTestId('sample-ids-checkbox');
+    await sampleIdsCheckbox.click();
+    await expect(sampleIdsCheckbox).toBeChecked();
+
+    // Re-enter the export page so the sample IDs are already exported when it loads
+    await page.getByTestId('back-btn').click();
+    await page.locator('button#export-data-button').click();
+    await expect(sampleIdsCheckbox).toBeChecked();
+    const tableBody = page.locator('tbody');
+    await expect(tableBody.getByText('Sample ID - Study 1')).toBeVisible();
+
+    await sampleIdsCheckbox.click();
+    await expect(sampleIdsCheckbox).not.toBeChecked();
+    await page.getByTestId('next-btn').click();
+    await expect(sampleIdsCheckbox).toBeHidden();
+    await page.getByRole('button', { name: 'Back', exact: true }).click();
+
+    await expect(sampleIdsCheckbox).not.toBeChecked();
+    await expect(tableBody.getByRole('cell', { name: 'Patient ID', exact: true })).toBeVisible();
+    await expect(tableBody.getByText('Sample ID - Study 1')).toBeHidden();
+    await expect(tableBody.getByText('Sample ID - Study 2')).toBeHidden();
+  });
+
   async function navigateToDownloadTab(page: Page) {
     await setupExportPageAndAddFilterAndExport(page);
     const nextButton = page.getByTestId('next-btn');
@@ -556,9 +610,10 @@ test.describe('Export Page', () => {
 
     await page.locator('input#dataset-name').fill('test-dataset');
     await mockApiSuccess(page, `*/**/picsure/operations/dataset/named`, newDatasetResponse);
-    await mockApiSuccess(
+    await mockApiSuccessByMethod(
       page,
       `${queryPath}/${newDatasetResponse.picsureResultId}/status`,
+      'GET',
       availableDatasetResponse,
     );
     await mockApiSuccess(page, '*/**/psama/user/me?hasToken', picsureUser);
@@ -598,18 +653,23 @@ test.describe('Export Page', () => {
       settings: baseExportSettings,
     });
     await navigateToDownloadTab(page);
-    await mockApiSuccess(
+    await mockApiSuccessByMethod(
       page,
       `${queryPath}/${newDatasetResponse.picsureResultId}/result`,
+      'GET',
       'csv,data',
     );
     const downloadButton = page.getByRole('button', { name: 'Download as CSV' });
     await expect(downloadButton).toBeVisible();
+    const resultRequest = page.waitForRequest((request) => request.url().endsWith('/result'));
 
     // When
     const [download] = await Promise.all([page.waitForEvent('download'), downloadButton.click()]);
 
     // Then
+    const request = await resultRequest;
+    expect(request.method()).toBe('GET');
+    expect(request.postData()).toBeNull();
     expect(download).toBeTruthy();
     await expect(page.locator('#modal-component')).not.toBeVisible();
   });
