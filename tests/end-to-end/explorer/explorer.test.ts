@@ -254,6 +254,165 @@ test.describe('Explorer for authenticated users', () => {
         await expect(tableBody.locator('tr.expandable-row').first()).toBeVisible();
         await expect(page.getByTestId('filter-categorical')).toBeVisible();
       });
+      test('Home and End jump rows, and ArrowRight/ArrowLeft walk the row actions', async ({
+        page,
+      }) => {
+        // Given
+        await page.route('*/**/picsure/hpds/auth/query/sync', async (route: Route) =>
+          route.fulfill({ body: '9999' }),
+        );
+        await page.goto('/explorer?search=somedata');
+        await userIsLoggedIn(page);
+        const tableBody = page.locator('#explorer-table tbody');
+        const dataRows = tableBody.locator('tr[id^="explorer-table-row-"]');
+        await expect(dataRows).toHaveCount(mockData.content.length);
+        const firstRow = tableBody.locator('#explorer-table-row-0');
+        const lastRow = tableBody.locator(`#explorer-table-row-${mockData.content.length - 1}`);
+        const info = firstRow.getByRole('button', { name: 'Information (i)' });
+        const filter = firstRow.getByRole('button', { name: 'Filter (f)' });
+
+        // Then: one tab stop per grid; row actions are reached with the arrow keys
+        await expect(firstRow).toHaveAttribute('tabindex', '0');
+        await expect(lastRow).toHaveAttribute('tabindex', '-1');
+        await expect(info).toHaveAttribute('tabindex', '-1');
+
+        // When
+        await firstRow.focus();
+        await page.keyboard.press('End');
+
+        // Then
+        await expect(lastRow).toBeFocused();
+        await expect(lastRow).toHaveAttribute('tabindex', '0');
+
+        // When
+        await page.keyboard.press('Home');
+        await expect(firstRow).toBeFocused();
+        await page.keyboard.press('ArrowRight');
+
+        // Then
+        await expect(info).toBeFocused();
+        await page.keyboard.press('ArrowRight');
+        await expect(filter).toBeFocused();
+        await page.keyboard.press('ArrowLeft');
+        await expect(info).toBeFocused();
+        await page.keyboard.press('ArrowLeft');
+        await expect(firstRow).toBeFocused();
+      });
+      test('ArrowDown and ArrowUp at a page edge change pages and focus the first row', async ({
+        page,
+      }) => {
+        // Given
+        const pageResults = (pageNumber: number) => ({
+          ...mockData,
+          totalPages: 2,
+          totalElements: 20,
+          numberOfElements: 10,
+          number: pageNumber,
+          first: pageNumber === 0,
+          last: pageNumber === 1,
+          pageable: { ...mockData.pageable, pageNumber, offset: pageNumber * 10 },
+          content: Array.from({ length: 10 }, (_, index) => ({
+            ...mockData.content[index % mockData.content.length],
+            conceptPath: `\\test\\page-${pageNumber}-result-${index}\\`,
+            name: `page-${pageNumber}-result-${index}`,
+          })),
+        });
+        await page.route('*/**/picsure/hpds/auth/query/sync', async (route: Route) =>
+          route.fulfill({ body: '9999' }),
+        );
+        await page.route(searchResultPath, async (route: Route) =>
+          route.fulfill({ json: pageResults(0) }),
+        );
+        await page.route(
+          searchResultPath.replace('page_number=0', 'page_number=1'),
+          async (route: Route) => route.fulfill({ json: pageResults(1) }),
+        );
+        await page.goto('/explorer?search=somedata');
+        await userIsLoggedIn(page);
+        const tableBody = page.locator('#explorer-table tbody');
+        const firstRow = tableBody.locator('#explorer-table-row-0');
+        await expect(tableBody.locator('tr[id^="explorer-table-row-"]')).toHaveCount(10);
+
+        // When
+        await firstRow.focus();
+        await page.keyboard.press('End');
+        await expect(tableBody.locator('#explorer-table-row-9')).toBeFocused();
+        await page.keyboard.press('ArrowDown');
+
+        // Then
+        await expect(page.getByLabel('Page 2')).toHaveAttribute('aria-current', 'page');
+        await expect(firstRow).toContainText('page-1-result-0');
+        await expect(firstRow).toBeFocused();
+        await expect(page.getByText('Page 2 of 2')).toBeAttached();
+
+        // When
+        await page.keyboard.press('ArrowUp');
+
+        // Then: paging back also lands on the first row
+        await expect(page.getByLabel('Page 1')).toHaveAttribute('aria-current', 'page');
+        await expect(firstRow).toContainText('page-0-result-0');
+        await expect(firstRow).toBeFocused();
+      });
+      test('Escape from a panel text field returns to the row, and a second Escape closes it', async ({
+        page,
+      }) => {
+        // Given
+        await page.route('*/**/picsure/hpds/auth/query/sync', async (route: Route) =>
+          route.fulfill({ body: '9999' }),
+        );
+        await page.goto('/explorer?search=somedata');
+        await userIsLoggedIn(page);
+        const tableBody = page.locator('#explorer-table tbody');
+        const firstRow = tableBody.locator('#explorer-table-row-0');
+        await expect(firstRow).toBeVisible();
+        await firstRow.focus();
+        await page.keyboard.press('f');
+        const panel = tableBody.locator('tr.expandable-row');
+        const search = panel.getByPlaceholder('Search...').first();
+        await expect(search).toBeVisible();
+
+        // When
+        await search.focus();
+        await page.keyboard.press('Escape');
+
+        // Then
+        await expect(firstRow).toBeFocused();
+        await expect(panel).toBeVisible();
+
+        // When
+        await page.keyboard.press('Escape');
+
+        // Then
+        await expect(panel).not.toBeVisible();
+        await expect(firstRow).toBeFocused();
+      });
+      test('Escape on another row closes the expanded row and leaves focus there', async ({
+        page,
+      }) => {
+        // Given
+        await page.route('*/**/picsure/hpds/auth/query/sync', async (route: Route) =>
+          route.fulfill({ body: '9999' }),
+        );
+        await page.goto('/explorer?search=somedata');
+        await userIsLoggedIn(page);
+        const tableBody = page.locator('#explorer-table tbody');
+        const firstRow = tableBody.locator('#explorer-table-row-0');
+        await expect(firstRow).toBeVisible();
+        await firstRow.focus();
+        await page.keyboard.press('Enter');
+        const panel = tableBody.locator('tr.expandable-row');
+        await expect(panel).toBeVisible();
+
+        // When
+        await page.keyboard.press('ArrowDown');
+        const secondRow = tableBody.locator('#explorer-table-row-1');
+        await expect(secondRow).toBeFocused();
+        await page.keyboard.press('Escape');
+
+        // Then
+        await expect(panel).not.toBeVisible();
+        await expect(secondRow).toBeFocused();
+      });
     });
     test.describe('Info Actions', () => {
       test('Clicking a row opens info panel', async ({ page }) => {
