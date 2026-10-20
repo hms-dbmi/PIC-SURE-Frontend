@@ -53,6 +53,44 @@ test.describe('Filter warning navigation', () => {
     );
   });
 
+  test('does not leave the Explore link highlighted after going back to Discover', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      sessionStorage.setItem(
+        'filterTree',
+        JSON.stringify({
+          uuid: 'root',
+          operator: 'AND',
+          children: [
+            {
+              uuid: 'denied-filter',
+              id: '\\denied-study\\variable\\',
+              filterType: 'Categorical',
+              displayType: 'restrict',
+              variableName: 'Denied variable',
+              allowFiltering: true,
+              dataset: 'denied-study',
+              categoryValues: ['Yes'],
+            },
+          ],
+        }),
+      );
+    });
+
+    await page.goto('/discover');
+    const exploreLink = page.locator('#nav-link-explorer');
+    const unselectedBackground = await exploreLink.evaluate(
+      (el) => getComputedStyle(el).backgroundColor,
+    );
+    await exploreLink.click();
+    await page.getByRole('button', { name: 'Back to Discover' }).click();
+
+    await expect(page.getByTestId('sendfilter-warning')).toBeHidden();
+    await page.mouse.move(0, 0);
+    await expect(exploreLink).toHaveCSS('background-color', unselectedBackground);
+  });
+
   test('warns after leaving Discover before moving to Explore with an unconsented filter', async ({
     page,
   }) => {
