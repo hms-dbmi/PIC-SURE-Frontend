@@ -10,7 +10,6 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
   registerSignedInUser: vi.fn(),
 }));
 
-import { logout, setToken } from '#lib/auth/User.ts';
 import { session } from '#lib/auth/session.svelte.ts';
 import { request } from '#lib/api/client.ts';
 import { createLog } from '#lib/telemetry/logger.ts';
@@ -45,7 +44,7 @@ const psamaLogoutFailures = {
 describe('logout', () => {
   beforeEach(() => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
-    setToken('token');
+    session.setToken('token');
   });
 
   afterEach(() => {
@@ -61,7 +60,7 @@ describe('logout', () => {
       vi.fn(() => Promise.resolve(new Response('{}'))),
     );
 
-    await Promise.all([logout(), logout()]);
+    await Promise.all([session.logout(), session.logout()]);
 
     expect(fetch).toHaveBeenCalledOnce();
     expect(navigate).toHaveBeenCalledOnce();
@@ -78,7 +77,7 @@ describe('logout', () => {
       },
     };
 
-    await logout(provider as unknown as AuthProvider);
+    await session.logout(provider as unknown as AuthProvider);
 
     expect(navigate).toHaveBeenCalledExactlyOnceWith('/login');
   });
@@ -106,7 +105,7 @@ describe('logout', () => {
       const ended = vi.fn();
       const stopListening = session.onEnd(ended);
 
-      await logout(provider);
+      await session.logout(provider);
       stopListening();
 
       expect(navigate).toHaveBeenCalledExactlyOnceWith('/login');
@@ -131,7 +130,7 @@ describe('logout', () => {
       { ...common, name: 'AUTH0', type: 'AUTH0', clientid: 'c', connection: 'x' },
     ];
     saveSessionProvider(providers[0]);
-    setToken(jwt('first'));
+    session.setToken(jwt('first'));
     const ended = vi.fn();
     const stopListening = session.onEnd(ended);
 
@@ -142,7 +141,7 @@ describe('logout', () => {
 
     const provider = findSessionProvider(providers);
     expect(provider?.name).toBe('AUTH0');
-    await logout(provider && (await createInstance(provider)));
+    await session.logout(provider && (await createInstance(provider)));
     stopListening();
 
     expect(ended).toHaveBeenCalledTimes(2);
@@ -167,14 +166,14 @@ describe('logout', () => {
         }),
       };
 
-      await logout(provider as unknown as AuthProvider);
+      await session.logout(provider as unknown as AuthProvider);
 
       expect(seenByProvider).toBe('id-token');
       expect(localStorage.getItem('oktaIdToken')).toBeNull();
     });
 
     it('goes on a logout without a provider', async () => {
-      await logout();
+      await session.logout();
 
       expect(localStorage.getItem('oktaIdToken')).toBeNull();
     });
@@ -189,7 +188,7 @@ describe('logout', () => {
       localStorage.setItem('token', `${btoa('{}')}.${btoa(JSON.stringify({ exp: 1 }))}.sig`);
 
       vi.resetModules();
-      await import('#lib/auth/User.ts');
+      await import('#lib/auth/session.svelte.ts');
 
       expect(localStorage.getItem('oktaIdToken')).toBeNull();
     });
@@ -203,7 +202,7 @@ describe('logout', () => {
       });
 
       it('navigates to login once without a provider', async () => {
-        await logout();
+        await session.logout();
 
         expect(fetch).toHaveBeenCalledOnce();
         expect(navigate).toHaveBeenCalledOnce();
@@ -214,7 +213,7 @@ describe('logout', () => {
       it('navigates to login once when the provider logout fails too', async () => {
         const provider = { logout: vi.fn().mockRejectedValue(new Error('not implemented')) };
 
-        await logout(provider as unknown as AuthProvider);
+        await session.logout(provider as unknown as AuthProvider);
 
         expect(navigate).toHaveBeenCalledOnce();
         expect(navigate).toHaveBeenCalledWith('/login');

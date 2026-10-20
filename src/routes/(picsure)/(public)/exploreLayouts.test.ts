@@ -3,7 +3,7 @@ import type { RouteId } from '$app/types';
 
 vi.mock('#lib/auth/guard.ts', () => ({ requireAccess: vi.fn().mockResolvedValue(undefined) }));
 vi.mock('$app/state', () => ({ page: {} }));
-vi.mock('#lib/auth/User.ts', () => ({}));
+vi.mock('#lib/auth/session.svelte.ts', () => ({ session: {} }));
 vi.mock('#lib/config/config.svelte.ts', () => ({}));
 
 import { routeMode } from '#lib/explorer/mode.ts';

@@ -14,7 +14,13 @@ vi.mock('$app/state', () => ({
     },
   },
 }));
-vi.mock('#lib/auth/User.ts', () => ({ isUserLoggedIn: () => mockState.loggedIn }));
+vi.mock('#lib/auth/session.svelte.ts', () => ({
+  session: {
+    get isLoggedIn() {
+      return mockState.loggedIn;
+    },
+  },
+}));
 vi.mock('#lib/config/config.svelte.ts', () => ({ config: { features: mockState.features } }));
 
 import { isOpenAccess, routeMode, useOpenAccess } from '#lib/explorer/mode.ts';

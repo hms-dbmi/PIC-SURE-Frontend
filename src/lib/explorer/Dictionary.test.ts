@@ -10,27 +10,31 @@ vi.mock('$app/state', () => ({
   },
 }));
 
-const mockState = vi.hoisted(() => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { writable } = require('svelte/store') as typeof import('svelte/store');
-  return {
-    requestSpy: vi.fn(),
-    logSpy: vi.fn(),
-    consentsSettledSpy: vi.fn().mockResolvedValue(undefined),
-    showAccessUnavailableSpy: vi.fn(),
-    accessUnavailableStore: writable(false),
-    consentedStudiesStore: writable<string[]>([]),
-  };
-});
+const mockState = vi.hoisted(() => ({
+  requestSpy: vi.fn(),
+  logSpy: vi.fn(),
+  consentsSettledSpy: vi.fn().mockResolvedValue(undefined),
+  showAccessUnavailableSpy: vi.fn(),
+  accessUnavailable: false,
+  consentedStudies: [] as string[],
+}));
 
 vi.mock('#lib/api/client.ts', () => ({ request: mockState.requestSpy }));
 
-vi.mock('#lib/auth/User.ts', () => ({
+vi.mock('#lib/auth/accessUnavailable.ts', () => ({
   ACCESS_UNAVAILABLE_MESSAGE: 'Access unavailable',
-  accessUnavailable: mockState.accessUnavailableStore,
-  consentedStudies: mockState.consentedStudiesStore,
-  consentsSettled: mockState.consentsSettledSpy,
   showAccessUnavailable: mockState.showAccessUnavailableSpy,
+}));
+vi.mock('#lib/auth/session.svelte.ts', () => ({
+  session: {
+    get accessUnavailable() {
+      return mockState.accessUnavailable;
+    },
+    get consentedStudies() {
+      return mockState.consentedStudies;
+    },
+    consentsSettled: mockState.consentsSettledSpy,
+  },
 }));
 
 vi.mock('#lib/telemetry/logger.ts', () => ({
@@ -72,7 +76,7 @@ beforeEach(() => {
   mockState.logSpy.mockClear();
   mockMode = 'explorer';
   mockState.consentsSettledSpy.mockClear();
-  mockState.consentedStudiesStore.set(['phs000001']);
+  mockState.consentedStudies = ['phs000001'];
 });
 afterEach(() => {
   vi.mocked(console.log).mockRestore();
@@ -196,12 +200,12 @@ describe('consents follow the explore mode', () => {
   });
 
   it('fails closed in explorer when access is unavailable instead of sending no consents', async () => {
-    mockState.accessUnavailableStore.set(true);
+    mockState.accessUnavailable = true;
     try {
       await expect(searchFacets('age', [])).rejects.toThrow('Access unavailable');
       expect(mockState.requestSpy).not.toHaveBeenCalled();
     } finally {
-      mockState.accessUnavailableStore.set(false);
+      mockState.accessUnavailable = false;
     }
   });
 });

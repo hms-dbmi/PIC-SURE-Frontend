@@ -1,5 +1,3 @@
-import { get } from 'svelte/store';
-
 import * as dictionary from '#lib/api/picsure/dictionary.ts';
 import { isAbortError } from '#lib/api/errors.ts';
 import type { Facet, SearchResult } from '#lib/explorer/types.ts';
@@ -9,13 +7,8 @@ import type {
   DictionarySearchRequest,
 } from '#lib/api/picsure/dictionary.types.ts';
 import type { Pageable } from '#lib/api/picsure/pageable.types.ts';
-import {
-  ACCESS_UNAVAILABLE_MESSAGE,
-  accessUnavailable,
-  consentedStudies,
-  consentsSettled,
-  showAccessUnavailable,
-} from '#lib/auth/User.ts';
+import { ACCESS_UNAVAILABLE_MESSAGE, showAccessUnavailable } from '#lib/auth/accessUnavailable.ts';
+import { session } from '#lib/auth/session.svelte.ts';
 import { exploreMode } from '#lib/explorer/mode.ts';
 import { log, createLog } from '#lib/telemetry/logger.ts';
 
@@ -125,14 +118,14 @@ export async function getHierarchyConcepts(
  * than emitting an empty `\_consents\`, so a consent-based deployment cannot reach here empty.
  */
 export async function addConsents(request: DictionarySearchRequest) {
-  await consentsSettled();
-  if (get(accessUnavailable)) {
+  await session.consentsSettled();
+  if (session.accessUnavailable) {
     // Raised here because ExplorerSearch swallows this error in one path and replaces it with
     // its own generic text in the other, and a reload has no login-time toast to fall back on.
     showAccessUnavailable();
     throw new Error(ACCESS_UNAVAILABLE_MESSAGE);
   }
-  request.consents = get(consentedStudies);
+  request.consents = session.consentedStudies;
   return request;
 }
 

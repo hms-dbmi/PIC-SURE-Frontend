@@ -7,7 +7,7 @@
   import type { ExportRowInterface } from '#lib/explorer/export/ExportRow.ts';
   import Content from '#lib/shell/Content.svelte';
   import { config } from '#lib/config/config.svelte.ts';
-  import { isUserLoggedIn } from '#lib/auth/User.ts';
+  import { session } from '#lib/auth/session.svelte.ts';
   import { goto } from '$app/navigation';
 
   let exportRows: ExportRowInterface[] = $exports.map((exp) => {
@@ -47,7 +47,7 @@
 </script>
 
 <Content backUrl="/explorer" backTitle="Back to Explore" title="Export Data for Research Analysis">
-  {#if !isUserLoggedIn()}
+  {#if !session.isLoggedIn}
     <div class="flex flex-col items-center justify-center m-8">
       <p>You are not logged in. To export the data for your selected cohort, please log in.</p>
       <div class="flex gap-4">

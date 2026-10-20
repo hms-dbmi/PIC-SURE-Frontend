@@ -1,6 +1,6 @@
 import { page } from '$app/state';
 import type { RouteId } from '$app/types';
-import { isUserLoggedIn } from '#lib/auth/User.ts';
+import { session } from '#lib/auth/session.svelte.ts';
 import { browser } from '$app/env';
 import { config } from '#lib/config/config.svelte.ts';
 
@@ -25,7 +25,7 @@ export function routeMode(routeId: RouteId | null | undefined): ExploreMode | un
 }
 
 export function isOpenAccess(): boolean {
-  return (browser && exploreMode() === 'discover') || !isUserLoggedIn();
+  return (browser && exploreMode() === 'discover') || !session.isLoggedIn;
 }
 
 export function isExploreWithoutLogin(): boolean {

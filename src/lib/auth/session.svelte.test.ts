@@ -485,3 +485,15 @@ describe('the end of a session', () => {
     expect(ended).toHaveBeenCalledOnce();
   });
 });
+
+describe('the profile', () => {
+  it('is kept in this tab’s sessionStorage without its long-term token', () => {
+    session.user = { email: 'set@example.org', token: 'long-term', privileges: ['QUERY'] };
+
+    expect(session.user.token).toBe('long-term');
+    expect(JSON.parse(sessionStorage.getItem('user') ?? '')).toEqual({
+      email: 'set@example.org',
+      privileges: ['QUERY'],
+    });
+  });
+});

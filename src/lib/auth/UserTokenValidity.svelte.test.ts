@@ -1,20 +1,13 @@
 // @vitest-environment happy-dom
 
 import { flushSync } from 'svelte';
-import { get } from 'svelte/store';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const environment = vi.hoisted(() => ({ browser: true }));
 vi.mock('$app/env', () => environment);
 
-import {
-  getTokenExpiration,
-  getTokenExpirationAsDate,
-  hasValidToken,
-  isTokenExpired,
-  removeToken,
-  setToken,
-} from '#lib/auth/User.ts';
+import { session } from '#lib/auth/session.svelte.ts';
+import { getTokenExpiration, getTokenExpirationAsDate, isTokenExpired } from '#lib/auth/token.ts';
 
 vi.mock('#lib/telemetry/logger.ts', () => ({
   createLog: vi.fn(),
@@ -96,85 +89,93 @@ describe('token expiration helpers', () => {
   });
 });
 
+/** Reads `session.hasValidToken` from an effect, as a component would, until stopped. */
+function observeValidity() {
+  const seen = { valid: undefined as boolean | undefined, stop: () => {} };
+  seen.stop = $effect.root(() => {
+    $effect(() => {
+      seen.valid = session.hasValidToken;
+    });
+  });
+  flushSync();
+  return seen;
+}
+
 describe('hasValidToken', () => {
   afterEach(() => {
     environment.browser = true;
     vi.restoreAllMocks();
-    removeToken();
+    session.removeToken();
     vi.useRealTimers();
   });
 
   it('is false on the server, which never reads browser storage', async () => {
-    setToken(makeToken(Math.floor(Date.now() / 1000) + 60));
+    session.setToken(makeToken(Math.floor(Date.now() / 1000) + 60));
     environment.browser = false;
     const readStorage = vi.spyOn(localStorage, 'getItem');
     vi.resetModules();
-    const server = await import('#lib/auth/User.ts');
+    const server = await import('#lib/auth/session.svelte.ts');
 
-    expect(get(server.hasValidToken)).toBe(false);
+    expect(server.session.hasValidToken).toBe(false);
     expect(readStorage).not.toHaveBeenCalled();
   });
 
   it('is false when a stored token has expired', () => {
     vi.useFakeTimers();
-    setToken(makeToken(Math.floor(Date.now() / 1000) - 1));
-    let valid = true;
-    const unsubscribe = hasValidToken.subscribe((value) => (valid = value));
+    session.setToken(makeToken(Math.floor(Date.now() / 1000) - 1));
+    const observed = observeValidity();
 
-    expect(valid).toBe(false);
+    expect(observed.valid).toBe(false);
     expect(vi.getTimerCount()).toBe(0);
     expect(localStorage.getItem('token')).not.toBeNull();
-    unsubscribe();
+    observed.stop();
   });
 
   it.each(invalidExpirations)('rejects %s without scheduling a timer', (_description, payload) => {
     vi.useFakeTimers();
-    setToken(makeTokenWithPayload(payload));
-    let valid = true;
-    const unsubscribe = hasValidToken.subscribe((value) => (valid = value));
+    session.setToken(makeTokenWithPayload(payload));
+    const observed = observeValidity();
 
-    expect(valid).toBe(false);
+    expect(observed.valid).toBe(false);
     expect(vi.getTimerCount()).toBe(0);
-    unsubscribe();
+    observed.stop();
   });
 
   it('reacts when a stored token reaches its expiration', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-08-28T12:00:00.000Z'));
-    setToken(makeToken(Math.floor(Date.now() / 1000) + 2));
-    let valid = false;
-    const unsubscribe = hasValidToken.subscribe((value) => (valid = value));
-    expect(valid).toBe(true);
+    session.setToken(makeToken(Math.floor(Date.now() / 1000) + 2));
+    const observed = observeValidity();
+    expect(observed.valid).toBe(true);
     expect(vi.getTimerCount()).toBe(1);
 
     vi.advanceTimersByTime(2_001);
     flushSync();
 
-    expect(valid).toBe(false);
+    expect(observed.valid).toBe(false);
     expect(vi.getTimerCount()).toBe(0);
     expect(localStorage.getItem('token')).not.toBeNull();
-    unsubscribe();
+    observed.stop();
   });
 
   it('replaces the expiration timer when the token changes', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-08-28T12:00:00.000Z'));
-    setToken(makeToken(Math.floor(Date.now() / 1000) + 2));
-    let valid = false;
-    const unsubscribe = hasValidToken.subscribe((value) => (valid = value));
-    expect(valid).toBe(true);
+    session.setToken(makeToken(Math.floor(Date.now() / 1000) + 2));
+    const observed = observeValidity();
+    expect(observed.valid).toBe(true);
     expect(vi.getTimerCount()).toBe(1);
 
     vi.advanceTimersByTime(1_000);
-    setToken(makeToken(Math.floor(Date.now() / 1000) + 10));
+    session.setToken(makeToken(Math.floor(Date.now() / 1000) + 10));
     flushSync();
-    expect(valid).toBe(true);
+    expect(observed.valid).toBe(true);
     expect(vi.getTimerCount()).toBe(1);
 
     vi.advanceTimersByTime(2_000);
     flushSync();
-    expect(valid).toBe(true);
-    unsubscribe();
+    expect(observed.valid).toBe(true);
+    observed.stop();
     flushSync();
     expect(vi.getTimerCount()).toBe(0);
   });
