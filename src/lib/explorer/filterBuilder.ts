@@ -1,4 +1,4 @@
-import type { SearchResult } from '#lib/explorer/types.ts';
+import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
 import {
   type Filter,
   createCategoricalFilter,

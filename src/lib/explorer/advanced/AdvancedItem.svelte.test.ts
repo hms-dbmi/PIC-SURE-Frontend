@@ -7,7 +7,7 @@ import { FilterTreeEditor } from '#lib/explorer/advanced/FilterTreeEditor.svelte
 import { createFilterGroup, type FilterInterface } from '#lib/query/filter.svelte.ts';
 import { LogicTree } from '#lib/query/logicTree.svelte.ts';
 import AdvancedItemHost from '../../../../tests/support/fixtures/AdvancedItemHost.svelte';
-import type { SearchResult } from '#lib/explorer/types.ts';
+import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
 
 type SearchResultFixture = Partial<Omit<SearchResult, 'studyAcronym'>> & {
   studyAcronym?: string | null;

@@ -29,8 +29,11 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
 }));
 
 import type { State } from '@vincjo/datatables/server';
-import type { Facet, SearchResult } from '#lib/explorer/types.ts';
-import type { DictionaryFacetResult } from '#lib/api/picsure/dictionary.types.ts';
+import type {
+  Facet,
+  SearchResult,
+  DictionaryFacetResult,
+} from '#lib/api/picsure/dictionary.types.ts';
 import { ExplorerSearch } from '#lib/explorer/search.svelte.ts';
 
 type LoadCallback = (state: State) => Promise<SearchResult[] | undefined>;

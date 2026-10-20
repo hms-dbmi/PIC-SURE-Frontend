@@ -1,7 +1,8 @@
 import * as dictionary from '#lib/api/picsure/dictionary.ts';
 import { isAbortError } from '#lib/api/errors.ts';
-import type { Facet, SearchResult } from '#lib/explorer/types.ts';
 import type {
+  Facet,
+  SearchResult,
   DictionaryConceptResult,
   DictionaryFacetResult,
   DictionarySearchRequest,

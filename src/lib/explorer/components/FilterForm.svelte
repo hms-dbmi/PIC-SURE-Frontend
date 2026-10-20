@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { SearchResult } from '#lib/explorer/types.ts';
+  import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
   import { type Filter, studyLabel } from '#lib/query/filter.svelte.ts';
   import { buildFilter } from '#lib/explorer/filterBuilder.ts';
 

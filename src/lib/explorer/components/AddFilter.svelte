@@ -2,7 +2,7 @@
   import { untrack } from 'svelte';
 
   import { toaster } from '#lib/ui/toaster.ts';
-  import type { SearchResult } from '#lib/explorer/types.ts';
+  import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
   import type { Filter } from '#lib/query/filter.svelte.ts';
   import { getConceptDetails } from '#lib/explorer/Dictionary.ts';
 

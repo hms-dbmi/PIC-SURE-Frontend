@@ -58,7 +58,7 @@ import type { QueryDescriptor } from '#lib/query/descriptor.svelte.ts';
 import { ResultCounts, resultCountsState } from '#lib/query/counts/resultCounts.svelte.ts';
 import { filterState } from '#lib/query/filters.svelte.ts';
 import { createCategoricalFilter } from '#lib/query/filter.svelte.ts';
-import type { SearchResult } from '#lib/explorer/types.ts';
+import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
 
 function changeFilters() {
   filterState.add(createCategoricalFilter({ conceptPath: '\\a\\' } as SearchResult, ['x']));

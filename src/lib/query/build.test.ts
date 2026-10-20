@@ -21,7 +21,7 @@ import {
 } from '#lib/query/filter.svelte.ts';
 import { LogicTree } from '#lib/query/logicTree.svelte.ts';
 import { Operator, queryLeaves } from '#lib/query/query.ts';
-import type { SearchResult } from '#lib/explorer/types.ts';
+import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
 import { buildRequest, filterConcepts } from '#lib/query/build.ts';
 
 function searchResult(conceptPath: string, children: SearchResult[] = []): SearchResult {

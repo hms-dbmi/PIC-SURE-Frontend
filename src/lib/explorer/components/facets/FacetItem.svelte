@@ -1,7 +1,6 @@
 <script lang="ts">
   import FacetItem from './FacetItem.svelte';
-  import type { DictionaryFacetResult } from '#lib/api/picsure/dictionary.types.ts';
-  import type { Facet } from '#lib/explorer/types.ts';
+  import type { DictionaryFacetResult, Facet } from '#lib/api/picsure/dictionary.types.ts';
   import { explorerSearch as search, nestedFacetKey } from '#lib/explorer/search.svelte.ts';
 
   interface Props {

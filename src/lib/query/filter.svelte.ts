@@ -1,5 +1,5 @@
 import { genericUUID, objectUUID } from '#lib/utils/uuid.ts';
-import type { SearchResult } from '#lib/explorer/types.ts';
+import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
 import { GenotypeMap, type GeneFilterValues, type SNP } from '#lib/query/genomic.ts';
 import { type OperatorType, Operator } from '#lib/query/query.ts';
 

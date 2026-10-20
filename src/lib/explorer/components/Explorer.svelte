@@ -9,7 +9,7 @@
   import { config } from '#lib/config/config.svelte.ts';
   import { explorerSearch as search } from '#lib/explorer/search.svelte.ts';
   import type { TourDataType } from '#lib/explorer/components/tour/types.ts';
-  import type { SearchResult } from '#lib/explorer/types.ts';
+  import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
   import type { Filter } from '#lib/query/filter.svelte.ts';
   import { saveFilter } from '#lib/explorer/saveFilter.ts';
   import { explorerPanel } from '#lib/explorer/panel.svelte.ts';

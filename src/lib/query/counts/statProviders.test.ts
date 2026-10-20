@@ -43,7 +43,7 @@ import {
   type FilterInterface,
 } from '#lib/query/filter.svelte.ts';
 import { LogicTree } from '#lib/query/logicTree.svelte.ts';
-import type { SearchResult } from '#lib/explorer/types.ts';
+import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
 import type { StatConfig } from '#lib/config/index.ts';
 import { statEntries, statProvider } from '#lib/query/counts/statProviders.ts';
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildFilter } from '#lib/explorer/filterBuilder.ts';
-import type { SearchResult } from '#lib/explorer/types.ts';
+import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
 
 const categorical = {
   conceptPath: '\\demo\\sex\\',

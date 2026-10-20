@@ -23,7 +23,7 @@ import {
   type GeneFilterValues,
   type SNP,
 } from '#lib/query/genomic.ts';
-import type { SearchResult } from '#lib/explorer/types.ts';
+import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
 import { LogicTree } from '#lib/query/logicTree.svelte.ts';
 import { mapSearchResultAsExport } from '#lib/explorer/export/Export.ts';
 import type { ExportInterface } from '#lib/explorer/export/types.ts';

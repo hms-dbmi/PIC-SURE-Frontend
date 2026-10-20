@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { SearchResult } from '#lib/explorer/types.ts';
+  import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
   import { getInitialTree, getConceptTree } from '#lib/explorer/Dictionary.ts';
   import { exports } from '#lib/explorer/export/Export.ts';
   import { addExport, removeExport, mapSearchResultAsExport } from '#lib/explorer/export/Export.ts';

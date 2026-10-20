@@ -27,7 +27,7 @@ import {
   isFilterGroup,
   type FilterInterface,
 } from '#lib/query/filter.svelte.ts';
-import type { SearchResult } from '#lib/explorer/types.ts';
+import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
 import { LogicTree } from '#lib/query/logicTree.svelte.ts';
 import { createQuery, type PhenotypicFilter } from '#lib/query/query.ts';
 import { queryToFilterTree } from '#lib/query/restore.ts';

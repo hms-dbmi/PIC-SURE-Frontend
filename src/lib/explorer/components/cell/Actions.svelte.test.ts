@@ -5,7 +5,7 @@ import { fireEvent, render, screen } from '@testing-library/svelte';
 
 import Actions from '#lib/explorer/components/cell/Actions.svelte';
 import { addExport, clearExports, mapSearchResultAsExport } from '#lib/explorer/export/Export.ts';
-import type { SearchResult } from '#lib/explorer/types.ts';
+import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
 
 vi.mock('#lib/telemetry/logger.ts', async (importOriginal) => ({
   ...(await importOriginal<typeof import('#lib/telemetry/logger.ts')>()),

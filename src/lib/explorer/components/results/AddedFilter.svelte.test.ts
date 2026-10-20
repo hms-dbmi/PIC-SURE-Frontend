@@ -30,7 +30,7 @@ import { log } from '#lib/telemetry/logger.ts';
 import { filterState } from '#lib/query/filters.svelte.ts';
 import { explorerPanel } from '#lib/explorer/panel.svelte.ts';
 import type { Filter } from '#lib/query/filter.svelte.ts';
-import type { SearchResult } from '#lib/explorer/types.ts';
+import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
 
 const searchResult = {
   conceptPath: '\\test\\concept\\',

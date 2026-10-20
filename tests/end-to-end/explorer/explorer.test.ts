@@ -12,7 +12,7 @@ import {
   facetResponseWithZeroCount,
   hierarchyResponse,
 } from '../../support/mock-data';
-import { type SearchResult } from '../../../src/lib/explorer/types';
+import { type SearchResult } from '../../../src/lib/api/picsure/dictionary.types';
 import {
   expectUniqueIds,
   getOption,

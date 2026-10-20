@@ -4,8 +4,7 @@ import type { State } from '@vincjo/datatables/server';
 
 import FacetSideBar from '#lib/explorer/components/facets/FacetSideBar.svelte';
 import { explorerSearch } from '#lib/explorer/search.svelte.ts';
-import type { Facet } from '#lib/explorer/types.ts';
-import type { DictionaryFacetResult } from '#lib/api/picsure/dictionary.types.ts';
+import type { Facet, DictionaryFacetResult } from '#lib/api/picsure/dictionary.types.ts';
 
 const mocks = vi.hoisted(() => ({ searchFacets: vi.fn() }));
 

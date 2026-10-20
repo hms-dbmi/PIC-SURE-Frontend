@@ -1,6 +1,6 @@
 <script lang="ts">
   import IconButton from '#lib/ui/IconButton.svelte';
-  import type { SearchResult } from '#lib/explorer/types.ts';
+  import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
   import {
     exports,
     addExport,

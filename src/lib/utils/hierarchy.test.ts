@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { conceptDepth, sortHierarchyDeepestFirst } from './hierarchy';
-import type { SearchResult } from '#lib/explorer/types.ts';
+import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
 
 /** Helper to create a minimal SearchResult with just the fields relevant to hierarchy sorting. */
 function makeResult(conceptPath: string): SearchResult {

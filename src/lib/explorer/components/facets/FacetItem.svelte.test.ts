@@ -5,8 +5,7 @@ import { fireEvent, render, screen } from '@testing-library/svelte';
 
 import FacetItem from '#lib/explorer/components/facets/FacetItem.svelte';
 import { explorerSearch, nestedFacetKey } from '#lib/explorer/search.svelte.ts';
-import type { Facet } from '#lib/explorer/types.ts';
-import type { DictionaryFacetResult } from '#lib/api/picsure/dictionary.types.ts';
+import type { Facet, DictionaryFacetResult } from '#lib/api/picsure/dictionary.types.ts';
 
 vi.mock('$app/env', () => ({ browser: true }));
 vi.mock('#lib/explorer/Dictionary.ts', () => ({

@@ -2,8 +2,7 @@
   import CollapsiblePanel from '#lib/ui/CollapsiblePanel.svelte';
   import { scale } from 'svelte/transition';
   import { elasticInOut } from 'svelte/easing';
-  import type { DictionaryFacetResult } from '#lib/api/picsure/dictionary.types.ts';
-  import type { Facet } from '#lib/explorer/types.ts';
+  import type { DictionaryFacetResult, Facet } from '#lib/api/picsure/dictionary.types.ts';
   import { explorerSearch as search } from '#lib/explorer/search.svelte.ts';
   import { log, createLog, getPageContext } from '#lib/telemetry/logger.ts';
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { SearchResult } from '#lib/explorer/types.ts';
+  import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
   import { getConceptDetails } from '#lib/explorer/Dictionary.ts';
   import Loading from '#lib/ui/Loading.svelte';
   import ShowMoreButton from '#lib/ui/ShowMoreButton.svelte';

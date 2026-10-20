@@ -22,7 +22,7 @@ import {
   userIsLoggedIn,
 } from '../utils';
 import { createCategoricalFilter, createNumericFilter } from '../../../src/lib/query/filter.svelte';
-import type { SearchResult } from '../../../src/lib/explorer/types';
+import type { SearchResult } from '../../../src/lib/api/picsure/dictionary.types';
 
 const countResultPath = '*/**/picsure/hpds/auth/query/sync';
 

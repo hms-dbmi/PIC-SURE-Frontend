@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { SearchResult } from '#lib/explorer/types.ts';
+  import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
   import type { TreeNodeInit } from '#lib/ui/tree/treeModel.svelte.ts';
   import {
     type Filter,

@@ -1,9 +1,12 @@
 import { TableHandler, type State } from '@vincjo/datatables/server';
 
-import type { DictionaryFacetResult } from '#lib/api/picsure/dictionary.types.ts';
+import type {
+  DictionaryFacetResult,
+  Facet,
+  SearchResult,
+} from '#lib/api/picsure/dictionary.types.ts';
 import { isAbortError } from '#lib/api/errors.ts';
 import { searchDictionary, searchFacets } from '#lib/explorer/Dictionary.ts';
-import type { Facet, SearchResult } from '#lib/explorer/types.ts';
 import { log, createLog, getPageContext } from '#lib/telemetry/logger.ts';
 import { getDefaultRows } from '#lib/ui/datatable/rowsPerPage.ts';
 import { assertNoSsrWrite } from '#lib/utils/ssrWrite.ts';

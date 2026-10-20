@@ -6,7 +6,7 @@ import { fireEvent, render, screen } from '@testing-library/svelte';
 import ResultInfoComponent from '#lib/explorer/components/ResultInfoComponent.svelte';
 import { config } from '#lib/config/config.svelte.ts';
 import { getConceptDetails } from '#lib/explorer/Dictionary.ts';
-import type { SearchResult } from '#lib/explorer/types.ts';
+import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
 
 vi.mock('#lib/explorer/Dictionary.ts', () => ({
   getConceptDetails: vi.fn(),

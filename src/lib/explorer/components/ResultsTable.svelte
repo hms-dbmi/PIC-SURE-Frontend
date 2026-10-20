@@ -2,7 +2,7 @@
   import type { ComponentProps, Snippet } from 'svelte';
 
   import type { Column } from '#lib/ui/datatable/types.ts';
-  import type { SearchResult } from '#lib/explorer/types.ts';
+  import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
   import { explorerPanel } from '#lib/explorer/panel.svelte.ts';
   import { log, createLog, getPageContext } from '#lib/telemetry/logger.ts';
 

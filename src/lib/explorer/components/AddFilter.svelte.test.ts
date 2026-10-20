@@ -5,7 +5,7 @@ import { fireEvent, render, screen } from '@testing-library/svelte';
 
 import AddFilter from '#lib/explorer/components/AddFilter.svelte';
 import { getConceptDetails } from '#lib/explorer/Dictionary.ts';
-import type { SearchResult } from '#lib/explorer/types.ts';
+import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
 import { createCategoricalFilter } from '#lib/query/filter.svelte.ts';
 import { optionsIn } from '../../../../tests/support/helpers';
 
