@@ -2,7 +2,6 @@
   import { onDestroy } from 'svelte';
 
   import Loading from './Loading.svelte';
-  import { log, createLog, getPageContext } from '#lib/telemetry/logger.ts';
 
   const SEARCH_DEBOUNCE_MS = 250;
 
@@ -19,6 +18,7 @@
     allOptionsLoaded?: boolean;
     allOptions?: string[] | undefined;
     onscroll?: (search: string) => void;
+    onselectall?: (count: number) => void;
   }
 
   let {
@@ -31,6 +31,7 @@
     allOptionsLoaded = false,
     allOptions = undefined,
     onscroll = () => {},
+    onselectall,
   }: Props = $props();
 
   let currentlyLoadingSelected: boolean = $state(false);
@@ -109,12 +110,7 @@
       unselectedOptions = [];
       selectedOptionEndLocation = 20;
     }
-    log(
-      createLog('ACTION', 'filter.select_all', {
-        count: selectedOptions.length,
-        pageContext: getPageContext(),
-      }),
-    );
+    onselectall?.(selectedOptions.length);
   }
 
   let infiniteScroll = $derived(allOptions === undefined);

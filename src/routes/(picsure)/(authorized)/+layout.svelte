@@ -1,6 +1,6 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
-  import { appPath } from '#lib/api/paths.ts';
+  import { appPath } from '#lib/utils/appPath.ts';
   import type { Snippet } from 'svelte';
   import { beforeNavigate, goto } from '$app/navigation';
   import { session } from '#lib/auth/session.svelte.ts';

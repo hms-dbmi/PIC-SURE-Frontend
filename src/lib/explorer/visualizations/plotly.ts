@@ -1,6 +1,12 @@
 import type { PlotlyHTMLElement, Root, Data, Config, Layout } from 'plotly.js-basic-dist-min';
 import { config } from '#lib/config/config.svelte.ts';
 import { truncate } from '#lib/utils/strings.ts';
+import type {
+  CategoricalPlotData,
+  ContinuousPlotData,
+  CountValue,
+  ObfuscatedCount,
+} from '#lib/api/picsure/visualization.types.ts';
 
 const MAX_TITLE_LENGTH = 60;
 
@@ -27,38 +33,6 @@ export type PlotlyNewPlot = (
   layout?: Partial<Layout>,
   config?: Partial<Config>,
 ) => Promise<PlotlyHTMLElement>;
-
-export type ObfuscatedCount = {
-  count: number;
-  display: string;
-  variance?: number | null;
-};
-
-// For backwards compatibility
-export type CountValue = ObfuscatedCount | number;
-
-type CountMap = { [key: string]: CountValue };
-
-type PlotData = {
-  title: string;
-  conceptPath?: string;
-  subtitle?: string;
-  continuous: boolean;
-  colors: string[];
-  chartWidth: number;
-  chartHeight: number;
-  obfuscated: boolean;
-  xaxisName: string;
-  yaxisName: string;
-};
-
-export type CategoricalPlotData = PlotData & {
-  categoricalMap: CountMap;
-};
-
-export type ContinuousPlotData = PlotData & {
-  continuousMap: CountMap;
-};
 
 export type PlotMeta = {
   isCategorical: boolean;

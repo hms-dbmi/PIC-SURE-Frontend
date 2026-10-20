@@ -2,7 +2,7 @@ import type { ClientInit, HandleClientError } from '@sveltejs/kit/hooks';
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
 import { page } from '$app/state';
-import { appPath } from '#lib/api/paths.ts';
+import { appPath } from '#lib/utils/appPath.ts';
 import { showAccessUnavailable } from '#lib/auth/accessUnavailable.ts';
 import { session } from '#lib/auth/session.svelte.ts';
 import { log, createLog } from '#lib/telemetry/logger.ts';

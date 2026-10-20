@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { appPath } from '#lib/api/paths.ts';
+import { appPath } from '#lib/utils/appPath.ts';
 
 describe('appPath', () => {
   it('drops the leading slash kit 3 pathnames do not use', () => {

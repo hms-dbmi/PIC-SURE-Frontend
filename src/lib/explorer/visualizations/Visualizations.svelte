@@ -1,15 +1,17 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { getDistributions } from '#lib/api/picsure/visualization.ts';
-  import PlotlyPlot from '#lib/ui/PlotlyPlot.svelte';
+  import PlotlyPlot from '#lib/explorer/visualizations/PlotlyPlot.svelte';
   import {
     type PlotValues,
     type PlotlyNewPlot,
-    type CategoricalPlotData,
-    type ContinuousPlotData,
     createContinuousPlot,
     createCategoryPlot,
   } from '#lib/explorer/visualizations/plotly.ts';
+  import type {
+    CategoricalPlotData,
+    ContinuousPlotData,
+  } from '#lib/api/picsure/visualization.types.ts';
   import { buildRequest } from '#lib/query/build.ts';
   import {
     categoricalHasData,

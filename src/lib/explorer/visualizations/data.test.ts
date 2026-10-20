@@ -11,7 +11,7 @@ import type {
   CategoricalPlotData,
   ContinuousPlotData,
   CountValue,
-} from '#lib/explorer/visualizations/plotly.ts';
+} from '#lib/api/picsure/visualization.types.ts';
 import type { Filter } from '#lib/query/filter.svelte.ts';
 
 function categorical(conceptPath: string | undefined, categoricalMap: Record<string, CountValue>) {

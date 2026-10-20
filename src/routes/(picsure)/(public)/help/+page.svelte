@@ -1,6 +1,6 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
-  import { appPath } from '#lib/api/paths.ts';
+  import { appPath } from '#lib/utils/appPath.ts';
   import Content from '#lib/shell/Content.svelte';
   import CardButton from '#lib/ui/CardButton.svelte';
   import { config } from '#lib/config/config.svelte.ts';

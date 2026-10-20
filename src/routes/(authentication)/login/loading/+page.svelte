@@ -1,6 +1,6 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
-  import { appPath } from '#lib/api/paths.ts';
+  import { appPath } from '#lib/utils/appPath.ts';
   import { page } from '$app/state';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';

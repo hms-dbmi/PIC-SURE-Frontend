@@ -4,7 +4,7 @@ import type { QueryJson } from '#lib/query/query.ts';
 import type {
   CategoricalPlotData,
   ContinuousPlotData,
-} from '#lib/explorer/visualizations/plotly.ts';
+} from '#lib/api/picsure/visualization.types.ts';
 
 export interface Distributions {
   categoricalData: CategoricalPlotData[];

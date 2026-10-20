@@ -1,9 +1,9 @@
-import {
-  normalizeCount,
-  type CategoricalPlotData,
-  type ContinuousPlotData,
-  type CountValue,
-} from '#lib/explorer/visualizations/plotly.ts';
+import type {
+  CategoricalPlotData,
+  ContinuousPlotData,
+  CountValue,
+} from '#lib/api/picsure/visualization.types.ts';
+import { normalizeCount } from '#lib/explorer/visualizations/plotly.ts';
 import type { Filter } from '#lib/query/filter.svelte.ts';
 
 export type VisualizationPlotData = CategoricalPlotData | ContinuousPlotData;

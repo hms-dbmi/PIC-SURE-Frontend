@@ -5,6 +5,7 @@ import { fireEvent, render, screen } from '@testing-library/svelte';
 
 import AddFilter from '#lib/explorer/components/AddFilter.svelte';
 import { getConceptDetails } from '#lib/explorer/Dictionary.ts';
+import { log } from '#lib/telemetry/logger.ts';
 import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
 import { createCategoricalFilter } from '#lib/query/filter.svelte.ts';
 import { optionsIn } from '../../../../tests/support/helpers';
@@ -17,6 +18,12 @@ vi.mock('#lib/explorer/Dictionary.ts', () => ({
 
 vi.mock('#lib/ui/toaster.ts', () => ({
   toaster: { error: vi.fn() },
+}));
+
+vi.mock('#lib/telemetry/logger.ts', () => ({
+  log: vi.fn(),
+  createLog: (type: string, action: string, metadata: object) => ({ type, action, metadata }),
+  getPageContext: () => 'page-context',
 }));
 
 const mockGetConceptDetails = vi.mocked(getConceptDetails);
@@ -106,6 +113,19 @@ describe('AddFilter', () => {
     expect(mockGetConceptDetails).toHaveBeenCalledTimes(1);
     expect(optionsIn('selected')).toEqual([values[0]]);
     expect(screen.getByTestId('filter-add')).toBeEnabled();
+  });
+
+  it('logs Select All with the number of selected values', async () => {
+    await renderCategoricalFilter();
+    vi.mocked(log).mockClear();
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Select All' }));
+
+    expect(log).toHaveBeenCalledExactlyOnceWith({
+      type: 'ACTION',
+      action: 'filter.select_all',
+      metadata: { count: values.length, pageContext: 'page-context' },
+    });
   });
 
   it('starts an edit from the existing filter and its concept', async () => {

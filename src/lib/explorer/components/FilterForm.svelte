@@ -2,6 +2,7 @@
   import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
   import { type Filter, studyLabel } from '#lib/query/filter.svelte.ts';
   import { buildFilter } from '#lib/explorer/filterBuilder.ts';
+  import { log, createLog, getPageContext } from '#lib/telemetry/logger.ts';
 
   import OptionsSelectionList from '#lib/ui/OptionsSelectionList.svelte';
   import { cardClass } from '#lib/ui/surface.ts';
@@ -55,6 +56,10 @@
     if (filter) onadded(filter);
   }
 
+  function logSelectAll(count: number) {
+    log(createLog('ACTION', 'filter.select_all', { count, pageContext: getPageContext() }));
+  }
+
   function getNextValues(search: string = '') {
     const allOptions = concept.values || [];
     if (allOptions.length === 0) return;
@@ -105,6 +110,7 @@
           bind:currentlyLoading={loading}
           allOptions={concept.values}
           onscroll={getNextValues}
+          onselectall={logSelectAll}
         />
       </div>
     {:else if concept.type === 'Continuous'}

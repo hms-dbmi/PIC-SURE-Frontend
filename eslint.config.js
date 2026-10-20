@@ -5,14 +5,6 @@ import prettier from 'eslint-config-prettier';
 import svelte from 'eslint-plugin-svelte';
 import globals from 'globals';
 
-// Files that already imported app code when the ui/utils boundary rules were added. The PR that
-// cleans one removes it from this list; nothing new gets added.
-const boundaryExceptions = [
-  'src/lib/ui/OptionsSelectionList.svelte',
-  'src/lib/ui/PlotlyPlot.svelte',
-  'src/lib/ui/unsavedGuard.svelte.ts',
-];
-
 const skeletonOnlyInUi = {
   group: ['@skeletonlabs/*'],
   message: 'Only src/lib/ui/ may import Skeleton; use or add a ui/ primitive.',
@@ -64,7 +56,7 @@ function importBoundary(folder, allowed, pending = {}, extra = {}) {
   return [
     ...[1, 2, 3, 4, 5, 6].map((depth) => ({
       files: [`src/lib/${folder}/${'*/'.repeat(depth - 1)}*.{ts,svelte}`],
-      ignores: ['**/*.test.ts', ...boundaryExceptions],
+      ignores: ['**/*.test.ts'],
       rules: rules(depth),
     })),
     ...Object.entries(pending).map(([file, exempt]) => ({

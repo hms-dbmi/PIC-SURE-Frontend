@@ -1,7 +1,7 @@
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
 import { page } from '$app/state';
-import { appPath } from '#lib/api/paths.ts';
+import { appPath } from '#lib/utils/appPath.ts';
 import { sessionHooks } from '#lib/api/sessionHooks.ts';
 import { log, createLog } from '#lib/telemetry/logger.ts';
 
