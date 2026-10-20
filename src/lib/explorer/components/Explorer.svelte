@@ -1,7 +1,6 @@
 <script lang="ts">
   import Button from '#lib/ui/Button.svelte';
   import { resolve } from '$app/paths';
-  import { appPath } from '#lib/api/paths.ts';
   import { onMount, onDestroy, tick } from 'svelte';
 
   import { page } from '$app/state';
@@ -9,17 +8,7 @@
 
   import { config } from '#lib/config/config.svelte.ts';
   import type { Column } from '#lib/ui/datatable/types.ts';
-  import {
-    searchTerm,
-    selectedFacets,
-    tableHandler as handler,
-    initHandler,
-    error,
-    tour,
-    resetSearch,
-    nextSearchSettled,
-    loading as isLoading,
-  } from '#lib/explorer/Search.ts';
+  import { explorerSearch as search } from '#lib/explorer/search.svelte.ts';
   import type { TourDataType } from '#lib/explorer/components/tour/types.ts';
 
   import Actions from '#lib/explorer/components/cell/Actions.svelte';
@@ -33,7 +22,7 @@
 
   let { tourConfig }: { tourConfig: TourDataType } = $props();
 
-  let searchInput = $state(page.url.searchParams.get('search') || $searchTerm || '');
+  let searchInput = $state(page.url.searchParams.get('search') || search.term);
   const tableName = 'ExplorerTable';
   // The tour's steps select this table and its rows by id.
   const tableId = 'explorer-table';
@@ -47,26 +36,27 @@
     config.features.enableGENEQuery || config.features.enableSNPQuery,
   );
   let isDiscoverPage = $derived(exploreMode() === 'discover');
-  let path = $derived(isDiscoverPage ? '/discover' : '/explorer');
+  let path = $derived(
+    isDiscoverPage
+      ? resolve('/(picsure)/(public)/discover')
+      : resolve('/(picsure)/(public)/explorer'),
+  );
   let allowGenomicFiltering = $derived(genomicFeaturesEnabled && !isDiscoverPage);
 
   function update() {
-    if ($error) error.set('');
-    searchTerm.set(searchInput);
+    search.clearError();
+    search.setTerm(searchInput);
 
-    goto(
-      resolve(appPath(searchInput ? `${path}?search=${encodeURIComponent(searchInput)}` : path)),
-      {
-        replace: true,
-      },
-    );
+    goto(searchInput ? `${path}?search=${encodeURIComponent(searchInput)}` : path, {
+      replace: true,
+    });
   }
 
   function reset() {
-    resetSearch();
+    search.reset();
     searchInput = '';
 
-    goto(resolve(appPath(path)));
+    goto(path);
   }
 
   function scrollToSearchResults() {
@@ -76,17 +66,17 @@
   let releaseHandler: (() => void) | undefined;
 
   onMount(async () => {
-    releaseHandler = initHandler();
-    if (searchInput && searchInput !== $searchTerm) {
-      searchTerm.set(searchInput);
+    releaseHandler = search.start();
+    if (searchInput && searchInput !== search.term) {
+      search.setTerm(searchInput);
     } else {
       // reload table and facets
-      handler.invalidate();
+      search.table.invalidate();
     }
     if (page.url.searchParams.get('startTour') === 'true') {
       // A load with a search term hides the tour, so let the one started above finish first
-      await nextSearchSettled();
-      tour.set(true);
+      await search.nextSettled();
+      search.showTour();
       await tick();
       const tourBtn = document.querySelector('#explorer-tour-start');
       if (tourBtn) {
@@ -112,7 +102,7 @@
           <Button
             variant="tonal"
             data-testid="explorer-genomic-filter-open"
-            href={resolve('explorer/genome-filter')}
+            href={resolve('/(picsure)/(public)/explorer/genome-filter')}
             onclick={() => log(createLog('NAVIGATION', 'explorer.genomic_filter_click'))}
             >Genomic Filtering</Button
           >
@@ -120,34 +110,34 @@
         <Button
           variant="tonal-error"
           aria-label="You are on the reset button"
-          disabled={!searchInput && $selectedFacets.length === 0}
+          disabled={!searchInput && search.selectedFacets.length === 0}
           onclick={reset}
         >
           Reset
         </Button>
       </div>
     </div>
-    {#if $error}
+    {#if search.error}
       <ErrorAlert title="Sorry, we could not retrieve your search results." color="secondary">
-        {$error}
+        {search.error}
       </ErrorAlert>
-    {:else if $searchTerm || $selectedFacets.length > 0}
+    {:else if search.hasCriteria}
       <SearchDatatable
         isClickable
         ariaLabel="Search results"
         {tableName}
         id={tableId}
         data-testid="explorer-results-table"
-        {handler}
+        handler={search.table}
         {columns}
         {cellOverides}
-        isLoading={$isLoading}
+        isLoading={search.loading}
         expandable
         rowClickLogAction="search_result.row_click"
         onPageChange={scrollToSearchResults}
       />
     {/if}
-    {#if config.features.explorer.enableTour && $tour}
+    {#if config.features.explorer.enableTour && search.tour}
       <div id="explorer-tour" class="text-center mt-4">
         <ExplorerTour {tourConfig} />
       </div>

@@ -7,8 +7,7 @@
   import { config } from '#lib/config/config.svelte.ts';
   import { flatIndex } from '#lib/utils/objects.ts';
 
-  import { searchTerm, selectedFacets, nextSearchSettled } from '#lib/explorer/Search.ts';
-  import { expandedNestedFacets } from '#lib/explorer/NestedFacets.ts';
+  import { explorerSearch } from '#lib/explorer/search.svelte.ts';
   import { isToastShowing, toaster } from '#lib/ui/toaster.ts';
   import { filterState } from '#lib/query/filters.svelte.ts';
   import { clearExports } from '#lib/explorer/export/Export.ts';
@@ -49,8 +48,8 @@
   };
 
   function resetSearch() {
-    searchTerm.set('');
-    expandedNestedFacets.set([]);
+    explorerSearch.setTerm('');
+    explorerSearch.collapseNestedFacets();
     filterState.clear();
     clearExports();
   }
@@ -224,7 +223,7 @@
         }),
       );
       resetSearch();
-      selectedFacets.set([]);
+      explorerSearch.setFacets([]);
       const sidePanel = document.querySelector('#results-side-panel') as HTMLElement;
       if (sidePanel.classList.contains('open-panel')) {
         (document.querySelector('#results-panel-toggle') as HTMLElement)?.click();
@@ -244,9 +243,9 @@
     const searchBox = document.querySelector('#explorer-search-box') as HTMLInputElement;
     searchBox.value = tourConfig.searchTerm;
 
-    $searchTerm = tourConfig.searchTerm;
+    explorerSearch.setTerm(tourConfig.searchTerm);
 
-    const outcome = await nextSearchSettled();
+    const outcome = await explorerSearch.nextSettled();
     if (outcome !== 'loaded') {
       console.error(`Search did not load during tour (${outcome}).`);
       started = false;

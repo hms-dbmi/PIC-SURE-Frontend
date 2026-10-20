@@ -5,7 +5,7 @@
   import { createInstance } from '#lib/auth/providerRegistry.ts';
   import { sanitizeHTML } from '#lib/utils/html.ts';
   import type { AuthData } from '#lib/auth/providers/AuthProvider.ts';
-  import { resetSearch } from '#lib/explorer/Search.ts';
+  import { explorerSearch } from '#lib/explorer/search.svelte.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
 
   interface Props {
@@ -45,7 +45,7 @@
     );
     let instance = await createInstance(provider!);
     instance.login(redirectTo, providerType).then(() => {
-      resetSearch();
+      explorerSearch.reset();
     });
   };
 </script>

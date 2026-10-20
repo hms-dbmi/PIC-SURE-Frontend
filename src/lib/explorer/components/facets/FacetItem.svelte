@@ -2,13 +2,7 @@
   import FacetItem from './FacetItem.svelte';
   import type { DictionaryFacetResult } from '#lib/api/picsure/dictionary.types.ts';
   import type { Facet } from '#lib/explorer/types.ts';
-  import SearchStore from '#lib/explorer/Search.ts';
-  import {
-    expandedNestedFacets,
-    nestedFacetKey,
-    toggleNestedFacet,
-  } from '#lib/explorer/NestedFacets.ts';
-  let { updateFacets, selectedFacets } = SearchStore;
+  import { explorerSearch as search, nestedFacetKey } from '#lib/explorer/search.svelte.ts';
 
   interface Props {
     facet: Facet;
@@ -19,11 +13,12 @@
   let { facet, facetCategory, textFilterValue }: Props = $props();
 
   let expansionKey = $derived(nestedFacetKey(facetCategory.name, facet.name));
-  let open = $derived($expandedNestedFacets.includes(expansionKey));
+  let open = $derived(search.expandedNestedFacets.includes(expansionKey));
 
   function getCurrentlySelectedChildren() {
     return (
-      facet.children?.filter((child) => $selectedFacets.some((f) => f.name === child.name)) ?? []
+      facet.children?.filter((child) => search.selectedFacets.some((f) => f.name === child.name)) ??
+      []
     );
   }
 
@@ -32,28 +27,29 @@
       if (checkedState(facet.name) === 'indeterminate') {
         // Clearing children leaves checked false, so cancel the browser's toggle to true.
         event.preventDefault();
-        updateFacets(getCurrentlySelectedChildren());
+        search.toggleFacets(getCurrentlySelectedChildren());
       } else {
-        updateFacets(facet.children);
+        search.toggleFacets(facet.children);
       }
     } else {
-      updateFacets([facet]);
+      search.toggleFacets([facet]);
     }
   }
 
   let checkedState = $derived((facetToCheck: string) => {
     const atLeastOneChildSelected =
       facet.children &&
-      facet.children.some((child) => $selectedFacets.some((f) => f.name === child.name));
+      facet.children.some((child) => search.selectedFacets.some((f) => f.name === child.name));
     let isEveryChildSelected = false;
     if (atLeastOneChildSelected) {
       isEveryChildSelected =
-        facet.children?.every((child) => $selectedFacets.some((f) => f.name === child.name)) ??
-        false;
+        facet.children?.every((child) =>
+          search.selectedFacets.some((f) => f.name === child.name),
+        ) ?? false;
     }
     const isIndeterminate = atLeastOneChildSelected && !isEveryChildSelected;
     const isSelected =
-      $selectedFacets.some((facet) => facet.name === facetToCheck) || isEveryChildSelected;
+      search.selectedFacets.some((facet) => facet.name === facetToCheck) || isEveryChildSelected;
 
     if (isSelected) return 'true';
     if (isIndeterminate) return 'indeterminate';
@@ -71,7 +67,7 @@
                 child.display.toLowerCase().includes(textFilterValue.toLowerCase()) ||
                 child.name.toLowerCase().includes(textFilterValue.toLowerCase()) ||
                 child.description?.toLowerCase().includes(textFilterValue.toLowerCase());
-              return matchesFilter && $selectedFacets.some((f) => f.name === child.name);
+              return matchesFilter && search.selectedFacets.some((f) => f.name === child.name);
             })
             .sort((a, b) => (b.count || 0) - (a.count || 0)),
           ...facet.children
@@ -81,7 +77,7 @@
                 child.display.toLowerCase().includes(textFilterValue.toLowerCase()) ||
                 child.name.toLowerCase().includes(textFilterValue.toLowerCase()) ||
                 child.description?.toLowerCase().includes(textFilterValue.toLowerCase());
-              return matchesFilter && !$selectedFacets.some((f) => f.name === child.name);
+              return matchesFilter && !search.selectedFacets.some((f) => f.name === child.name);
             })
             .sort((a, b) => (b.count || 0) - (a.count || 0)),
         ]
@@ -102,7 +98,7 @@
       aria-label="{open ? 'Collapse' : 'Expand'} {facet.display} children"
       aria-expanded={open}
       data-testId={`explorer-facet-toggle-${facet.name}`}
-      onclick={() => toggleNestedFacet(expansionKey)}
+      onclick={() => search.toggleNestedFacet(expansionKey)}
     >
       <i class="fa-solid {open ? 'fa-angle-down' : 'fa-angle-right'}"></i>
     </button>

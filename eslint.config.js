@@ -196,6 +196,26 @@ export default [
       ],
     },
   },
+  {
+    // The dictionary helpers sit below explorer search; importing it back restores the cycle
+    // that ExplorerSearch removed.
+    files: ['src/lib/explorer/Dictionary.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: String.raw`(^|/)search\.svelte(\.ts)?$`,
+              message: 'Dictionary.ts must not import explorer search state.',
+            },
+            skeletonOnlyInUi,
+            dndKitOnlyInUi,
+          ],
+        },
+      ],
+    },
+  },
   ...importBoundary('ui', ['ui', 'utils']),
   ...importBoundary('utils', ['utils']),
   ...importBoundary('config', ['config', 'api', 'assets', 'ui', 'utils']),

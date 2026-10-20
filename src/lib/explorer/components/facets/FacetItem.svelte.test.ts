@@ -1,20 +1,23 @@
 // @vitest-environment happy-dom
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { get } from 'svelte/store';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 
 import FacetItem from '#lib/explorer/components/facets/FacetItem.svelte';
-import { expandedNestedFacets, nestedFacetKey } from '#lib/explorer/NestedFacets.ts';
+import { explorerSearch, nestedFacetKey } from '#lib/explorer/search.svelte.ts';
 import type { Facet } from '#lib/explorer/types.ts';
 import type { DictionaryFacetResult } from '#lib/api/picsure/dictionary.types.ts';
 
-vi.mock('#lib/explorer/Search.ts', async () => {
-  const { writable } = await import('svelte/store');
-  const selectedFacets = writable<Facet[]>([]);
-  const updateFacets = vi.fn();
-  return { default: { updateFacets, selectedFacets }, updateFacets, selectedFacets };
-});
+vi.mock('$app/env', () => ({ browser: true }));
+vi.mock('#lib/explorer/Dictionary.ts', () => ({
+  searchDictionary: vi.fn(),
+  searchFacets: vi.fn(),
+}));
+vi.mock('#lib/telemetry/logger.ts', () => ({
+  log: vi.fn(),
+  createLog: vi.fn(),
+  getPageContext: vi.fn(),
+}));
 
 const facetCategory: DictionaryFacetResult = {
   name: 'test-category',
@@ -56,7 +59,8 @@ const renderFacetItem = (name = 'parent-facet') =>
 
 describe('FacetItem nested facet expansion', () => {
   beforeEach(() => {
-    expandedNestedFacets.set([]);
+    explorerSearch.setFacets([]);
+    explorerSearch.collapseNestedFacets();
   });
 
   it('shows children and records the facet in expandedNestedFacets when the arrow is clicked', async () => {
@@ -68,7 +72,9 @@ describe('FacetItem nested facet expansion', () => {
 
     expect(screen.getByTestId('explorer-facet-children-parent-facet')).toBeInTheDocument();
     expect(screen.getByTestId('explorer-facet-label-parent-facet-child-1')).toBeInTheDocument();
-    expect(get(expandedNestedFacets)).toContain(nestedFacetKey('test-category', 'parent-facet'));
+    expect(explorerSearch.expandedNestedFacets).toContain(
+      nestedFacetKey('test-category', 'parent-facet'),
+    );
   });
 
   it('keeps children expanded when the component remounts, as on a facet reload', async () => {
@@ -89,18 +95,20 @@ describe('FacetItem nested facet expansion', () => {
     await view.rerender({ facet: makeFacet('other-facet') });
 
     expect(screen.queryByTestId('explorer-facet-children-other-facet')).not.toBeInTheDocument();
-    expect(get(expandedNestedFacets)).toEqual([nestedFacetKey('test-category', 'parent-facet')]);
+    expect(explorerSearch.expandedNestedFacets).toEqual([
+      nestedFacetKey('test-category', 'parent-facet'),
+    ]);
   });
 
   it('keys expansion by category, so a same-named facet in another category stays collapsed', async () => {
-    expandedNestedFacets.set([nestedFacetKey('some-other-category', 'parent-facet')]);
+    explorerSearch.toggleNestedFacet(nestedFacetKey('some-other-category', 'parent-facet'));
     renderFacetItem();
 
     expect(screen.queryByTestId('explorer-facet-children-parent-facet')).not.toBeInTheDocument();
   });
 
   it('collapses children and removes the facet from expandedNestedFacets on a second click', async () => {
-    expandedNestedFacets.set([nestedFacetKey('test-category', 'parent-facet')]);
+    explorerSearch.toggleNestedFacet(nestedFacetKey('test-category', 'parent-facet'));
     renderFacetItem();
 
     expect(screen.getByTestId('explorer-facet-children-parent-facet')).toBeInTheDocument();
@@ -108,13 +116,13 @@ describe('FacetItem nested facet expansion', () => {
     await fireEvent.click(screen.getByTestId('explorer-facet-toggle-parent-facet'));
 
     expect(screen.queryByTestId('explorer-facet-children-parent-facet')).not.toBeInTheDocument();
-    expect(get(expandedNestedFacets)).not.toContain(
+    expect(explorerSearch.expandedNestedFacets).not.toContain(
       nestedFacetKey('test-category', 'parent-facet'),
     );
   });
 
   it('keeps an explicitly collapsed facet collapsed across a remount', async () => {
-    expandedNestedFacets.set([nestedFacetKey('test-category', 'parent-facet')]);
+    explorerSearch.toggleNestedFacet(nestedFacetKey('test-category', 'parent-facet'));
     const first = renderFacetItem();
     await fireEvent.click(screen.getByTestId('explorer-facet-toggle-parent-facet'));
     first.unmount();
