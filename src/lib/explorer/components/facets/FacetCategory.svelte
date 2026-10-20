@@ -131,7 +131,8 @@
     {facetCategory.display}
   {/snippet}
   <div class="flex flex-col">
-    {#if overShowLimit}
+    <!-- A filter that outlives a refetch stays visible, so it can always be cleared. -->
+    {#if overShowLimit || textFilterValue}
       <input
         type="search"
         placeholder={'Filter ' + facetCategory.display}
@@ -163,7 +164,7 @@
 </CollapsiblePanel>
 {#if !search.openFacets.includes(facetCategory.name)}
   <div class="mb-2 flex flex-wrap gap-2" transition:scale={{ easing: elasticInOut }}>
-    {#each selectedFacetsChips as facet}
+    {#each selectedFacetsChips as facet (facet.name)}
       <span
         class="badge z-10 {tones['outlined-surface']} py-2 overflow-hidden"
         data-testid="explorer-facet-badge-{facet.name}"

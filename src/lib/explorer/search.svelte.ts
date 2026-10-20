@@ -129,7 +129,6 @@ export class ExplorerSearch {
     this.#criteriaChanged();
   };
 
-  /** Adds each facet that isn't selected and removes each one that is. */
   toggleFacets = (facets: Facet[]) => {
     const next = [...this.#selectedFacets];
     facets.forEach((facet) => {
@@ -148,18 +147,22 @@ export class ExplorerSearch {
   };
 
   clearError = () => {
+    assertNoSsrWrite('explorerSearch');
     this.#error = '';
   };
 
   showTour = () => {
+    assertNoSsrWrite('explorerSearch');
     this.#tour = true;
   };
 
   setOpenFacets = (categories: string[]) => {
+    assertNoSsrWrite('explorerSearch');
     this.#openFacets = categories;
   };
 
   toggleNestedFacet = (key: string) => {
+    assertNoSsrWrite('explorerSearch');
     const keys = this.#expandedNestedFacets;
     this.#expandedNestedFacets = keys.includes(key)
       ? keys.filter((k) => k !== key)
@@ -167,6 +170,7 @@ export class ExplorerSearch {
   };
 
   collapseNestedFacets = () => {
+    assertNoSsrWrite('explorerSearch');
     this.#expandedNestedFacets = [];
   };
 
