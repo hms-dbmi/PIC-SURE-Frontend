@@ -13,11 +13,15 @@
 
   import type { Query } from '#lib/query/query.ts';
   import { QueryVersion } from '#lib/api/picsure/datasets.ts';
-  import { ENSURE_MAX_DEPTH, getConceptDetails } from '#lib/explorer/Dictionary.ts';
+  import {
+    ENSURE_MAX_DEPTH,
+    exportState,
+    getConceptDetails,
+    mapSearchResultAsExport,
+  } from '#lib/explorer/index.ts';
   import { getConceptTree } from '#lib/api/picsure/dictionary.ts';
 
   import { filterState } from '#lib/query/filters.svelte.ts';
-  import { exports } from '#lib/explorer/export/Export.ts';
 
   import FiltersSummary from '#lib/datasets/components/FiltersSummary.svelte';
   import SelectedVariablesSummary from '#lib/datasets/components/SelectedVariablesSummary.svelte';
@@ -56,7 +60,7 @@
       queryData.filterTree,
       queryData.genomicFilters,
     ]);
-    exports.set(exportdata);
+    exportState.replace(exportdata.map(mapSearchResultAsExport));
     filterState.restore(filterdata, genomicData);
     // Success toasts hide after two seconds; raised before the navigation, it can expire while
     // the explorer renders.

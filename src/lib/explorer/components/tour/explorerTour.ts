@@ -4,7 +4,7 @@ import { config } from '#lib/config/config.svelte.ts';
 import { flatIndex } from '#lib/utils/objects.ts';
 import { explorerSearch } from '#lib/explorer/search.svelte.ts';
 import { filterState } from '#lib/query/filters.svelte.ts';
-import { clearExports } from '#lib/explorer/export/Export.ts';
+import { exportState } from '#lib/explorer/export/export.svelte.ts';
 import { isToastShowing, toaster } from '#lib/ui/toaster.ts';
 import { log, createLog, getPageContext } from '#lib/telemetry/logger.ts';
 import type { TourDataType } from '#lib/explorer/components/tour/types.ts';
@@ -22,7 +22,7 @@ function resetSearch() {
   explorerSearch.setTerm('');
   explorerSearch.collapseNestedFacets();
   filterState.clear();
-  clearExports();
+  exportState.clear();
 }
 
 /**

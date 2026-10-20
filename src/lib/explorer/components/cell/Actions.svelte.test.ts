@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 
 import Actions from '#lib/explorer/components/cell/Actions.svelte';
-import { addExport, clearExports, mapSearchResultAsExport } from '#lib/explorer/export/Export.ts';
+import { exportState, mapSearchResultAsExport } from '#lib/explorer/export/export.svelte.ts';
 import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
 
 vi.mock('#lib/telemetry/logger.ts', async (importOriginal) => ({
@@ -26,10 +26,10 @@ const row = {
 } as unknown as SearchResult;
 
 describe('search result row actions', () => {
-  beforeEach(() => clearExports());
+  beforeEach(() => exportState.clear());
 
   it('removes an export that was added somewhere else', async () => {
-    addExport(mapSearchResultAsExport({ ...row }));
+    exportState.add(mapSearchResultAsExport({ ...row }));
     render(Actions, { row });
 
     await fireEvent.click(screen.getByRole('button', { name: 'Remove from Analysis (e)' }));

@@ -3,14 +3,14 @@
   import { resolve } from '$app/paths';
   import ExportStepper from '#lib/explorer/export/ExportStepper.svelte';
   import { filterState } from '#lib/query/filters.svelte.ts';
-  import { exports } from '#lib/explorer/export/Export.ts';
+  import { exportState } from '#lib/explorer/export/export.svelte.ts';
   import type { ExportRowInterface } from '#lib/explorer/export/ExportRow.ts';
   import Content from '#lib/shell/Content.svelte';
   import { config } from '#lib/config/config.svelte.ts';
   import { session } from '#lib/auth/session.svelte.ts';
   import { goto } from '$app/navigation';
 
-  let exportRows: ExportRowInterface[] = $exports.map((exp) => {
+  let exportRows: ExportRowInterface[] = exportState.variables.map((exp) => {
     return {
       ref: exp,
       selected: true,
@@ -59,7 +59,7 @@
         >
       </div>
     </div>
-  {:else if $exports.length > 0 || filterState.all.length > 0}
+  {:else if exportState.variables.length > 0 || filterState.all.length > 0}
     <section class="flex justify-center items-center w-full h-full mt-8">
       <ExportStepper rows={[patientIdRow, ...systemFieldRows, ...filterRows, ...exportRows]} />
     </section>

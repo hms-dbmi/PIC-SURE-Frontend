@@ -1,14 +1,11 @@
 <script lang="ts">
   import { config } from '#lib/config/config.svelte.ts';
-  import { getSignedUrl as requestSignedUrl } from '#lib/api/picsure/query.ts';
+  import { getSignedUrl } from '#lib/api/picsure/query.ts';
   import { consentDeniedMessage } from '#lib/api/errors.ts';
   import DownloadButton from './DownloadButton.svelte';
   import Loading from '#lib/ui/Loading.svelte';
   import { toaster } from '#lib/ui/toaster.ts';
-  import {
-    getDatasetId,
-    getQueryRequest,
-  } from '#lib/explorer/export/ExportStepperManager.svelte.ts';
+  import { exportState } from '#lib/explorer/export/export.svelte.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
   import Button from '#lib/ui/Button.svelte';
   let exportLoading: boolean = $state(false);
@@ -22,7 +19,7 @@
     exportLoading = true;
 
     try {
-      const signedUrl = await getSignedUrl();
+      const signedUrl = await getSignedUrl(exportState.datasetId ?? '', exportState.request);
       if (signedUrl) {
         window.open(url + encodeURIComponent(signedUrl), '_blank');
       } else {
@@ -36,15 +33,6 @@
       });
     } finally {
       exportLoading = false;
-    }
-  }
-
-  async function getSignedUrl(): Promise<string | null> {
-    try {
-      return await requestSignedUrl(getDatasetId() ?? '', getQueryRequest());
-    } catch (error) {
-      console.error('Error getting signed URL:', error);
-      throw error; // Re-throw to be handled by caller
     }
   }
 </script>
@@ -63,7 +51,7 @@
           log(
             createLog('EXPORT', 'export.pfb_signed_url', {
               platform: exportLink.title,
-              datasetId: getDatasetId(),
+              datasetId: exportState.datasetId,
             }),
           );
           exportSignedToUrl(exportLink.url);
@@ -77,5 +65,5 @@
       </Button>
     {/each}
   {/if}
-  <DownloadButton query={getQueryRequest()} datasetId={getDatasetId()} />
+  <DownloadButton query={exportState.request} datasetId={exportState.datasetId} />
 </section>

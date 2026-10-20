@@ -1,30 +1,27 @@
 <script lang="ts">
   import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
   import { getInitialTree, getConceptTree } from '#lib/explorer/Dictionary.ts';
-  import { exports } from '#lib/explorer/export/Export.ts';
-  import { addExport, removeExport, mapSearchResultAsExport } from '#lib/explorer/export/Export.ts';
+  import { exportState, mapSearchResultAsExport } from '#lib/explorer/export/export.svelte.ts';
+  import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import Loading from '#lib/ui/Loading.svelte';
   import TreeView from '#lib/ui/tree/TreeView.svelte';
   import { toConceptNodes } from '#lib/explorer/export/conceptTree.ts';
   import Summary from '#lib/explorer/export/Summary.svelte';
-  import { getQueryRequest } from '#lib/explorer/export/ExportStepperManager.svelte.ts';
   import { cardClass } from '#lib/ui/surface.ts';
   import { untrack } from 'svelte';
 
-  let disabledConcepts: string[] = $derived(getQueryRequest().query.select);
+  let disabledConcepts: string[] = $derived(exportState.request.query.select);
   let selectedConcepts: string[] = $derived([
-    ...$exports.map(({ conceptPath }) => conceptPath),
+    ...exportState.variables.map(({ conceptPath }) => conceptPath),
     ...disabledConcepts,
   ]);
 
-  // Calculate largestDepth synchronously before template renders
-  let largestDepth: number = $derived(
-    selectedConcepts.length > 0
-      ? Math.max(
-          ...selectedConcepts.map((concept: string) => concept.split('\\').filter(Boolean).length),
-        )
-      : 1,
-  );
+  const deepestLevel = (concepts: string[]) =>
+    Math.max(1, ...concepts.map((concept) => concept.split('\\').filter(Boolean).length));
+
+  // Loaded once, deep enough to show what's selected when the step opens. Later selections are
+  // the tree's own, and loading it again would close every folder the user opened.
+  const initialTree = untrack(() => getInitialTree(deepestLevel(selectedConcepts)));
 
   async function fetchChildren(conceptPath: string): Promise<SearchResult[] | undefined | null> {
     const dataset = conceptPath.split('\\')[1];
@@ -65,11 +62,11 @@
     untrack(() => toConceptNodes(concepts, selectedConcepts, disabledConcepts));
 
   const onselect = (searchResult: SearchResult) => {
-    addExport(mapSearchResultAsExport(searchResult));
+    exportState.add(mapSearchResultAsExport(searchResult));
   };
 
   const onunselect = (searchResult: SearchResult) => {
-    removeExport(mapSearchResultAsExport(searchResult));
+    exportState.remove(mapSearchResultAsExport(searchResult));
   };
 </script>
 
@@ -81,7 +78,7 @@
     </header>
     <hr />
     <div class="card-body p-4">
-      {#await getInitialTree(largestDepth)}
+      {#await initialTree}
         <Loading ring size="small" />
       {:then treeNodes}
         <TreeView
@@ -92,6 +89,8 @@
           {onselect}
           {onunselect}
         />
+      {:catch}
+        <ErrorAlert title="We couldn't load the variables. Please try again later." />
       {/await}
     </div>
   </div>

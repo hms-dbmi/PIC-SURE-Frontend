@@ -4,12 +4,8 @@
   import { goto } from '$app/navigation';
   import { config } from '#lib/config/config.svelte.ts';
   import type { ExportRowInterface } from '#lib/explorer/export/ExportRow.ts';
-  import { exports } from '#lib/explorer/export/Export.ts';
+  import { ExportStatusError, exportState } from '#lib/explorer/export/export.svelte.ts';
   import { filterState } from '#lib/query/filters.svelte.ts';
-  import { resultCountsState } from '#lib/query/counts/resultCounts.svelte.ts';
-  import { createDatasetName } from '#lib/api/picsure/datasets.ts';
-  import { getQueryStatus } from '#lib/api/picsure/query.ts';
-  import { withBackoff } from '#lib/utils/backoff.ts';
   import Stepper from '#lib/ui/stepper/Stepper.svelte';
   import Step from '#lib/ui/stepper/Step.svelte';
   import UserToken from '#lib/auth/components/UserToken.svelte';
@@ -23,43 +19,22 @@
   import TabbedAnalysisStep from './TabbedAnalysisStep.svelte';
   import PfbExport from './PfbExport.svelte';
   import AnalysisPlatformLinks from './AnalysisPlatformLinks.svelte';
-  import {
-    getLockDownload,
-    setLockDownload,
-    getDatasetId,
-    getDatasetNameInput,
-    getSaveable,
-    getActiveType,
-    setActiveType,
-    setQueryRequest,
-    getQueryRequest,
-    resetExportStepperState,
-  } from '#lib/explorer/export/ExportStepperManager.svelte.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
   import { buildRequest, filterConcepts } from '#lib/query/build.ts';
 
   const { rows = [] }: { rows?: ExportRowInterface[] } = $props();
 
   let statusPromise: Promise<unknown> = $state(Promise.resolve());
-  let preparePromise: Promise<void> = $state(Promise.resolve());
   let saveDatasetPromise: Promise<void> = $state(Promise.resolve());
 
-  const showTabbedAnalysisStep = $derived(
-    getQueryRequest().query.expectedResultType === 'DATAFRAME' ||
-      getQueryRequest().query.expectedResultType === 'DATAFRAME_TIMESERIES',
-  );
+  const resultType = $derived(exportState.request.query.expectedResultType);
+  const isDataFrame = $derived(resultType === 'DATAFRAME' || resultType === 'DATAFRAME_TIMESERIES');
   const showPfbExportStep = $derived(
-    getQueryRequest().query.expectedResultType === 'DATAFRAME_PFB' &&
-      config.features.explorer.enablePfbExport,
-  );
-  const showUserToken = $derived(
-    (getQueryRequest().query.expectedResultType === 'DATAFRAME' ||
-      getQueryRequest().query.expectedResultType === 'DATAFRAME_TIMESERIES') &&
-      config.features.analyzeApi,
+    resultType === 'DATAFRAME_PFB' && config.features.explorer.enablePfbExport,
   );
 
   onMount(async () => {
-    setQueryRequest(
+    exportState.setRequest(
       buildRequest(filterState.queryFilters, 'COUNT', (query) => {
         // populate selected export columns from filters
         query.select = [
@@ -69,81 +44,32 @@
       }),
     );
     if (!config.features.explorer.enablePfbExport) {
-      setActiveType('DATAFRAME');
+      exportState.setResultType('DATAFRAME');
     }
   });
 
-  async function onNextHandler(_step: number, stepName: string): Promise<void> {
+  async function onNextHandler(step: number, stepName: string): Promise<void> {
+    log(createLog('EXPORT', 'export.stepper_next', { step, stepName }));
     if (stepName === 'start') {
-      if (getDatasetId()) {
-        saveDatasetPromise = createDatasetName(
-          getDatasetId() ?? '',
-          getDatasetNameInput() ?? '',
-        ).then(() => {
-          statusPromise = checkExportStatus(getDatasetId());
-        });
-      } else {
-        throw new Error('No dataset ID provided');
-      }
+      saveDatasetPromise = exportState.saveDataset().then(() => {
+        statusPromise = exportState.waitForExport();
+      });
     }
-    return;
   }
 
-  async function checkExportStatus(lastPicsureResultId?: string): Promise<void> {
-    const statusId = lastPicsureResultId || getDatasetId();
-    if (!statusId) throw new Error('No dataset ID provided');
-
-    return withBackoff(
-      async () => {
-        const res = await getQueryStatus(statusId, getQueryRequest());
-
-        if (res.status === 'ERROR') {
-          setLockDownload(true);
-          throw new Error(`Export failed with status: ${res.status}`);
-        }
-
-        if (res.status !== 'SUCCESS' && res.status !== 'AVAILABLE') {
-          throw new Error(`Export not ready. Status: ${res.status}`);
-        }
-
-        setLockDownload(false);
-        return;
-      },
-      15,
-      500,
-      60000,
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      (error, _attempt) => {
-        return !(
-          error instanceof Error && error.message.includes('Export failed with status: ERROR')
-        );
-      },
-    );
+  function onBackHandler(step: number, stepName: string) {
+    log(createLog('EXPORT', 'export.stepper_back', { step, stepName }));
   }
 
   function onComplete() {
     log(
       createLog('EXPORT', 'export.stepper.complete', {
-        datasetId: getDatasetId(),
-        resultType: getActiveType(),
+        datasetId: exportState.datasetId,
+        resultType: exportState.resultType,
       }),
     );
-    resetExportStepperState();
+    exportState.resetStepper();
     goto(resolve('explorer'));
-  }
-
-  const MAX_DATA_POINTS_FOR_EXPORT = $derived(config.settings.maxDataPointsForExport || 1000000);
-  function dataLimitExceeded(): boolean {
-    const extraVariables = filterState.phenotypic
-      .filter((filter) => filter.filterType === 'AnyRecordOf')
-      .reduce((acc, filter) => acc + filter.concepts.length, 0);
-    let participantCount: number =
-      typeof resultCountsState.total === 'number'
-        ? resultCountsState.total
-        : MAX_DATA_POINTS_FOR_EXPORT + 1;
-    let totalDataPoints: number =
-      participantCount + (filterState.phenotypic.length + extraVariables) + $exports.length;
-    return totalDataPoints > MAX_DATA_POINTS_FOR_EXPORT;
   }
 </script>
 
@@ -151,17 +77,12 @@
   class="w-full h-full m-8"
   oncomplete={onComplete}
   onnext={onNextHandler}
+  onback={onBackHandler}
   buttonCompleteLabel="Done"
 >
-  <Step name="review" locked={dataLimitExceeded()}>
+  <Step name="review" locked={exportState.dataLimitExceeded}>
     {#snippet header()}Review Cohort Details:{/snippet}
-    <ReviewStep
-      query={getQueryRequest()}
-      {rows}
-      {preparePromise}
-      dataLimitExceeded={dataLimitExceeded()}
-      maxDataPoints={MAX_DATA_POINTS_FOR_EXPORT}
-    />
+    <ReviewStep query={exportState.request} {rows} />
   </Step>
   {#if config.features.explorer.showTreeStep}
     <Step name="select-variables">
@@ -170,22 +91,16 @@
     </Step>
   {/if}
   {#if config.features.explorer.enablePfbExport}
-    <Step name="select-type" locked={getActiveType() === undefined}>
+    <Step name="select-type" locked={exportState.resultType === undefined}>
       {#snippet header()}Review and Save Dataset:{/snippet}
       <TypeStep />
     </Step>
   {/if}
-  <Step
-    name="save-dataset"
-    locked={!getDatasetNameInput() ||
-      (getDatasetNameInput()?.length ?? 0) < 2 ||
-      !getDatasetId() ||
-      !getSaveable()}
-  >
+  <Step name="save-dataset" locked={!exportState.canSave}>
     {#snippet header()}Save Dataset ID:{/snippet}
     <SaveDatasetStep />
   </Step>
-  <Step name="start" locked={getLockDownload()}>
+  <Step name="start" locked={exportState.downloadLocked}>
     {#snippet header()}Start Analysis:{/snippet}
     <section class="flex flex-col w-full h-full items-center">
       {#await saveDatasetPromise}
@@ -194,12 +109,12 @@
         {#await statusPromise}
           <Loading ring size="medium" label="Preparing" />
         {:then}
-          {#if showTabbedAnalysisStep}
+          {#if isDataFrame}
             <TabbedAnalysisStep />
           {:else if showPfbExportStep}
             <PfbExport />
           {/if}
-          {#if showUserToken}
+          {#if isDataFrame && config.features.analyzeApi}
             <div class="flex justify-center">
               <UserToken />
             </div>
@@ -210,7 +125,11 @@
             <ErrorAlert
               title="An error occurred while preparing your dataset. Please try again. If this problem persists, please
             contact an administrator."
-            />
+            >
+              {#if e instanceof ExportStatusError}
+                <p>{e.message}</p>
+              {/if}
+            </ErrorAlert>
             <div class="hidden">{e}</div>
           </div>
         {/await}
@@ -220,7 +139,8 @@
             title="An error occurred while saving your dataset. Please try again. If this problem persists, please
           contact an administrator."
           >
-            {#if String(e).includes('Export not ready')}
+            <!-- The dataset API rejects an invalid name with a message to show as it is. -->
+            {#if typeof e === 'string'}
               <p>{e}</p>
             {/if}
           </ErrorAlert>

@@ -1,10 +1,7 @@
 <script lang="ts">
   import Summary from '#lib/explorer/export/Summary.svelte';
   import CardButton from '#lib/ui/CardButton.svelte';
-  import {
-    getActiveType,
-    setActiveType,
-  } from '#lib/explorer/export/ExportStepperManager.svelte.ts';
+  import { exportState } from '#lib/explorer/export/export.svelte.ts';
   import { config } from '#lib/config/config.svelte.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
 </script>
@@ -18,10 +15,10 @@
       subtitle="Export data as a Python or R data frame or a comma-separated values file"
       size="other"
       class="flex-1 max-w-64"
-      active={getActiveType() === 'DATAFRAME'}
+      active={exportState.resultType === 'DATAFRAME'}
       onclick={() => {
         log(createLog('EXPORT', 'export.select_type', { type: 'DATAFRAME' }));
-        setActiveType('DATAFRAME');
+        exportState.setResultType('DATAFRAME');
       }}
     ></CardButton>
     {#if config.features.explorer.enableExportTimeseries}
@@ -31,10 +28,10 @@
         subtitle="Export as an R or Python data frame or a comma-separated values file including timestamps"
         size="other"
         class="flex-1 max-w-64"
-        active={getActiveType() === 'DATAFRAME_TIMESERIES'}
+        active={exportState.resultType === 'DATAFRAME_TIMESERIES'}
         onclick={() => {
           log(createLog('EXPORT', 'export.select_type', { type: 'DATAFRAME_TIMESERIES' }));
-          setActiveType('DATAFRAME_TIMESERIES');
+          exportState.setResultType('DATAFRAME_TIMESERIES');
         }}
       ></CardButton>
     {/if}
@@ -44,10 +41,10 @@
       subtitle="Export data in Portable Format for Biomedical Data file format"
       size="other"
       class="flex-1 max-w-64"
-      active={getActiveType() === 'DATAFRAME_PFB'}
+      active={exportState.resultType === 'DATAFRAME_PFB'}
       onclick={() => {
         log(createLog('EXPORT', 'export.select_type', { type: 'DATAFRAME_PFB' }));
-        setActiveType('DATAFRAME_PFB');
+        exportState.setResultType('DATAFRAME_PFB');
       }}
     ></CardButton>
   </div>

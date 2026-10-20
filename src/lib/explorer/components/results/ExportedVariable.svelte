@@ -2,7 +2,7 @@
   import IconButton from '#lib/ui/IconButton.svelte';
   import type { ExportInterface } from '#lib/explorer/export/types.ts';
   import { fade } from 'svelte/transition';
-  import { removeExportByUuid } from '#lib/explorer/export/Export.ts';
+  import { exportState } from '#lib/explorer/export/export.svelte.ts';
   import { cardClass } from '#lib/ui/surface.ts';
 
   interface Props {
@@ -11,7 +11,7 @@
 
   let { variable }: Props = $props();
   const remove = function () {
-    removeExportByUuid(variable.id);
+    exportState.removeById(variable.id);
   };
 </script>
 

@@ -6,16 +6,7 @@
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import { submitQuery as startQuery } from '#lib/api/picsure/query.ts';
   import { getStepper } from '#lib/ui/stepper/stepper.svelte.ts';
-  import { exports } from '#lib/explorer/export/Export.ts';
-  import {
-    getActiveType,
-    getDatasetId,
-    setDatasetId,
-    getDatasetNameInput,
-    setDatasetNameInput,
-    setSaveable,
-    getQueryRequest,
-  } from '#lib/explorer/export/ExportStepperManager.svelte.ts';
+  import { exportState } from '#lib/explorer/export/export.svelte.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
   import { config } from '#lib/config/config.svelte.ts';
   import { cardClass } from '#lib/ui/surface.ts';
@@ -25,7 +16,6 @@
   let processingMessage: string = $state('');
   let datasetIdPromise: Promise<void> = $state(Promise.resolve());
   let preparePromise: Promise<void> = $state(Promise.resolve());
-  let datasetNameInput: string | undefined = $state(getDatasetNameInput());
 
   async function submitQuery(): Promise<void> {
     let interval: NodeJS.Timeout;
@@ -54,22 +44,22 @@
     }
 
     try {
-      getQueryRequest().query.expectedResultType = getActiveType() || 'DATAFRAME';
-      setDatasetId('');
+      exportState.useChosenResultType();
+      exportState.setDatasetId('');
       requestUpdate(() => {
         // Make a copy so we don't add exports to selected for the loaded query
-        const request = structuredClone($state.snapshot(getQueryRequest()));
+        const request = structuredClone(exportState.request);
         request.query.select = [
           ...config.settings.exportSystemFields,
           ...request.query.select,
-          ...$exports.map(({ conceptPath }) => conceptPath),
+          ...exportState.variables.map(({ conceptPath }) => conceptPath),
         ];
         return startQuery(request).then((res) => {
-          setDatasetId(res.picsureResultId || 'Error');
+          exportState.setDatasetId(res.picsureResultId || 'Error');
           if (res.picsureResultId) {
             log(
               createLog('DATA', 'dataset.create', {
-                name: getDatasetNameInput(),
+                name: exportState.datasetName,
                 datasetId: res.picsureResultId,
               }),
             );
@@ -83,14 +73,6 @@
       throw error;
     }
   }
-
-  $effect(() => {
-    setSaveable((getDatasetNameInput()?.length ?? 0) > 2 && (getDatasetId()?.length ?? 0) > 0);
-  });
-
-  $effect(() => {
-    setDatasetNameInput(datasetNameInput);
-  });
 
   onMount(() => {
     preparePromise = submitQuery();
@@ -118,7 +100,9 @@
               id="export-dataset-name"
               class="input w-80"
               placeholder="Enter a name"
-              bind:value={datasetNameInput}
+              bind:value={
+                () => exportState.datasetName ?? '', (name) => exportState.setDatasetName(name)
+              }
               required
             />
           </div>
@@ -129,7 +113,7 @@
                 <Loading ring size="micro" label={processingMessage} />
               {:then}
                 <label for="export-dataset-id" class="font-bold mr-2">Dataset ID:</label>
-                <div id="export-dataset-id" class="mr-4">{getDatasetId()}</div>
+                <div id="export-dataset-id" class="mr-4">{exportState.datasetId}</div>
               {:catch}
                 <ErrorAlert
                   title="An error occurred while getting the dataset ID. Please try again later."

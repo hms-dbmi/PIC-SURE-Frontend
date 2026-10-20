@@ -271,6 +271,32 @@ test.describe('Export Page', () => {
     expect(openQueryUrls).toEqual([]);
   });
 
+  test('logs each stepper move with the step it lands on', async ({ page }) => {
+    // Given
+    const logs: { action?: string; metadata?: Record<string, unknown> }[] = [];
+    await page.route('**/api/v1/log', (route) => {
+      const { action, metadata } = route.request().postDataJSON() ?? {};
+      if (action?.startsWith('export.stepper')) logs.push({ action, metadata });
+      return route.fulfill({ status: 202, json: { result: 'accepted' } });
+    });
+    await setupExportPageAndAddFilterAndExport(page);
+    const nextButton = page.getByTestId('ui-stepper-next');
+
+    // When
+    await nextButton.click();
+    await expect(page.locator('header.step-header')).toHaveText('Finalize Data:');
+    await page.getByTestId('ui-stepper-back').click();
+    await expect(page.locator('header.step-header')).toHaveText('Review Cohort Details:');
+
+    // Then
+    await expect
+      .poll(() => logs)
+      .toEqual([
+        { action: 'export.stepper_next', metadata: { step: 1, stepName: 'select-variables' } },
+        { action: 'export.stepper_back', metadata: { step: 0, stepName: 'review' } },
+      ]);
+  });
+
   test('All steps render as expected', async ({ page }) => {
     await setupExportPageAndAddFilterAndExport(page);
     await expect(page).toHaveURL('/explorer/export');
@@ -543,6 +569,36 @@ test.describe('Export Page', () => {
     expect(capturedQuery).not.toBeNull();
     expect(capturedQuery!.query.select).toContain('\\GENOMIC\\SAMPLE_ID\\Study1\\');
     expect(capturedQuery!.query.select).toContain('\\GENOMIC\\SAMPLE_ID\\Study2\\');
+  });
+
+  async function startAnalysisWith(page: Page, datasetName: string, status: object) {
+    await setupExportPageAndAddFilterAndExport(page);
+    const nextButton = page.getByTestId('ui-stepper-next');
+    await nextButton.click(); // Review Cohort Details -> Tree Step
+    await nextButton.click(); // Tree Step -> Select Type
+    await page.getByTestId('export-type-csv').click();
+    await mockApiSuccess(page, queryPath, newDatasetResponse);
+    await nextButton.click(); // Submit query -> Save Dataset ID
+    await page.locator('input#export-dataset-name').fill(datasetName);
+    await mockApiSuccess(page, `*/**/picsure/operations/dataset/named`, newDatasetResponse);
+    await mockApiSuccess(page, `${queryPath}/${newDatasetResponse.picsureResultId}/status`, status);
+    await nextButton.click(); // -> Start Analysis
+  }
+
+  test('a failed export says so', async ({ page }) => {
+    await startAnalysisWith(page, 'test-dataset', { ...availableDatasetResponse, status: 'ERROR' });
+
+    await expect(page.getByTestId('ui-error-alert')).toContainText(
+      'Export failed with status: ERROR',
+    );
+  });
+
+  test('an invalid dataset name says why it was refused', async ({ page }) => {
+    await startAnalysisWith(page, 'bad@name', availableDatasetResponse);
+
+    await expect(page.getByTestId('ui-error-alert')).toContainText(
+      'Name can only contain letters, numbers',
+    );
   });
 
   async function navigateToDownloadTab(page: Page) {

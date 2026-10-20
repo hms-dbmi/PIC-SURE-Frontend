@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { exports } from '#lib/explorer/export/Export.ts';
+  import { exportState } from '#lib/explorer/export/export.svelte.ts';
   import ResultsPanel from '#lib/explorer/components/results/ResultsPanel.svelte';
   import { filterState } from '#lib/query/filters.svelte.ts';
   import { explorerPanel } from '#lib/explorer/panel.svelte.ts';
@@ -8,10 +8,9 @@
   import Button from '#lib/ui/Button.svelte';
 
   onMount(() => {
-    if (filterState.phenotypic.length !== 0) explorerPanel.show();
-    return exports.subscribe((exportList) => {
-      if (exportList?.length !== 0) explorerPanel.show();
-    });
+    if (filterState.phenotypic.length !== 0 || exportState.variables.length !== 0) {
+      explorerPanel.show();
+    }
   });
 
   function toggle() {

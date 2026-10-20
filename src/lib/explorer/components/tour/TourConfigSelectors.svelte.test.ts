@@ -7,7 +7,8 @@ import { TableHandler } from '@vincjo/datatables';
 
 import tourConfig from '#lib/assets/TourConfiguration.json';
 
-vi.mock('#lib/telemetry/logger.ts', () => ({
+vi.mock('#lib/telemetry/logger.ts', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('#lib/telemetry/logger.ts')>()),
   log: vi.fn(),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   createLog: vi.fn((...args: any[]) => args),

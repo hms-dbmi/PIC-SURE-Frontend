@@ -4,12 +4,7 @@
   import { onMount } from 'svelte';
 
   import { config } from '#lib/config/config.svelte.ts';
-  import {
-    exports,
-    addExports,
-    removeExports,
-    mapSearchResultAsExport,
-  } from '#lib/explorer/export/Export.ts';
+  import { exportState, mapSearchResultAsExport } from '#lib/explorer/export/export.svelte.ts';
   import type { ExportInterface } from '#lib/explorer/export/types.ts';
   import type { ExportRowInterface } from '#lib/explorer/export/ExportRow.ts';
   import { searchDictionary } from '#lib/explorer/Dictionary.ts';
@@ -26,15 +21,12 @@
   import { log, createLog } from '#lib/telemetry/logger.ts';
   import type { QueryRequest } from '#lib/api/picsure/query.types.ts';
 
-  export interface PrepareProps {
+  interface Props {
     query: QueryRequest;
     rows: ExportRowInterface[];
-    preparePromise: Promise<void>;
-    dataLimitExceeded: boolean;
-    maxDataPoints: number;
   }
 
-  let { query, rows, dataLimitExceeded, maxDataPoints }: PrepareProps = $props();
+  let { query, rows }: Props = $props();
 
   const columns: Column<ExportRowInterface>[] = [
     { dataElement: 'name', label: 'Variable Name', sort: true },
@@ -49,37 +41,32 @@
   let checkingSampleIds = $state(false);
 
   onMount(async () => {
-    const exportedSampleIds = $exports.filter((e: ExportInterface) =>
+    const exportedSampleIds = exportState.variables.filter((e: ExportInterface) =>
       e.conceptPath.includes('SAMPLE_ID'),
     );
-    if (exportedSampleIds.length > 0) {
-      checkingSampleIds = true;
+    if (exportedSampleIds.length === 0) return;
+    checkingSampleIds = true;
+    try {
       const genomicConcepts = await getGenomicConcepts();
-      if (genomicConcepts.length > 0) {
-        // Find sample IDs that match genomic concepts
-        const matchingSampleIds = exportedSampleIds.filter((sampleId) =>
-          genomicConcepts.some(
-            (concept: { conceptPath: string }) => concept.conceptPath === sampleId.conceptPath,
-          ),
-        );
-        sampleIds = matchingSampleIds.length === genomicConcepts.length;
-        checkingSampleIds = false;
-        if (sampleIds) {
-          lastExports = matchingSampleIds.map((item) => ({
-            ref: item,
-            variableId: item.conceptPath,
-            variableName: item.display,
-            description: item.searchResult?.description,
-            type: item.searchResult?.type,
-            selected: true,
-          })) as ExportRowInterface[];
-        }
-      } else {
-        sampleIds = false;
-        checkingSampleIds = false;
+      const matchingSampleIds = exportedSampleIds.filter((sampleId) =>
+        genomicConcepts.some((concept) => concept.conceptPath === sampleId.conceptPath),
+      );
+      sampleIds = genomicConcepts.length > 0 && matchingSampleIds.length === genomicConcepts.length;
+      if (sampleIds) {
+        lastExports = matchingSampleIds.map((item) => ({
+          ref: item,
+          variableId: item.conceptPath,
+          variableName: item.display,
+          description: item.searchResult?.description,
+          type: item.searchResult?.type,
+          selected: true,
+        })) as ExportRowInterface[];
       }
-    } else {
-      sampleIds = false;
+    } catch (error) {
+      // The box stays unticked; ticking it runs the lookup again and reports a failure.
+      console.error('Error checking the exported sample IDs', error);
+    } finally {
+      checkingSampleIds = false;
     }
   });
 
@@ -125,7 +112,7 @@
         const exportsToRemove: ExportInterface[] = lastExports?.map(
           (e) => e.ref,
         ) as ExportInterface[];
-        removeExports(exportsToRemove || []);
+        exportState.removeAll(exportsToRemove || []);
         activeRows = activeRows.filter(
           (r) => !lastExports.some((le) => le.variableId === r.variableId),
         );
@@ -138,7 +125,7 @@
       const newExports = genomicConcepts.map(mapSearchResultAsExport);
 
       // Add exports and create corresponding rows
-      addExports(newExports);
+      exportState.addAll(newExports);
       const newRows = newExports.map(
         (e) =>
           ({
@@ -173,7 +160,7 @@
 <div id="export-review-step" class="flex flex-col w-full h-full items-center">
   <Summary />
   <section class="w-full">
-    {#if dataLimitExceeded}
+    {#if exportState.dataLimitExceeded}
       <ErrorAlert
         data-testid="export-review-error"
         title="Warning"
@@ -181,8 +168,9 @@
         closeText="Back"
         onclose={() => goto(resolve('explorer'))}
       >
-        Warning: Your selected data exceeds {maxDataPoints.toLocaleString('en-US')} estimated data points,
-        which is too large to export. Please reduce the data selection or the number of selected participants.
+        Warning: Your selected data exceeds {exportState.maxDataPoints.toLocaleString('en-US')} estimated
+        data points, which is too large to export. Please reduce the data selection or the number of selected
+        participants.
       </ErrorAlert>
     {:else if !loadingSampleIds}
       <ClientTable

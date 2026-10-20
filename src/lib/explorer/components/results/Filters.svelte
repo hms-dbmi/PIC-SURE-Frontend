@@ -3,7 +3,7 @@
   import type { FilterGroupInterface } from '#lib/query/filter.svelte.ts';
   import { page } from '$app/state';
   import { filterState } from '#lib/query/filters.svelte.ts';
-  import { exports } from '#lib/explorer/export/Export.ts';
+  import { exportState } from '#lib/explorer/export/export.svelte.ts';
 
   import FilterComponent from '#lib/explorer/components/results/AddedFilter.svelte';
   import FilterTreeView from '#lib/query/components/FilterTreeView.svelte';
@@ -20,7 +20,7 @@
   let advancedFilteringDisabled = $derived(filterState.phenotypic.length <= 1);
 </script>
 
-{#if filterState.phenotypic.length + filterState.genomic.length + $exports.length === 0}
+{#if filterState.phenotypic.length + filterState.genomic.length + exportState.variables.length === 0}
   <p class="text-center">No filters added</p>
 {:else}
   <div class="px-4 mb-1 w-80">

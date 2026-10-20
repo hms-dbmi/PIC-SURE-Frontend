@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { ExportInterface } from '#lib/explorer/export/types.ts';
+  import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
 
-  let { exports = [] }: { exports: ExportInterface[] } = $props();
+  let { exports = [] }: { exports: SearchResult[] } = $props();
   let paths = $derived(exports.map(({ conceptPath }) => conceptPath));
 
   type PathNode = {

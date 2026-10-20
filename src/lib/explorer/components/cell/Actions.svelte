@@ -1,12 +1,7 @@
 <script lang="ts">
   import IconButton from '#lib/ui/IconButton.svelte';
   import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
-  import {
-    exports,
-    addExport,
-    removeExport,
-    mapSearchResultAsExport,
-  } from '#lib/explorer/export/Export.ts';
+  import { exportState, mapSearchResultAsExport } from '#lib/explorer/export/export.svelte.ts';
   import { explorerPanel, type RowView } from '#lib/explorer/panel.svelte.ts';
   import { config } from '#lib/config/config.svelte.ts';
   import { isOpenAccess } from '#lib/explorer/mode.ts';
@@ -47,7 +42,7 @@
           pageContext: getPageContext(),
         }),
       );
-      removeExport(exportItem);
+      exportState.remove(exportItem);
     } else {
       log(
         createLog('ACTION', 'search_result.export_add', {
@@ -56,14 +51,11 @@
           pageContext: getPageContext(),
         }),
       );
-      addExport(exportItem);
-      explorerPanel.show();
+      exportState.add(exportItem);
     }
   }
 
-  let isExported = $derived(
-    $exports.map((exp) => exp.conceptPath).includes(exportItem.conceptPath),
-  );
+  let isExported = $derived(exportState.has(exportItem.conceptPath));
   let shouldDisableFilter = $derived(isOpenAccess() && !row.allowFiltering);
 </script>
 

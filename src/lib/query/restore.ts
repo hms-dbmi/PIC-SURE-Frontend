@@ -25,8 +25,6 @@ import {
 } from '#lib/query/genomic.ts';
 import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
 import { LogicTree } from '#lib/query/logicTree.svelte.ts';
-import { mapSearchResultAsExport } from '#lib/explorer/export/Export.ts';
-import type { ExportInterface } from '#lib/explorer/export/types.ts';
 
 /** The dictionary lookups a restore needs, injected so restoring does no I/O of its own. */
 export interface ConceptLookup {
@@ -207,7 +205,7 @@ function getExports(
   lookup: ConceptLookup,
   query: Query,
   errors: string[],
-): Promise<ExportInterface[]> {
+): Promise<SearchResult[]> {
   return Promise.all(
     query.select.map(async (conceptPath) => {
       let searchResult: SearchResult;
@@ -219,7 +217,7 @@ function getExports(
         errors.push(conceptPath);
       }
 
-      return mapSearchResultAsExport(searchResult);
+      return searchResult;
     }),
   );
 }
@@ -227,7 +225,8 @@ function getExports(
 export type QuerySummaryData = {
   filterTree: Promise<LogicTree<FilterInterface>>;
   genomicFilters: Promise<Filter[]>;
-  exports: Promise<ExportInterface[]>;
+  /** The query's selected variables. */
+  exports: Promise<SearchResult[]>;
   errors: Promise<string[]>;
 };
 

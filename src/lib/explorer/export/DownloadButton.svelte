@@ -2,7 +2,6 @@
   import Button from '#lib/ui/Button.svelte';
   import { ApiError, consentDeniedMessage } from '#lib/api/errors.ts';
   import { config } from '#lib/config/config.svelte.ts';
-  import { browser } from '$app/env';
   import type { QueryRequest } from '#lib/api/picsure/query.types.ts';
   import { getQueryResult } from '#lib/api/picsure/query.ts';
   import ConfirmDialog from '#lib/ui/dialog/ConfirmDialog.svelte';
@@ -19,14 +18,13 @@
   let modalOpen: boolean = $state(false);
   let isDownloading: boolean = $state(false);
 
-  const downloadText = $derived(
-    query.query.expectedResultType === 'DATAFRAME' ||
-      query.query.expectedResultType === 'DATAFRAME_TIMESERIES'
-      ? 'Download as CSV'
-      : query.query.expectedResultType === 'DATAFRAME_PFB' &&
-          config.features.explorer.enablePfbExport
-        ? 'Download as PFB'
-        : 'Download is Disabled',
+  const resultType = $derived(query.query.expectedResultType);
+  const format = $derived(
+    resultType === 'DATAFRAME' || resultType === 'DATAFRAME_TIMESERIES'
+      ? { label: 'Download as CSV', file: 'pic-sure-data.csv' }
+      : resultType === 'DATAFRAME_PFB' && config.features.explorer.enablePfbExport
+        ? { label: 'Download as PFB', file: 'pic-sure-data.avro' }
+        : { label: 'Download is Disabled', file: undefined },
   );
 
   async function download(): Promise<void> {
@@ -45,7 +43,7 @@
       isDownloading = true;
       log(
         createLog('DOWNLOAD', 'export.download_clicked', {
-          type: query.query.expectedResultType,
+          type: resultType,
           datasetId,
         }),
       );
@@ -54,30 +52,17 @@
       const duration = Math.round(performance.now() - startTime);
       const blob = new Blob([res], { type: 'octet/stream' });
 
-      const responseDataUrl = URL.createObjectURL(blob);
-      if (browser) {
-        const link = document.createElement('a');
-        link.href = responseDataUrl;
-        if (
-          query.query.expectedResultType === 'DATAFRAME' ||
-          query.query.expectedResultType === 'DATAFRAME_TIMESERIES'
-        ) {
-          link.download = 'pic-sure-data.csv';
-        } else if (
-          config.features.explorer.enablePfbExport &&
-          query.query.expectedResultType === 'DATAFRAME_PFB'
-        ) {
-          link.download = 'pic-sure-data.avro';
-        }
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      if (format.file) link.download = format.file;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
       log(
         createLog(
           'DOWNLOAD',
           'export.download_success',
-          { type: query.query.expectedResultType, datasetId },
+          { type: resultType, datasetId },
           { status: 200, bytes: blob.size, duration },
         ),
       );
@@ -91,7 +76,7 @@
         createLog(
           'DOWNLOAD',
           'export.download_error',
-          { type: query.query.expectedResultType, datasetId },
+          { type: resultType, datasetId },
           {
             status: error instanceof ApiError ? error.status : undefined,
             error: { message: (error as Error).message },
@@ -118,7 +103,7 @@
         'This action will download the data to your local machine. Are you sure you want to proceed?'}
     </ConfirmDialog>
     <Button onclick={() => (config.features.confirmDownload ? (modalOpen = true) : download())}
-      ><i class="fa-solid fa-download mr-1"></i>{downloadText}
+      ><i class="fa-solid fa-download mr-1"></i>{format.label}
       {#if isDownloading}
         <Loading ring size="micro" color="white" />
       {/if}

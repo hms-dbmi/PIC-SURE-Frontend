@@ -1,9 +1,7 @@
 // @vitest-environment happy-dom
 
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { fireEvent, render, waitFor, within } from '@testing-library/svelte';
-
-vi.mock('#lib/telemetry/logger.ts', () => ({ log: vi.fn(), createLog: vi.fn() }));
 
 import TwoSteppers from '../../../../tests/support/fixtures/TwoSteppers.svelte';
 

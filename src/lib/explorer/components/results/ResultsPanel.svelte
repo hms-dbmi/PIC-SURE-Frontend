@@ -12,7 +12,7 @@
 
   import { filterState } from '#lib/query/filters.svelte.ts';
   import { resultCountsState } from '#lib/query/counts/resultCounts.svelte.ts';
-  import { exports, clearExports } from '#lib/explorer/export/Export.ts';
+  import { exportState } from '#lib/explorer/export/export.svelte.ts';
   import { exploreMode } from '#lib/explorer/mode.ts';
   import { resultsPanelRules } from '#lib/explorer/resultsPanelRules.ts';
 
@@ -33,7 +33,7 @@
       features: config.features,
       filterTypes: filterState.all.map((filter) => filter.filterType),
       hasGenomicFilter: filterState.hasGenomicFilter,
-      exportCount: $exports.length,
+      exportCount: exportState.variables.length,
       counts: resultCountsState,
     }),
   );
@@ -67,7 +67,7 @@
   cancelLabel="No"
   onconfirm={() => {
     filterState.clear();
-    clearExports();
+    exportState.clear();
   }}
 >
   Are you sure you want to clear all filters?
@@ -110,22 +110,20 @@
       {/if}
     </div>
     <Filters {isDiscoverPage} />
-    {#if $exports.length > 0}
+    {#if exportState.variables.length > 0}
       <div class="px-4 mb-1 w-80">
         <header class="text-left ml-1" data-testid="results-exports-header">
           Added Variables
-          {#if $exports.length > 10}
+          {#if exportState.variables.length > 10}
             <button
               data-testid="results-exports-clear"
               class="anchor text-sm flex-none float-right mr-2"
-              onclick={() => {
-                $exports = [];
-              }}>Clear</button
+              onclick={() => exportState.clear()}>Clear</button
             >
           {/if}
         </header>
         <section class="py-1">
-          {#each $exports as variable (variable.id)}
+          {#each exportState.variables as variable (variable.id)}
             <ExportedVariable {variable} />
           {/each}
         </section>
