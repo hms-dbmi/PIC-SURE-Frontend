@@ -10,33 +10,6 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
   getPageContext: vi.fn(() => 'test-context'),
 }));
 
-// The real ExpandableRow store eagerly imports explorer components that touch
-// localStorage at module load, which isn't available in this environment. We
-// only need the store contract Row.svelte consumes, so provide a minimal stub.
-vi.mock('#lib/explorer/ExpandableRow.ts', () => {
-  const make = (value: unknown) => {
-    let current = value;
-    const subscribers = new Set<(v: unknown) => void>();
-    return {
-      subscribe(fn: (v: unknown) => void) {
-        fn(current);
-        subscribers.add(fn);
-        return () => subscribers.delete(fn);
-      },
-      set(next: unknown) {
-        current = next;
-        subscribers.forEach((fn) => fn(current));
-      },
-    };
-  };
-  return {
-    activeTable: make(''),
-    activeRow: make(''),
-    activeComponent: make(undefined),
-    setActiveRow: vi.fn(),
-  };
-});
-
 import Row from '#lib/ui/datatable/Row.svelte';
 import { createLog } from '#lib/telemetry/logger.ts';
 
@@ -85,7 +58,6 @@ describe('Datatable Row', () => {
       index: 0,
       row,
       isClickable: true,
-      expandable: true,
       rowClickLogAction: 'search_result.row_click',
     });
 

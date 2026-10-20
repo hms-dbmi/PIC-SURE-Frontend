@@ -10,18 +10,6 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
   getPageContext: vi.fn(() => 'test-context'),
 }));
 
-// The real ExpandableRow store eagerly imports explorer components that touch
-// localStorage at module load. Row.svelte only needs the store contract.
-vi.mock('#lib/explorer/ExpandableRow.ts', async () => {
-  const { writable } = await import('svelte/store');
-  return {
-    activeTable: writable(''),
-    activeRow: writable(''),
-    activeComponent: writable(undefined),
-    setActiveRow: vi.fn(),
-  };
-});
-
 vi.mock('#lib/auth/session.svelte.ts', () => ({
   session: { isTopAdmin: true, onEnd: () => {} },
 }));

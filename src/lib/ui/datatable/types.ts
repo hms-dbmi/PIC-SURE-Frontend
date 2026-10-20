@@ -26,7 +26,8 @@ export interface TableProps {
   showPagination?: boolean;
   class?: string;
   isClickable?: boolean;
-  expandable?: boolean;
+  // Rendered under the row the explorer panel has expanded in this table.
+  expandedRow?: import('svelte').Snippet<[Indexable]>;
   rowClickHandler?: (row: Indexable) => void;
   rowClickKeys?: string[];
   tableActions?: import('svelte').Snippet;

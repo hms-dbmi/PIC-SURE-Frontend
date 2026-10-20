@@ -1,11 +1,11 @@
 <script lang="ts">
   import Button from '#lib/ui/Button.svelte';
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount } from 'svelte';
   import { config } from '#lib/config/config.svelte.ts';
   import Content from '#lib/shell/Content.svelte';
   import Dialog from '#lib/ui/dialog/Dialog.svelte';
   import AdvancedFiltering from '#lib/explorer/advanced/AdvancedFiltering.svelte';
-  import { panelOpen } from '#lib/explorer/panel.ts';
+  import { explorerPanel } from '#lib/explorer/panel.svelte.ts';
   import { filterState } from '#lib/query/filters.svelte.ts';
   import { createUnsavedGuard } from '#lib/ui/unsavedGuard.svelte.ts';
 
@@ -20,16 +20,13 @@
   const guard = createUnsavedGuard(() => advancedFilteringRef?.hasUnsavedChanges() ?? false);
 
   onMount(() => {
-    $panelOpen = false;
-  });
-
-  onDestroy(() => {
-    $panelOpen = true;
+    explorerPanel.hide();
+    return () => explorerPanel.show();
   });
 
   function applyChanges() {
     advancedFilteringRef?.applyChanges();
-    if (filterState.phenotypic.length !== 0) $panelOpen = true;
+    if (filterState.phenotypic.length !== 0) explorerPanel.show();
   }
 
   function handleCancel() {

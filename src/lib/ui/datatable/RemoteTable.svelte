@@ -4,7 +4,7 @@
 
   import type { TableProps } from './types';
 
-  import { activeTable, activeRow, closeActiveRow } from '#lib/explorer/ExpandableRow.ts';
+  import { explorerPanel } from '#lib/explorer/panel.svelte.ts';
   import { isFormField, isTextEntryField } from '#lib/ui/datatable/keyboard.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
   import ExpandableRow from '#lib/ui/datatable/Row.svelte';
@@ -39,7 +39,7 @@
     showPagination = true,
     class: className = '',
     isClickable = false,
-    expandable = false,
+    expandedRow,
     rowClickHandler = () => {},
     rowClickKeys = [],
     tableActions,
@@ -158,7 +158,7 @@
   }
 
   function closeExpandedRow() {
-    if (!expandable || $activeTable !== tableName || !$activeRow) return;
+    if (!expandedRow || explorerPanel.activeTable !== tableName || !explorerPanel.activeRow) return;
     const owner = tbodyElement?.querySelector('tr.expandable-row')
       ?.previousElementSibling as HTMLElement | null;
     // Only pull focus back to the opener row when focus was on it or inside the
@@ -169,7 +169,7 @@
       currentRow instanceof HTMLTableRowElement &&
       currentRow !== owner &&
       dataRows().includes(currentRow);
-    closeActiveRow();
+    explorerPanel.closeRow();
     if (!onAnotherRow) owner?.focus();
   }
 
@@ -350,7 +350,7 @@
             {rowClickKeys}
             {rowClickLogAction}
             {isClickable}
-            {expandable}
+            {expandedRow}
             tabindex={isClickable ? (i === activeRowIndex ? 0 : -1) : -1}
           />
         {/each}

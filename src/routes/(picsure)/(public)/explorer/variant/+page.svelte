@@ -1,12 +1,12 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
-  import { onDestroy, onMount } from 'svelte';
+  import { onMount } from 'svelte';
 
   import { goto } from '$app/navigation';
   import { config } from '#lib/config/config.svelte.ts';
   import { isToastShowing, toaster } from '#lib/ui/toaster.ts';
 
-  import { panelOpen } from '#lib/explorer/panel.ts';
+  import { explorerPanel } from '#lib/explorer/panel.svelte.ts';
 
   import Content from '#lib/shell/Content.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
@@ -24,10 +24,10 @@
       }
       goto(resolve('explorer'));
     } else {
-      $panelOpen = false;
+      explorerPanel.hide();
     }
+    return () => explorerPanel.show();
   });
-  onDestroy(() => ($panelOpen = true));
 </script>
 
 <svelte:head>

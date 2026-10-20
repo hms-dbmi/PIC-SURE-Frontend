@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { createRawSnippet, type Snippet } from 'svelte';
 import { fireEvent, render, waitFor } from '@testing-library/svelte';
 import { TableHandler } from '@vincjo/datatables';
 
@@ -11,46 +12,13 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
   getPageContext: vi.fn(() => 'test-context'),
 }));
 
-// The real ExpandableRow store eagerly imports explorer components that touch
-// localStorage at module load, which isn't available in this environment. We
-// only need the store contract the datatable consumes, so provide a minimal stub.
-vi.mock('#lib/explorer/ExpandableRow.ts', () => {
-  const make = (value: unknown) => {
-    let current = value;
-    const subscribers = new Set<(v: unknown) => void>();
-    return {
-      subscribe(fn: (v: unknown) => void) {
-        fn(current);
-        subscribers.add(fn);
-        return () => subscribers.delete(fn);
-      },
-      set(next: unknown) {
-        current = next;
-        subscribers.forEach((fn) => fn(current));
-      },
-    };
-  };
-  return {
-    activeTable: make(''),
-    activeRow: make(''),
-    activeComponent: make(undefined),
-    setActiveRow: vi.fn(),
-    closeActiveRow: vi.fn(),
-  };
-});
-
 import { TableHandler as ServerTableHandler } from '@vincjo/datatables/server';
 
 import RemoteTable from '#lib/ui/datatable/RemoteTable.svelte';
 import { isTextEntryField } from '#lib/ui/datatable/keyboard.ts';
-import {
-  activeTable,
-  activeRow,
-  activeComponent,
-  closeActiveRow,
-} from '#lib/explorer/ExpandableRow.ts';
+import type { Indexable } from '#lib/utils/objects.ts';
+import { explorerPanel } from '#lib/explorer/panel.svelte.ts';
 import KeyButtonCell from '../../../../tests/support/fixtures/KeyButtonCell.svelte';
-import PanelInputCell from '../../../../tests/support/fixtures/PanelInputCell.svelte';
 
 const columns = [
   { dataElement: 'name', label: 'Name' },
@@ -66,7 +34,12 @@ function makeRows(count: number, onAction?: () => void) {
   }));
 }
 
-function renderTable(rowCount = 7, onAction?: () => void, expandable = false) {
+const panel = createRawSnippet(() => ({ render: () => '<div>panel</div>' }));
+const panelWithInput = createRawSnippet(() => ({
+  render: () => '<input type="text" aria-label="panel-input" />',
+}));
+
+function renderTable(rowCount = 7, onAction?: () => void, expandedRow?: Snippet<[Indexable]>) {
   const handler = new TableHandler(makeRows(rowCount, onAction), { rowsPerPage: 5 });
   const result = render(RemoteTable, {
     tableName: 'KbdTest',
@@ -75,7 +48,7 @@ function renderTable(rowCount = 7, onAction?: () => void, expandable = false) {
     columns,
     cellOverides: { id: KeyButtonCell },
     isClickable: true,
-    expandable,
+    expandedRow,
   });
   return { handler, ...result };
 }
@@ -86,9 +59,7 @@ function rows(container: HTMLElement): HTMLTableRowElement[] {
 
 afterEach(() => {
   vi.clearAllMocks();
-  activeTable.set('');
-  activeRow.set('');
-  activeComponent.set(undefined);
+  explorerPanel.closeRow();
 });
 
 describe('Datatable keyboard navigation', () => {
@@ -250,55 +221,50 @@ describe('Datatable keyboard navigation', () => {
   });
 
   it('closes an expanded row with Escape and keeps focus on the opener row', async () => {
-    const { container } = renderTable(7, undefined, true);
-    activeTable.set('KbdTest');
-    activeRow.set('ds-0');
+    const { container } = renderTable(7, undefined, panel);
+    explorerPanel.toggleRow('ds-0', { table: 'KbdTest' });
 
     await waitFor(() => expect(container.querySelector('tr.expandable-row')).not.toBeNull());
     const pageRows = rows(container);
     pageRows[0].focus();
 
     await fireEvent.keyDown(pageRows[0], { key: 'Escape' });
-    expect(vi.mocked(closeActiveRow)).toHaveBeenCalledTimes(1);
+    expect(explorerPanel.activeRow).toBe('');
     expect(document.activeElement?.id).toBe('KbdTest-row-0');
   });
 
   it('Escape from a text field steps back to the owner row first, then closes on repeat', async () => {
-    const { container } = renderTable(7, undefined, true);
-    activeTable.set('KbdTest');
-    activeRow.set('ds-0');
-    activeComponent.set(PanelInputCell);
+    const { container } = renderTable(7, undefined, panelWithInput);
+    explorerPanel.toggleRow('ds-0', { table: 'KbdTest' });
 
     await waitFor(() => expect(container.querySelector('tr.expandable-row input')).not.toBeNull());
     const input = container.querySelector<HTMLInputElement>('tr.expandable-row input')!;
     input.focus();
 
     await fireEvent.keyDown(input, { key: 'Escape' });
-    expect(vi.mocked(closeActiveRow)).not.toHaveBeenCalled();
+    expect(explorerPanel.activeRow).toBe('ds-0');
     expect(document.activeElement?.id).toBe('KbdTest-row-0');
 
     await fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
-    expect(vi.mocked(closeActiveRow)).toHaveBeenCalledTimes(1);
+    expect(explorerPanel.activeRow).toBe('');
   });
 
   it('leaves focus alone when Escape closes a panel owned by a different row', async () => {
-    const { container } = renderTable(7, undefined, true);
-    activeTable.set('KbdTest');
-    activeRow.set('ds-0');
+    const { container } = renderTable(7, undefined, panel);
+    explorerPanel.toggleRow('ds-0', { table: 'KbdTest' });
 
     await waitFor(() => expect(container.querySelector('tr.expandable-row')).not.toBeNull());
     const pageRows = rows(container);
     pageRows[2].focus();
 
     await fireEvent.keyDown(pageRows[2], { key: 'Escape' });
-    expect(vi.mocked(closeActiveRow)).toHaveBeenCalledTimes(1);
+    expect(explorerPanel.activeRow).toBe('');
     expect(document.activeElement?.id).toBe('KbdTest-row-2');
   });
 
   it("leaves focus alone when Escape arrives from another row's action button", async () => {
-    const { container } = renderTable(7, undefined, true);
-    activeTable.set('KbdTest');
-    activeRow.set('ds-0');
+    const { container } = renderTable(7, undefined, panel);
+    explorerPanel.toggleRow('ds-0', { table: 'KbdTest' });
 
     await waitFor(() => expect(container.querySelector('tr.expandable-row')).not.toBeNull());
     const pageRows = rows(container);
@@ -308,7 +274,7 @@ describe('Datatable keyboard navigation', () => {
     expect(action.tagName).toBe('BUTTON');
 
     await fireEvent.keyDown(action, { key: 'Escape' });
-    expect(vi.mocked(closeActiveRow)).toHaveBeenCalledTimes(1);
+    expect(explorerPanel.activeRow).toBe('');
     expect(document.activeElement).toBe(action);
   });
 });

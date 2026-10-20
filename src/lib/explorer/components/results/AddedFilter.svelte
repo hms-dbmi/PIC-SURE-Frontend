@@ -15,6 +15,7 @@
   import { filterState } from '#lib/query/filters.svelte.ts';
   import { genomicDraft } from '#lib/query/genomicDraft.svelte.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
+  import { explorerPanel } from '#lib/explorer/panel.svelte.ts';
 
   import Dialog from '#lib/ui/dialog/Dialog.svelte';
   import AddFilter from '#lib/explorer/components/AddFilter.svelte';
@@ -51,6 +52,14 @@
     carot = open ? 'fa-caret-down' : 'fa-caret-up';
     if (open) log(createLog('ACTION', 'filter.view_details', { variable: filter.variableName }));
   };
+
+  function saveEdit(edited: Filter) {
+    filterState.update(filter.uuid, edited);
+    filterState.enrich(edited, edited.id, edited.dataset);
+    filterModal = false;
+    explorerPanel.closeRow();
+    explorerPanel.show();
+  }
 
   const deleteFilter = function () {
     return filterState.remove(filter.uuid);
@@ -114,11 +123,7 @@
             <i class="fa-solid fa-pen-to-square"></i>
             <span class="sr-only">Edit Filter</span>
           {/snippet}
-          <AddFilter
-            data={filter.searchResult}
-            existingFilter={filter}
-            onclose={() => (filterModal = false)}
-          />
+          <AddFilter data={filter.searchResult} existingFilter={filter} onadded={saveEdit} />
         </Dialog>
       {/if}
       <button

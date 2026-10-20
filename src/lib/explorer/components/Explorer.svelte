@@ -10,8 +10,16 @@
   import type { Column } from '#lib/ui/datatable/types.ts';
   import { explorerSearch as search } from '#lib/explorer/search.svelte.ts';
   import type { TourDataType } from '#lib/explorer/components/tour/types.ts';
+  import type { SearchResult } from '#lib/explorer/types.ts';
+  import type { Indexable } from '#lib/utils/objects.ts';
+  import type { Filter } from '#lib/query/filter.svelte.ts';
+  import { filterState } from '#lib/query/filters.svelte.ts';
+  import { explorerPanel } from '#lib/explorer/panel.svelte.ts';
 
   import Actions from '#lib/explorer/components/cell/Actions.svelte';
+  import AddFilter from '#lib/explorer/components/AddFilter.svelte';
+  import HierarchyComponent from '#lib/explorer/components/HierarchyComponent.svelte';
+  import ResultInfoComponent from '#lib/explorer/components/ResultInfoComponent.svelte';
   import SearchDatatable from '#lib/ui/datatable/RemoteTable.svelte';
   import Searchbox from '#lib/ui/Searchbox.svelte';
   import FacetSideBar from '#lib/explorer/components/facets/FacetSideBar.svelte';
@@ -59,6 +67,22 @@
     goto(path);
   }
 
+  function showAddedFilter() {
+    explorerPanel.closeRow();
+    explorerPanel.show();
+  }
+
+  function addFilter(filter: Filter) {
+    filterState.add(filter);
+    filterState.enrich(filter, filter.id, filter.dataset);
+    showAddedFilter();
+  }
+
+  function addHierarchyFilter(filter: Filter) {
+    filterState.add(filter);
+    showAddedFilter();
+  }
+
   function scrollToSearchResults() {
     document.getElementById(tableId)?.scrollIntoView({ block: 'start' });
   }
@@ -87,6 +111,16 @@
 
   onDestroy(() => releaseHandler?.());
 </script>
+
+{#snippet expandedRow(row: Indexable)}
+  {#if explorerPanel.activeView === 'filter'}
+    <AddFilter data={row as SearchResult} onadded={addFilter} />
+  {:else if explorerPanel.activeView === 'hierarchy'}
+    <HierarchyComponent data={row as SearchResult} onadded={addHierarchyFilter} />
+  {:else}
+    <ResultInfoComponent data={row as SearchResult} />
+  {/if}
+{/snippet}
 
 <section id="explorer-main" class="flex gap-9">
   <div id="explorer-facet-sidebar" class="flex-none flex-col items-center w-80">
@@ -132,7 +166,7 @@
         {columns}
         {cellOverides}
         isLoading={search.loading}
-        expandable
+        {expandedRow}
         rowClickLogAction="search_result.row_click"
         onPageChange={scrollToSearchResults}
       />

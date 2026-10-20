@@ -1,13 +1,9 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte';
   import { slide } from 'svelte/transition';
   import type { Column } from '#lib/ui/datatable/types.ts';
   import type { Indexable } from '#lib/utils/objects.ts';
-  import {
-    activeTable,
-    activeRow,
-    activeComponent,
-    setActiveRow,
-  } from '#lib/explorer/ExpandableRow.ts';
+  import { explorerPanel } from '#lib/explorer/panel.svelte.ts';
   import { isFormField } from '#lib/ui/datatable/keyboard.ts';
   import { log, createLog, getPageContext } from '#lib/telemetry/logger.ts';
 
@@ -19,7 +15,7 @@
     tableName?: string;
     tableId: string;
     isClickable?: boolean;
-    expandable?: boolean;
+    expandedRow?: Snippet<[Indexable]>;
     rowClickHandler?: (row: Indexable) => void;
     rowClickKeys?: string[];
     rowClickLogAction?: string;
@@ -34,7 +30,7 @@
     tableName = '',
     tableId,
     isClickable = false,
-    expandable = false,
+    expandedRow,
     rowClickHandler = () => {},
     rowClickKeys = [],
     rowClickLogAction,
@@ -43,21 +39,20 @@
 
   let rowElement: HTMLTableRowElement | undefined = $state();
 
+  let rowKey = $derived(row.conceptPath || row.dataset_id);
+  let active = $derived(explorerPanel.isExpanded(tableName, rowKey));
+
   function onClick(row: Indexable) {
-    const willOpen = !(
-      $activeTable === tableName &&
-      ($activeRow === row?.conceptPath || $activeRow === row.dataset_id)
-    );
     if (rowClickLogAction) {
       log(
         createLog('ACTION', rowClickLogAction, {
-          variable: row.conceptPath || row.dataset_id,
-          open: willOpen,
+          variable: rowKey,
+          open: !active,
           pageContext: getPageContext(),
         }),
       );
     }
-    setActiveRow({ row: row.conceptPath || row.dataset_id, table: tableName });
+    explorerPanel.toggleRow(rowKey, { table: tableName });
     rowClickHandler(row);
   }
 
@@ -83,11 +78,6 @@
       (shortcut as HTMLElement).click();
     }
   }
-
-  let active = $derived(
-    $activeTable === tableName &&
-      ($activeRow === row?.conceptPath || $activeRow === row.dataset_id),
-  );
 </script>
 
 <tr
@@ -96,7 +86,7 @@
   onclick={() => onClick(row)}
   onkeydown={onKeydown}
   class={isClickable ? 'cursor-pointer' : ''}
-  aria-expanded={expandable ? active : undefined}
+  aria-expanded={expandedRow ? active : undefined}
   {tabindex}
 >
   {#each columns as column, colIndex}
@@ -114,14 +104,11 @@
   {/each}
 </tr>
 
-{#if expandable && active && !!$activeRow}
+{#if expandedRow && active}
   <tr id="{tableId}-active-row-{index.toString()}" class="expandable-row">
     <td colspan={columns.length}>
       <div transition:slide={{ axis: 'y' }}>
-        {#if $activeComponent}
-          {@const SvelteComponent = $activeComponent}
-          <SvelteComponent data={row} />
-        {/if}
+        {@render expandedRow(row)}
       </div>
     </td>
   </tr>

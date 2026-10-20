@@ -9,7 +9,7 @@
   import { createInstance } from '#lib/auth/providerRegistry.ts';
   import { LoginStateError } from '#lib/auth/loginState.ts';
   import { loginRedirectPath } from '#lib/auth/loginRedirect.ts';
-  import { panelOpen } from '#lib/explorer/panel.ts';
+  import { explorerPanel } from '#lib/explorer/panel.svelte.ts';
   import Loading from '#lib/ui/Loading.svelte';
   import type { User } from '#lib/auth/model/user.ts';
   import { asksForTerms } from '#lib/auth/access.ts';
@@ -82,7 +82,7 @@
   }
 
   onMount(async () => {
-    panelOpen.set(false);
+    explorerPanel.hide();
     const redirectTo = sessionStorage.getItem('redirect') || '/';
     attemptUserLogin(redirectTo).catch((error) => {
       if (error instanceof LoginStateError && error.problem === 'missing') {

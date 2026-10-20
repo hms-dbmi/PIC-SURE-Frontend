@@ -9,17 +9,6 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
   createLog: vi.fn(),
   getPageContext: vi.fn(),
 }));
-// The real store pulls in explorer modules (and their imports) this test doesn't need.
-vi.mock('#lib/explorer/ExpandableRow.ts', async () => {
-  const { writable } = await import('svelte/store');
-  return {
-    activeTable: writable(''),
-    activeRow: writable(''),
-    activeComponent: writable(undefined),
-    setActiveRow: vi.fn(),
-    closeActiveRow: vi.fn(),
-  };
-});
 
 import StaticTable from '#lib/ui/datatable/StaticTable.svelte';
 

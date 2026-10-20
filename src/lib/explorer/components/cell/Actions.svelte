@@ -1,14 +1,13 @@
 <script lang="ts">
   import IconButton from '#lib/ui/IconButton.svelte';
   import type { SearchResult } from '#lib/explorer/types.ts';
-  import { setActiveRow } from '#lib/explorer/ExpandableRow.ts';
   import {
     exports,
     addExport,
     removeExport,
     mapSearchResultAsExport,
   } from '#lib/explorer/export/Export.ts';
-  import { panelOpen } from '#lib/explorer/panel.ts';
+  import { explorerPanel, type RowView } from '#lib/explorer/panel.svelte.ts';
   import { config } from '#lib/config/config.svelte.ts';
   import { isOpenAccess } from '#lib/explorer/mode.ts';
   import { log, createLog, getPageContext } from '#lib/telemetry/logger.ts';
@@ -20,21 +19,17 @@
   let { data }: Props = $props();
   let exportItem = $derived(mapSearchResultAsExport(data.row));
 
-  function updateActiveRow(componentName: string) {
+  function updateActiveRow(view: RowView) {
     return (event: Event) => {
       event.stopPropagation();
       log(
-        createLog('ACTION', `search_result.${componentName}`, {
+        createLog('ACTION', `search_result.${view}`, {
           variable: data.row.display || data.row.name,
           conceptPath: data.row.conceptPath,
           pageContext: getPageContext(),
         }),
       );
-      setActiveRow({
-        row: data.row.conceptPath,
-        component: componentName,
-        table: data?.tableName,
-      });
+      explorerPanel.toggleRow(data.row.conceptPath, { view, table: data.tableName });
     };
   }
 
@@ -62,7 +57,7 @@
         }),
       );
       addExport(exportItem);
-      $panelOpen = true;
+      explorerPanel.show();
     }
   }
 

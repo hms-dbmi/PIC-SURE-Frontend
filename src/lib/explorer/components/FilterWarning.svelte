@@ -3,7 +3,7 @@
 
   import { goto } from '$app/navigation';
 
-  import { panelOpen } from '#lib/explorer/panel.ts';
+  import { explorerPanel } from '#lib/explorer/panel.svelte.ts';
   import { filterState } from '#lib/query/filters.svelte.ts';
 
   import AlertDialog from '#lib/ui/dialog/AlertDialog.svelte';
@@ -63,7 +63,7 @@
   async function reset() {
     const path = warning.path;
     await warning.resetQuery();
-    panelOpen.set(false);
+    explorerPanel.hide();
     filterState.warning = undefined;
     open = false;
     goto(resolve(path));

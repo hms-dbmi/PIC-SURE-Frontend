@@ -6,15 +6,12 @@
     AnyRecordOfFilterError,
     createAnyRecordOfFilter,
   } from '#lib/query/filter.svelte.ts';
-  import { activeRow } from '#lib/explorer/ExpandableRow.ts';
-  import { filterState } from '#lib/query/filters.svelte.ts';
   import TreeView from '#lib/ui/tree/TreeView.svelte';
   import {
     getConceptTree,
     getHierarchyConcepts,
     ENSURE_MAX_DEPTH,
   } from '#lib/explorer/Dictionary.ts';
-  import { panelOpen } from '#lib/explorer/panel.ts';
   import Loading from '#lib/ui/Loading.svelte';
   import { toaster } from '#lib/ui/toaster.ts';
   import AlertDialog from '#lib/ui/dialog/AlertDialog.svelte';
@@ -25,9 +22,9 @@
   import Button from '#lib/ui/Button.svelte';
   interface Props {
     data?: SearchResult;
-    onclose?: () => void;
+    onadded: (filter: Filter) => void;
   }
-  let { data = {} as SearchResult, onclose = () => {} }: Props = $props();
+  let { data = {} as SearchResult, onadded }: Props = $props();
 
   let modalOpen: boolean = $state(false);
   let selectedNode: string | undefined = $state(undefined);
@@ -114,8 +111,7 @@
         type: 'AnyRecordOf',
       };
       filter = createAnyRecordOfFilter(searchResult, treeResult);
-      filterState.add(filter);
-      finish();
+      onadded(filter);
     } catch (error: unknown) {
       if (error instanceof AnyRecordOfFilterError) {
         modalOpen = true;
@@ -129,12 +125,6 @@
     } finally {
       isLoading = false;
     }
-  }
-
-  function finish() {
-    $activeRow = '';
-    $panelOpen = true;
-    onclose();
   }
 </script>
 

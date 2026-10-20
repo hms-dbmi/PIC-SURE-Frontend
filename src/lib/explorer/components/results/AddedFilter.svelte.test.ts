@@ -19,22 +19,16 @@ vi.mock('#lib/query/genomicDraft.svelte.ts', () => ({
   genomicDraft: { loadGeneFilter: vi.fn(), loadSnpFilter: vi.fn() },
 }));
 
-vi.mock('#lib/query/filters.svelte.ts', () => ({ filterState: { remove: vi.fn() } }));
+vi.mock('#lib/query/filters.svelte.ts', () => ({
+  filterState: { remove: vi.fn(), update: vi.fn(), enrich: vi.fn() },
+}));
 
 vi.mock('#lib/explorer/Dictionary.ts', () => ({ getConceptDetails: vi.fn() }));
 
-vi.mock('#lib/explorer/ExpandableRow.ts', async () => {
-  const { writable } = await import('svelte/store');
-  return { activeRow: writable('') };
-});
-
-vi.mock('#lib/explorer/panel.ts', async () => {
-  const { writable } = await import('svelte/store');
-  return { panelOpen: writable(true) };
-});
-
 import AddedFilter from '#lib/explorer/components/results/AddedFilter.svelte';
 import { log } from '#lib/telemetry/logger.ts';
+import { filterState } from '#lib/query/filters.svelte.ts';
+import { explorerPanel } from '#lib/explorer/panel.svelte.ts';
 import type { Filter } from '#lib/query/filter.svelte.ts';
 import type { SearchResult } from '#lib/explorer/types.ts';
 
@@ -46,6 +40,7 @@ const searchResult = {
   description: 'Variable description',
   type: 'Categorical',
   allowFiltering: true,
+  values: ['value-1', 'value-2', 'value-3'],
 } as SearchResult;
 
 const categoricalFilter = {
@@ -103,5 +98,24 @@ describe('AddedFilter', () => {
         metadata: { variable: 'Gene With Variant' },
       }),
     );
+  });
+
+  it('saves an edited filter in place and shows it in the open panel', async () => {
+    explorerPanel.hide();
+    render(AddedFilter, { filter: categoricalFilter });
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Edit Filter' }));
+    await fireEvent.click(await screen.findByRole('checkbox', { name: 'value-2' }));
+    await fireEvent.click(screen.getByTestId('filter-add'));
+
+    const [uuid, edited] = vi.mocked(filterState.update).mock.calls[0];
+    expect(uuid).toBe('filter-uuid');
+    expect(edited).toMatchObject({
+      displayType: 'restrict',
+      categoryValues: ['value-1', 'value-2'],
+    });
+    expect(filterState.enrich).toHaveBeenCalledWith(edited, searchResult.conceptPath, 'dataset-1');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(explorerPanel.open).toBe(true);
   });
 });

@@ -1,224 +1,48 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { untrack } from 'svelte';
 
   import { toaster } from '#lib/ui/toaster.ts';
   import type { SearchResult } from '#lib/explorer/types.ts';
-  import { filterState } from '#lib/query/filters.svelte.ts';
-  import { activeRow } from '#lib/explorer/ExpandableRow.ts';
-  import {
-    type Filter,
-    createCategoricalFilter,
-    createNumericFilter,
-    createRequiredFilter,
-    studyLabel,
-  } from '#lib/query/filter.svelte.ts';
+  import type { Filter } from '#lib/query/filter.svelte.ts';
   import { getConceptDetails } from '#lib/explorer/Dictionary.ts';
-  import { panelOpen } from '#lib/explorer/panel.ts';
 
   import Loading from '#lib/ui/Loading.svelte';
-  import OptionsSelectionList from '#lib/ui/OptionsSelectionList.svelte';
-  import { cardClass } from '#lib/ui/surface.ts';
-  import Button from '#lib/ui/Button.svelte';
+  import FilterForm from '#lib/explorer/components/FilterForm.svelte';
 
   interface Props {
     data?: SearchResult;
     existingFilter?: Filter;
-    onclose?: () => void;
+    onadded: (filter: Filter) => void;
   }
 
-  let { data = {} as SearchResult, existingFilter, onclose = () => {} }: Props = $props();
+  let { data = {} as SearchResult, existingFilter, onadded }: Props = $props();
 
-  let max: string = $state('');
-  let min: string = $state('');
-  let minFormValue: string = $state('');
-  let maxFormValue: string = $state('');
-  let pageSize = 20;
-  let unselectedOptions: string[] = $state([]);
-  let selectedOptions: string[] = $state([]);
-  let lastSearchTerm = '';
-  let loading = $state(false);
-  let display: string = $state('');
-  let description: string = $state('');
-  let studyDisplay: string = $state('');
+  // A new categorical filter needs the concept's values, which only its details carry. Keyed on
+  // the concept rather than the row object, so a re-rendered row keeps the form and its selection.
+  let detailsKey = $derived(
+    !existingFilter && data.type === 'Categorical' ? `${data.dataset}\n${data.conceptPath}` : '',
+  );
+  let concept: SearchResult | Promise<SearchResult> = $derived(
+    detailsKey ? untrack(() => loadDetails(data)) : data,
+  );
 
-  onMount(async () => {
-    if (existingFilter) {
-      display = data?.display || '';
-      description = data?.description || '';
-      studyDisplay = studyLabel(data);
-      if (existingFilter.filterType === 'Categorical') {
-        if (existingFilter.categoryValues.length === 0) {
-          selectedOptions = data?.values || [];
-        } else {
-          selectedOptions = existingFilter.categoryValues;
-        }
-        unselectedOptions =
-          data?.values?.filter((value) => {
-            return !selectedOptions.find((selected) => selected === value);
-          }) || [];
-        if (unselectedOptions.length >= 50) {
-          unselectedOptions = unselectedOptions.slice(0, pageSize);
-        }
-      } else if (existingFilter.filterType === 'numeric') {
-        minFormValue =
-          existingFilter.min !== undefined && existingFilter.min !== null
-            ? existingFilter.min.toString()
-            : '';
-        maxFormValue =
-          existingFilter.max !== undefined && existingFilter.max !== null
-            ? existingFilter.max.toString()
-            : '';
-      }
-    } else if (data?.type === 'Categorical') {
-      try {
-        loading = true;
-        data = await getConceptDetails(data.conceptPath, data.dataset);
-        loading = false;
-        unselectedOptions = data?.values || [];
-        if (unselectedOptions.length >= 50) {
-          unselectedOptions = unselectedOptions.slice(0, pageSize);
-        }
-      } catch (e) {
-        console.error(e);
-        toaster.error({
-          title: 'An error occured while loading the filter. Please try again later.',
-        });
-      }
-    }
-    min = data.min !== undefined && data.min !== null ? data.min.toString() : '';
-    max = data.max !== undefined && data.max !== null ? data.max.toString() : '';
-  });
-
-  function addNewFilter() {
-    let filter: Filter;
-    if (data.type === 'Categorical') {
-      if (!valuesSelected || valuesSelected.length === 0) return;
-      if (valuesSelected.length === data?.values?.length) {
-        filter = createRequiredFilter(data);
-      } else {
-        filter = createCategoricalFilter(data, valuesSelected);
-      }
-    } else {
-      filter = createNumericFilter(data, minFormValue || undefined, maxFormValue || undefined);
-    }
-    if (!filter) return; //todo errors
-    if (existingFilter) {
-      filterState.update(existingFilter.uuid, filter);
-    } else {
-      filterState.add(filter);
-    }
-    filterState.enrich(filter, data.conceptPath, data.dataset);
-    finish();
-  }
-
-  function finish() {
-    $activeRow = '';
-    $panelOpen = true;
-    onclose();
-  }
-
-  function getNextValues(search: string = '') {
-    const totalOptions = data?.values?.length || 0;
-    if (totalOptions === 0) return;
-
-    loading = true;
+  async function loadDetails(row: SearchResult): Promise<SearchResult> {
     try {
-      let allOptions = data?.values || [];
-
-      if (search !== lastSearchTerm) {
-        // new search
-        unselectedOptions = [];
-        lastSearchTerm = search;
-      }
-
-      const selected = new Set(selectedOptions);
-      const needle = search.toLowerCase();
-      let filteredOptions = allOptions.filter(
-        (option) => !selected.has(option) && (!needle || option.toLowerCase().includes(needle)),
-      );
-
-      const displayed = new Set(unselectedOptions);
-      const nextOptions = filteredOptions
-        .filter((option) => !displayed.has(option))
-        .slice(0, pageSize);
-
-      unselectedOptions = [...unselectedOptions, ...nextOptions];
+      return await getConceptDetails(row.conceptPath, row.dataset);
     } catch (error) {
       console.error(error);
       toaster.error({
-        title: 'An error occurred while loading more options. Please try again later.',
+        title: 'An error occured while loading the filter. Please try again later.',
       });
+      return row;
     }
-    loading = false;
   }
-
-  let valuesSelected = $derived(selectedOptions.map((option) => option));
 </script>
 
-<div>
-  {#if !!data}
-    <div class="variable-info">
-      {#if display}
-        <div class="variable-name">Variable Name: {display}</div>
-      {/if}
-      {#if description}
-        <div class="variable-desc">Variable Description: {description}</div>
-      {/if}
-      {#if studyDisplay}
-        <div class="variable-study">Study: {studyDisplay}</div>
-      {/if}
-    </div>
-  {/if}
-  <div class="flex justify-between" data-testid="filter-component">
-    {#if !data}
-      <Loading ring size="medium" />
-    {:else}
-      {#if data?.type === 'Categorical'}
-        <div data-testid="filter-categorical" class="w-full">
-          <OptionsSelectionList
-            bind:unselectedOptions
-            bind:selectedOptions
-            bind:currentlyLoading={loading}
-            allOptions={data?.values}
-            onscroll={getNextValues}
-          />
-        </div>
-      {:else if data?.type === 'Continuous'}
-        <div class="{cardClass} bg-surface-100 p-3 m-1 w-full">
-          <section class="card-body flex grow gap-4" data-testid="filter-numerical">
-            <label class="flex-auto flex-col">
-              <span>Min: {min}</span>
-              <input
-                data-testid="filter-numerical-min"
-                type="text"
-                placeholder="Enter value or leave blank for variable min"
-                class="input"
-                bind:value={minFormValue}
-              />
-            </label>
-            <label class="flex-auto flex-col">
-              <span>Max: {max}</span>
-              <input
-                data-testid="filter-numerical-max"
-                type="text"
-                placeholder="Enter value or leave blank for variable max"
-                class="input"
-                bind:value={maxFormValue}
-              />
-            </label>
-          </section>
-        </div>
-      {/if}
-      <Button
-        size="icon"
-        class="m-1 h-fit"
-        data-testid="filter-add"
-        aria-label="Add Filter"
-        onclick={addNewFilter}
-        disabled={data.type === 'Categorical' && valuesSelected.length === 0}
-      >
-        <i class="fas fa-plus"></i>
-      </Button>
-    {/if}
+{#await concept}
+  <div class="flex justify-center" data-testid="filter-component">
+    <Loading ring size="medium" />
   </div>
-</div>
+{:then concept}
+  <FilterForm {concept} {existingFilter} {onadded} />
+{/await}

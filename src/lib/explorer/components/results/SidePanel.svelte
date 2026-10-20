@@ -1,53 +1,40 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { exports } from '#lib/explorer/export/Export.ts';
   import ResultsPanel from '#lib/explorer/components/results/ResultsPanel.svelte';
-  import { onDestroy, onMount } from 'svelte';
-  import { type Unsubscriber } from 'svelte/store';
   import { filterState } from '#lib/query/filters.svelte.ts';
-  import { panelOpen } from '#lib/explorer/panel.ts';
+  import { explorerPanel } from '#lib/explorer/panel.svelte.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
   import Button from '#lib/ui/Button.svelte';
 
-  let unsubExportStore: Unsubscriber;
-
-  function openPanel() {
-    panelOpen.set(true);
-  }
-
   onMount(() => {
-    if (filterState.phenotypic.length !== 0) openPanel();
-    unsubExportStore = exports.subscribe((exportList) => {
-      if (exportList?.length !== 0) {
-        openPanel();
-      }
+    if (filterState.phenotypic.length !== 0) explorerPanel.show();
+    return exports.subscribe((exportList) => {
+      if (exportList?.length !== 0) explorerPanel.show();
     });
   });
 
-  onDestroy(() => {
-    unsubExportStore && unsubExportStore();
-  });
+  function toggle() {
+    const open = explorerPanel.toggle();
+    log(createLog('ACTION', 'results_panel.toggle', { open }));
+  }
 </script>
 
-<div id="results-side-panel" class="flex {$panelOpen ? 'open' : 'closed'}-panel">
+<div id="results-side-panel" class="flex {explorerPanel.open ? 'open' : 'closed'}-panel">
   <div id="results-side-panel-bar">
     <Button
       id="results-panel-toggle"
-      title="{$panelOpen ? 'Hide' : 'Show'} Results"
+      title="{explorerPanel.open ? 'Hide' : 'Show'} Results"
       variant="tonal"
       size="icon-sm"
       class="mt-[2.3rem]"
       aria-label="Toggle Results Panel"
-      onclick={() => {
-        panelOpen.update((value) => {
-          log(createLog('ACTION', 'results_panel.toggle', { open: !value }));
-          return !value;
-        });
-      }}
+      onclick={toggle}
     >
-      <i class="fa-solid {$panelOpen ? 'fa-arrow-right' : 'fa-arrow-left'}"></i>
+      <i class="fa-solid {explorerPanel.open ? 'fa-arrow-right' : 'fa-arrow-left'}"></i>
     </Button>
   </div>
-  {#if $panelOpen}
+  {#if explorerPanel.open}
     <ResultsPanel />
   {/if}
 </div>
