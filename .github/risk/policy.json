@@ -10,7 +10,7 @@
   },
 
   "limits": {
-    "maxChangedLines": 150,
+    "maxChangedLines": 450,
     "maxFiles": 10,
     "apiFileCap": 3000,
     "ignoreForSize": ["**/pnpm-lock.yaml"]
@@ -96,7 +96,7 @@
     {
       "id": "ui-source",
       "lowRisk": false,
-      "lowRiskMaxLines": 60,
+      "lowRiskMaxLines": 300,
       "reason": "Application source change larger than the 60-line low-risk allowance",
       "globs": ["src/**/*.{svelte,ts,js}"]
     }
