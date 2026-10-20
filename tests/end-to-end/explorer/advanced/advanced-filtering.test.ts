@@ -1054,6 +1054,7 @@ test.describe('Advanced Query Builder - Drag interactions', () => {
     await page.mouse.move(startX, y, { steps: 10 });
     await page.mouse.move(startX, y + 2);
     await page.mouse.move(startX, y);
+    await expect(innerZone).toHaveText('Drop here');
     await page.mouse.up();
     await expect(afPage.getDropPreviews()).toHaveCount(0);
     await expect(groups).toHaveCount(3);
