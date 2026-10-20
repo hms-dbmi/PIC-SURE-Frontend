@@ -8,11 +8,20 @@ vi.mock('$app/environment', () => ({
   },
 }));
 
-const mockLogout = vi.fn();
+const mockLogout = vi.fn<(...args: unknown[]) => Promise<{ navigation: Promise<void> }>>(
+  async () => ({ navigation: Promise.resolve() }),
+);
 const mockLogin = vi.fn();
 vi.mock('$lib/stores/User', () => ({
   logout: (...args: unknown[]) => mockLogout(...args),
   login: (...args: unknown[]) => mockLogin(...args),
+}));
+
+const mockClearFilters = vi.fn();
+const mockForgetStoredFilters = vi.fn();
+vi.mock('$lib/stores/Filter', () => ({
+  clearFilters: () => mockClearFilters(),
+  forgetStoredFilters: () => mockForgetStoredFilters(),
 }));
 
 const mockLog = vi.fn();
@@ -339,6 +348,8 @@ describe('api', () => {
         'Your session has timed out. Please log in.',
       );
       expect(mockLogout).toHaveBeenCalledWith(undefined, true);
+      expect(mockForgetStoredFilters).not.toHaveBeenCalled();
+      expect(mockClearFilters).not.toHaveBeenCalled();
     });
 
     it('calls logout and clears session on 403 then throws', async () => {
@@ -350,8 +361,22 @@ describe('api', () => {
         status: 403,
       });
       expect(sessionStorage.removeItem).toHaveBeenCalledWith('logout-reason');
-      expect(sessionStorage.removeItem).toHaveBeenCalledWith('filters');
+      await vi.waitFor(() => expect(mockClearFilters).toHaveBeenCalled());
       expect(mockLogout).toHaveBeenCalledWith(undefined, false);
+    });
+
+    it('forgets stored filters on 403 at once but resets the stores after logout navigates', async () => {
+      let finishNavigation = () => {};
+      const navigation = new Promise<void>((done) => (finishNavigation = done));
+      mockLogout.mockResolvedValueOnce({ navigation });
+      fetchMock.mockResolvedValue(mockFetchResponse({ ok: false, status: 403, body: 'Forbidden' }));
+
+      await expect(get('picsure/test')).rejects.toThrow('403: Forbidden');
+      await vi.waitFor(() => expect(mockForgetStoredFilters).toHaveBeenCalled());
+      expect(mockClearFilters).not.toHaveBeenCalled();
+
+      finishNavigation();
+      await vi.waitFor(() => expect(mockClearFilters).toHaveBeenCalled());
     });
 
     it('reports consent denial without logging out', async () => {
@@ -372,6 +397,8 @@ describe('api', () => {
 
       expect(mockLogout).not.toHaveBeenCalled();
       expect(sessionStorage.removeItem).not.toHaveBeenCalled();
+      expect(mockForgetStoredFilters).not.toHaveBeenCalled();
+      expect(mockClearFilters).not.toHaveBeenCalled();
     });
 
     it('throws error with status for other error codes', async () => {
