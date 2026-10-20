@@ -36,7 +36,8 @@
     const notAuthorized =
       exploreMode() !== 'explorer' && toMode === 'explorer' && filterState.hasInvalidFilter;
     const stigmatizing =
-      toMode === 'discover' && (filterState.hasGenomicFilter || filterState.hasUnallowedFilter);
+      toMode === 'discover' &&
+      (filterState.hasGenomicOrSnpFilter || filterState.hasUnallowedFilter);
 
     if (stigmatizing || notAuthorized) {
       if (stigmatizing) filterState.warning = 'stigmatizing';

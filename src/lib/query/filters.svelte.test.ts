@@ -24,6 +24,7 @@ import {
   createFilterGroup,
   createGenomicFilter,
   createNumericFilter,
+  createSnpsFilter,
   isFilterGroup,
   type FilterInterface,
 } from '#lib/query/filter.svelte.ts';
@@ -323,6 +324,31 @@ describe('adding, updating and removing', () => {
     expect(filters.genomic).toHaveLength(1);
     expect(filters.genomic[0]).toMatchObject({ Gene_with_variant: ['TP53'] });
     expect(filters.hasGenomicFilter).toBe(true);
+  });
+
+  describe('genomic filter checks', () => {
+    const snpFilter = () => createSnpsFilter([{ search: 'chr1,12345,A,G', constraint: '0/1' }]);
+
+    it('counts a SNP-only filter for Discover but not as a gene filter', () => {
+      filters.add(snpFilter());
+
+      expect(filters.hasGenomicOrSnpFilter).toBe(true);
+      expect(filters.hasGenomicFilter).toBe(false);
+    });
+
+    it('counts a gene-only filter for both', () => {
+      filters.add(createGenomicFilter({ Gene_with_variant: ['BRCA1'] }));
+
+      expect(filters.hasGenomicOrSnpFilter).toBe(true);
+      expect(filters.hasGenomicFilter).toBe(true);
+    });
+
+    it('counts neither for phenotypic filters only', () => {
+      filters.add(createCategoricalFilter(mockSearchResult('\\a\\'), ['x']));
+
+      expect(filters.hasGenomicOrSnpFilter).toBe(false);
+      expect(filters.hasGenomicFilter).toBe(false);
+    });
   });
 
   it('removes unallowed filters from both lists', () => {

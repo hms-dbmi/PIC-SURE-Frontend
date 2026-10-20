@@ -99,8 +99,14 @@ export class FilterState {
     return datasets.filter((dataset, index) => dataset && datasets.indexOf(dataset) === index);
   }
 
+  /** Gene filters only; SNP filters don't show the Variant Explorer. */
   get hasGenomicFilter(): boolean {
     return this.#genomic.some((filter) => filter.filterType === 'genomic');
+  }
+
+  /** Gene or SNP filters: what Discover can't query and `removeGenomic()` removes. */
+  get hasGenomicOrSnpFilter(): boolean {
+    return this.#genomic.length > 0;
   }
 
   get hasUnallowedFilter(): boolean {

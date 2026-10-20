@@ -121,4 +121,40 @@ test.describe('Filter warning navigation', () => {
     await expect(page).toHaveURL(/\/discover$/);
     await expect(page.getByTestId('explorer-filter-warning')).toBeVisible();
   });
+
+  test('warns before moving from Explore to Discover with a SNP filter', async ({ page }) => {
+    await mockApiSuccess(page, '*/**/picsure/hpds/query/sync', 100);
+    await page.addInitScript(() => {
+      sessionStorage.setItem(
+        'genomicFilters',
+        JSON.stringify([
+          {
+            uuid: 'snp-filter',
+            id: 'snp-variant',
+            filterType: 'snp',
+            displayType: 'any',
+            snpValues: [{ search: 'chr1,12345,A,G', constraint: '0/1' }],
+            variableName: 'Variant Filter',
+            description: 'chr1,12345,A,G: Heterozygous',
+            allowFiltering: true,
+            dataset: '',
+          },
+        ]),
+      );
+    });
+
+    await page.goto('/explorer');
+    const warning = page.getByTestId('explorer-filter-warning');
+    await expect(async () => {
+      await page.locator('#app-nav-link-discover').click();
+      await expect(warning).toBeVisible({ timeout: 1000 });
+    }).toPass();
+    await expect(page).toHaveURL(/\/explorer$/);
+
+    await page.getByRole('button', { name: 'Remove Invalid Filters' }).click();
+
+    await expect(page).toHaveURL(/\/discover$/);
+    await expect(warning).toBeHidden();
+    expect(await page.evaluate(() => sessionStorage.getItem('genomicFilters'))).toBe('[]');
+  });
 });
