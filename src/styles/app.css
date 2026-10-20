@@ -473,16 +473,15 @@ nav#page-navigation li .nav-dropdown a:focus {
   @apply preset-filled-error-500;
 }
 
-/* Unlayered so it beats .card's surface-200 border, which overrides Tailwind border utilities.
-   BDC only: the other themes' lighter warning ramps fall below 4.5:1 text contrast at these shades. */
-[data-theme='bdc'] .warning-message {
+/* Must stay unlayered and after .card, whose surface-200 border overrides Tailwind border utilities. */
+.warning-message {
   background-color: var(--color-warning-50);
   border-color: var(--color-warning-700);
   color: var(--color-warning-900);
 }
 
-[data-theme='bdc'] .warning-message > i,
-[data-theme='bdc'] .warning-message .site-banner-icon {
+.warning-message > i,
+.warning-message .site-banner-icon {
   color: var(--color-warning-800);
 }
 
