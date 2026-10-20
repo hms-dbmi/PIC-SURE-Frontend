@@ -83,6 +83,11 @@ genomicFilters.subscribe((filters: Filter[]) => {
   }
 });
 
+export function forgetStoredFilters() {
+  sessionStorage.removeItem('filterTree');
+  sessionStorage.removeItem('genomicFilters');
+}
+
 function restoreGenomicFilters(): Filter[] {
   if (browser && sessionStorage.getItem('genomicFilters')) {
     const oldFilters: Filter[] = JSON.parse(sessionStorage.getItem('genomicFilters') || '[]');

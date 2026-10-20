@@ -333,7 +333,8 @@ export async function logout(authProvider?: AuthProvider, redirect = false) {
       })
       .catch(handleErrors);
   } else {
-    handleLogout(redirect);
+    // not awaited: callers that redirect elsewhere shouldn't wait for the login page to load
+    return { navigation: handleLogout(redirect) };
   }
 }
 
@@ -341,9 +342,9 @@ function handleLogout(redirect: boolean) {
   user.set({});
   log(createLog('AUTH', 'logout.success'));
   if (redirect) {
-    goto(resolve(loginRedirectPath(page.url) as '/'));
+    return goto(resolve(loginRedirectPath(page.url) as '/'));
   } else {
-    goto(resolve('/login'));
+    return goto(resolve('/login'));
   }
 }
 
