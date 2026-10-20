@@ -1,3 +1,4 @@
+import { untrack } from 'svelte';
 import type { Attachment } from 'svelte/attachments';
 import { on } from 'svelte/events';
 
@@ -56,10 +57,11 @@ export class GridKeyboard<T extends Row> {
     const offFocusin = on(table, 'focusin', (event) => this.#onFocusin(event));
 
     // Take the rows' interactive children out of the page tab order as rows render (they stay
-    // reachable with the left/right arrow keys).
+    // reachable with the left/right arrow keys), and keep the tab stop where the clamp put it.
     $effect(() => {
       void this.#options.handler.rows;
       if (!this.#options.enabled) return;
+      this.#active = untrack(() => this.activeRowIndex);
       for (const rowElement of this.#dataRows()) {
         rowElement
           .querySelectorAll<HTMLElement>(focusableSelector)

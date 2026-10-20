@@ -73,8 +73,8 @@
     onpagechange: (page) => events?.pageChange(page),
   });
 
-  function isExpanded(row: T): boolean {
-    return expandable && !!rowKey && expansion?.activeRow === String(row[rowKey]);
+  function expansionKey(row: T): string | undefined {
+    return expandable && rowKey ? String(row[rowKey]) : undefined;
   }
 
   const context: TableContext<T> = {
@@ -93,11 +93,15 @@
     get expandedRow() {
       return expandable ? expandedRow : undefined;
     },
-    isExpanded,
+    isExpanded: (row) => {
+      const key = expansionKey(row);
+      return key !== undefined && expansion?.activeRow === key;
+    },
     tabindex: (index) => grid.tabindex(index),
     activate(row) {
       rowClickHandler?.(row);
-      if (expandable && rowKey) expansion?.toggleRow(String(row[rowKey]));
+      const key = expansionKey(row);
+      if (key !== undefined) expansion?.toggleRow(key);
     },
   };
   // The context can't carry T; each Row only hands back the rows this table gave it.

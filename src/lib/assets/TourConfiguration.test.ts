@@ -16,7 +16,7 @@ const VALID_HOOKS = new Set([
 ]);
 
 // The datatable only ever mints ids of these shapes (see Row.svelte /
-// RemoteTable.svelte), always prefixed with the table's id ("explorer-table"
+// DataTable.svelte), always prefixed with the table's id ("explorer-table"
 // for the explorer search results table the tour walks through).
 const DYNAMIC_ID_PATTERN = /^explorer-table(-row-\d+|-active-row-\d+|-row-\d+-col-\d+)?$/;
 

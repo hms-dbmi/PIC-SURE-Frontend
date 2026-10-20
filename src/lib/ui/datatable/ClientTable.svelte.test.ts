@@ -82,4 +82,16 @@ describe('ClientTable rows', () => {
     expect(table.getAllByRole('row')[1]).toHaveTextContent('Row 99');
     expect(table.getAllByRole('row')[2]).toHaveTextContent('Row 9');
   });
+
+  it('goes back to the first page when the rows change', async () => {
+    const view = render(ClientTable, { tableName: 'Paged', rows: data.slice(0, 11), columns });
+    const table = within(view.container as HTMLElement);
+    await fireEvent.click(table.getByRole('button', { name: 'Page 2' }));
+    expect(table.getAllByRole('row')[1]).toHaveTextContent('Row 10');
+
+    await view.rerender({ rows: data.slice(0, 10) });
+
+    expect(table.getByRole('button', { name: 'Page 1' })).toHaveAttribute('aria-current', 'page');
+    expect(table.getAllByRole('row')[1]).toHaveTextContent('Row 0');
+  });
 });

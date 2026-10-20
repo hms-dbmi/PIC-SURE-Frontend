@@ -166,6 +166,21 @@ describe('Datatable keyboard navigation', () => {
     expect(document.activeElement?.id).toBe('KbdTest-row-2');
   });
 
+  it('keeps the tab stop where a shorter page clamped it', async () => {
+    const { container, handler } = renderTable(7);
+    rows(container)[0].focus();
+    await fireEvent.keyDown(rows(container)[0], { key: 'End' });
+
+    handler.setPage(2);
+    await waitFor(() => expect(rows(container)).toHaveLength(2));
+    await waitFor(() => expect(rows(container)[1].getAttribute('tabindex')).toBe('0'));
+
+    handler.setPage(1);
+    await waitFor(() => expect(rows(container)).toHaveLength(5));
+    expect(rows(container)[1].getAttribute('tabindex')).toBe('0');
+    expect(rows(container)[4].getAttribute('tabindex')).toBe('-1');
+  });
+
   it('reaches row action buttons with ArrowRight and returns with ArrowLeft', async () => {
     const { container } = renderTable();
     const pageRows = rows(container);

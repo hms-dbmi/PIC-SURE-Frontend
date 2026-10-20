@@ -7,7 +7,6 @@
     onsearch,
   }: {
     handler: AnyTableHandler<T>;
-    // Called with the term once typing pauses.
     onsearch?: (term: string) => void;
   } = $props();
 

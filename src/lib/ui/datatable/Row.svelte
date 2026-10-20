@@ -1,4 +1,4 @@
-<script lang="ts" generics="T extends Row">
+<script lang="ts">
   import { slide } from 'svelte/transition';
   import type { Row } from './types.ts';
   import { getTableContext } from './context.ts';
@@ -6,7 +6,7 @@
 
   interface Props {
     index: number;
-    row: T;
+    row: Row;
   }
 
   let { index, row }: Props = $props();

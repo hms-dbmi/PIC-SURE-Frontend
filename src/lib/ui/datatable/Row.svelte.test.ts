@@ -6,7 +6,7 @@ import { fireEvent, render } from '@testing-library/svelte';
 import ClientTable from '#lib/ui/datatable/ClientTable.svelte';
 
 const columns = [{ dataElement: 'name' as const, label: 'Name' }];
-const row = { name: 'Row A', dataset_id: 'ds-1' };
+const row = { name: 'Row A' };
 
 afterEach(() => {
   vi.clearAllMocks();
@@ -17,7 +17,7 @@ describe('Datatable Row', () => {
     const rowClickHandler = vi.fn();
 
     const { container } = render(ClientTable, {
-      tableName: 'ExplorerTable',
+      tableName: 'RowTest',
       id: 'test-table',
       columns,
       rows: [row],
@@ -36,7 +36,7 @@ describe('Datatable Row', () => {
     const rowClickHandler = vi.fn();
 
     const { container } = render(ClientTable, {
-      tableName: 'ActiveDatasets',
+      tableName: 'RowTest',
       id: 'test-table',
       columns,
       rows: [row],
@@ -58,7 +58,7 @@ describe('Datatable Row', () => {
     const rowClickHandler = vi.fn();
 
     const { container } = render(ClientTable, {
-      tableName: 'ActiveDatasets',
+      tableName: 'RowTest',
       id: 'test-table',
       columns,
       rows: [row],
@@ -78,7 +78,7 @@ describe('Datatable Row', () => {
     const rowClickHandler = vi.fn();
 
     const { container } = render(ClientTable, {
-      tableName: 'ActiveDatasets',
+      tableName: 'RowTest',
       id: 'test-table',
       columns,
       rows: [row],
@@ -97,7 +97,7 @@ describe('Datatable Row', () => {
     const rowClickHandler = vi.fn();
 
     const { container } = render(ClientTable, {
-      tableName: 'ActiveDatasets',
+      tableName: 'RowTest',
       id: 'test-table',
       columns,
       rows: [row],
