@@ -13,19 +13,20 @@
     size = 'small',
     color = 'primary',
   }: {
-    // Each message shows once afterMs has passed since mount, or since messages last changed.
+    // afterMs counts from mount; passing a new array restarts the schedule, so keep it a stable constant.
     messages: TimedMessage[];
     size?: 'micro' | 'mini' | 'small' | 'medium' | 'large';
     color?: string;
   } = $props();
 
-  let text = $state('');
+  let elapsedMs = $state(0);
+  const text = $derived(messages.filter(({ afterMs }) => afterMs <= elapsedMs).at(-1)?.text ?? '');
 
   $effect(() => {
-    text = messages.filter(({ afterMs }) => afterMs <= 0).at(-1)?.text ?? '';
+    elapsedMs = 0;
     const timers = messages
       .filter(({ afterMs }) => afterMs > 0)
-      .map(({ afterMs, text: next }) => setTimeout(() => (text = next), afterMs));
+      .map(({ afterMs }) => setTimeout(() => (elapsedMs = afterMs), afterMs));
     return () => timers.forEach(clearTimeout);
   });
 </script>

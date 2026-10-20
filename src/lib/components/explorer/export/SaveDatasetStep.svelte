@@ -35,10 +35,10 @@
   let datasetNameInput: string | undefined = $state(getDatasetNameInput());
 
   async function submitQuery(): Promise<void> {
-    function requestUpdate(method: () => Promise<void | DataSetResponse>, retry: boolean = true) {
-      retrying = !retry;
+    function requestUpdate(method: () => Promise<void | DataSetResponse>, canRetry = true) {
+      retrying = !canRetry;
       datasetIdPromise = method().catch((err) => {
-        if (retry) {
+        if (canRetry) {
           requestUpdate(method, false);
         } else {
           throw err;

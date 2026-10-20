@@ -57,6 +57,7 @@ describe('TimedLoading', () => {
 
   it('clears its timers when unmounted', () => {
     const { unmount } = render(TimedLoading, { messages });
+    expect(vi.getTimerCount()).toBe(2);
     unmount();
     expect(vi.getTimerCount()).toBe(0);
   });
