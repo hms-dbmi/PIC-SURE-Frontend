@@ -15,6 +15,7 @@
 
   import Shell from '$lib/components/Shell.svelte';
   import Navigation from '$lib/components/Navigation.svelte';
+  import SiteBanner from '$lib/components/SiteBanner.svelte';
   import SidePanel from '$lib/components/explorer/results/SidePanel.svelte';
   import Footer from '$lib/components/Footer.svelte';
   import Drawer from '$lib/components/Drawer.svelte';
@@ -59,6 +60,7 @@
 </Drawer>
 <Shell>
   {#snippet header()}
+    <SiteBanner />
     <Navigation />
   {/snippet}
   {#snippet sidebarRight()}
