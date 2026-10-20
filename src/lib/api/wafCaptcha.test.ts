@@ -7,14 +7,11 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
   createLog: (...args: unknown[]) => mockCreateLog(...args),
 }));
 
-let mockPathname = '/discover';
+let mockMode = 'discover';
 vi.mock('$app/state', () => ({
   page: {
-    get url() {
-      return new URL(`http://localhost${mockPathname}`);
-    },
     get data() {
-      return { mode: mockPathname.startsWith('/discover') ? 'discover' : 'explorer' };
+      return { mode: mockMode };
     },
   },
 }));
@@ -49,7 +46,7 @@ describe('wafCaptcha', () => {
     vi.clearAllMocks();
     vi.useFakeTimers();
     vi.setSystemTime(NOW);
-    mockPathname = '/discover';
+    mockMode = 'discover';
     mockToken = null;
 
     reloadSpy = vi.fn();
@@ -136,7 +133,7 @@ describe('wafCaptcha', () => {
     });
 
     it('reports authorized mode for a signed-in user outside discover', () => {
-      mockPathname = '/explorer';
+      mockMode = 'explorer';
       mockToken = 'token';
       waf.handleWafCaptcha('/picsure/query/sync');
 
@@ -149,10 +146,10 @@ describe('wafCaptcha', () => {
     });
 
     it.each([
-      ['a signed-in user on discover', '/discover', 'token'],
-      ['an anonymous visitor outside discover', '/explorer', null],
-    ])('reports open mode for %s', (_who, pathname, token) => {
-      mockPathname = pathname;
+      ['a signed-in user on discover', 'discover', 'token'],
+      ['an anonymous visitor outside discover', 'explorer', null],
+    ])('reports open mode for %s', (_who, mode, token) => {
+      mockMode = mode;
       mockToken = token;
       waf.handleWafCaptcha('/picsure/query/sync');
 

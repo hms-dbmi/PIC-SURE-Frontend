@@ -2,14 +2,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { get } from 'svelte/store';
 
 vi.mock('$app/env', () => ({ browser: true }));
-// The explorer and discover layouts return { mode }; the URL is kept so the same tests pinned the
-// path sniffing these replaced.
 let mockMode: 'explorer' | 'discover' = 'explorer';
 vi.mock('$app/state', () => ({
   page: {
-    get url() {
-      return new URL(`http://localhost/${mockMode}`);
-    },
     get data() {
       return { mode: mockMode };
     },

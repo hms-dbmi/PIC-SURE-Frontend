@@ -1,7 +1,7 @@
 <script lang="ts">
   import { buttonClass } from '#lib/ui/button.ts';
   import { resolve } from '$app/paths';
-  import { onDestroy, onMount } from 'svelte';
+  import { onDestroy, onMount, untrack } from 'svelte';
   import { elasticInOut } from 'svelte/easing';
   import { slide, scale } from 'svelte/transition';
 
@@ -25,8 +25,7 @@
   import Button from '#lib/ui/Button.svelte';
 
   let currentPage: string = $state(page.url.pathname);
-  let currentMode = $state(exploreMode());
-  let isDiscoverPage = $derived(currentMode === 'discover');
+  let isDiscoverPage = $derived(exploreMode() === 'discover');
   let modalOpen: boolean = $state(false);
 
   let hasFilterOrExport = $derived(
@@ -73,7 +72,8 @@
         : resultCountsState.total === 0),
   );
 
-  const getIsOpenAccess = () => isDiscoverPage;
+  // Untracked, so a change of mode reruns the count only through the restart below.
+  const getIsOpenAccess = () => untrack(() => isDiscoverPage);
 
   // The destroy/mount method is not called on page navigation if the page we're navigating to
   // has this same component. This can cause requests that may be pending on one page
@@ -83,7 +83,6 @@
   $effect(() => {
     if (!page.url.pathname.startsWith(currentPage)) {
       currentPage = page.url.pathname;
-      currentMode = exploreMode();
       resultCountsState.start(getIsOpenAccess);
     }
   });

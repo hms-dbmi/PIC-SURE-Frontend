@@ -9,9 +9,6 @@ const mockState = vi.hoisted(() => ({
 vi.mock('$app/env', () => ({ browser: true }));
 vi.mock('$app/state', () => ({
   page: {
-    get url() {
-      return new URL(`http://localhost/${mockState.mode ?? ''}`);
-    },
     get data() {
       return mockState.mode ? { mode: mockState.mode } : {};
     },
