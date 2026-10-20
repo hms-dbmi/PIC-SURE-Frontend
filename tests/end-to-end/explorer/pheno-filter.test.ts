@@ -612,10 +612,9 @@ test.describe('Add Filters', () => {
     }
     const addFilterButtoEdit = modal.getByTestId('filter-add');
     await addFilterButtoEdit.click();
-    const openButton = firstAddedFilter.locator('button').last();
-    await openButton.click();
+    await expect(modal).toBeHidden();
 
-    // Then
+    // Then: the card opened above stays open and shows the edited filter.
     const infoSection = firstAddedFilter.locator('section');
     await expect(infoSection).toBeVisible();
     await expect(infoSection).toContainText(`Restricting to ${selectedOptions.length} values.`);
