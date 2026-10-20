@@ -63,8 +63,8 @@
     <section class="py-1">
       <div class="flex flex-col">
         <FilterTreeView group={filterState.tree.root as FilterGroupInterface}>
-          {#snippet filter(filter)}
-            <FilterComponent {filter} />
+          {#snippet filter(node)}
+            <FilterComponent filter={node} />
           {/snippet}
           {#snippet separator(operator)}
             <span class="font-semibold text-xs py-0.5" data-testid="results-filter-operator"

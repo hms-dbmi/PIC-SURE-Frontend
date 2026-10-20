@@ -44,6 +44,12 @@ describe('FilterTreeEditor', () => {
     expect(ids(applied.root as FilterGroupInterface)).toEqual(['a', 'b']);
   });
 
+  it('is dirty from the start when it edits a fresh tree in place of the saved one', () => {
+    const saved = editor().tree.serialized;
+    const e = new FilterTreeEditor(new LogicTree<FilterInterface>(createFilterGroup), saved);
+    expect(e.dirty).toBe(true);
+  });
+
   it('adds empty subqueries and changes a group operator', () => {
     const e = editor();
     e.addGroup();

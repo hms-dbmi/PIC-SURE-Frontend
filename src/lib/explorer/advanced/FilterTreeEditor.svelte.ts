@@ -14,7 +14,6 @@ import {
   type DragStartEvent,
 } from '#lib/ui/sortable/sortable.ts';
 import {
-  ROOT_ID,
   applyDrop,
   applyOrder,
   classifyDrop,
@@ -23,8 +22,6 @@ import {
   type DropZoneData,
   type OrderMap,
 } from './filterTreeOps.ts';
-
-const createGroup = (nodes: FilterInterface[], op: OperatorType) => createFilterGroup(nodes, op);
 
 /**
  * One Advanced Filtering editor: a working copy of the filter tree, the drag in progress and the
@@ -47,9 +44,9 @@ export class FilterTreeEditor {
   // A drag-over moved the source; false for a click on the handle.
   #moved = false;
 
-  constructor(tree: LogicTree<FilterInterface>) {
+  constructor(tree: LogicTree<FilterInterface>, saved = tree.serialized) {
     this.tree = tree;
-    this.#saved = tree.serialized;
+    this.#saved = saved;
   }
 
   get root() {
@@ -62,7 +59,7 @@ export class FilterTreeEditor {
 
   /** The sortable id of a group: `root` for the tree's root, its uuid otherwise. */
   idOf(group: FilterGroupInterface) {
-    return group === this.tree.root ? ROOT_ID : group.uuid;
+    return containerIdOf(this.tree, group)!;
   }
 
   /** The sortable group (container id) a node sits in. */
@@ -159,7 +156,10 @@ export class FilterTreeEditor {
 
   #restoreSnapshot() {
     if (!this.#snapshot) return;
-    this.tree.root = LogicTree.deserialize<FilterInterface>(this.#snapshot, createGroup).root;
+    this.tree.root = LogicTree.deserialize<FilterInterface>(
+      this.#snapshot,
+      this.tree.createGroup,
+    ).root;
   }
 
   #clearDrag() {

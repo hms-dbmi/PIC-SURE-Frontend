@@ -12,6 +12,7 @@
   import GroupDropZone from './GroupDropZone.svelte';
   import { Operator, type OperatorType } from '#lib/query/query.ts';
   import { getFilterTreeEditor, isInDragOverlay } from './FilterTreeEditor.svelte.ts';
+  import { ROOT_ID } from './filterTreeOps.ts';
   import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
   import Switch from '#lib/ui/Switch.svelte';
   import { cardClass } from '#lib/ui/surface.ts';
@@ -37,7 +38,8 @@
   const operatorValue = $derived(group.operator || Operator.AND);
   let not = $state(false);
   const hasSubqueryChildren = $derived(group.children.some((child) => isFilterGroup(child)));
-  const isDraggable = $derived(id !== 'root');
+  const isRoot = $derived(id === ROOT_ID);
+  const isDraggable = $derived(!isRoot);
 
   // Derive the actual index from parent's children array (reactive to array changes)
   const actualIndex = $derived(
@@ -93,15 +95,13 @@
   {/if}
 
   <div
-    data-testid={id === 'root' ? 'filter-root' : 'filter-group'}
-    class="{cardClass} py-1 px-2 {id === 'root'
+    data-testid={isRoot ? 'filter-root' : 'filter-group'}
+    class="{cardClass} py-1 px-2 {isRoot
       ? 'bg-surface-50 shadow-none border-none'
       : activeId === id && !isOverlay
         ? 'invisible'
         : 'border'}"
-    {@attach css(
-      id !== 'root' && !(activeId === id && !isOverlay) ? `${groupBg}; ${groupBorder}` : '',
-    )}
+    {@attach css(!isRoot && !(activeId === id && !isOverlay) ? `${groupBg}; ${groupBorder}` : '')}
   >
     <div class="flex flex-row items-center gap-2 mb-1 w-full">
       <SortableHandle
@@ -120,7 +120,7 @@
             onchange={(value) => editor.setOperator(group, value as OperatorType)}
           />
         </div>
-        {#if id === 'root'}
+        {#if isRoot}
           <Button
             variant="soft"
             class="leading-(--text-lg--line-height) disabled:opacity-75 ml-auto mb-1"
@@ -155,8 +155,8 @@
 
     <div class="flex flex-col min-h-[50px] w-full">
       {#each group.children as child, i (child.uuid)}
-        {#if id === 'root' && isGroupDrag && child.uuid !== activeId && (i === 0 || group.children[i - 1]?.uuid !== activeId)}
-          <GroupDropZone groupId="root" insertAt={i} label="Move here" />
+        {#if isRoot && isGroupDrag && child.uuid !== activeId && (i === 0 || group.children[i - 1]?.uuid !== activeId)}
+          <GroupDropZone groupId={ROOT_ID} insertAt={i} label="Move here" />
         {/if}
         {#if isFilterGroup(child)}
           <AdvancedGroup group={child} index={i} depth={depth + 1} />
@@ -166,10 +166,10 @@
       {/each}
       {#if group.children.length === 0}
         <EmptyDropZone groupId={id} />
-      {:else if id === 'root' && isGroupDrag && group.children[group.children.length - 1]?.uuid !== activeId}
+      {:else if isRoot && isGroupDrag && group.children[group.children.length - 1]?.uuid !== activeId}
         <!-- Reorder zone at end of root; skip if dragged group is already last -->
-        <GroupDropZone groupId="root" insertAt={group.children.length} label="Move here" />
-      {:else if id !== 'root' && !(isGroupDrag && group.children.some((c) => c.uuid === activeId))}
+        <GroupDropZone groupId={ROOT_ID} insertAt={group.children.length} label="Move here" />
+      {:else if !isRoot && !(isGroupDrag && group.children.some((c) => c.uuid === activeId))}
         <!-- GroupDropZone for dropping groups into this group; hidden when dragging a group that's already in this group -->
         <GroupDropZone groupId={id} />
       {/if}

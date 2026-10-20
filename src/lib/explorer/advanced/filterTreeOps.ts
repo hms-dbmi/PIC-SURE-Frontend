@@ -1,4 +1,4 @@
-// The filter-tree editor's drag-and-drop rules, kept free of the DOM and of dnd-kit: the component
+// The filter-tree editor's drag-and-drop rules, kept free of the DOM and of dnd-kit: FilterTreeEditor
 // turns dnd-kit's events into ids and drop-zone data, and these functions read and rearrange the
 // editor's working copy of the tree.
 import {

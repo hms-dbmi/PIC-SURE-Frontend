@@ -12,6 +12,7 @@
   import LogicTreeSummary from './LogicTreeSummary.svelte';
   import { cardClass } from '#lib/ui/surface.ts';
   import { FilterTreeEditor, setFilterTreeEditor } from './FilterTreeEditor.svelte.ts';
+  import { ROOT_ID } from './filterTreeOps.ts';
 
   const editor = setFilterTreeEditor(
     new FilterTreeEditor(
@@ -23,9 +24,10 @@
           toaster.error({
             description: 'Failed to load saved filter arrangement. Starting fresh.',
           });
-          return new LogicTree<FilterInterface>((nodes, op) => createFilterGroup(nodes, op));
+          return new LogicTree<FilterInterface>(createFilterGroup);
         }
       })(),
+      filterState.tree.serialized,
     ),
   );
 
@@ -48,7 +50,7 @@
     <AdvancedGroup group={editor.root} />
     <!-- Root-level drop zone for un-nesting groups; hidden when dragged group is already at root -->
     {#if !(editor.isGroupDrag && editor.activeNode?.parent === editor.root)}
-      <GroupDropZone groupId="root" />
+      <GroupDropZone groupId={ROOT_ID} />
     {/if}
     <DragOverlay>
       {#if editor.activeNode}
