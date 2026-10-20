@@ -48,11 +48,19 @@ describe('TimedLoading', () => {
     advance(5000);
     expect(screen.getByRole('status')).toHaveTextContent('Still working on it…');
 
-    await rerender({ messages: [{ afterMs: 0, text: 'Retrying…' }] });
+    await rerender({
+      messages: [
+        { afterMs: 0, text: 'Retrying…' },
+        { afterMs: 3000, text: 'Still retrying…' },
+      ],
+    });
     expect(screen.getByRole('status')).toHaveTextContent('Retrying…');
 
-    advance(10_000);
+    advance(2999);
     expect(screen.getByRole('status')).toHaveTextContent('Retrying…');
+
+    advance(1);
+    expect(screen.getByRole('status')).toHaveTextContent('Still retrying…');
   });
 
   it('clears its timers when unmounted', () => {

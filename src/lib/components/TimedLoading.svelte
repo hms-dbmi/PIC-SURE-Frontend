@@ -13,7 +13,7 @@
     size = 'small',
     color = 'primary',
   }: {
-    // afterMs counts from mount; passing a new array restarts the schedule, so keep it a stable constant.
+    // afterMs counts from mount or the last messages change, so pass a stable constant array.
     messages: TimedMessage[];
     size?: 'micro' | 'mini' | 'small' | 'medium' | 'large';
     color?: string;
@@ -22,7 +22,7 @@
   let elapsedMs = $state(0);
   const text = $derived(messages.filter(({ afterMs }) => afterMs <= elapsedMs).at(-1)?.text ?? '');
 
-  $effect(() => {
+  $effect.pre(() => {
     elapsedMs = 0;
     const timers = messages
       .filter(({ afterMs }) => afterMs > 0)
