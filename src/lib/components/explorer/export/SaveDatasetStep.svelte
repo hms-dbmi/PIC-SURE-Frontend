@@ -3,6 +3,7 @@
   import { onMount } from 'svelte';
   import Summary from '$lib/components/explorer/export/Summary.svelte';
   import Loading from '$lib/components/Loading.svelte';
+  import TimedLoading, { type TimedMessage } from '$lib/components/TimedLoading.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import type { DataSetResponse } from '$lib/models/Dataset';
   import * as api from '$lib/api';
@@ -21,36 +22,28 @@
   import { log, createLog } from '$lib/logger';
   import { config } from '$lib/configuration.svelte';
 
-  const PROMISE_WAIT_INTERVAL = 7;
-  let processingMessage: string = $state('');
+  const CREATING_MESSAGES: TimedMessage[] = [
+    { afterMs: 0, text: 'Creating dataset ID…' },
+    { afterMs: 7000, text: 'Hang tight. We are still working on it…' },
+  ];
+  const RETRYING_MESSAGES: TimedMessage[] = [
+    { afterMs: 0, text: "Something's taking longer than usual. We are still working on it…" },
+  ];
+  let retrying = $state(false);
   let datasetIdPromise: Promise<void | DataSetResponse> = $state(Promise.resolve());
   let preparePromise: Promise<void> = $state(Promise.resolve());
   let datasetNameInput: string | undefined = $state(getDatasetNameInput());
 
   async function submitQuery(): Promise<void> {
-    let interval: NodeJS.Timeout;
-    const statetext = {
-      initial: 'Creating dataset ID...',
-      waiting: 'Hang tight. We are still working on it...',
-      retry: "Something's taking longer than usual. We are still working on it...",
-    };
-
     function requestUpdate(method: () => Promise<void | DataSetResponse>, retry: boolean = true) {
-      processingMessage = retry ? statetext.initial : statetext.retry;
-      if (retry) {
-        interval = setInterval(() => {
-          processingMessage = statetext.waiting;
-        }, PROMISE_WAIT_INTERVAL * 1000);
-      }
-      datasetIdPromise = method()
-        .finally(() => clearInterval(interval))
-        .catch((err) => {
-          if (retry) {
-            requestUpdate(method, false);
-          } else {
-            throw err;
-          }
-        });
+      retrying = !retry;
+      datasetIdPromise = method().catch((err) => {
+        if (retry) {
+          requestUpdate(method, false);
+        } else {
+          throw err;
+        }
+      });
     }
 
     try {
@@ -126,7 +119,10 @@
             <div class="flex items-center">
               {#await datasetIdPromise}
                 <label for="dataset-id" class="font-bold mr-2">Dataset ID:</label>
-                <Loading ring size="micro" label={processingMessage} />
+                <TimedLoading
+                  size="micro"
+                  messages={retrying ? RETRYING_MESSAGES : CREATING_MESSAGES}
+                />
               {:then}
                 <label for="dataset-id" class="font-bold mr-2">Dataset ID:</label>
                 <div id="dataset-id" class="mr-4">{getDatasetId()}</div>
