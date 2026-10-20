@@ -8,20 +8,16 @@ vi.mock('$app/environment', () => ({
   },
 }));
 
-const mockLogout = vi.fn<(...args: unknown[]) => Promise<{ navigation: Promise<void> }>>(
-  async () => ({ navigation: Promise.resolve() }),
-);
+const mockLogout = vi.fn();
 const mockLogin = vi.fn();
 vi.mock('$lib/stores/User', () => ({
   logout: (...args: unknown[]) => mockLogout(...args),
   login: (...args: unknown[]) => mockLogin(...args),
 }));
 
-const mockClearFilters = vi.fn();
-const mockForgetStoredFilters = vi.fn();
-vi.mock('$lib/stores/Filter', () => ({
-  clearFilters: () => mockClearFilters(),
-  forgetStoredFilters: () => mockForgetStoredFilters(),
+const mockReportAccessDenied = vi.fn();
+vi.mock('$lib/accessDenied', () => ({
+  reportAccessDenied: () => mockReportAccessDenied(),
 }));
 
 const mockLog = vi.fn();
@@ -348,11 +344,11 @@ describe('api', () => {
         'Your session has timed out. Please log in.',
       );
       expect(mockLogout).toHaveBeenCalledWith(undefined, true);
-      expect(mockForgetStoredFilters).not.toHaveBeenCalled();
-      expect(mockClearFilters).not.toHaveBeenCalled();
+      expect(mockReportAccessDenied).not.toHaveBeenCalled();
     });
 
     it('calls logout and clears session on 403 then throws', async () => {
+      (localStorage.getItem as Mock).mockReturnValue('my-token');
       fetchMock.mockResolvedValue(mockFetchResponse({ ok: false, status: 403, body: 'Forbidden' }));
 
       await expect(get('picsure/test')).rejects.toThrow('403: Forbidden');
@@ -361,22 +357,16 @@ describe('api', () => {
         status: 403,
       });
       expect(sessionStorage.removeItem).toHaveBeenCalledWith('logout-reason');
-      await vi.waitFor(() => expect(mockClearFilters).toHaveBeenCalled());
+      expect(mockReportAccessDenied).toHaveBeenCalled();
       expect(mockLogout).toHaveBeenCalledWith(undefined, false);
     });
 
-    it('forgets stored filters on 403 at once but resets the stores after logout navigates', async () => {
-      let finishNavigation = () => {};
-      const navigation = new Promise<void>((done) => (finishNavigation = done));
-      mockLogout.mockResolvedValueOnce({ navigation });
+    it('does not report a 403 for an anonymous request as a denied login', async () => {
       fetchMock.mockResolvedValue(mockFetchResponse({ ok: false, status: 403, body: 'Forbidden' }));
 
       await expect(get('picsure/test')).rejects.toThrow('403: Forbidden');
-      await vi.waitFor(() => expect(mockForgetStoredFilters).toHaveBeenCalled());
-      expect(mockClearFilters).not.toHaveBeenCalled();
 
-      finishNavigation();
-      await vi.waitFor(() => expect(mockClearFilters).toHaveBeenCalled());
+      expect(mockReportAccessDenied).not.toHaveBeenCalled();
     });
 
     it('reports consent denial without logging out', async () => {
@@ -397,8 +387,7 @@ describe('api', () => {
 
       expect(mockLogout).not.toHaveBeenCalled();
       expect(sessionStorage.removeItem).not.toHaveBeenCalled();
-      expect(mockForgetStoredFilters).not.toHaveBeenCalled();
-      expect(mockClearFilters).not.toHaveBeenCalled();
+      expect(mockReportAccessDenied).not.toHaveBeenCalled();
     });
 
     it('throws error with status for other error codes', async () => {

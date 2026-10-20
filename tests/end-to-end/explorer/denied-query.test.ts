@@ -1,14 +1,29 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Page, type Route } from '@playwright/test';
 
 import { test, mockApiConfig, mockApiSuccess } from '../custom-context';
-import { facetResultPath, facetsResponse, searchResultPath, searchResults } from '../mock-data';
+import {
+  countResultPath,
+  deniedFilterTree,
+  facetResultPath,
+  facetsResponse,
+  searchResultPath,
+  searchResults,
+} from '../mock-data';
 
-const countResultPath = '*/**/picsure/hpds/auth/query/sync';
-
+// null when nothing is stored, which is all a forbidden logout leaves until the stores are reset
 function storedFilterIds(page: Page) {
   return page.evaluate(() => {
-    const tree = JSON.parse(sessionStorage.getItem('filterTree') || '{"children":[]}');
-    return (tree.children as { id: string }[]).map((child) => child.id);
+    const tree = sessionStorage.getItem('filterTree');
+    return tree === null
+      ? null
+      : JSON.parse(tree).children.map((child: { id: string }) => child.id);
+  });
+}
+
+function forbid(route: Route) {
+  return route.fulfill({
+    status: 403,
+    json: { errorType: 'forbidden', message: 'User is not authorized.' },
   });
 }
 
@@ -21,64 +36,43 @@ test.describe('Logout from a rejected query', () => {
     await mockApiSuccess(page, facetResultPath, facetsResponse);
     await mockApiSuccess(page, '*/**/psama/logout', {});
     // seeds only the first load: the logout can reload the page, and reseeding would hide what it left in storage
-    await page.addInitScript(() => {
+    await page.addInitScript((tree) => {
       if (sessionStorage.getItem('test-seeded')) return;
       sessionStorage.setItem('test-seeded', 'true');
-      sessionStorage.setItem(
-        'filterTree',
-        JSON.stringify({
-          uuid: 'root',
-          operator: 'AND',
-          children: [
-            {
-              uuid: 'saved-filter',
-              id: '\\saved-study\\variable\\',
-              filterType: 'Categorical',
-              displayType: 'restrict',
-              variableName: 'Saved variable',
-              allowFiltering: true,
-              dataset: 'saved-study',
-              categoryValues: ['Yes'],
-            },
-          ],
-        }),
-      );
-    });
+      sessionStorage.setItem('filterTree', JSON.stringify(tree));
+    }, deniedFilterTree);
   });
 
   test('clears saved filters when the query is forbidden', async ({ page }) => {
     let countRequests = 0;
     await page.route(countResultPath, (route) => {
       countRequests++;
-      return route.fulfill({
-        status: 403,
-        json: { errorType: 'forbidden', message: 'User is not authorized.' },
-      });
+      return forbid(route);
     });
 
     await page.goto('/explorer');
 
     await expect(page).toHaveURL(/\/login$/);
+    // an empty tree rather than null means the in-memory stores were reset and stored
     await expect.poll(() => storedFilterIds(page)).toEqual([]);
-    // clearing the filters must not make the still-mounted explorer rerun its count query
     await page.waitForLoadState('networkidle');
     expect(countRequests).toBe(1);
   });
 
   test('clears saved filters when the logout falls back to a full page load', async ({ page }) => {
-    await page.route(countResultPath, (route) =>
-      route.fulfill({
-        status: 403,
-        json: { errorType: 'forbidden', message: 'User is not authorized.' },
-      }),
-    );
-    // a failed client-side load makes SvelteKit navigate natively, so the logout never settles
+    await page.route(countResultPath, forbid);
+    // a failed client-side load makes SvelteKit fall back to loading the login page natively
     await page.route('**/login/__data.json*', (route) => route.abort());
+    const loginPageLoad = page.waitForRequest(
+      (request) =>
+        request.resourceType() === 'document' && new URL(request.url()).pathname === '/login',
+    );
 
     await page.goto('/explorer');
 
+    await loginPageLoad;
     await expect(page).toHaveURL(/\/login$/);
-    await expect.poll(() => storedFilterIds(page)).toEqual([]);
+    await expect.poll(async () => (await storedFilterIds(page)) ?? []).toEqual([]);
   });
 
   test('keeps saved filters when the session expires', async ({ page }) => {
@@ -92,6 +86,6 @@ test.describe('Logout from a rejected query', () => {
     await page.goto('/explorer');
 
     await expect(page).toHaveURL(/\/login\?/);
-    expect(await storedFilterIds(page)).toEqual(['\\saved-study\\variable\\']);
+    expect(await storedFilterIds(page)).toEqual(['\\denied-study\\variable\\']);
   });
 });

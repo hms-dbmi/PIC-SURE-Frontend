@@ -1,7 +1,13 @@
 import { expect } from '@playwright/test';
 
 import { test, mockApiConfig, mockApiSuccess } from '../custom-context';
-import { facetResultPath, facetsResponse, searchResultPath, searchResults } from '../mock-data';
+import {
+  deniedFilterTree,
+  facetResultPath,
+  facetsResponse,
+  searchResultPath,
+  searchResults,
+} from '../mock-data';
 
 test.describe('Filter warning navigation', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
@@ -20,27 +26,9 @@ test.describe('Filter warning navigation', () => {
   test('warns before moving from Discover to Explore with an unconsented filter', async ({
     page,
   }) => {
-    await page.addInitScript(() => {
-      sessionStorage.setItem(
-        'filterTree',
-        JSON.stringify({
-          uuid: 'root',
-          operator: 'AND',
-          children: [
-            {
-              uuid: 'denied-filter',
-              id: '\\denied-study\\variable\\',
-              filterType: 'Categorical',
-              displayType: 'restrict',
-              variableName: 'Denied variable',
-              allowFiltering: true,
-              dataset: 'denied-study',
-              categoryValues: ['Yes'],
-            },
-          ],
-        }),
-      );
-    });
+    await page.addInitScript((tree) => {
+      sessionStorage.setItem('filterTree', JSON.stringify(tree));
+    }, deniedFilterTree);
 
     await page.goto('/discover');
     await page.locator('#nav-link-explorer').click();
@@ -56,27 +44,9 @@ test.describe('Filter warning navigation', () => {
   test('warns after leaving Discover before moving to Explore with an unconsented filter', async ({
     page,
   }) => {
-    await page.addInitScript(() => {
-      sessionStorage.setItem(
-        'filterTree',
-        JSON.stringify({
-          uuid: 'root',
-          operator: 'AND',
-          children: [
-            {
-              uuid: 'denied-filter',
-              id: '\\denied-study\\variable\\',
-              filterType: 'Categorical',
-              displayType: 'restrict',
-              variableName: 'Denied variable',
-              allowFiltering: true,
-              dataset: 'denied-study',
-              categoryValues: ['Yes'],
-            },
-          ],
-        }),
-      );
-    });
+    await page.addInitScript((tree) => {
+      sessionStorage.setItem('filterTree', JSON.stringify(tree));
+    }, deniedFilterTree);
 
     await page.goto('/discover');
     await page.locator('#nav-link-api').click();
