@@ -117,4 +117,43 @@ test.describe('Variable Distributions visualizations', () => {
       ),
     ).toBeVisible();
   });
+
+  test('shows a loading message while the distributions are generated', async ({ page }) => {
+    let releaseDistributions = () => {};
+    const distributionsHeld = new Promise<void>((resolve) => (releaseDistributions = resolve));
+    await page.route(distributionsPath, async (route: Route) => {
+      await distributionsHeld;
+      await route.fulfill({
+        json: {
+          categoricalData: [
+            {
+              title: detailResponseCat.display,
+              conceptPath: detailResponseCat.conceptPath,
+              categoricalMap: { Yes: 1 },
+              obfuscated: false,
+              xaxisName: detailResponseCat.display,
+              yaxisName: 'Participants',
+            },
+          ],
+          continuousData: [],
+        },
+      });
+    });
+
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+    await addFilterFromRow(page, 0);
+    await page.getByTestId('distributions-btn').click();
+
+    const status = page.locator('#visualizations').getByRole('status');
+    await expect(status).toHaveText('Generating visualizations…');
+
+    releaseDistributions();
+    await expect(
+      page.locator(
+        '[aria-label="Column chart showing the visualization of Any family with heart attack?"]',
+      ),
+    ).toBeVisible();
+    await expect(status).not.toBeAttached();
+  });
 });
