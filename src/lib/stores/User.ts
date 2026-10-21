@@ -13,6 +13,7 @@ import { page } from '$app/state';
 import { loginRedirectPath } from '$lib/utilities/LoginRedirect';
 import { log, createLog } from '$lib/logger';
 import { isToastShowing, toaster } from '$lib/toaster';
+import { accessDenied } from '$lib/accessDenied';
 
 const tokenRevision = writable(0);
 
@@ -337,13 +338,21 @@ export async function logout(authProvider?: AuthProvider, redirect = false) {
   }
 }
 
-function handleLogout(redirect: boolean) {
+let logoutNavigation = 0;
+
+async function handleLogout(redirect: boolean) {
+  const navigation = ++logoutNavigation;
   user.set({});
   log(createLog('AUTH', 'logout.success'));
-  if (redirect) {
-    goto(resolve(loginRedirectPath(page.url) as '/'));
-  } else {
-    goto(resolve('/login'));
+  try {
+    if (redirect) {
+      await goto(resolve(loginRedirectPath(page.url) as '/'));
+    } else {
+      await goto(resolve('/login'));
+    }
+  } finally {
+    // If a later logout superseded this navigation, the denied page is still mounted, so leave it to that one
+    if (navigation === logoutNavigation) accessDenied.set(false);
   }
 }
 

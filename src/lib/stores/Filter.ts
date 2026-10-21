@@ -5,6 +5,7 @@ import { browser } from '$app/environment';
 import { ensureConsentsLoaded, user } from '$lib/stores/User';
 import { getConceptDetails } from '$lib/stores/Dictionary';
 import { log, createLog, registerAssociatedStudies, getPageContext } from '$lib/logger';
+import { accessDenied } from '$lib/accessDenied';
 
 import { type Filter, type FilterInterface, createFilterGroup } from '$lib/models/Filter.svelte';
 import type { SearchResult } from '$lib/models/Search';
@@ -71,14 +72,32 @@ export const activeFilter: Writable<Filter | undefined> = writable();
 export const activeSearch: Writable<SearchResult | undefined> = writable();
 export const filterWarning: Writable<string | undefined> = writable();
 
-filterTree.subscribe((tree: LogicTree<FilterInterface>) => {
-  if (browser) {
-    sessionStorage.setItem('filterTree', tree.serialized);
+// The filters of a forbidden logout asked for data the user can't see, and if they survive into the
+// next login the denied query reruns and logs them out again. Storage is dropped at once, but the
+// stores are reset only after the logout navigates, or the denied page would rerun its count query.
+let discarding = false;
+
+accessDenied.subscribe((denied) => {
+  if (denied) {
+    discarding = true;
+    sessionStorage.removeItem('filterTree');
+    sessionStorage.removeItem('genomicFilters');
+  } else if (discarding) {
+    discarding = false;
+    resetFilters();
   }
 });
 
+function persistFilterTree(tree: LogicTree<FilterInterface>) {
+  if (browser && !discarding) {
+    sessionStorage.setItem('filterTree', tree.serialized);
+  }
+}
+
+filterTree.subscribe(persistFilterTree);
+
 genomicFilters.subscribe((filters: Filter[]) => {
-  if (browser) {
+  if (browser && !discarding) {
     sessionStorage.setItem('genomicFilters', JSON.stringify(filters));
   }
 });
@@ -170,9 +189,7 @@ export function enrichFilterDetails(filter: Filter, conceptPath: string, dataset
       if (!filter.searchResult) return;
       filter.searchResult.table = detail.table;
       filter.searchResult.study = detail.study;
-      if (browser) {
-        sessionStorage.setItem('filterTree', get(filterTree).serialized);
-      }
+      persistFilterTree(get(filterTree));
     })
     .catch((error) => console.error('Failed to enrich filter details', error));
 }
@@ -257,12 +274,16 @@ export async function removeInvalidFilters(): Promise<void> {
 
 export function clearFilters() {
   const count = get(allFilters).length;
+  resetFilters();
+  if (count > 0) log(createLog('FILTER', 'filter.clear', { count, pageContext: getPageContext() }));
+}
+
+function resetFilters() {
   genomicFilters.set([]);
   const tree = get(filterTree);
   tree.root.children = [];
   tree.root.uuid = genericUUID();
   filterTree.set(tree);
-  if (count > 0) log(createLog('FILTER', 'filter.clear', { count, pageContext: getPageContext() }));
 }
 
 export function setFilterTree(tree: LogicTree<FilterInterface>) {
