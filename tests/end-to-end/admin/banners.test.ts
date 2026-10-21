@@ -2,7 +2,7 @@ import { expect, type Locator, type Page } from '@playwright/test';
 import { test, mockApiConfig } from '../custom-context';
 import { userIsLoggedIn } from '../utils';
 import { mockBanner as banner } from '../../support/mock-data';
-import { tones } from '#lib/ui/surface.ts';
+import { warningMessageClass } from '#lib/ui/surface.ts';
 
 test.describe('Visitors receive banners across navigation', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
@@ -769,7 +769,7 @@ test.describe('Admins create, edit, and publish banners', () => {
     await page.getByRole('combobox', { name: 'Icon' }).selectOption('WARNING');
 
     const preview = page.getByRole('region', { name: 'Planned maintenance' });
-    await expect(preview).toContainClass(tones['tonal-warning']);
+    await expect(preview).toContainClass(warningMessageClass);
     await expect(
       preview.getByRole('link', { name: 'System maintenance status page' }),
     ).toBeVisible();

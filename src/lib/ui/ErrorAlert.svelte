@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { warningMessageClass } from '#lib/ui/surface.ts';
+
   interface Props {
     title?: string;
     color?: 'error' | 'warning' | 'secondary';
@@ -25,7 +27,7 @@
 
   const presets = {
     error: { tonal: 'preset-tonal-error', filled: 'preset-filled-error-500' },
-    warning: { tonal: 'preset-tonal-warning', filled: 'preset-filled-warning-500' },
+    warning: { tonal: warningMessageClass, filled: 'preset-filled-warning-500' },
     secondary: { tonal: 'preset-tonal-secondary', filled: 'preset-filled-secondary-500' },
   };
   const iconSizes = { '4xl': 'text-4xl', '2xl': 'text-2xl', lg: 'text-lg' };

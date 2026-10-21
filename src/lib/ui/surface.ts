@@ -26,3 +26,7 @@ export const tones = {
 export type Tone = keyof typeof tones;
 
 export const cardClass = 'card';
+
+// Warning messages (.warning-message in app.css). It sets the fill, border and text colours itself,
+// in the components layer, so a tone or colour utility on the same element would override it.
+export const warningMessageClass = 'warning-message';

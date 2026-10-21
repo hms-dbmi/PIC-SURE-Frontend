@@ -1,5 +1,5 @@
 import type { BannerAppearance, BannerLifecycle } from '#lib/banners/model/banner.ts';
-import { tones } from '#lib/ui/surface.ts';
+import { tones, warningMessageClass } from '#lib/ui/surface.ts';
 
 // How each appearance and lifecycle status looks, for the site banner, the admin rows and the
 // editor. Class strings are complete so Tailwind generates them.
@@ -31,7 +31,7 @@ export const BANNER_APPEARANCE_PRESENTATION: Record<
   WARNING: {
     label: 'Warning',
     swatchClass: 'bg-warning-500',
-    toneClass: `${tones['tonal-warning']} border-warning-500`,
+    toneClass: warningMessageClass,
   },
   ERROR: {
     label: 'Error',
