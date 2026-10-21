@@ -1,5 +1,6 @@
 import { error, isHttpError, type NumericRange } from '@sveltejs/kit';
 import { logout, login } from '$lib/stores/User';
+import { reportAccessDenied } from '$lib/accessDenied';
 import { browser } from '$app/environment';
 import { log, createLog, getSessionId } from '$lib/logger';
 import { config } from '$lib/configuration.svelte';
@@ -214,7 +215,8 @@ async function handleResponse(res: Response, openRequest = false) {
     log(createLog('AUTH', 'session.forbidden', undefined, { status: 403 }));
     if (browser) {
       sessionStorage.removeItem('logout-reason');
-      sessionStorage.removeItem('filters');
+      // an anonymous request has no login to come back through
+      if (!openRequest) reportAccessDenied();
     }
     logout(undefined, false);
     fail(res.status, resText);

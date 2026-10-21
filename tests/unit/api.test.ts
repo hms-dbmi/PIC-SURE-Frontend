@@ -15,6 +15,11 @@ vi.mock('$lib/stores/User', () => ({
   login: (...args: unknown[]) => mockLogin(...args),
 }));
 
+const mockReportAccessDenied = vi.fn();
+vi.mock('$lib/accessDenied', () => ({
+  reportAccessDenied: () => mockReportAccessDenied(),
+}));
+
 const mockLog = vi.fn();
 const mockCreateLog = vi.fn((...args: unknown[]) => args);
 const mockGetSessionId = vi.fn(() => 'test-session-id');
@@ -339,9 +344,11 @@ describe('api', () => {
         'Your session has timed out. Please log in.',
       );
       expect(mockLogout).toHaveBeenCalledWith(undefined, true);
+      expect(mockReportAccessDenied).not.toHaveBeenCalled();
     });
 
     it('calls logout and clears session on 403 then throws', async () => {
+      (localStorage.getItem as Mock).mockReturnValue('my-token');
       fetchMock.mockResolvedValue(mockFetchResponse({ ok: false, status: 403, body: 'Forbidden' }));
 
       await expect(get('picsure/test')).rejects.toThrow('403: Forbidden');
@@ -350,8 +357,16 @@ describe('api', () => {
         status: 403,
       });
       expect(sessionStorage.removeItem).toHaveBeenCalledWith('logout-reason');
-      expect(sessionStorage.removeItem).toHaveBeenCalledWith('filters');
+      expect(mockReportAccessDenied).toHaveBeenCalled();
       expect(mockLogout).toHaveBeenCalledWith(undefined, false);
+    });
+
+    it('does not report a 403 for an anonymous request as a denied login', async () => {
+      fetchMock.mockResolvedValue(mockFetchResponse({ ok: false, status: 403, body: 'Forbidden' }));
+
+      await expect(get('picsure/test')).rejects.toThrow('403: Forbidden');
+
+      expect(mockReportAccessDenied).not.toHaveBeenCalled();
     });
 
     it('reports consent denial without logging out', async () => {
@@ -372,6 +387,7 @@ describe('api', () => {
 
       expect(mockLogout).not.toHaveBeenCalled();
       expect(sessionStorage.removeItem).not.toHaveBeenCalled();
+      expect(mockReportAccessDenied).not.toHaveBeenCalled();
     });
 
     it('throws error with status for other error codes', async () => {
