@@ -239,7 +239,7 @@
 
   nav#app-nav a.nav-link:hover,
   nav#app-nav a.nav-link:active,
-  nav#app-nav a.nav-link:focus,
+  nav#app-nav a.nav-link:focus-visible,
   nav#app-nav a.nav-link.highlight {
     @apply bg-secondary-500 text-secondary-contrast-500;
   }
