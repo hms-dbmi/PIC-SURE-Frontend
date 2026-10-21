@@ -243,6 +243,7 @@ export function removeUnallowedFilters() {
   if (totalCount > 0) log(createLog('FILTER', 'filter.remove_unallowed', { count: totalCount }));
 }
 
+// Leaves genomic filters alone, for the same reason hasInvalidFilter skips them.
 export async function removeInvalidFilters(): Promise<void> {
   if (get(filters).length === 0) return;
 
