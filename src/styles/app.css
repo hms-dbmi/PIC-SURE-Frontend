@@ -411,7 +411,7 @@ nav#page-navigation a.nav-link[aria-current='page'] {
 
 nav#page-navigation a.nav-link:hover,
 nav#page-navigation a.nav-link:active,
-nav#page-navigation a.nav-link:focus,
+nav#page-navigation a.nav-link:focus-visible,
 nav#page-navigation li.open a.nav-link,
 nav#page-navigation a.nav-link.highlight {
   @apply preset-filled-secondary-500;
