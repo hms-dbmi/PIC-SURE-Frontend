@@ -489,6 +489,39 @@ test.describe('Export Page', () => {
     expect(capturedQuery!.query.select).toContain('\\_consents\\');
   });
 
+  test('shows a retry message while a failed dataset ID request is retried', async ({ page }) => {
+    await setupExportPageAndAddFilterAndExport(page);
+    const nextButton = page.getByTestId('ui-stepper-next');
+    await nextButton.click(); // Review Cohort Details
+    await nextButton.click(); // Tree Step
+    await page.getByTestId('export-type-csv').click();
+
+    let attempts = 0;
+    let releaseRetry = () => {};
+    const retryHeld = new Promise<void>((resolve) => (releaseRetry = resolve));
+    await page.route(queryPath, async (route: Route) => {
+      attempts++;
+      if (attempts === 1) {
+        await route.fulfill({ status: 500 });
+        return;
+      }
+      await retryHeld;
+      await route.fulfill({ json: newDatasetResponse });
+    });
+
+    await nextButton.click(); // Submit query
+
+    await expect(
+      page.getByRole('status').filter({
+        hasText: "Something's taking longer than usual. We are still working on it…",
+      }),
+    ).toBeVisible();
+    releaseRetry();
+    await expect(page.locator('div#export-dataset-id')).toHaveText(
+      newDatasetResponse.picsureResultId,
+    );
+  });
+
   async function setupExportPageWithSampleIdMocks(page: Page) {
     // Mock data for genomic concepts
     const genomicConceptsResponse = {
