@@ -473,6 +473,18 @@ nav#page-navigation li .nav-dropdown a:focus {
   @apply preset-filled-error-500;
 }
 
+/* Must stay unlayered and after .card, whose surface-200 border overrides Tailwind border utilities. */
+.warning-message {
+  background-color: var(--color-warning-50);
+  border-color: var(--color-warning-700);
+  color: var(--color-warning-900);
+}
+
+.warning-message > i,
+.warning-message .site-banner-icon {
+  color: var(--color-warning-800);
+}
+
 #user-token span.badge.expiring {
   @apply preset-filled-warning-500;
 }

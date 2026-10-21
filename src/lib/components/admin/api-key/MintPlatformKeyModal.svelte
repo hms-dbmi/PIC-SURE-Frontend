@@ -84,7 +84,7 @@
       <div
         role="alert"
         data-testid="minted-key-warning"
-        class="card preset-tonal-warning border border-warning-500 p-3 my-4 font-bold"
+        class="warning-message card preset-tonal-warning border border-warning-500 p-3 my-4 font-bold"
       >
         This key is shown only once and cannot be recovered. Copy it now and store it securely.
       </div>
