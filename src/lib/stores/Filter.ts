@@ -47,23 +47,17 @@ export const hasUnallowedFilter: Readable<boolean> = derived(filters, ($f) =>
 );
 
 function hasConsentForFilter(filter: Filter, consents: string[]): boolean {
-  let filterDataset = filter.dataset || '';
-  if (genomicFilterTypes.includes(filter.filterType)) {
-    filterDataset = 'Gene_with_variant';
-  }
-
+  const filterDataset = filter.dataset || '';
   return filterDataset.length > 0 && consents.some((consent) => consent.includes(filterDataset));
 }
 
-export const hasInvalidFilter: Readable<boolean> = derived(
-  [user, allFilters],
-  ([$user, $allFilters]) => {
-    const consents = $user?.consents?.['\\_consents\\'];
-    if ($allFilters.length === 0 || !consents) return false;
+// Genomic filters are left out: they belong to no study, and only Explore can create them.
+export const hasInvalidFilter: Readable<boolean> = derived([user, filters], ([$user, $filters]) => {
+  const consents = $user?.consents?.['\\_consents\\'];
+  if ($filters.length === 0 || !consents) return false;
 
-    return $allFilters.some((filter) => !hasConsentForFilter(filter, consents));
-  },
-);
+  return $filters.some((filter) => !hasConsentForFilter(filter, consents));
+});
 
 export const hasOrGroup: Readable<boolean> = derived(filterTree, ($ft) => $ft.hasOr);
 
@@ -250,17 +244,12 @@ export function removeUnallowedFilters() {
 }
 
 export async function removeInvalidFilters(): Promise<void> {
-  const currentFilters = get(filters);
-  const geneFilters = get(genomicFilters);
-  if (currentFilters.length === 0 && geneFilters.length === 0) return;
+  if (get(filters).length === 0) return;
 
   const consentsMap = await ensureConsentsLoaded();
   const consents = consentsMap?.['\\_consents\\'];
 
   if (!consents) return;
-
-  const geneRemoveCount = geneFilters.filter((node) => !hasConsentForFilter(node, consents)).length;
-  genomicFilters.set(geneFilters.filter((node) => hasConsentForFilter(node, consents)));
 
   const tree = get(filterTree);
   const remove = tree.leafNodes.filter((node) => !hasConsentForFilter(node as Filter, consents));
@@ -268,8 +257,8 @@ export async function removeInvalidFilters(): Promise<void> {
   tree.root.uuid = genericUUID();
   filterTree.set(tree);
 
-  const totalRemoved = geneRemoveCount + remove.length;
-  if (totalRemoved > 0) log(createLog('FILTER', 'filter.remove_invalid', { count: totalRemoved }));
+  if (remove.length > 0)
+    log(createLog('FILTER', 'filter.remove_invalid', { count: remove.length }));
 }
 
 export function clearFilters() {
