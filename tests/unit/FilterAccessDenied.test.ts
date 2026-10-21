@@ -16,14 +16,8 @@ vi.mock('$lib/logger', () => ({
   getPageContext: vi.fn(),
 }));
 
-import { reportAccessDenied } from '$lib/accessDenied';
-import {
-  addFilter,
-  clearFilters,
-  filterTree,
-  finishDiscardingFilters,
-  genomicFilters,
-} from '$lib/stores/Filter';
+import { accessDenied } from '$lib/accessDenied';
+import { addFilter, clearFilters, filterTree, genomicFilters } from '$lib/stores/Filter';
 import { createCategoricalFilter, createGenomicFilter } from '$lib/models/Filter.svelte';
 import type { SearchResult } from '$lib/models/Search';
 
@@ -46,7 +40,7 @@ function storedFilterCount() {
 
 describe('filters after a forbidden logout', () => {
   beforeEach(() => {
-    finishDiscardingFilters();
+    accessDenied.set(false);
     clearFilters();
     sessionStorage.clear();
     addFilter(createCategoricalFilter(searchResult, ['Yes']));
@@ -54,8 +48,8 @@ describe('filters after a forbidden logout', () => {
     mockLog.mockClear();
   });
 
-  it('removes the stored filters at once and keeps the stores until the login page loads', () => {
-    reportAccessDenied();
+  it('removes the stored filters at once and keeps the stores until the logout navigates', () => {
+    accessDenied.set(true);
 
     expect(sessionStorage.getItem('filterTree')).toBeNull();
     expect(sessionStorage.getItem('genomicFilters')).toBeNull();
@@ -63,8 +57,8 @@ describe('filters after a forbidden logout', () => {
     expect(get(genomicFilters)).toHaveLength(1);
   });
 
-  it('does not store filter changes made before the login page loads', () => {
-    reportAccessDenied();
+  it('does not store filter changes made before the logout navigates', () => {
+    accessDenied.set(true);
 
     addFilter(
       createCategoricalFilter({ ...searchResult, conceptPath: '\\study\\other\\' }, ['No']),
@@ -73,10 +67,10 @@ describe('filters after a forbidden logout', () => {
     expect(sessionStorage.getItem('filterTree')).toBeNull();
   });
 
-  it('resets the stores once the login page loads, without logging a user clear', () => {
-    reportAccessDenied();
+  it('resets the stores once the logout navigates, without logging a user clear', () => {
+    accessDenied.set(true);
 
-    finishDiscardingFilters();
+    accessDenied.set(false);
 
     expect(get(filterTree).root.children).toHaveLength(0);
     expect(get(genomicFilters)).toHaveLength(0);
@@ -84,8 +78,8 @@ describe('filters after a forbidden logout', () => {
     expect(mockLog).not.toHaveBeenCalled();
   });
 
-  it('leaves the filters alone on a normal navigation to the login page', () => {
-    finishDiscardingFilters();
+  it('leaves the filters alone after a logout that was not forbidden', () => {
+    accessDenied.set(false);
 
     expect(get(filterTree).root.children).toHaveLength(1);
     expect(storedFilterCount()).toBe(1);

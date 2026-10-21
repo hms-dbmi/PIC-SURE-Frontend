@@ -9,7 +9,6 @@
   import ExternalLinkWarning from '$lib/components/ExternalLinkWarning.svelte';
   import { log, createLog } from '$lib/logger';
   import { resumeAfterWafCaptcha } from '$lib/wafCaptcha';
-  import { finishDiscardingFilters } from '$lib/stores/Filter';
 
   let { children }: { children?: Snippet } = $props();
 
@@ -31,7 +30,6 @@
   });
 
   afterNavigate(({ from, to, type }) => {
-    if (to?.route.id === '/(authentication)/login') finishDiscardingFilters();
     log(
       createLog('NAVIGATION', 'page.navigate', {
         from: from?.url?.pathname,

@@ -5,7 +5,7 @@ import { browser } from '$app/environment';
 import { ensureConsentsLoaded, user } from '$lib/stores/User';
 import { getConceptDetails } from '$lib/stores/Dictionary';
 import { log, createLog, registerAssociatedStudies, getPageContext } from '$lib/logger';
-import { onAccessDenied } from '$lib/accessDenied';
+import { accessDenied } from '$lib/accessDenied';
 
 import { type Filter, type FilterInterface, createFilterGroup } from '$lib/models/Filter.svelte';
 import type { SearchResult } from '$lib/models/Search';
@@ -72,23 +72,21 @@ export const activeFilter: Writable<Filter | undefined> = writable();
 export const activeSearch: Writable<SearchResult | undefined> = writable();
 export const filterWarning: Writable<string | undefined> = writable();
 
-// Set by a forbidden logout until the login page loads. The filters asked for data the user can't
-// see, and if they survive into the next login the denied query reruns and logs them out again.
+// The filters of a forbidden logout asked for data the user can't see, and if they survive into the
+// next login the denied query reruns and logs them out again. Storage is dropped at once, but the
+// stores are reset only after the logout navigates, or the denied page would rerun its count query.
 let discarding = false;
 
-onAccessDenied(() => {
-  if (!browser) return;
-  discarding = true;
-  sessionStorage.removeItem('filterTree');
-  sessionStorage.removeItem('genomicFilters');
+accessDenied.subscribe((denied) => {
+  if (denied) {
+    discarding = true;
+    sessionStorage.removeItem('filterTree');
+    sessionStorage.removeItem('genomicFilters');
+  } else if (discarding) {
+    discarding = false;
+    resetFilters();
+  }
 });
-
-// Resetting the stores any earlier would make a still-mounted explorer rerun its count query.
-export function finishDiscardingFilters() {
-  if (!discarding) return;
-  discarding = false;
-  resetFilters();
-}
 
 function persistFilterTree(tree: LogicTree<FilterInterface>) {
   if (browser && !discarding) {

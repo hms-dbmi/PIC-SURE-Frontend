@@ -1,12 +1,5 @@
-type Listener = () => void;
+import { writable } from 'svelte/store';
 
-const listeners = new Set<Listener>();
-
-// api.ts reports a forbidden logout here because the stores that react to it import api.ts
-export function onAccessDenied(listener: Listener) {
-  listeners.add(listener);
-}
-
-export function reportAccessDenied() {
-  listeners.forEach((listener) => listener());
-}
+// Raised by a forbidden logout until it has navigated away. It lives apart from the filter store
+// that reacts to it because that store imports api.ts and User.ts, which raise and lower it.
+export const accessDenied = writable(false);

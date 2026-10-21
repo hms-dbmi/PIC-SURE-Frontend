@@ -15,9 +15,9 @@ vi.mock('$lib/stores/User', () => ({
   login: (...args: unknown[]) => mockLogin(...args),
 }));
 
-const mockReportAccessDenied = vi.fn();
+const mockSetAccessDenied = vi.fn();
 vi.mock('$lib/accessDenied', () => ({
-  reportAccessDenied: () => mockReportAccessDenied(),
+  accessDenied: { set: (denied: boolean) => mockSetAccessDenied(denied) },
 }));
 
 const mockLog = vi.fn();
@@ -344,7 +344,7 @@ describe('api', () => {
         'Your session has timed out. Please log in.',
       );
       expect(mockLogout).toHaveBeenCalledWith(undefined, true);
-      expect(mockReportAccessDenied).not.toHaveBeenCalled();
+      expect(mockSetAccessDenied).not.toHaveBeenCalled();
     });
 
     it('calls logout and clears session on 403 then throws', async () => {
@@ -357,7 +357,7 @@ describe('api', () => {
         status: 403,
       });
       expect(sessionStorage.removeItem).toHaveBeenCalledWith('logout-reason');
-      expect(mockReportAccessDenied).toHaveBeenCalled();
+      expect(mockSetAccessDenied).toHaveBeenCalledWith(true);
       expect(mockLogout).toHaveBeenCalledWith(undefined, false);
     });
 
@@ -366,7 +366,7 @@ describe('api', () => {
 
       await expect(get('picsure/test')).rejects.toThrow('403: Forbidden');
 
-      expect(mockReportAccessDenied).not.toHaveBeenCalled();
+      expect(mockSetAccessDenied).not.toHaveBeenCalled();
     });
 
     it('reports consent denial without logging out', async () => {
@@ -387,7 +387,7 @@ describe('api', () => {
 
       expect(mockLogout).not.toHaveBeenCalled();
       expect(sessionStorage.removeItem).not.toHaveBeenCalled();
-      expect(mockReportAccessDenied).not.toHaveBeenCalled();
+      expect(mockSetAccessDenied).not.toHaveBeenCalled();
     });
 
     it('throws error with status for other error codes', async () => {
