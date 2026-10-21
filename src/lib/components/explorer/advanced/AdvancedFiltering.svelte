@@ -65,6 +65,8 @@
   onDestroy(
     accessDenied.subscribe((denied) => {
       if (!denied) return;
+      // a drag in progress would restore its snapshot of the denied filters when it ends
+      clearDragState();
       localTree.root.children = [];
       savedSerialized = localTree.serialized;
     }),
