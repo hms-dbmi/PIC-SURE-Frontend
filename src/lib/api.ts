@@ -215,7 +215,7 @@ async function handleResponse(res: Response, openRequest = false) {
     log(createLog('AUTH', 'session.forbidden', undefined, { status: 403 }));
     if (browser) {
       sessionStorage.removeItem('logout-reason');
-      // an anonymous request has no login to come back through
+      // an open-access request carries no login token, so the user's filters weren't what was denied
       if (!openRequest) accessDenied.set(true);
     }
     logout(undefined, false);

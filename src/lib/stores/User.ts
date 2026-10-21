@@ -349,7 +349,7 @@ async function handleLogout(redirect: boolean) {
   } else {
     await goto(resolve('/login'));
   }
-  // A later logout supersedes this navigation, and the page that was denied is still mounted
+  // If a later logout superseded this navigation, the denied page is still mounted, so leave it to that one
   if (navigation === logoutNavigation) accessDenied.set(false);
 }
 

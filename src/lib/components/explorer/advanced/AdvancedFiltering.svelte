@@ -17,10 +17,12 @@
   } from '@dnd-kit-svelte/svelte';
   import { move } from '@dnd-kit/helpers';
   import { filterTree, genomicFilters } from '$lib/stores/Filter';
+  import { accessDenied } from '$lib/accessDenied';
   import { LogicTree } from '$lib/models/LogicTree.svelte';
   import { Operator, type OperatorType } from '$lib/models/query/Query';
   import { toaster } from '$lib/toaster';
   import LogicTreeSummary from './LogicTreeSummary.svelte';
+  import { onDestroy } from 'svelte';
 
   type DragOperation =
     | { type: 'canceled' }
@@ -57,6 +59,16 @@
   })();
 
   let savedSerialized = $state($filterTree.serialized);
+
+  // A forbidden logout discards the filters. Dropping the draft too keeps the unsaved-changes guard
+  // from cancelling that logout and keeps Apply Changes from saving the denied filters again.
+  onDestroy(
+    accessDenied.subscribe((denied) => {
+      if (!denied) return;
+      localTree.root.children = [];
+      savedSerialized = localTree.serialized;
+    }),
+  );
 
   const sensors = [KeyboardSensor, PointerSensor];
 
