@@ -420,6 +420,61 @@ test.describe('Export Page', () => {
     expect(capturedQuery!.query.select).toContain('\\_consents\\');
   });
 
+  test('shows a loading message while the dataset ID is created', async ({ page }) => {
+    await setupExportPageAndAddFilterAndExport(page);
+    const nextButton = page.getByTestId('next-btn');
+    await nextButton.click(); // Review Cohort Details
+    await nextButton.click(); // Tree Step
+    await page.getByTestId('csv-export-option').click();
+
+    let releaseQuery = () => {};
+    const queryHeld = new Promise<void>((resolve) => (releaseQuery = resolve));
+    await page.route(queryPath, async (route: Route) => {
+      await queryHeld;
+      await route.fulfill({ json: newDatasetResponse });
+    });
+
+    await nextButton.click(); // Submit query
+
+    await expect(
+      page.getByRole('status').filter({ hasText: 'Creating dataset ID…' }),
+    ).toBeVisible();
+    await expect(page.locator('#dataset-name')).toBeVisible();
+    releaseQuery();
+    await expect(page.locator('div#dataset-id')).toHaveText(newDatasetResponse.picsureResultId);
+  });
+
+  test('shows a retry message while a failed dataset ID request is retried', async ({ page }) => {
+    await setupExportPageAndAddFilterAndExport(page);
+    const nextButton = page.getByTestId('next-btn');
+    await nextButton.click(); // Review Cohort Details
+    await nextButton.click(); // Tree Step
+    await page.getByTestId('csv-export-option').click();
+
+    let attempts = 0;
+    let releaseRetry = () => {};
+    const retryHeld = new Promise<void>((resolve) => (releaseRetry = resolve));
+    await page.route(queryPath, async (route: Route) => {
+      attempts++;
+      if (attempts === 1) {
+        await route.fulfill({ status: 500 });
+        return;
+      }
+      await retryHeld;
+      await route.fulfill({ json: newDatasetResponse });
+    });
+
+    await nextButton.click(); // Submit query
+
+    await expect(
+      page.getByRole('status').filter({
+        hasText: "Something's taking longer than usual. We are still working on it…",
+      }),
+    ).toBeVisible();
+    releaseRetry();
+    await expect(page.locator('div#dataset-id')).toHaveText(newDatasetResponse.picsureResultId);
+  });
+
   async function setupExportPageWithSampleIdMocks(page: Page) {
     // Mock data for genomic concepts
     const genomicConceptsResponse = {

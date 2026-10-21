@@ -22,6 +22,13 @@ export default defineConfig(async ({ mode }) => {
     envDir: mode === 'test' ? './tests/end-to-end/env-isolated' : import.meta.dirname,
     test: {
       setupFiles: ['./tests/component/setup.ts'],
+      // Without `include`, vitest only reports files the tests import, so a new untested file
+      // would be missing from lcov instead of showing 0%. Keep in step with coverage.include
+      // in .github/risk/policy.json.
+      coverage: {
+        include: ['src/**/*.{ts,js,svelte}'],
+        exclude: ['**/*.d.ts', '**/*.{test,spec}.{ts,js}'],
+      },
     } satisfies ViteUserConfig['test'],
     server: {
       // Forwards to `npm run mock-api` (tests/end-to-end/mock-server), which serves fixture
