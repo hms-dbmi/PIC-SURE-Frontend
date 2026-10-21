@@ -10,16 +10,19 @@ import { Psama } from '$lib/paths';
 interface Auth0Data extends AuthData {
   clientid: string;
   connection: string;
+  domain?: string;
 }
 
 class Auth0 extends AuthProvider implements Auth0Data {
   clientid: string;
   connection: string;
+  domain?: string;
 
   constructor(data: Auth0Data) {
     super(data);
     this.clientid = data.clientid;
     this.connection = data.connection;
+    this.domain = data.domain;
   }
 
   authenticate = async (hashParts: string[]): Promise<User | undefined> => {
@@ -39,7 +42,7 @@ class Auth0 extends AuthProvider implements Auth0Data {
     const redirectUrl = this.getRedirectURI();
     this.saveState(redirectTo, type);
     const webAuth = new auth0.WebAuth({
-      domain: auth.auth0Tenant + '.auth0.com',
+      domain: this.domain || auth.auth0Tenant + '.auth0.com',
       clientID: this.clientid || '',
       redirectUri: redirectUrl,
       responseType: 'token',
