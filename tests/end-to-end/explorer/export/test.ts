@@ -420,6 +420,30 @@ test.describe('Export Page', () => {
     expect(capturedQuery!.query.select).toContain('\\_consents\\');
   });
 
+  test('shows a loading message while the dataset ID is created', async ({ page }) => {
+    await setupExportPageAndAddFilterAndExport(page);
+    const nextButton = page.getByTestId('next-btn');
+    await nextButton.click(); // Review Cohort Details
+    await nextButton.click(); // Tree Step
+    await page.getByTestId('csv-export-option').click();
+
+    let releaseQuery = () => {};
+    const queryHeld = new Promise<void>((resolve) => (releaseQuery = resolve));
+    await page.route(queryPath, async (route: Route) => {
+      await queryHeld;
+      await route.fulfill({ json: newDatasetResponse });
+    });
+
+    await nextButton.click(); // Submit query
+
+    await expect(
+      page.getByRole('status').filter({ hasText: 'Creating dataset ID…' }),
+    ).toBeVisible();
+    await expect(page.locator('#dataset-name')).toBeVisible();
+    releaseQuery();
+    await expect(page.locator('div#dataset-id')).toHaveText(newDatasetResponse.picsureResultId);
+  });
+
   test('shows a retry message while a failed dataset ID request is retried', async ({ page }) => {
     await setupExportPageAndAddFilterAndExport(page);
     const nextButton = page.getByTestId('next-btn');
