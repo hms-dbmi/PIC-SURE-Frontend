@@ -194,3 +194,20 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+
+  # Unit tests for the risk classifier and review-policy scripts. Needs no dependencies, so it
+  # runs on every PR and push; without it a change to .github/scripts/risk or policy.json could
+  # break the classifier unnoticed.
+  risk-scripts:
+    name: Risk script tests
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          sparse-checkout: .github
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+      - name: Run risk script tests
+        run: node --test .github/scripts/risk/risk.test.mjs
