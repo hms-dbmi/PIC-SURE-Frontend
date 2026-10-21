@@ -344,13 +344,16 @@ async function handleLogout(redirect: boolean) {
   const navigation = ++logoutNavigation;
   user.set({});
   log(createLog('AUTH', 'logout.success'));
-  if (redirect) {
-    await goto(resolve(loginRedirectPath(page.url) as '/'));
-  } else {
-    await goto(resolve('/login'));
+  try {
+    if (redirect) {
+      await goto(resolve(loginRedirectPath(page.url) as '/'));
+    } else {
+      await goto(resolve('/login'));
+    }
+  } finally {
+    // If a later logout superseded this navigation, the denied page is still mounted, so leave it to that one
+    if (navigation === logoutNavigation) accessDenied.set(false);
   }
-  // If a later logout superseded this navigation, the denied page is still mounted, so leave it to that one
-  if (navigation === logoutNavigation) accessDenied.set(false);
 }
 
 export function isTokenExpired(token: string) {

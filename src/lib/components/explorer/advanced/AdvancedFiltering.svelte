@@ -62,15 +62,14 @@
 
   // A forbidden logout discards the filters. Dropping the draft too keeps the unsaved-changes guard
   // from cancelling that logout and keeps Apply Changes from saving the denied filters again.
-  onDestroy(
-    accessDenied.subscribe((denied) => {
-      if (!denied) return;
-      // a drag in progress would restore its snapshot of the denied filters when it ends
-      clearDragState();
-      localTree.root.children = [];
-      savedSerialized = localTree.serialized;
-    }),
-  );
+  const unsubAccessDenied = accessDenied.subscribe((denied) => {
+    if (!denied) return;
+    // a drag in progress would restore its snapshot of the denied filters when it ends
+    clearDragState();
+    localTree.root.children = [];
+    savedSerialized = localTree.serialized;
+  });
+  onDestroy(unsubAccessDenied);
 
   const sensors = [KeyboardSensor, PointerSensor];
 
