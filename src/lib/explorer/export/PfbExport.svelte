@@ -8,15 +8,15 @@
   import { exportState } from '#lib/explorer/export/export.svelte.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
   import Button from '#lib/ui/Button.svelte';
-  let exportLoading: boolean = $state(false);
+  let exportingIndex: number | null = $state(null);
 
-  async function exportSignedToUrl(url?: string) {
+  async function exportSignedToUrl(index: number, url?: string) {
     if (!url) {
       console.warn('No URL provided for export');
       return;
     }
 
-    exportLoading = true;
+    exportingIndex = index;
 
     try {
       const signedUrl = await getSignedUrl(exportState.datasetId ?? '');
@@ -32,7 +32,7 @@
         closable: true,
       });
     } finally {
-      exportLoading = false;
+      exportingIndex = null;
     }
   }
 </script>
@@ -42,10 +42,13 @@
     Select an option below to export your selected data in PFB format.
   </div>
   {#if config.branding.explorePage?.pfbExportUrls && config.branding.explorePage.pfbExportUrls.length > 0}
-    {#each config.branding.explorePage.pfbExportUrls as exportLink}
+    {#each config.branding.explorePage.pfbExportUrls as exportLink, index}
+      {@const exporting = exportingIndex === index}
       <Button
-        disabled={exportLoading}
-        variant="filled-bordered"
+        disabled={exportingIndex !== null}
+        aria-busy={exporting || undefined}
+        aria-label={exporting ? `Exporting to ${exportLink.title}` : undefined}
+        variant={exporting ? 'filled-bordered-busy' : 'filled-bordered'}
         class="flex-initial w-64"
         onclick={() => {
           log(
@@ -54,13 +57,14 @@
               datasetId: exportState.datasetId,
             }),
           );
-          exportSignedToUrl(exportLink.url);
+          exportSignedToUrl(index, exportLink.url);
         }}
       >
-        <i class="fa-solid fa-arrow-up-right-from-square"></i>
-        <span>Export to {exportLink.title}</span>
-        {#if exportLoading}
-          <Loading ring size="micro" label="Exporting" />
+        {#if exporting}
+          <Loading ring size="micro" color="white" label="Exporting…" />
+        {:else}
+          <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          <span>Export to {exportLink.title}</span>
         {/if}
       </Button>
     {/each}

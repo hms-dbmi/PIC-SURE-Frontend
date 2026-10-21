@@ -22,6 +22,8 @@ export const buttonVariants = {
   'filled-secondary': 'preset-filled-secondary-500',
   'filled-bordered':
     'preset-filled-primary-500 disabled:preset-tonal-primary border border-primary-500',
+  'filled-bordered-busy':
+    'preset-filled-primary-500 disabled:opacity-100 border border-primary-500',
   // The `-static` variants and `tint` have no hover colour.
   'tonal-static': 'preset-tonal-primary border border-primary-500',
   'soft-static': 'border preset-tonal-primary',
