@@ -5,6 +5,7 @@ vi.mock('#lib/api/client.ts', () => ({ request: vi.fn() }));
 import { request } from '#lib/api/client.ts';
 import {
   countVariants,
+  getQueryResult,
   getQueryStatus,
   getSignedUrl,
   getVariantExcerpt,
@@ -73,19 +74,25 @@ describe('variant results', () => {
 describe('export queries', () => {
   it('keeps only the status fields it understands', async () => {
     respond.mockResolvedValue({ picsureResultId: 'r1', status: 7, extra: true });
-    await expect(getQueryStatus('r1', query)).resolves.toEqual({
+    await expect(getQueryStatus('r1')).resolves.toEqual({
       picsureResultId: 'r1',
       status: undefined,
     });
-    expect(respond).toHaveBeenCalledWith('picsure/hpds/auth/query/r1/status', {
-      method: 'POST',
-      body: query,
-      auth: 'open',
-    });
+    expect(respond).toHaveBeenCalledWith('picsure/hpds/auth/query/r1/status', { auth: 'open' });
+  });
+
+  it('fetches the result and the signed URL with GET and no body', async () => {
+    respond.mockResolvedValue({ signedUrl: 'https://signed' });
+    await getQueryResult('r1');
+    await getSignedUrl('r1');
+    expect(respond.mock.calls).toEqual([
+      ['picsure/hpds/auth/query/r1/result', { auth: 'open' }],
+      ['picsure/hpds/auth/query/r1/signed-url', { auth: 'open' }],
+    ]);
   });
 
   it('answers null when the backend has no signed URL', async () => {
     respond.mockResolvedValue({ signedUrl: '' });
-    await expect(getSignedUrl('r1', query)).resolves.toBeNull();
+    await expect(getSignedUrl('r1')).resolves.toBeNull();
   });
 });

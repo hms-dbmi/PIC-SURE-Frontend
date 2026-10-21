@@ -19,7 +19,7 @@
     exportLoading = true;
 
     try {
-      const signedUrl = await getSignedUrl(exportState.datasetId ?? '', exportState.request);
+      const signedUrl = await getSignedUrl(exportState.datasetId ?? '');
       if (signedUrl) {
         window.open(url + encodeURIComponent(signedUrl), '_blank');
       } else {

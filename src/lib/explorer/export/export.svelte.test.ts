@@ -193,7 +193,7 @@ describe('waiting for the export', () => {
     await exportState.waitForExport();
 
     expect(mocks.getQueryStatus).toHaveBeenCalledTimes(2);
-    expect(mocks.getQueryStatus).toHaveBeenCalledWith('id', exportState.request);
+    expect(mocks.getQueryStatus).toHaveBeenCalledWith('id');
     expect(exportState.downloadLocked).toBe(false);
   });
 

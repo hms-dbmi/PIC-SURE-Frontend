@@ -1,5 +1,11 @@
 import { expect, type Route, type Page } from '@playwright/test';
-import { test, mockApiSuccess, mockApiConfig, mockQuerySync } from '../custom-context';
+import {
+  test,
+  mockApiSuccess,
+  mockApiSuccessByMethod,
+  mockApiConfig,
+  mockQuerySync,
+} from '../custom-context';
 import {
   conceptTreePath,
   conceptsDetailPath,
@@ -366,9 +372,10 @@ test.describe('Export Page', () => {
     );
     await expect(nextButton).not.toBeDisabled();
     await mockApiSuccess(page, `*/**/picsure/operations/dataset/named`, newDatasetResponse);
-    await mockApiSuccess(
+    await mockApiSuccessByMethod(
       page,
       `${queryPath}/${newDatasetResponse.picsureResultId}/status`,
+      'GET',
       availableDatasetResponse,
     );
     await mockApiSuccess(page, '*/**/psama/user/me?hasToken', picsureUser);
@@ -609,7 +616,12 @@ test.describe('Export Page', () => {
     await nextButton.click(); // Submit query -> Save Dataset ID
     await page.locator('input#export-dataset-name').fill(datasetName);
     await mockApiSuccess(page, `*/**/picsure/operations/dataset/named`, newDatasetResponse);
-    await mockApiSuccess(page, `${queryPath}/${newDatasetResponse.picsureResultId}/status`, status);
+    await mockApiSuccessByMethod(
+      page,
+      `${queryPath}/${newDatasetResponse.picsureResultId}/status`,
+      'GET',
+      status,
+    );
     await nextButton.click(); // -> Start Analysis
   }
 
@@ -642,9 +654,10 @@ test.describe('Export Page', () => {
 
     await page.locator('input#export-dataset-name').fill('test-dataset');
     await mockApiSuccess(page, `*/**/picsure/operations/dataset/named`, newDatasetResponse);
-    await mockApiSuccess(
+    await mockApiSuccessByMethod(
       page,
       `${queryPath}/${newDatasetResponse.picsureResultId}/status`,
+      'GET',
       availableDatasetResponse,
     );
     await mockApiSuccess(page, '*/**/psama/user/me?hasToken', picsureUser);
@@ -684,18 +697,23 @@ test.describe('Export Page', () => {
       settings: baseExportSettings,
     });
     await navigateToDownloadTab(page);
-    await mockApiSuccess(
+    await mockApiSuccessByMethod(
       page,
       `${queryPath}/${newDatasetResponse.picsureResultId}/result`,
+      'GET',
       'csv,data',
     );
     const downloadButton = page.getByRole('button', { name: 'Download as CSV' });
     await expect(downloadButton).toBeVisible();
+    const resultRequest = page.waitForRequest((request) => request.url().endsWith('/result'));
 
     // When
     const [download] = await Promise.all([page.waitForEvent('download'), downloadButton.click()]);
 
     // Then
+    const request = await resultRequest;
+    expect(request.method()).toBe('GET');
+    expect(request.postData()).toBeNull();
     expect(download).toBeTruthy();
     await expect(page.getByRole('dialog')).not.toBeVisible();
   });

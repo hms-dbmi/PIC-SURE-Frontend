@@ -67,24 +67,18 @@ export async function submitQuery(query: QueryRequest): Promise<QueryStatus> {
   return toQueryStatus(await request(Picsure.Query, { method: 'POST', body: query, auth: 'open' }));
 }
 
-export async function getQueryStatus(queryId: string, query: QueryRequest): Promise<QueryStatus> {
-  return toQueryStatus(
-    await request(PicsurePaths.queryStatus(queryId), { method: 'POST', body: query, auth: 'open' }),
-  );
+export async function getQueryStatus(queryId: string): Promise<QueryStatus> {
+  return toQueryStatus(await request(PicsurePaths.queryStatus(queryId), { auth: 'open' }));
 }
 
 /** The finished query's data file: CSV text, or the raw bytes of a binary format. */
 export function getQueryResult(queryId: string): Promise<ArrayBuffer | string> {
-  return request(PicsurePaths.queryResult(queryId), { method: 'POST', body: {}, auth: 'open' });
+  return request(PicsurePaths.queryResult(queryId), { auth: 'open' });
 }
 
 /** A signed URL that lets an external platform fetch the result, or null without one. */
-export async function getSignedUrl(queryId: string, query: QueryRequest): Promise<string | null> {
-  const response = await request(PicsurePaths.querySignedUrl(queryId), {
-    method: 'POST',
-    body: query,
-    auth: 'open',
-  });
+export async function getSignedUrl(queryId: string): Promise<string | null> {
+  const response = await request(PicsurePaths.querySignedUrl(queryId), { auth: 'open' });
   const signedUrl = isRecord(response) ? response.signedUrl : undefined;
   return typeof signedUrl === 'string' && signedUrl ? signedUrl : null;
 }

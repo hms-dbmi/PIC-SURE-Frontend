@@ -193,10 +193,9 @@ class ExportState {
   async waitForExport(): Promise<void> {
     const id = this.#datasetId;
     if (!id) throw new Error('No dataset ID provided');
-    const request = this.#request;
     await withBackoff(
       async () => {
-        const { status } = await getQueryStatus(id, request);
+        const { status } = await getQueryStatus(id);
         if (status === 'ERROR') {
           this.setDownloadLocked(true);
           throw new ExportStatusError(status);
