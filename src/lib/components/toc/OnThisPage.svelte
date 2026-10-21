@@ -102,7 +102,7 @@
   }
 </script>
 
-<nav aria-label="On this page" data-testid="toc" class="card bg-surface-100-900 p-5">
+<nav aria-label="On this page" data-testid="toc" class="card bg-surface-100-900/50 p-5">
   <span class="text-sm font-bold">On this page</span>
   <ul class="mt-4 border-l-2 border-surface-200-800 text-sm">
     {#each entries as entry (entry.id)}
