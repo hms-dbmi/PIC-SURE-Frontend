@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 
 import { test, mockApiConfig, mockApiSuccess } from '../custom-context';
 import {
@@ -8,6 +8,33 @@ import {
   searchResultPath,
   searchResults,
 } from '../mock-data';
+
+async function seedDeniedFilter(page: Page) {
+  await page.addInitScript((tree) => {
+    sessionStorage.setItem('filterTree', JSON.stringify(tree));
+  }, deniedFilterTree);
+}
+
+async function seedGenomicFilter(page: Page) {
+  await page.addInitScript(() => {
+    sessionStorage.setItem(
+      'genomicFilters',
+      JSON.stringify([
+        {
+          uuid: 'standalone-genomic-filter',
+          id: 'genomic',
+          filterType: 'genomic',
+          displayType: 'any',
+          variableName: 'Genomic Filter',
+          description: 'Gene with variant: BRCA1',
+          allowFiltering: true,
+          dataset: '',
+          Gene_with_variant: ['BRCA1'],
+        },
+      ]),
+    );
+  });
+}
 
 test.describe('Filter warning navigation', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
@@ -26,9 +53,7 @@ test.describe('Filter warning navigation', () => {
   test('warns before moving from Discover to Explore with an unconsented filter', async ({
     page,
   }) => {
-    await page.addInitScript((tree) => {
-      sessionStorage.setItem('filterTree', JSON.stringify(tree));
-    }, deniedFilterTree);
+    await seedDeniedFilter(page);
 
     await page.goto('/discover');
     await page.locator('#nav-link-explorer').click();
@@ -44,9 +69,7 @@ test.describe('Filter warning navigation', () => {
   test('warns after leaving Discover before moving to Explore with an unconsented filter', async ({
     page,
   }) => {
-    await page.addInitScript((tree) => {
-      sessionStorage.setItem('filterTree', JSON.stringify(tree));
-    }, deniedFilterTree);
+    await seedDeniedFilter(page);
 
     await page.goto('/discover');
     await page.locator('#nav-link-api').click();
@@ -59,29 +82,38 @@ test.describe('Filter warning navigation', () => {
   });
 
   test('warns for a standalone genomic filter without consent', async ({ page }) => {
-    await page.addInitScript(() => {
-      sessionStorage.setItem(
-        'genomicFilters',
-        JSON.stringify([
-          {
-            uuid: 'standalone-genomic-filter',
-            id: 'genomic',
-            filterType: 'genomic',
-            displayType: 'any',
-            variableName: 'Genomic Filter',
-            description: 'Gene with variant: BRCA1',
-            allowFiltering: true,
-            dataset: '',
-            Gene_with_variant: ['BRCA1'],
-          },
-        ]),
-      );
-    });
+    await seedGenomicFilter(page);
 
     await page.goto('/discover');
     await page.locator('#nav-link-explorer').click();
 
     await expect(page).toHaveURL(/\/discover$/);
     await expect(page.getByTestId('sendfilter-warning')).toBeVisible();
+  });
+
+  [
+    { seed: seedDeniedFilter, from: '/discover', to: 'explorer', back: 'Back to Discover' },
+    { seed: seedGenomicFilter, from: '/explorer', to: 'discover', back: 'Back to Explore' },
+  ].forEach(({ seed, from, to, back }) => {
+    test(`does not leave the ${to} link highlighted after choosing ${back}`, async ({
+      page,
+      browserName,
+    }) => {
+      await seed(page);
+
+      await page.goto(from);
+      const link = page.locator(`#nav-link-${to}`);
+      const unselectedBackground = await link.evaluate(
+        (el) => getComputedStyle(el).backgroundColor,
+      );
+      await link.click();
+      await page.getByRole('button', { name: back }).click();
+
+      await expect(page.getByTestId('sendfilter-warning')).toBeHidden();
+      // WebKit doesn't focus links on click, so the dialog has no link to return focus to.
+      if (browserName !== 'webkit') await expect(link).toBeFocused();
+      await page.mouse.move(0, 0);
+      await expect(link).toHaveCSS('background-color', unselectedBackground);
+    });
   });
 });

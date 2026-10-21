@@ -409,9 +409,15 @@ test('risk:low waives review; risk:needs-review needs a human approval', () => {
 });
 
 test('approvals must be from a human, not the author, on the current commit', () => {
+  const latestOnly = {
+    ...policy,
+    review: { ...policy.review, requireApprovalOnLatestCommit: true },
+  };
+  const decideLatest = (reviews, risk) =>
+    reviewDecision({ pr: headPr, reviews, risk, policy: latestOnly });
   assert.equal(decide([rv('author', 'APPROVED')], 'review').state, 'pending');
   assert.equal(decide([rv('some-bot', 'APPROVED', 'sha1', 'Bot')], 'review').state, 'pending');
-  assert.equal(decide([rv('alice', 'APPROVED', 'old-sha')], 'review').state, 'pending');
+  assert.equal(decideLatest([rv('alice', 'APPROVED', 'old-sha')], 'review').state, 'pending');
 });
 
 test('requireApprovalOnLatestCommit: false accepts an approval on an older commit', () => {

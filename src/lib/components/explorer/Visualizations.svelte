@@ -19,7 +19,7 @@
     isVisualizationFilter,
   } from '$lib/utilities/VisualizationData';
   import { toaster } from '$lib/toaster';
-  import Loading from '$lib/components/Loading.svelte';
+  import TimedLoading, { type TimedMessage } from '$lib/components/TimedLoading.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import { Picsure } from '$lib/paths';
   import { isOpenAccess, useOpenAccess } from '$lib/AccessState';
@@ -27,6 +27,12 @@
   import { filters, filterTree, genomicFilters } from '$lib/stores/Filter';
   import { type Filter, type FilterGroupInterface } from '$lib/models/Filter.svelte';
   import { get } from 'svelte/store';
+
+  const LOADING_MESSAGES: TimedMessage[] = [
+    { afterMs: 0, text: 'Generating visualizations…' },
+    { afterMs: 3000, text: 'Still working on it…' },
+    { afterMs: 7000, text: 'Hang tight…' },
+  ];
 
   let plotValues: PlotValues[] = $state([]);
   let excludedVariables: string[] = $state([]);
@@ -142,7 +148,7 @@
 {/if}
 <div id="visualizations" class="flex flex-row flex-wrap gap-6 items-center justify-center">
   {#if loading}
-    <Loading ring size="medium" />
+    <TimedLoading size="medium" messages={LOADING_MESSAGES} />
   {:else if plotValues.length}
     {#each plotValues as { data, layout, meta }, index}
       <PlotlyPlot {index} {data} {layout} {meta} {newPlot} />
