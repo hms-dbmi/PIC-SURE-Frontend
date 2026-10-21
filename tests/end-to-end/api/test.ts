@@ -318,6 +318,34 @@ test.describe('API page', () => {
     }
   });
 
+  test('Capability text lines up whether it fits on one line or wraps', async ({ page }) => {
+    // Given a width where some capabilities wrap onto a second line
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto('/api');
+    await userIsLoggedIn(page);
+    const items = page.getByTestId('capability-item');
+    await expect(items).toHaveCount(capabilities.length);
+
+    // When
+    const layout = await items.evaluateAll((elements) =>
+      elements.map((item) => {
+        const text = item.querySelector('span')!;
+        const { left, height } = text.getBoundingClientRect();
+        return {
+          textLeft: left,
+          lines: Math.round(height / parseFloat(getComputedStyle(text).lineHeight)),
+        };
+      }),
+    );
+
+    // Then
+    expect(
+      new Set(layout.map(({ lines }) => lines > 1)).size,
+      'configuration.json capabilities should mix one-line and wrapped items at 1280px',
+    ).toBe(2);
+    expect(new Set(layout.map(({ textLeft }) => textLeft)).size).toBe(1);
+  });
+
   test('Shows personal access token card with login confirmed', async ({ page }) => {
     // Given
     await page.goto('/api');
