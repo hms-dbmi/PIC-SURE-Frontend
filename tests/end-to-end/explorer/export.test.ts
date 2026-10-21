@@ -489,7 +489,7 @@ test.describe('Export Page', () => {
     expect(capturedQuery!.query.select).toContain('\\_consents\\');
   });
 
-  test('Sample IDs checkbox adds genomic concepts to exports and query', async ({ page }) => {
+  async function setupExportPageWithSampleIdMocks(page: Page) {
     // Mock data for genomic concepts
     const genomicConceptsResponse = {
       totalPages: 1,
@@ -542,7 +542,6 @@ test.describe('Export Page', () => {
       '\\GENOMIC\\SAMPLE_ID\\Study2\\': 150,
     };
 
-    // First set up the page
     await setupExportPageAndAddFilterAndExport(page);
     await expect(page).toHaveURL('/explorer/export');
 
@@ -554,6 +553,10 @@ test.describe('Export Page', () => {
     await page.route(searchResultPathForSampleIds, async (route) => {
       await route.fulfill({ json: genomicConceptsResponse });
     });
+  }
+
+  test('Sample IDs checkbox adds genomic concepts to exports and query', async ({ page }) => {
+    await setupExportPageWithSampleIdMocks(page);
 
     // Find and click the sample IDs checkbox
     const sampleIdsCheckbox = page.getByTestId('export-sample-ids-checkbox');
@@ -604,6 +607,56 @@ test.describe('Export Page', () => {
     expect(capturedQuery).not.toBeNull();
     expect(capturedQuery!.query.select).toContain('\\GENOMIC\\SAMPLE_ID\\Study1\\');
     expect(capturedQuery!.query.select).toContain('\\GENOMIC\\SAMPLE_ID\\Study2\\');
+  });
+
+  test('Sample ID rows persist after navigating forward and back', async ({ page }) => {
+    await setupExportPageWithSampleIdMocks(page);
+    const sampleIdsCheckbox = page.getByTestId('export-sample-ids-checkbox');
+    await sampleIdsCheckbox.click();
+    await expect(sampleIdsCheckbox).toBeChecked();
+    const tableBody = page.locator('tbody');
+    await expect(tableBody.getByText('Sample ID - Study 1')).toBeVisible();
+
+    await page.getByTestId('ui-stepper-next').click();
+    await expect(sampleIdsCheckbox).toBeHidden();
+    await page.getByRole('button', { name: 'Back', exact: true }).click();
+
+    await expect(sampleIdsCheckbox).toBeChecked();
+    await expect(tableBody.getByText('Sample ID - Study 1')).toBeVisible();
+    await expect(tableBody.getByText('Sample ID - Study 2')).toBeVisible();
+
+    await sampleIdsCheckbox.click();
+    await expect(sampleIdsCheckbox).not.toBeChecked();
+    await expect(tableBody.getByRole('cell', { name: 'Patient ID', exact: true })).toBeVisible();
+    await expect(tableBody.getByText('Sample ID - Study 1')).toBeHidden();
+    await expect(tableBody.getByText('Sample ID - Study 2')).toBeHidden();
+  });
+
+  test('Unchecked sample ID rows stay removed after navigating forward and back', async ({
+    page,
+  }) => {
+    await setupExportPageWithSampleIdMocks(page);
+    const sampleIdsCheckbox = page.getByTestId('export-sample-ids-checkbox');
+    await sampleIdsCheckbox.click();
+    await expect(sampleIdsCheckbox).toBeChecked();
+
+    // Re-enter the export page so the sample IDs are already exported when it loads
+    await page.getByTestId('ui-page-back').click();
+    await page.locator('button#results-export-open').click();
+    await expect(sampleIdsCheckbox).toBeChecked();
+    const tableBody = page.locator('tbody');
+    await expect(tableBody.getByText('Sample ID - Study 1')).toBeVisible();
+
+    await sampleIdsCheckbox.click();
+    await expect(sampleIdsCheckbox).not.toBeChecked();
+    await page.getByTestId('ui-stepper-next').click();
+    await expect(sampleIdsCheckbox).toBeHidden();
+    await page.getByRole('button', { name: 'Back', exact: true }).click();
+
+    await expect(sampleIdsCheckbox).not.toBeChecked();
+    await expect(tableBody.getByRole('cell', { name: 'Patient ID', exact: true })).toBeVisible();
+    await expect(tableBody.getByText('Sample ID - Study 1')).toBeHidden();
+    await expect(tableBody.getByText('Sample ID - Study 2')).toBeHidden();
   });
 
   async function startAnalysisWith(page: Page, datasetName: string, status: object) {

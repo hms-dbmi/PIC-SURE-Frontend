@@ -20,16 +20,16 @@
       type: exp.searchResult?.type,
     })),
   );
-  let filterRows: ExportRowInterface[] = filterState.all.map((filter) => {
-    return {
+  const filterRows: ExportRowInterface[] = $derived(
+    filterState.all.map((filter) => ({
       ref: filter,
       selected: true,
       variableId: filter.id,
       name: filter.searchResult?.display || filter.variableName,
       description: filter.searchResult?.description,
       type: filter.searchResult?.type,
-    };
-  });
+    })),
+  );
   const systemFieldRows: ExportRowInterface[] = $derived(
     config.settings.exportSystemFields.map((conceptPath: string) => ({
       selected: true,
