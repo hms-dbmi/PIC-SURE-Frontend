@@ -78,6 +78,42 @@ test.describe('API page', () => {
     ).toBeVisible();
   });
 
+  test('On this page sits in its own card, set apart from the page content', async ({ page }) => {
+    // Given the navigation rail is shown
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/api');
+    await userIsLoggedIn(page);
+    const toc = page.getByTestId('toc');
+    await expect(toc).toBeVisible();
+
+    // When
+    const layout = await toc.evaluate((nav) => {
+      const isPainted = (color: string) => color !== 'rgba(0, 0, 0, 0)' && color !== 'transparent';
+      const surfaces = [
+        ...document.querySelectorAll(
+          '#api-page section, #api-page header, #api-page .card, [data-testid^="workflow-"] > *',
+        ),
+      ].filter((element) => element !== nav);
+      for (let element = nav.parentElement; element; element = element.parentElement) {
+        surfaces.push(element);
+      }
+      const content = document.getElementById('capabilities')!;
+      return {
+        cardBackground: getComputedStyle(nav).backgroundColor,
+        pageBackgrounds: surfaces
+          .map((element) => getComputedStyle(element).backgroundColor)
+          .filter(isPainted),
+        gap: nav.getBoundingClientRect().left - content.getBoundingClientRect().right,
+      };
+    });
+
+    // Then
+    expect(layout.cardBackground).not.toBe('rgba(0, 0, 0, 0)');
+    expect(layout.pageBackgrounds.length).toBeGreaterThan(0);
+    expect(layout.pageBackgrounds).not.toContain(layout.cardBackground);
+    expect(layout.gap).toBeGreaterThanOrEqual(48);
+  });
+
   test('Choose Your Workflow starts with every option collapsed', async ({ page }) => {
     // Given
     await page.goto('/api');
