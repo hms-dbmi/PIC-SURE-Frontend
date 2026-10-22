@@ -43,6 +43,26 @@ function respondFirstWith(status: number, body = '') {
   );
 }
 
+/** An unsigned JWT for `sub`; `jti` tells apart two tokens for the same user. */
+function jwt(sub: string, jti: string): string {
+  const encode = (part: object) => btoa(JSON.stringify(part)).replace(/=+$/, '');
+  const exp = Math.floor(Date.now() / 1000) + 3600;
+  return `${encode({ alg: 'none' })}.${encode({ sub, jti, exp })}.signature`;
+}
+
+/** Holds the first request open and returns what answers it with a 403. Later requests get `{}`. */
+function forbidOnceInFlight(): () => void {
+  let respond: (response: Response) => void = () => {};
+  vi.stubGlobal(
+    'fetch',
+    vi
+      .fn()
+      .mockImplementationOnce(() => new Promise<Response>((resolve) => (respond = resolve)))
+      .mockResolvedValue(new Response('{}')),
+  );
+  return () => respond(new Response('', { status: 403 }));
+}
+
 describe('a request the backend forbids', () => {
   beforeEach(() => {
     session.setToken('token');
@@ -164,19 +184,52 @@ describe('a request the backend forbids', () => {
   });
 
   it('denies nothing when it answers a token the session has since dropped', async () => {
-    let respond: (response: Response) => void = () => {};
-    vi.stubGlobal(
-      'fetch',
-      vi
-        .fn()
-        .mockImplementationOnce(() => new Promise<Response>((resolve) => (respond = resolve)))
-        .mockResolvedValue(new Response('{}')),
-    );
+    const answer = forbidOnceInFlight();
 
     const refused = request('picsure/query/sync');
     await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
     session.removeToken();
-    respond(new Response('', { status: 403 }));
+    answer();
+    await expect(refused).rejects.toMatchObject({ code: 'forbidden' });
+
+    expect(events).toEqual([]);
+  });
+
+  it('denies access when it answers a token the session has since refreshed', async () => {
+    session.setToken(jwt('user-1', 'first'));
+    const answer = forbidOnceInFlight();
+
+    const refused = request('picsure/query/sync');
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+    session.setToken(jwt('user-1', 'refreshed'));
+    answer();
+    await expect(refused).rejects.toMatchObject({ code: 'forbidden' });
+
+    expect(events).toEqual(['denied']);
+  });
+
+  it('denies nothing when it answers a dropped token, even after the same user signs in again', async () => {
+    session.setToken(jwt('user-1', 'first'));
+    const answer = forbidOnceInFlight();
+
+    const refused = request('picsure/query/sync');
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+    session.removeToken();
+    session.setToken(jwt('user-1', 'second login'));
+    answer();
+    await expect(refused).rejects.toMatchObject({ code: 'forbidden' });
+
+    expect(events).toEqual([]);
+  });
+
+  it('denies nothing when it answers the token of a user who has since been replaced', async () => {
+    session.setToken(jwt('user-1', 'first'));
+    const answer = forbidOnceInFlight();
+
+    const refused = request('picsure/query/sync');
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+    session.setToken(jwt('user-2', 'first'));
+    answer();
     await expect(refused).rejects.toMatchObject({ code: 'forbidden' });
 
     expect(events).toEqual([]);

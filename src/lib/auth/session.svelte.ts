@@ -95,6 +95,8 @@ function restoreUser(): User {
  */
 export class Session {
   #token = $state.raw('');
+  /** Tokens of this session that a refresh has replaced since it began. */
+  #refreshedFrom: string[] = [];
   #user = $state.raw<User>({});
   #validity = $derived(tokenValidity(this.#token));
   #shell: SessionShell = disconnected;
@@ -122,7 +124,7 @@ export class Session {
       this.clear();
       log(createLog('AUTH', 'session.expired'));
     } else {
-      this.#token = token;
+      this.#assignToken(token);
       this.user = restoreUser();
     }
     onTokenChange((stored) => {
@@ -132,7 +134,7 @@ export class Session {
         this.#forgetPendingRequests();
         this.user = {};
       }
-      this.#token = stored;
+      this.#assignToken(stored);
       if (stored) this.bootstrap();
     });
   }
@@ -151,8 +153,8 @@ export class Session {
 
   /**
    * Runs `listener` when a request sent with the session's token is forbidden and logs the user
-   * out, before that logout navigates. What they asked for (their filters) mustn't outlive the session: restored at
-   * the next login, the same request would be refused and log them out again. A listener added
+   * out, before that logout navigates. What they asked for mustn't outlive the session: restored
+   * at the next login, the same request would be refused and log them out again. A listener added
    * before that logout has navigated runs at once. The function the listener returns runs once the
    * logout has navigated, or failed to. Returns the unsubscribe.
    */
@@ -171,7 +173,9 @@ export class Session {
     // A 403 during a logout already under way, or for a token the session has dropped, didn't
     // start the logout. It's most likely PSAMA refusing an expired token (the logout call itself,
     // or a request that outlasted the logout), which says nothing about what was asked for.
-    if (this.#denial || this.#pendingLogout || token !== untrack(() => this.#token)) return;
+    // A token a refresh has replaced since the request is still this session's.
+    const sameSession = token === untrack(() => this.#token) || this.#refreshedFrom.includes(token);
+    if (this.#denial || this.#pendingLogout || !sameSession) return;
     this.#denial = [];
     for (const listener of this.#deniedListeners) this.#notifyDenied(listener);
   }
@@ -253,13 +257,24 @@ export class Session {
       this.#forgetPendingRequests();
     }
     writeToken(token);
-    this.#token = token;
+    this.#assignToken(token);
   }
 
   removeToken() {
     assertNoSsrWrite('session');
     clearToken();
-    this.#token = '';
+    this.#assignToken('');
+  }
+
+  #assignToken(token: string) {
+    const current = untrack(() => this.#token);
+    const subject = current && tokenSubject(current);
+    if (token && subject && token !== current && tokenSubject(token) === subject) {
+      this.#refreshedFrom.push(current);
+    } else if (token !== current) {
+      this.#refreshedFrom = [];
+    }
+    this.#token = token;
   }
 
   clear() {
