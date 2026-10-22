@@ -41,7 +41,7 @@
     "driver.js": "^1.9.0",
     "plotly.js-basic-dist-min": "^3.5.1",
     "quill": "^2.0.3",
-    "sanitize-html": "^2.17.7",
+    "sanitize-html": "^2.18.1",
     "shiki": "^4.4.3",
     "swagger-ui-dist": "^5.33.0",
     "uuid": "^14.0.2"
@@ -59,7 +59,7 @@
     "@types/auth0-js": "^9.21.6",
     "@types/node": "24.13.3",
     "@types/plotly.js-basic-dist-min": "^2.12.4",
-    "@types/sanitize-html": "^2.16.1",
+    "@types/sanitize-html": "^2.16.2",
     "@typescript-eslint/eslint-plugin": "^8.70.1",
     "@typescript-eslint/parser": "^8.71.0",
     "@vitest/coverage-v8": "4.1.11",
