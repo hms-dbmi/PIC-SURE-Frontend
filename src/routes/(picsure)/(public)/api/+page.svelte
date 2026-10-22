@@ -226,9 +226,9 @@
               {@const locked = !loggedIn && capability.requiresLogin}
               <li data-testid="api-capability-item" class="flex items-center gap-3">
                 {#if locked}
-                  <i class="fa-regular fa-circle-xmark text-xl text-surface-400"></i>
+                  <i class="fa-regular fa-circle-xmark shrink-0 text-xl text-surface-400"></i>
                 {:else}
-                  <i class="fa-regular fa-circle-check text-xl text-success-500"></i>
+                  <i class="fa-regular fa-circle-check shrink-0 text-xl text-success-500"></i>
                 {/if}
                 <span class={locked ? 'text-surface-500' : ''}>
                   {capability.text}{#if capability.requiresLogin}&nbsp;(Requires login){/if}
