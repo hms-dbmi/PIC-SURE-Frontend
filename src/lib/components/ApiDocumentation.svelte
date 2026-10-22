@@ -4,6 +4,7 @@
 
   const services = [
     { name: 'hpds-query-service', title: 'HPDS queries' },
+    { name: 'hpds-open-access', title: 'PIC-SURE High Performance Data Store (HPDS) Open Access' },
     { name: 'dictionary', title: 'Dictionary' },
   ];
   let available = $state<typeof services>([]);
