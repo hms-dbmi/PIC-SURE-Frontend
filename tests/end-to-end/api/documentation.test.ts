@@ -107,7 +107,7 @@ test.describe('API documentation for public visitors', () => {
     await expect(viewer.locator('.servers select')).toBeVisible();
     await expect(viewer.locator('.servers select')).toHaveValue('/picsure');
     await expect(page.getByLabel('Select service:').locator('option')).toHaveText([
-      'HPDS queries',
+      'Authorized Queries',
       'Dictionary',
     ]);
     await viewer.locator('.opblock-summary').click();
@@ -177,7 +177,7 @@ test.describe('API documentation for public visitors', () => {
   }
 
   test('lists the HPDS open access document when the registry publishes it', async ({ page }) => {
-    const openAccess = 'PIC-SURE High Performance Data Store (HPDS) Open Access';
+    const openAccess = 'Open Queries';
     await page.route('**/picsure/openapi', (route) =>
       route.fulfill({
         json: [
@@ -194,7 +194,7 @@ test.describe('API documentation for public visitors', () => {
     await page.goto('/api#api-access');
     const serviceSelect = page.getByLabel('Select service:');
     await expect(serviceSelect.locator('option')).toHaveText([
-      'HPDS queries',
+      'Authorized Queries',
       openAccess,
       'Dictionary',
     ]);

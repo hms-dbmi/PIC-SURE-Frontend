@@ -3,8 +3,8 @@
   import type { SwaggerComponent, SwaggerSystem } from 'swagger-ui-dist/swagger-ui-bundle.js';
 
   const services = [
-    { name: 'hpds-query-service', title: 'HPDS queries' },
-    { name: 'hpds-open-access', title: 'PIC-SURE High Performance Data Store (HPDS) Open Access' },
+    { name: 'hpds-query-service', title: 'Authorized Queries' },
+    { name: 'hpds-open-access', title: 'Open Queries' },
     { name: 'dictionary', title: 'Dictionary' },
   ];
   let available = $state<typeof services>([]);
