@@ -22,6 +22,18 @@ describe('getDistributions', () => {
     expect(respond).toHaveBeenCalledWith(path, { method: 'POST', body: { query }, auth: 'open' });
   });
 
+  it('passes on whether it asks for open-access data', async () => {
+    respond.mockResolvedValue({});
+    await getDistributions(query, { openEndpoint: false, openAccess: true });
+
+    expect(respond).toHaveBeenCalledWith('picsure/visualization/auth/distributions', {
+      method: 'POST',
+      body: { query },
+      auth: 'open',
+      openAccess: true,
+    });
+  });
+
   it('reads a response without plot lists as no plots', async () => {
     respond.mockResolvedValue({ categoricalData: null });
     await expect(getDistributions(query, { openEndpoint: true })).resolves.toEqual({

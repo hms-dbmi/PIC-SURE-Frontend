@@ -339,6 +339,18 @@ describe('stat providers', () => {
     expect(result.value).toEqual({ rejected: error });
   });
 
+  it.each([
+    { key: 'dict:facets:dataset_id', response: [] },
+    { key: 'dict:concepts', response: { totalElements: 1 } },
+  ])('asks $key for open-access data only when the stat is open', async ({ key, response }) => {
+    request.mockResolvedValue(response);
+
+    await runStat({ key, label: key }, { open: true });
+    await runStat({ key, label: key });
+
+    expect(request.mock.calls.map(([, opts]) => opts?.openAccess)).toEqual([true, false]);
+  });
+
   it('returns a hardcoded value without a request', async () => {
     expect(await runStat({ key: 'hardcoded', label: 'h', value: '1,000' })).toEqual({
       value: '1,000',

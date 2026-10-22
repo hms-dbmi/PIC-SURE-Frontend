@@ -43,13 +43,6 @@ function respondFirstWith(status: number, body = '') {
   );
 }
 
-/** An unsigned JWT for `sub`; `jti` tells apart two tokens for the same user. */
-function jwt(sub: string, jti: string): string {
-  const encode = (part: object) => btoa(JSON.stringify(part)).replace(/=+$/, '');
-  const exp = Math.floor(Date.now() / 1000) + 3600;
-  return `${encode({ alg: 'none' })}.${encode({ sub, jti, exp })}.signature`;
-}
-
 /** Holds the first request open and returns what answers it with a 403. Later requests get `{}`. */
 function forbidOnceInFlight(): () => void {
   let respond: (response: Response) => void = () => {};
@@ -132,13 +125,42 @@ describe('a request the backend forbids', () => {
     expect(events).toEqual(['denied', 'lifted']);
   });
 
-  it('denies nothing when the request went without the user’s token', async () => {
+  it('denies nothing when an anonymous visitor’s open request is forbidden', async () => {
+    session.clear();
+    // the open-access session's POST is refused as well, so the request goes without one
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(new Response('', { status: 403 }))),
+    );
+
+    await expect(request('picsure/query/sync', { auth: 'open' })).rejects.toMatchObject({
+      code: 'forbidden',
+    });
+
+    expect(events).toEqual([]);
+  });
+
+  it('denies nothing when a request for open-access data is forbidden, and still logs out', async () => {
+    respondFirstWith(403);
+
+    await expect(
+      request('picsure/dictionary/facets', { method: 'POST', auth: 'open', openAccess: true }),
+    ).rejects.toMatchObject({ code: 'forbidden' });
+    await vi.waitFor(() => expect(navigations).toHaveLength(1));
+
+    expect(events).toEqual([]);
+    expect(session.isLoggedIn).toBe(false);
+  });
+
+  it('denies access when a request without the user’s token is forbidden', async () => {
     session.clear();
     respondFirstWith(403);
 
-    await expect(request('picsure/query/sync')).rejects.toMatchObject({ code: 'forbidden' });
+    await expect(
+      request('psama/open/apiKey', { method: 'POST', auth: 'none' }),
+    ).rejects.toMatchObject({ code: 'forbidden' });
 
-    expect(events).toEqual([]);
+    expect(events).toEqual(['denied']);
   });
 
   it('tells a listener added before the logout navigates, and lifts it with the rest', async () => {
@@ -183,56 +205,16 @@ describe('a request the backend forbids', () => {
     expect(runs).toBe(1);
   });
 
-  it('denies nothing when it answers a token the session has since dropped', async () => {
+  it('denies access when it answers a token the session has since dropped', async () => {
     const answer = forbidOnceInFlight();
 
     const refused = request('picsure/query/sync');
     await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
     session.removeToken();
-    answer();
-    await expect(refused).rejects.toMatchObject({ code: 'forbidden' });
-
-    expect(events).toEqual([]);
-  });
-
-  it('denies access when it answers a token the session has since refreshed', async () => {
-    session.setToken(jwt('user-1', 'first'));
-    const answer = forbidOnceInFlight();
-
-    const refused = request('picsure/query/sync');
-    await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
-    session.setToken(jwt('user-1', 'refreshed'));
     answer();
     await expect(refused).rejects.toMatchObject({ code: 'forbidden' });
 
     expect(events).toEqual(['denied']);
-  });
-
-  it('denies nothing when it answers a dropped token, even after the same user signs in again', async () => {
-    session.setToken(jwt('user-1', 'first'));
-    const answer = forbidOnceInFlight();
-
-    const refused = request('picsure/query/sync');
-    await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
-    session.removeToken();
-    session.setToken(jwt('user-1', 'second login'));
-    answer();
-    await expect(refused).rejects.toMatchObject({ code: 'forbidden' });
-
-    expect(events).toEqual([]);
-  });
-
-  it('denies nothing when it answers the token of a user who has since been replaced', async () => {
-    session.setToken(jwt('user-1', 'first'));
-    const answer = forbidOnceInFlight();
-
-    const refused = request('picsure/query/sync');
-    await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
-    session.setToken(jwt('user-2', 'first'));
-    answer();
-    await expect(refused).rejects.toMatchObject({ code: 'forbidden' });
-
-    expect(events).toEqual([]);
   });
 
   it('denies nothing when the session has expired instead', async () => {
@@ -246,7 +228,7 @@ describe('a request the backend forbids', () => {
     expect(events).toEqual([]);
   });
 
-  it('denies nothing when PSAMA refuses the logout call of an expired session', async () => {
+  it('denies access when a 403 answers a logout under way, and lifts it once that logout has navigated', async () => {
     vi.stubGlobal(
       'fetch',
       vi
@@ -257,11 +239,14 @@ describe('a request the backend forbids', () => {
 
     await expect(request('picsure/query/sync')).rejects.toMatchObject({ code: 'unauthorized' });
     await vi.waitFor(() => expect(navigations).toHaveLength(1));
+    await settle();
+    expect(events).toEqual(['denied']);
+
     navigations[0].resolve();
     await settle();
-
     expect(fetch).toHaveBeenCalledTimes(2);
-    expect(events).toEqual([]);
+    expect(navigations).toHaveLength(1);
+    expect(events).toEqual(['denied', 'lifted']);
   });
 
   it('denies nothing when the user logs out', async () => {

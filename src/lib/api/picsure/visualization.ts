@@ -13,15 +13,15 @@ export interface Distributions {
 
 /**
  * Plot data for each variable the query filters on. `openEndpoint` asks the open variant's
- * obfuscated distributions.
+ * obfuscated distributions; `openAccess` is `RequestOptions.openAccess`.
  */
 export async function getDistributions(
   query: QueryJson,
-  { openEndpoint }: { openEndpoint: boolean },
+  { openEndpoint, openAccess }: { openEndpoint: boolean; openAccess?: boolean },
 ): Promise<Distributions> {
   const response = await request<unknown>(
     openEndpoint ? Picsure.Visualization.DistributionsOpen : Picsure.Visualization.Distributions,
-    { method: 'POST', body: { query }, auth: 'open' },
+    { method: 'POST', body: { query }, auth: 'open', openAccess },
   );
   const { categoricalData, continuousData } =
     typeof response === 'object' && response !== null ? (response as Record<string, unknown>) : {};

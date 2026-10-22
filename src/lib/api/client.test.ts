@@ -48,7 +48,7 @@ vi.mock('#lib/api/openSession.ts', () => ({
   recoverOpenSession: (sent: string) => mockRecoverOpenSession(sent),
 }));
 
-import { request } from '#lib/api/client.ts';
+import { request, type RequestOptions } from '#lib/api/client.ts';
 import { isAbortError } from '#lib/api/errors.ts';
 import { ApiError } from '#lib/api/errors.ts';
 import { registerSessionHooks } from '#lib/api/sessionHooks.ts';
@@ -399,7 +399,7 @@ describe('request', () => {
 
       expect(e).toMatchObject({ status: 403, code: 'forbidden', message: 'Forbidden' });
       expect(onForbidden).toHaveBeenCalledTimes(1);
-      expect(onForbidden).toHaveBeenCalledWith('my-token');
+      expect(onForbidden).toHaveBeenCalledWith(false);
       expect(mockCreateLog).toHaveBeenCalledWith('AUTH', 'session.forbidden', undefined, {
         status: 403,
       });
@@ -414,8 +414,50 @@ describe('request', () => {
 
       await rejection(request('picsure/test', { auth: 'open' }));
 
-      expect(onForbidden).toHaveBeenCalledWith(null);
+      expect(onForbidden).toHaveBeenCalledWith(true);
     });
+
+    it.each<{
+      name: string;
+      sent: string | null;
+      path: string;
+      opts: RequestOptions;
+      open: boolean;
+    }>([
+      {
+        name: 'a signed-in request for open-access data',
+        sent: 'my-token',
+        path: 'picsure/test',
+        opts: { auth: 'open', openAccess: true },
+        open: true,
+      },
+      {
+        name: "an open request with the user's token",
+        sent: 'my-token',
+        path: 'picsure/test',
+        opts: { auth: 'open' },
+        open: false,
+      },
+      {
+        name: "a request without the user's token",
+        sent: null,
+        path: 'psama/open/apiKey',
+        opts: { auth: 'none' },
+        open: false,
+      },
+    ])(
+      'tells the session whether a 403 to $name refused the user',
+      async ({ sent, path, opts, open }) => {
+        token = sent;
+        fetchMock.mockResolvedValue(
+          mockFetchResponse({ ok: false, status: 403, body: 'Forbidden' }),
+        );
+
+        await rejection(request(path, opts));
+
+        expect(onForbidden).toHaveBeenCalledWith(open);
+      },
+    );
 
     it('reports a consent denial with its message and keeps the session', async () => {
       const body = { errorType: 'consent_denied', message: 'Consent for phs000007 was withdrawn' };

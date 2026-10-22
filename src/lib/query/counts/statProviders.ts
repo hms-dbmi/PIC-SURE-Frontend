@@ -44,7 +44,9 @@ function facetCategoryCount(category: string): CountProvider {
   return {
     id: `dict:facets:${category}`,
     async fetch({ isOpenAccess }) {
-      const facetCategories = await searchFacets(await dictionaryRequest(isOpenAccess));
+      const facetCategories = await searchFacets(await dictionaryRequest(isOpenAccess), {
+        openAccess: isOpenAccess,
+      });
       const facetCat = facetCategories.find((facetCat) => facetCat.name === category);
       if (!facetCat) return 0;
       if (isOpenAccess) return facetCat.facets.length;
@@ -57,7 +59,11 @@ const conceptCount: CountProvider = {
   id: 'dict:concepts',
   async fetch({ isOpenAccess }) {
     const request = await dictionaryRequest(isOpenAccess);
-    const res = await searchConcepts(request, { pageNumber: 1, pageSize: 1 });
+    const res = await searchConcepts(
+      request,
+      { pageNumber: 1, pageSize: 1 },
+      { openAccess: isOpenAccess },
+    );
     if (res.totalElements === undefined || res.totalElements === null) {
       throw new Error('total not found');
     }

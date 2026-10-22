@@ -39,6 +39,12 @@ export interface RequestOptions {
   body?: unknown;
   headers?: Record<string, string>;
   auth?: Auth;
+  /**
+   * The request is for open-access data, so a 403 on it refuses nothing the user asked for, as on
+   * an anonymous `open` request (`SessionHooks.onForbidden`). It changes neither the credentials
+   * nor what is asked for.
+   */
+  openAccess?: boolean;
   signal?: AbortSignal;
   /**
    * For a request that must not reach the session or the page (the public banner feed): it is
@@ -69,7 +75,14 @@ export function request<T>(path: string, opts: RequestOptions = {}): Promise<T |
 }
 
 async function send(path: string, opts: RequestOptions): Promise<unknown> {
-  const { method = 'GET', body, auth = 'user', signal, softFail = false } = opts;
+  const {
+    method = 'GET',
+    body,
+    auth = 'user',
+    openAccess = false,
+    signal,
+    softFail = false,
+  } = opts;
   const doFetch = opts.fetch ?? fetch;
   const init: RequestInit = { method };
   const headers: Record<string, string> =
@@ -129,7 +142,13 @@ async function send(path: string, opts: RequestOptions): Promise<unknown> {
     }
   }
 
-  return await handleResponse(res, { path, userToken, openRequest, softFail });
+  return await handleResponse(res, {
+    path,
+    userToken,
+    openRequest,
+    openAccess,
+    softFail,
+  });
 }
 
 function withQuery(path: string, query: RequestOptions['query']): string {
@@ -170,8 +189,15 @@ async function handleResponse(
     path,
     userToken,
     openRequest,
+    openAccess,
     softFail,
-  }: { path: string; userToken: string | null; openRequest: boolean; softFail: boolean },
+  }: {
+    path: string;
+    userToken: string | null;
+    openRequest: boolean;
+    openAccess: boolean;
+    softFail: boolean;
+  },
 ): Promise<unknown> {
   if (res.ok) {
     if (!softFail) refreshToken(res);
@@ -209,7 +235,7 @@ async function handleResponse(
       throw new ApiError(403, 'terms_not_accepted', body, text);
     }
     log(createLog('AUTH', 'session.forbidden', undefined, { status: 403 }));
-    sessionHooks().onForbidden(userToken);
+    sessionHooks().onForbidden(openRequest || openAccess);
     throw failure(403, 'forbidden', text);
   }
   throw failure(res.status, 'http', text);

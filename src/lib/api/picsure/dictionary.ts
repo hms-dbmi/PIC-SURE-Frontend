@@ -14,12 +14,14 @@ import { expectArray, expectRecord, isRecord } from '#lib/api/picsure/guards.ts'
 
 interface Options {
   signal?: AbortSignal;
+  /** See `RequestOptions.openAccess`. */
+  openAccess?: boolean;
 }
 
 export async function searchConcepts(
   search: DictionarySearchRequest,
   page: Pick<Pageable, 'pageNumber' | 'pageSize'>,
-  { signal }: Options = {},
+  { signal, openAccess }: Options = {},
 ): Promise<DictionaryConceptResult> {
   const response = expectRecord(
     await request<unknown>(Picsure.Concepts, {
@@ -27,6 +29,7 @@ export async function searchConcepts(
       query: { page_number: page.pageNumber, page_size: page.pageSize },
       body: search,
       auth: 'open',
+      openAccess,
       signal,
     }),
     'concept search',
@@ -39,10 +42,16 @@ export async function searchConcepts(
 
 export async function searchFacets(
   search: DictionarySearchRequest,
-  { signal }: Options = {},
+  { signal, openAccess }: Options = {},
 ): Promise<DictionaryFacetResult[]> {
   const categories = expectArray(
-    await request<unknown>(Picsure.Facets, { method: 'POST', body: search, auth: 'open', signal }),
+    await request<unknown>(Picsure.Facets, {
+      method: 'POST',
+      body: search,
+      auth: 'open',
+      openAccess,
+      signal,
+    }),
     'facet',
   );
   if (!categories.every((category) => isRecord(category) && Array.isArray(category.facets))) {
