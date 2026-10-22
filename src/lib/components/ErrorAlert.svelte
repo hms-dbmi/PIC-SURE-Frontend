@@ -29,6 +29,7 @@
   class="card flex gap-4 preset-{solid ? 'filled' : 'tonal'}-{color}{solid
     ? '-500'
     : ''} border border-{color}-500 py-2 px-3 m-2"
+  class:warning-message={color === 'warning' && !solid}
 >
   {#if icon}<i
       class="fa-solid fa-circle-exclamation text-{iconSize} content-center"

@@ -4,6 +4,7 @@ import { test, mockApiSuccess, mockApiConfig } from '../../custom-context';
 import {
   conceptTreePath,
   conceptsDetailPath,
+  countResultPath,
   detailResponseCat,
   facetResultPath,
   facetsResponse,
@@ -20,8 +21,6 @@ import {
   createNumericFilter,
 } from '../../../../src/lib/models/Filter.svelte';
 import type { SearchResult } from '../../../../src/lib/models/Search';
-
-const countResultPath = '*/**/picsure/hpds/auth/query/sync';
 
 test.beforeEach(async ({ page }) => {
   await mockApiConfig(page, {

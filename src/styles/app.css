@@ -411,7 +411,7 @@ nav#page-navigation a.nav-link[aria-current='page'] {
 
 nav#page-navigation a.nav-link:hover,
 nav#page-navigation a.nav-link:active,
-nav#page-navigation a.nav-link:focus,
+nav#page-navigation a.nav-link:focus-visible,
 nav#page-navigation li.open a.nav-link,
 nav#page-navigation a.nav-link.highlight {
   @apply preset-filled-secondary-500;
@@ -471,6 +471,18 @@ nav#page-navigation li .nav-dropdown a:focus {
 
 #user-token span.badge.expired {
   @apply preset-filled-error-500;
+}
+
+/* Must stay unlayered and after .card, whose surface-200 border overrides Tailwind border utilities. */
+.warning-message {
+  background-color: var(--color-warning-50);
+  border-color: var(--color-warning-700);
+  color: var(--color-warning-900);
+}
+
+.warning-message > i,
+.warning-message .site-banner-icon {
+  color: var(--color-warning-800);
 }
 
 #user-token span.badge.expiring {

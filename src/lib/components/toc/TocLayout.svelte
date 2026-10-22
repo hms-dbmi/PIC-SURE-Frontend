@@ -37,6 +37,6 @@
 <style>
   .toc-layout {
     --toc-rail-width: 14rem;
-    --toc-rail-gap: 2rem;
+    --toc-rail-gap: 3rem;
   }
 </style>

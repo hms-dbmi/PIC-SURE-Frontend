@@ -400,6 +400,7 @@ export const searchResultPath = '*/**/picsure/dictionary/concepts?page_number=0&
 export const searchResultPathForSampleIds =
   '*/**/picsure/dictionary/concepts?page_number=0&page_size=10000';
 export const facetResultPath = '*/**/picsure/dictionary/facets';
+export const countResultPath = '*/**/picsure/hpds/auth/query/sync';
 export const conceptsDetailPath = '*/**/picsure/dictionary/concepts/detail'; // + name
 export const conceptTreePath = '*/**/picsure/dictionary/concepts/tree'; // + name
 export const configurationPath = '*/**/picsure/operations/configuration';
@@ -1761,3 +1762,21 @@ export const variantDataFull =
   'somechrom	52565	N	K	upstream_gene_variant	SNV	2	5_8S_rRNA	null	-10	Novel	2	1/1261	0/512  0/0 0/0 0/0 0/0 1/0\n' +
   'somechrom	52691	V	T	upstream_gene_variant	SNV	2	5_8S_rRNA	null	-10	Novel	2	1/1261	0/512  0/0 0/0 0/0 0/1 0/0\n' +
   'somechrom	52693	V	T	upstream_gene_variant	SNV	2	5_8S_rRNA	null	-10	Common	2	1/1261	0/512  0/1 0/0 0/0 0/0 0/0\n\n';
+
+// a stored filterTree with one filter on a study the test user has no consent for
+export const deniedFilterTree = {
+  uuid: 'root',
+  operator: 'AND',
+  children: [
+    {
+      uuid: 'denied-filter',
+      id: '\\denied-study\\variable\\',
+      filterType: 'Categorical',
+      displayType: 'restrict',
+      variableName: 'Denied variable',
+      allowFiltering: true,
+      dataset: 'denied-study',
+      categoryValues: ['Yes'],
+    },
+  ],
+};

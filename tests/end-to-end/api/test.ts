@@ -78,6 +78,42 @@ test.describe('API page', () => {
     ).toBeVisible();
   });
 
+  test('On this page sits in its own card, set apart from the page content', async ({ page }) => {
+    // Given the navigation rail is shown
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/api');
+    await userIsLoggedIn(page);
+    const toc = page.getByTestId('toc');
+    await expect(toc).toBeVisible();
+
+    // When
+    const layout = await toc.evaluate((nav) => {
+      const isPainted = (color: string) => color !== 'rgba(0, 0, 0, 0)' && color !== 'transparent';
+      const surfaces = [
+        ...document.querySelectorAll(
+          '#api-page section, #api-page header, #api-page .card, [data-testid^="workflow-"] > *',
+        ),
+      ].filter((element) => element !== nav);
+      for (let element = nav.parentElement; element; element = element.parentElement) {
+        surfaces.push(element);
+      }
+      const content = document.getElementById('capabilities')!;
+      return {
+        cardBackground: getComputedStyle(nav).backgroundColor,
+        pageBackgrounds: surfaces
+          .map((element) => getComputedStyle(element).backgroundColor)
+          .filter(isPainted),
+        gap: nav.getBoundingClientRect().left - content.getBoundingClientRect().right,
+      };
+    });
+
+    // Then
+    expect(layout.cardBackground).not.toBe('rgba(0, 0, 0, 0)');
+    expect(layout.pageBackgrounds.length).toBeGreaterThan(0);
+    expect(layout.pageBackgrounds).not.toContain(layout.cardBackground);
+    expect(layout.gap).toBeGreaterThanOrEqual(48);
+  });
+
   test('Choose Your Workflow starts with every option collapsed', async ({ page }) => {
     // Given
     await page.goto('/api');
@@ -316,6 +352,34 @@ test.describe('API page', () => {
         await expect(items.nth(index)).toContainText('(Requires login)');
       }
     }
+  });
+
+  test('Capability text lines up whether it fits on one line or wraps', async ({ page }) => {
+    // Given a width where some capabilities wrap onto a second line
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto('/api');
+    await userIsLoggedIn(page);
+    const items = page.getByTestId('capability-item');
+    await expect(items).toHaveCount(capabilities.length);
+
+    // When
+    const layout = await items.evaluateAll((elements) =>
+      elements.map((item) => {
+        const text = item.querySelector('span')!;
+        const { left, height } = text.getBoundingClientRect();
+        return {
+          textLeft: left,
+          lines: Math.round(height / parseFloat(getComputedStyle(text).lineHeight)),
+        };
+      }),
+    );
+
+    // Then
+    expect(
+      new Set(layout.map(({ lines }) => lines > 1)).size,
+      'configuration.json capabilities should mix one-line and wrapped items at 1280px',
+    ).toBe(2);
+    expect(new Set(layout.map(({ textLeft }) => textLeft)).size).toBe(1);
   });
 
   test('Shows personal access token card with login confirmed', async ({ page }) => {
