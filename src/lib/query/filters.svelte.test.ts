@@ -238,20 +238,29 @@ describe('consent-based filter access', () => {
     expect(filters.phenotypic.map((filter) => filter.dataset)).toEqual(['authorized-dataset']);
   });
 
-  it('detects and removes a standalone genomic filter without consent', async () => {
+  it('does not mark gene or SNP filters invalid, since they belong to no study', () => {
     mockSession.user = { consents: { '\\_consents\\': ['authorized-dataset'] } };
     filters.add(createGenomicFilter({ Gene_with_variant: ['BRCA1'] }));
+    filters.add(createSnpsFilter([{ search: 'chr1,12345,A,G', constraint: '0/1' }]));
 
-    expect(filters.phenotypic).toHaveLength(0);
-    expect(filters.genomic).toHaveLength(1);
-    expect(filters.hasInvalidFilter).toBe(true);
+    expect(filters.hasInvalidFilter).toBe(false);
+  });
+
+  it('keeps gene and SNP filters when removing invalid filters', async () => {
+    mockSession.user = { consents: { '\\_consents\\': ['authorized-dataset'] } };
+    filters.add(createGenomicFilter({ Gene_with_variant: ['BRCA1'] }));
+    filters.add(createSnpsFilter([{ search: 'chr1,12345,A,G', constraint: '0/1' }]));
+    filters.add(
+      createCategoricalFilter(mockSearchResult('\\demo\\denied\\', 'denied-dataset'), ['value']),
+    );
 
     mockSession.ensureConsentsLoaded.mockResolvedValue({
       '\\_consents\\': ['authorized-dataset'],
     });
     await filters.removeInvalid();
 
-    expect(filters.genomic).toHaveLength(0);
+    expect(filters.phenotypic).toHaveLength(0);
+    expect(filters.genomic.map((f) => f.filterType)).toEqual(['genomic', 'snp']);
   });
 
   it('loads missing consents before removing invalid filters', async () => {

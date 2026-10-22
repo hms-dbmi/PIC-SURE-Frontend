@@ -25,11 +25,7 @@ function isGenomic(filter: Filter): boolean {
 }
 
 function hasConsentForFilter(filter: Filter, consents: string[]): boolean {
-  let filterDataset = filter.dataset || '';
-  if (genomicFilterTypes.includes(filter.filterType)) {
-    filterDataset = 'Gene_with_variant';
-  }
-
+  const filterDataset = filter.dataset || '';
   return filterDataset.length > 0 && consents.some((consent) => consent.includes(filterDataset));
 }
 
@@ -114,12 +110,15 @@ export class FilterState {
     return this.#phenotypic.some((filter) => !filter.allowFiltering);
   }
 
-  /** True when a filter's study isn't among the user's consents (false until they load). */
+  /**
+   * True when a filter's study isn't among the user's consents (false until they load). Genomic
+   * filters are left out: they belong to no study, and only Explore can create them.
+   */
   get hasInvalidFilter(): boolean {
     const consents = session.user?.consents?.['\\_consents\\'];
-    if (this.#all.length === 0 || !consents) return false;
+    if (this.#phenotypic.length === 0 || !consents) return false;
 
-    return this.#all.some((filter) => !hasConsentForFilter(filter, consents));
+    return this.#phenotypic.some((filter) => !hasConsentForFilter(filter, consents));
   }
 
   byType(type: string): Filter[] {
@@ -233,15 +232,18 @@ export class FilterState {
     if (count > 0) log(createLog('FILTER', 'filter.remove_unallowed', { count }));
   }
 
+  /** Leaves genomic filters alone, for the same reason `hasInvalidFilter` skips them. */
   async removeInvalid(): Promise<void> {
     assertNoSsrWrite('filters');
-    if (this.#all.length === 0) return;
+    if (this.#phenotypic.length === 0) return;
 
     const consentsMap = await session.ensureConsentsLoaded();
     const consents = consentsMap?.['\\_consents\\'];
     if (!consents) return;
 
-    const count = this.#removeWhere((filter) => !hasConsentForFilter(filter, consents));
+    const count = this.#removeWhere(
+      (filter) => !isGenomic(filter) && !hasConsentForFilter(filter, consents),
+    );
     if (count > 0) log(createLog('FILTER', 'filter.remove_invalid', { count }));
   }
 
