@@ -19,6 +19,7 @@
 
   let { children }: { children?: Snippet } = $props();
   let filterWarningModal: boolean = $state(false);
+  let filterWarningTrigger: HTMLElement | undefined = $state();
   setTableEvents(tableEvents);
 
   onMount(() => {
@@ -44,13 +45,16 @@
       else if (notAuthorized) filterState.warning = 'notAuthorized';
 
       cancel();
+      const active = document.activeElement;
+      filterWarningTrigger =
+        active instanceof HTMLElement && active !== document.body ? active : undefined;
       filterWarningModal = true;
     }
   });
 </script>
 
 <Toaster />
-<FilterWarning bind:open={filterWarningModal} />
+<FilterWarning bind:open={filterWarningModal} returnFocus={filterWarningTrigger} />
 <Shell>
   {#snippet header()}
     <SiteBannerRegion />

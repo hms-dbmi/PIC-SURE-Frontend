@@ -134,7 +134,10 @@ test.describe('Filter warning navigation', () => {
     { seed: seedDeniedFilter, from: '/discover', to: 'explorer', back: 'Back to Discover' },
     { seed: seedGenomicFilter, from: '/explorer', to: 'discover', back: 'Back to Explore' },
   ].forEach(({ seed, from, to, back }) => {
-    test(`does not leave the ${to} link highlighted after choosing ${back}`, async ({ page }) => {
+    test(`does not leave the ${to} link highlighted after choosing ${back}`, async ({
+      page,
+      browserName,
+    }) => {
       await seed(page);
 
       await page.goto(from);
@@ -146,11 +149,46 @@ test.describe('Filter warning navigation', () => {
       await page.getByRole('button', { name: back }).click();
 
       await expect(page.getByTestId('explorer-filter-warning')).toBeHidden();
-      // The dialog hands focus back to the link, but SvelteKit blurs it again when Back navigates.
-      // Focus it from script as the dialog does, after the mouse click on Back.
-      await link.focus();
+      // WebKit doesn't focus links on click, so there's no link to return focus to.
+      if (browserName !== 'webkit') await expect(link).toBeFocused();
       await page.mouse.move(0, 0);
       await expect(link).toHaveCSS('background-color', unselectedBackground);
+    });
+
+    [
+      { opener: 'keyboard', chooser: 'keyboard', ring: true },
+      { opener: 'mouse', chooser: 'keyboard', ring: true },
+      { opener: 'keyboard', chooser: 'mouse', ring: false },
+    ].forEach(({ opener, chooser, ring }) => {
+      test(`returns focus to the ${to} link ${ring ? 'with' : 'without'} a ring after opening with the ${opener} and choosing ${back} with the ${chooser}`, async ({
+        page,
+        browserName,
+      }) => {
+        // WebKit doesn't focus links on click, so there's no link to return focus to.
+        test.skip(
+          opener === 'mouse' && browserName === 'webkit',
+          'WebKit leaves a clicked link unfocused',
+        );
+        await seed(page);
+
+        await page.goto(from);
+        const link = page.locator(`#app-nav-link-${to}`);
+        const unselectedBackground = await link.evaluate(
+          (el) => getComputedStyle(el).backgroundColor,
+        );
+        if (opener === 'keyboard') await link.press('Enter');
+        else await link.click();
+        const backButton = page.getByRole('button', { name: back });
+        if (chooser === 'keyboard') await backButton.press('Enter');
+        else await backButton.click();
+
+        await expect(page.getByTestId('explorer-filter-warning')).toBeHidden();
+        await expect(page).toHaveURL(new RegExp(`${from}$`));
+        await expect(link).toBeFocused();
+        await page.mouse.move(0, 0);
+        if (ring) await expect(link).not.toHaveCSS('background-color', unselectedBackground);
+        else await expect(link).toHaveCSS('background-color', unselectedBackground);
+      });
     });
   });
 });

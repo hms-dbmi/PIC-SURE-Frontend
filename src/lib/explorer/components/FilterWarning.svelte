@@ -10,7 +10,13 @@
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import Button from '#lib/ui/Button.svelte';
 
-  let { open = $bindable(false) }: { open: boolean } = $props();
+  interface Props {
+    open: boolean;
+    /** Refocused once the "Back to …" navigation has finished (Kit 3 blurs it when navigating). */
+    returnFocus?: HTMLElement;
+  }
+
+  let { open = $bindable(false), returnFocus }: Props = $props();
 
   type ExplorePath = 'discover' | 'explorer' | '';
 
@@ -53,11 +59,16 @@
 
   const warning: Warning = $derived(filterWarnings[filterState.warning || 'undefined']);
 
-  function goBack() {
+  async function goBack(event: MouseEvent) {
     const back = warning.back;
+    const target = returnFocus;
+    // A button pressed with Enter or Space clicks with detail 0. Firefox shows no focus ring on a
+    // programmatic focus after Kit's focus reset unless asked, and mouse users shouldn't get one.
+    const focusVisible = event.detail === 0;
     filterState.warning = undefined;
     open = false;
-    goto(resolve(back));
+    await goto(resolve(back));
+    target?.focus({ focusVisible });
   }
 
   async function reset() {
