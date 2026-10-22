@@ -39,6 +39,13 @@ export default defineConfig(async ({ mode }) => {
       // Undo vi.stubGlobal/vi.stubEnv after each test so stubs can't leak into later tests
       unstubGlobals: true,
       unstubEnvs: true,
+      // Without `include`, vitest only reports files the tests import, so a new untested file
+      // would be missing from lcov instead of showing 0%. Keep in step with coverage.include
+      // in .github/risk/policy.json.
+      coverage: {
+        include: ['src/**/*.{ts,js,svelte}'],
+        exclude: ['**/*.d.ts', '**/*.{test,spec}.{ts,js}'],
+      },
       // Every Vitest file belongs to exactly one project; Playwright specs under
       // tests/end-to-end match neither, so a bare `vitest` never collects them.
       projects: [

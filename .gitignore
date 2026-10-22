@@ -25,3 +25,4 @@ supervisord.pid
 /tests/end-to-end/.auth
 # Screenshot baselines for tests/visual: machine-specific, generated locally from the base branch
 /tests/visual/__screenshots__
+coverage/
