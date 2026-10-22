@@ -9,16 +9,19 @@ import { newLoginState, verifyLoginState } from '#lib/auth/loginState.ts';
 interface Auth0Data extends AuthData {
   clientid: string;
   connection: string;
+  domain?: string;
 }
 
 class Auth0 extends AuthProvider implements Auth0Data {
   clientid: string;
   connection: string;
+  domain?: string;
 
   constructor(data: Auth0Data) {
     super(data);
     this.clientid = data.clientid;
     this.connection = data.connection;
+    this.domain = data.domain;
   }
 
   // The implicit grant answers in the hash, form-encoded and in any order: `access_token`,
@@ -43,7 +46,7 @@ class Auth0 extends AuthProvider implements Auth0Data {
     const redirectUrl = this.getRedirectURI();
     this.saveState(redirectTo, type);
     const webAuth = new auth0.WebAuth({
-      domain: AUTH0_TENANT + '.auth0.com',
+      domain: this.domain || AUTH0_TENANT + '.auth0.com',
       clientID: this.clientid || '',
       redirectUri: redirectUrl,
       responseType: 'token',
