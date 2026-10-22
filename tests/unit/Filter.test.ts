@@ -111,20 +111,27 @@ describe('consent-based filter access', () => {
     ]);
   });
 
-  it('detects and removes a standalone genomic filter without consent', async () => {
+  it('does not mark a genomic filter invalid, since it belongs to no study', () => {
     mockUser.set({ consents: { '\\_consents\\': ['authorized-dataset'] } });
     addFilter(createGenomicFilter({ Gene_with_variant: ['BRCA1'] }));
 
-    expect(get(filterTree).leafNodes).toHaveLength(0);
-    expect(get(genomicFilters)).toHaveLength(1);
-    expect(get(hasInvalidFilter)).toBe(true);
+    expect(get(hasInvalidFilter)).toBe(false);
+  });
+
+  it('keeps genomic filters when removing invalid filters', async () => {
+    mockUser.set({ consents: { '\\_consents\\': ['authorized-dataset'] } });
+    addFilter(createGenomicFilter({ Gene_with_variant: ['BRCA1'] }));
+    addFilter(
+      createCategoricalFilter(mockSearchResult('\\demo\\denied\\', 'denied-dataset'), ['value']),
+    );
 
     mockEnsureConsentsLoaded.mockResolvedValue({
       '\\_consents\\': ['authorized-dataset'],
     });
     await removeInvalidFilters();
 
-    expect(get(genomicFilters)).toHaveLength(0);
+    expect(get(filterTree).leafNodes).toHaveLength(0);
+    expect(get(genomicFilters)).toHaveLength(1);
   });
 
   it('loads missing consents before removing invalid filters', async () => {
