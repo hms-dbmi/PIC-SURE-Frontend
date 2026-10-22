@@ -6,7 +6,7 @@
   <div
     class="border rounded-sm border-surface-500 flex flex-col items-center justify-center w-3/15 p-2"
   >
-    <span class="font-bold">Geneomic Region: </span>
+    <span class="font-bold">Genomic Region: </span>
     <div id="genomic-summary-variant" class="text-center break-words">
       {#each genomicDraft.genes as gene, index}
         {#if index !== 0}
