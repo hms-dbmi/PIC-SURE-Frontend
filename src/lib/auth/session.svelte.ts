@@ -25,8 +25,11 @@ import { assertNoSsrWrite } from '#lib/utils/ssrWrite.ts';
 
 /** What the session needs from the app around it. `hooks.client.ts` connects it at startup. */
 export interface SessionShell {
-  /** Navigates within the app to a path such as `/login?redirectTo=%2Fexplorer`. */
-  navigate(path: string): void;
+  /**
+   * Navigates within the app to a path such as `/login?redirectTo=%2Fexplorer`. Settles once the
+   * navigation has, or never when it falls back to loading the page.
+   */
+  navigate(path: string): Promise<void>;
   /** The page on screen, so a user whose session timed out can come back to it. */
   currentUrl(): { pathname: string; search: string };
   /** Tells the user that the studies they may see could not be loaded. */
@@ -34,7 +37,7 @@ export interface SessionShell {
 }
 
 const disconnected: SessionShell = {
-  navigate: () => {},
+  navigate: async () => {},
   currentUrl: () => ({ pathname: '/', search: '' }),
   showAccessUnavailable: () => {},
 };
@@ -105,6 +108,10 @@ export class Session {
   // navigate to /login a second time, so later calls share the logout already running.
   #pendingLogout: Promise<void> | undefined;
   #endListeners: (() => void)[] = [];
+  #deniedListeners: (() => (() => void) | void)[] = [];
+  // From a forbidden request until its logout has navigated: what the listeners returned.
+  #denial: (() => void)[] | undefined;
+  #navigations = 0;
 
   constructor() {
     if (!browser) return;
@@ -140,6 +147,38 @@ export class Session {
     return () => {
       this.#endListeners = this.#endListeners.filter((l) => l !== listener);
     };
+  }
+
+  /**
+   * Runs `listener` when a request sent with the session's token is forbidden and logs the user
+   * out, before that logout navigates. What they asked for (their filters) mustn't outlive the session: restored at
+   * the next login, the same request would be refused and log them out again. A listener added
+   * before that logout has navigated runs at once. The function the listener returns runs once the
+   * logout has navigated, or failed to. Returns the unsubscribe.
+   */
+  onAccessDenied(listener: () => (() => void) | void): () => void {
+    this.#deniedListeners.push(listener);
+    // Untracked: an effect that subscribes must not re-run when the listener reads state.
+    if (this.#denial) untrack(() => this.#notifyDenied(listener));
+    return () => {
+      this.#deniedListeners = this.#deniedListeners.filter((l) => l !== listener);
+    };
+  }
+
+  /** A request sent with `token` was forbidden. See `onAccessDenied`. */
+  denyAccess(token: string) {
+    assertNoSsrWrite('session');
+    // A 403 during a logout already under way, or for a token the session has dropped, didn't
+    // start the logout. It's most likely PSAMA refusing an expired token (the logout call itself,
+    // or a request that outlasted the logout), which says nothing about what was asked for.
+    if (this.#denial || this.#pendingLogout || token !== untrack(() => this.#token)) return;
+    this.#denial = [];
+    for (const listener of this.#deniedListeners) this.#notifyDenied(listener);
+  }
+
+  #notifyDenied(listener: () => (() => void) | void) {
+    const lift = listener();
+    if (lift) this.#denial?.push(lift);
   }
 
   connect(shell: SessionShell) {
@@ -425,7 +464,24 @@ export class Session {
   #leave(redirect: boolean) {
     this.user = {};
     log(createLog('AUTH', 'logout.success'));
-    this.#shell.navigate(redirect ? loginRedirectPath(this.#shell.currentUrl()) : '/login');
+    void this.#navigateAway(redirect ? loginRedirectPath(this.#shell.currentUrl()) : '/login');
+  }
+
+  async #navigateAway(path: string) {
+    const navigation = ++this.#navigations;
+    try {
+      await this.#shell.navigate(path);
+    } finally {
+      // A later logout superseded this navigation, so the denied page is still mounted: leave
+      // lifting the denial to that one.
+      if (navigation === this.#navigations) this.#liftDenial();
+    }
+  }
+
+  #liftDenial() {
+    const lifts = this.#denial;
+    this.#denial = undefined;
+    lifts?.forEach((lift) => lift());
   }
 }
 
@@ -443,8 +499,9 @@ registerSessionHooks({
     session.logout(undefined, true);
   },
   onTermsRefusal: (token) => session.holdForTerms(token),
-  onForbidden: () => {
+  onForbidden: (token) => {
     if (browser) sessionStorage.removeItem(LOGOUT_REASON_KEY);
+    if (token) session.denyAccess(token);
     session.logout(undefined, false);
   },
   onTokenRefreshed: (token) => {

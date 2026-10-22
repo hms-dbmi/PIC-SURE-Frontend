@@ -11,7 +11,7 @@ import { log, createLog } from '#lib/telemetry/logger.ts';
 // loads the profile has to reach the login page.
 export const init: ClientInit = () => {
   session.connect({
-    navigate: (path) => void goto(resolve(appPath(path))),
+    navigate: (path) => goto(resolve(appPath(path))),
     currentUrl: () => page.url,
     showAccessUnavailable,
   });

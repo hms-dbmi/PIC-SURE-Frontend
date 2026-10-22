@@ -69,7 +69,7 @@ describe('client init', () => {
     await init();
     const shell: SessionShell = session.connect.mock.calls[0][0];
 
-    shell.navigate('/login?redirectTo=%2Fexplorer');
+    await shell.navigate('/login?redirectTo=%2Fexplorer');
 
     expect(goto).toHaveBeenCalledWith('/base/login?redirectTo=%2Fexplorer');
     expect(shell.currentUrl()).toMatchObject({ pathname: '/explorer', search: '?q=1' });

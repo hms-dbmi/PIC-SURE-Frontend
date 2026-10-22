@@ -1,10 +1,21 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { flushSync } from 'svelte';
 
+const deniedListeners = vi.hoisted(() => [] as Array<() => (() => void) | void>);
 const mockSession = vi.hoisted(() => ({
   user: {} as { consents?: Record<string, string[]> },
   ensureConsentsLoaded: vi.fn(),
+  onAccessDenied: (listener: () => (() => void) | void) => {
+    deniedListeners.push(listener);
+    return () => {};
+  },
 }));
+
+/** A forbidden logout as the session runs it. Returns what runs once the logout has navigated. */
+function denyAccess() {
+  const lifts = deniedListeners.map((listener) => listener());
+  return () => lifts.forEach((lift) => lift?.());
+}
 
 vi.mock('$app/env', () => ({ browser: true }));
 vi.mock('#lib/auth/session.svelte.ts', () => ({ session: mockSession }));
@@ -16,9 +27,10 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
   registerAssociatedStudies: vi.fn(),
 }));
 
-import { FilterState } from '#lib/query/filters.svelte.ts';
+import { FilterState, filterState } from '#lib/query/filters.svelte.ts';
 import { buildRequest } from '#lib/query/build.ts';
 import { getConceptDetails } from '#lib/explorer/Dictionary.ts';
+import { log } from '#lib/telemetry/logger.ts';
 import {
   createCategoricalFilter,
   createFilterGroup,
@@ -421,5 +433,50 @@ describe('enrich', () => {
     filters.enrich(filter, enriched.conceptPath, enriched.dataset);
 
     expect(getConceptDetails).not.toHaveBeenCalled();
+  });
+});
+
+describe('the filters of a forbidden logout', () => {
+  const storedFilterCount = () => {
+    const tree = sessionStorage.getItem('filterTree');
+    return tree === null ? null : JSON.parse(tree).children.length;
+  };
+  let lift: () => void;
+
+  beforeEach(() => {
+    filterState.clear();
+    sessionStorage.clear();
+    filterState.add(createCategoricalFilter(mockSearchResult('\\study\\variable\\'), ['Yes']));
+    filterState.add(createGenomicFilter({ Gene_with_variant: ['BRCA1'] }));
+    vi.mocked(log).mockClear();
+    lift = () => {};
+  });
+
+  afterEach(() => lift());
+
+  it('are removed from storage at once and kept until the logout navigates', () => {
+    lift = denyAccess();
+
+    expect(sessionStorage.getItem('filterTree')).toBeNull();
+    expect(sessionStorage.getItem('genomicFilters')).toBeNull();
+    expect(filterState.tree.root.children).toHaveLength(1);
+    expect(filterState.genomic).toHaveLength(1);
+  });
+
+  it('are not stored again when they change before the logout navigates', () => {
+    lift = denyAccess();
+
+    filterState.add(createCategoricalFilter(mockSearchResult('\\study\\other\\'), ['No']));
+
+    expect(sessionStorage.getItem('filterTree')).toBeNull();
+  });
+
+  it('are reset once the logout navigates, without logging a user clear', () => {
+    denyAccess()();
+
+    expect(filterState.tree.root.children).toHaveLength(0);
+    expect(filterState.genomic).toHaveLength(0);
+    expect(storedFilterCount()).toBe(0);
+    expect(log).not.toHaveBeenCalled();
   });
 });

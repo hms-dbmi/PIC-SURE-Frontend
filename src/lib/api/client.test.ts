@@ -399,6 +399,7 @@ describe('request', () => {
 
       expect(e).toMatchObject({ status: 403, code: 'forbidden', message: 'Forbidden' });
       expect(onForbidden).toHaveBeenCalledTimes(1);
+      expect(onForbidden).toHaveBeenCalledWith('my-token');
       expect(mockCreateLog).toHaveBeenCalledWith('AUTH', 'session.forbidden', undefined, {
         status: 403,
       });
@@ -406,6 +407,14 @@ describe('request', () => {
         status: 403,
         error: { message: 'Forbidden' },
       });
+    });
+
+    it('tells the session no login was refused when a 403 answers an anonymous request', async () => {
+      fetchMock.mockResolvedValue(mockFetchResponse({ ok: false, status: 403, body: 'Forbidden' }));
+
+      await rejection(request('picsure/test', { auth: 'open' }));
+
+      expect(onForbidden).toHaveBeenCalledWith(null);
     });
 
     it('reports a consent denial with its message and keeps the session', async () => {

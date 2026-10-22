@@ -209,7 +209,7 @@ async function handleResponse(
       throw new ApiError(403, 'terms_not_accepted', body, text);
     }
     log(createLog('AUTH', 'session.forbidden', undefined, { status: 403 }));
-    sessionHooks().onForbidden();
+    sessionHooks().onForbidden(userToken);
     throw failure(403, 'forbidden', text);
   }
   throw failure(res.status, 'http', text);

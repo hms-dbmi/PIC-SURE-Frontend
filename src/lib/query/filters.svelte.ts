@@ -61,6 +61,7 @@ export class FilterState {
   #genomic: Filter[] = $state(restoreGenomicFilters());
 
   #warning: FilterWarningKind | undefined = $state();
+  #discarding = false;
 
   #phenotypic = $derived(this.#tree.leafNodes as Filter[]);
   #all = $derived([...this.#phenotypic, ...this.#genomic]);
@@ -247,11 +248,28 @@ export class FilterState {
   clear() {
     assertNoSsrWrite('filters');
     const count = this.#all.length;
-    this.#genomic = [];
-    this.#tree.root.children = [];
-    this.#persist();
+    this.#empty();
     if (count > 0)
       log(createLog('FILTER', 'filter.clear', { count, pageContext: getPageContext() }));
+  }
+
+  /**
+   * The filters asked for data the user was refused, and a logout is under way: removes them from
+   * storage now, so neither a reload nor the next login brings them back, and stores no change
+   * until `reset()`. The filters stay until then, or the page being left would rerun its count.
+   */
+  discardStored() {
+    assertNoSsrWrite('filters');
+    this.#discarding = true;
+    sessionStorage.removeItem('filterTree');
+    sessionStorage.removeItem('genomicFilters');
+  }
+
+  /** Removes every filter without logging a user clear, and stores changes again. */
+  reset() {
+    assertNoSsrWrite('filters');
+    this.#discarding = false;
+    this.#empty();
   }
 
   setTree(tree: LogicTree<FilterInterface>) {
@@ -268,6 +286,12 @@ export class FilterState {
     this.#persist();
   }
 
+  #empty() {
+    this.#genomic = [];
+    this.#tree.root.children = [];
+    this.#persist();
+  }
+
   /** Removes matching filters from both lists and returns how many went. */
   #removeWhere(matches: (filter: Filter) => boolean): number {
     const genomicCount = this.#genomic.filter(matches).length;
@@ -279,11 +303,15 @@ export class FilterState {
   }
 
   #persist() {
-    if (!browser) return;
+    if (!browser || this.#discarding) return;
     sessionStorage.setItem('filterTree', this.#tree.serialized);
     sessionStorage.setItem('genomicFilters', JSON.stringify($state.snapshot(this.#genomic)));
   }
 }
 
 export const filterState = new FilterState();
+session.onAccessDenied(() => {
+  filterState.discardStored();
+  return () => filterState.reset();
+});
 registerAssociatedStudies(() => untrack(() => filterState.associatedStudies));

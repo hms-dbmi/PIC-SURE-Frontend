@@ -14,6 +14,7 @@ import {
   searchResults,
   mockConsents,
   picsureUser,
+  countResultPath,
 } from '../../support/mock-data';
 import { userIsLoggedIn } from '../utils';
 import type { Branding } from '../../../src/lib/config/branding';
@@ -87,22 +88,22 @@ test.describe('Landing page', () => {
     });
 
     const stats: MockLandingStat[] = [
-      { key: 'query:blank', route: '*/**/picsure/hpds/auth/query/sync', api: '88', value: '88' },
+      { key: 'query:blank', route: countResultPath, api: '88', value: '88' },
       {
         key: 'query:genomic',
-        route: '*/**/picsure/hpds/auth/query/sync',
+        route: countResultPath,
         api: { 'some-genome': 4 },
         value: '4',
       },
       {
         key: 'query:biosample',
-        route: '*/**/picsure/hpds/auth/query/sync',
+        route: countResultPath,
         api: { 'some-sample': 12 },
         value: '12',
       },
       {
         key: 'query:consent',
-        route: '*/**/picsure/hpds/auth/query/sync',
+        route: countResultPath,
         api: '50',
         value: '50',
       },
@@ -164,7 +165,7 @@ test.describe('Landing page', () => {
         await mockApiSuccess(page, '*/**/psama/user/me?hasToken', picsureUser);
         await mockApiSuccess(page, '*/**/psama/user/me', picsureUser);
         await mockApiSuccess(page, '*/**/psama/user/me/consents', { consents: mockConsents });
-        await mockApiSuccess(page, '*/**/picsure/hpds/auth/query/sync', '88');
+        await mockApiSuccess(page, countResultPath, '88');
         await mockApiSuccess(
           page,
           '*/**/picsure/dictionary/concepts?page_number=1&page_size=1',

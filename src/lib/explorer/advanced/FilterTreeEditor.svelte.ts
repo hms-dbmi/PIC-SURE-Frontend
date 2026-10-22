@@ -86,6 +86,16 @@ export class FilterTreeEditor {
     return this.tree.clone();
   }
 
+  /**
+   * Empties the working tree and marks it saved, so it holds back no navigation. Drops a drag in
+   * progress too: its end would restore the tree it started from.
+   */
+  discard() {
+    this.#clearDrag();
+    this.tree.root.children = [];
+    this.#saved = this.tree.serialized;
+  }
+
   dragStart = (event: DragStartEvent) => {
     const active = event.operation.source;
     if (!active) return;

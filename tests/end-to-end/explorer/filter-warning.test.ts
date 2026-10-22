@@ -2,6 +2,7 @@ import { expect, type Page } from '@playwright/test';
 
 import { test, mockApiConfig, mockApiSuccess } from '../custom-context';
 import {
+  deniedFilterTree,
   facetResultPath,
   facetsResponse,
   searchResultPath,
@@ -9,27 +10,9 @@ import {
 } from '../../support/mock-data';
 
 async function seedDeniedFilter(page: Page) {
-  await page.addInitScript(() => {
-    sessionStorage.setItem(
-      'filterTree',
-      JSON.stringify({
-        uuid: 'root',
-        operator: 'AND',
-        children: [
-          {
-            uuid: 'denied-filter',
-            id: '\\denied-study\\variable\\',
-            filterType: 'Categorical',
-            displayType: 'restrict',
-            variableName: 'Denied variable',
-            allowFiltering: true,
-            dataset: 'denied-study',
-            categoryValues: ['Yes'],
-          },
-        ],
-      }),
-    );
-  });
+  await page.addInitScript((tree) => {
+    sessionStorage.setItem('filterTree', JSON.stringify(tree));
+  }, deniedFilterTree);
 }
 
 async function seedGenomicFilter(page: Page) {

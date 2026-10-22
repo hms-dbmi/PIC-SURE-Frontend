@@ -6,6 +6,7 @@
   import GroupDropZone from './GroupDropZone.svelte';
   import SortableProvider from '#lib/ui/sortable/SortableProvider.svelte';
   import { DragOverlay } from '#lib/ui/sortable/sortable.ts';
+  import { session } from '#lib/auth/session.svelte.ts';
   import { filterState } from '#lib/query/filters.svelte.ts';
   import { LogicTree } from '#lib/query/logicTree.svelte.ts';
   import { toaster } from '#lib/ui/toaster.ts';
@@ -30,6 +31,10 @@
       filterState.tree.serialized,
     ),
   );
+
+  // A forbidden logout discards the filters. Dropping the draft too keeps the unsaved-changes guard
+  // from cancelling that logout and keeps Apply Changes from saving the denied filters again.
+  $effect(() => session.onAccessDenied(() => editor.discard()));
 
   export function applyChanges() {
     filterState.setTree(editor.apply());

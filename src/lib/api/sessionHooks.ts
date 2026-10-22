@@ -12,8 +12,12 @@ export interface SessionHooks {
    * terms of service. Returns false to end the session like any other 403.
    */
   onTermsRefusal(token: string): boolean;
-  /** A 403 that is neither a consent denial nor the terms: end the session. */
-  onForbidden(): void;
+  /**
+   * A 403 that is neither a consent denial nor the terms: end the session. `token` is the user's
+   * token the request carried; null when it went without one, so nothing the user asked for was
+   * refused.
+   */
+  onForbidden(token: string | null): void;
   /** A successful response carried a refreshed token in its Authorization header. */
   onTokenRefreshed(token: string): void;
 }

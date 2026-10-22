@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('$app/env', () => ({ browser: false }));
 vi.mock('#lib/utils/ssrWrite.ts', () => ({ assertNoSsrWrite: vi.fn() }));
 vi.mock('#lib/auth/session.svelte.ts', () => ({
-  session: { user: {}, ensureConsentsLoaded: vi.fn() },
+  session: { user: {}, ensureConsentsLoaded: vi.fn(), onAccessDenied: vi.fn() },
 }));
 vi.mock('#lib/explorer/Dictionary.ts', () => ({ getConceptDetails: vi.fn() }));
 
