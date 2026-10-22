@@ -95,8 +95,8 @@ importers:
         specifier: ^10.2.0
         version: 10.2.0
       driver.js:
-        specifier: ^1.4.0
-        version: 1.4.0
+        specifier: ^1.9.0
+        version: 1.9.0
       plotly.js-basic-dist-min:
         specifier: ^3.5.1
         version: 3.5.1
@@ -1334,8 +1334,8 @@ packages:
     resolution: {integrity: sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw==}
     engines: {node: '>=12'}
 
-  driver.js@1.4.0:
-    resolution: {integrity: sha512-Gm64jm6PmcU+si21sQhBrTAM1JvUrR0QhNmjkprNLxohOBzul9+pNHXgQaT9lW84gwg9GMLB3NZGuGolsz5uew==}
+  driver.js@1.9.0:
+    resolution: {integrity: sha512-+YWVdNVUrY1/2spszQshohWYY4soIjNBnMFS6lfmousT8igos2lmswhlqyuuNMhr+qbV0EjJ+L6i2FECPr6Ygg==}
 
   dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
@@ -3602,7 +3602,7 @@ snapshots:
 
   dotenv@17.4.2: {}
 
-  driver.js@1.4.0: {}
+  driver.js@1.9.0: {}
 
   dunder-proto@1.0.1:
     dependencies:

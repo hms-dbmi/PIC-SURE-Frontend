@@ -38,7 +38,7 @@
     "@skeletonlabs/skeleton-svelte": "^1.5.1",
     "@vincjo/datatables": "^2.8.1",
     "auth0-js": "^10.2.0",
-    "driver.js": "^1.4.0",
+    "driver.js": "^1.9.0",
     "plotly.js-basic-dist-min": "^3.5.1",
     "quill": "^2.0.3",
     "sanitize-html": "^2.17.7",
