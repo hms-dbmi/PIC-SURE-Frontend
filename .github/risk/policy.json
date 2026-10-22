@@ -1,0 +1,217 @@
+{
+  "version": 1,
+  "allowForks": false,
+  "labels": { "low": "risk:low", "review": "risk:needs-review" },
+
+  "review": {
+    "checkName": "Review policy",
+    "minApprovals": 1,
+    "requireApprovalOnLatestCommit": false
+  },
+
+  "limits": {
+    "maxChangedLines": 450,
+    "maxFiles": 10,
+    "apiFileCap": 3000,
+    "ignoreForSize": ["**/pnpm-lock.yaml"]
+  },
+
+  "categories": [
+    {
+      "id": "ci",
+      "lowRisk": false,
+      "reason": "CI, workflow or repository-automation change",
+      "globs": [".github/**"]
+    },
+    {
+      "id": "build",
+      "lowRisk": false,
+      "reason": "Build, dependency, container or environment configuration change",
+      "globs": [
+        "package.json",
+        "**/package.json",
+        "pnpm-lock.yaml",
+        "**/pnpm-lock.yaml",
+        "pnpm-workspace.yaml",
+        ".npmrc",
+        ".nvmrc",
+        "svelte.config.*",
+        "vite.config.*",
+        "vitest.config.*",
+        "vitest.workspace.*",
+        "playwright.config.*",
+        "tsconfig*.json",
+        "eslint.config.*",
+        ".eslintrc*",
+        ".prettierrc*",
+        "Dockerfile*",
+        "**/Dockerfile*",
+        "docker-compose*.{yml,yaml}",
+        ".dockerignore",
+        ".env*",
+        "**/*.conf",
+        "httpd-vhosts*",
+        "cert/**",
+        "**/*.sh"
+      ]
+    },
+    {
+      "id": "tests",
+      "lowRisk": true,
+      "checkSensitive": false,
+      "globs": [
+        "**/*.{test,spec}.{ts,js}",
+        "tests/**",
+        "e2e/**",
+        "**/__tests__/**",
+        "**/__mocks__/**"
+      ]
+    },
+    {
+      "id": "docs",
+      "lowRisk": true,
+      "checkSensitive": false,
+      "allowNoPatch": true,
+      "globs": ["**/*.md", "docs/**", "LICENSE*", "NOTICE*"]
+    },
+    {
+      "id": "static",
+      "lowRisk": true,
+      "checkSensitive": false,
+      "allowNoPatch": true,
+      "globs": ["static/**/*.{png,jpg,jpeg,gif,ico,webp,woff,woff2,css}", "src/**/*.{css,scss}"]
+    },
+    {
+      "id": "server-code",
+      "lowRisk": false,
+      "reason": "Server-side SvelteKit code (endpoints, hooks, server loaders)",
+      "globs": [
+        "src/routes/**/+server.{ts,js}",
+        "src/routes/**/*.server.{ts,js}",
+        "src/hooks.*",
+        "src/lib/server/**",
+        "src/**/server/**"
+      ]
+    },
+    {
+      "id": "ui-source",
+      "lowRisk": false,
+      "lowRiskMaxLines": 300,
+      "reason": "Application source change larger than the {lowRiskMaxLines}-line low-risk allowance",
+      "globs": ["src/**/*.{svelte,ts,js}"]
+    }
+  ],
+
+  "sensitivePaths": [
+    {
+      "pattern": "(auth(?!or(?!i[stz]))|login|logout|oauth|oidc|saml|jwt|token|session|security|permission|privilege|role|crypto|cipher|secret|credential|password|consent|cookie|csrf|cors|deid|hipaa|fisma)",
+      "flags": "i"
+    }
+  ],
+
+  "redFlags": [
+    {
+      "id": "raw-html",
+      "appliesTo": ["src/**/*.{ts,js,svelte}"],
+      "exclude": ["**/*.{test,spec}.{ts,js}", "tests/**", "e2e/**"],
+      "pattern": "\\{@html\\b|innerHTML|outerHTML|insertAdjacentHTML|document\\.write",
+      "message": "Renders raw HTML (XSS surface)"
+    },
+    {
+      "id": "dynamic-code",
+      "appliesTo": ["src/**/*.{ts,js,svelte}"],
+      "exclude": ["**/*.{test,spec}.{ts,js}", "tests/**", "e2e/**"],
+      "pattern": "\\beval\\s*\\(|new Function\\s*\\(|setTimeout\\(\\s*['\"`]|child_process|\\bexecSync\\b",
+      "message": "Executes dynamic code or processes"
+    },
+    {
+      "id": "client-storage",
+      "appliesTo": ["src/**/*.{ts,js,svelte}"],
+      "exclude": ["**/*.{test,spec}.{ts,js}", "tests/**", "e2e/**"],
+      "on": "both",
+      "pattern": "localStorage|sessionStorage|document\\.cookie",
+      "message": "Reads or writes browser storage/cookies (token handling surface)"
+    },
+    {
+      "id": "network-call",
+      "appliesTo": ["src/**/*.{ts,js,svelte}"],
+      "exclude": ["**/*.{test,spec}.{ts,js}", "tests/**", "e2e/**"],
+      "pattern": "\\bfetch\\s*\\(|XMLHttpRequest|axios|WebSocket|EventSource|sendBeacon",
+      "message": "Adds a network call"
+    },
+    {
+      "id": "navigation-messaging",
+      "appliesTo": ["src/**/*.{ts,js,svelte}"],
+      "exclude": ["**/*.{test,spec}.{ts,js}", "tests/**", "e2e/**"],
+      "pattern": "postMessage|window\\.open\\(|(window\\.)?location(\\.href)?\\s*=[^=]",
+      "message": "Changes navigation or cross-window messaging (open redirect / origin checks)"
+    },
+    {
+      "id": "env-access",
+      "appliesTo": ["src/**/*.{ts,js,svelte}"],
+      "exclude": ["**/*.{test,spec}.{ts,js}", "tests/**", "e2e/**"],
+      "pattern": "\\$env/|process\\.env|import\\.meta\\.env",
+      "message": "Reads environment configuration (secret leakage surface)"
+    },
+    {
+      "id": "phi-identifiers",
+      "appliesTo": ["src/**/*.{ts,js,svelte}"],
+      "exclude": ["**/*.{test,spec}.{ts,js}", "tests/**", "e2e/**"],
+      "pattern": "\\b(ssn|social[_ ]?security|date[_ ]?of[_ ]?birth|dob|mrn|patient[_ ]?id)\\b",
+      "flags": "i",
+      "message": "Mentions direct PHI/PII identifiers"
+    },
+    {
+      "id": "suppression",
+      "appliesTo": ["src/**/*.{ts,js,svelte}", "**/*.{test,spec}.{ts,js}"],
+      "pattern": "eslint-disable|@ts-ignore|@ts-nocheck|@ts-expect-error|svelte-ignore|istanbul ignore|c8 ignore|v8 ignore",
+      "message": "Adds a lint/type/coverage suppression"
+    },
+    {
+      "id": "hardcoded-secret",
+      "appliesTo": ["**"],
+      "exclude": ["**/pnpm-lock.yaml", "**/package-lock.json"],
+      "pattern": "(password|passwd|secret|api[_-]?key|access[_-]?key|private[_-]?key|token)\\s*[=:]\\s*[\"'`][^\"'`\\s]{8,}[\"'`]|-----BEGIN [A-Z ]*PRIVATE KEY-----|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{30,}",
+      "flags": "i",
+      "message": "Looks like a hardcoded secret"
+    }
+  ],
+
+  "testQuality": {
+    "testFileGlobs": [
+      "**/*.{test,spec}.{ts,js}",
+      "tests/**/*.{ts,js}",
+      "e2e/**/*.{ts,js}",
+      "**/__tests__/**/*.{ts,js}"
+    ],
+    "testDeclaration": "\\b(it|test)(\\.each\\([^)]*\\))?\\s*\\(",
+    "assertion": "\\b(expect|assert[A-Za-z]*|fail)\\s*\\(",
+    "skipPatterns": [
+      "\\b(it|test|describe)\\.(skip|only|fixme|todo)\\b",
+      "\\bx(it|describe|test)\\b",
+      "\\bf(it|describe)\\s*\\(",
+      "\\.skip\\("
+    ]
+  },
+
+  "trustedBots": {
+    "dependabot[bot]": {
+      "maxBump": "patch",
+      "files": [
+        {
+          "glob": "package.json",
+          "lineRegex": "^\\s*\"[^\"]+\"\\s*:\\s*\"[\\^~]?(\\d[^\"]*)\"\\s*,?\\s*$",
+          "keyRegex": "^\\s*\"([^\"]+)\""
+        },
+        { "glob": "pnpm-lock.yaml", "lock": "pnpm" }
+      ]
+    }
+  },
+
+  "coverage": {
+    "min": 80,
+    "include": ["src/**/*.{ts,js,svelte}"],
+    "exclude": ["**/*.{test,spec}.{ts,js}", "**/*.d.ts", "tests/**", "e2e/**", "src/hooks.*"],
+    "failOnMissingFile": true
+  }
+}
