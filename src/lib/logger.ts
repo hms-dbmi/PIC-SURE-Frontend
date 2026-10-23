@@ -1,6 +1,7 @@
 import { browser } from '$app/environment';
 import { Internal } from '$lib/paths';
 import type { LogEvent } from '$lib/models/Log';
+import type { AfterNavigate } from '@sveltejs/kit';
 import { user, isUserLoggedIn } from '$lib/stores/User';
 import { get } from 'svelte/store';
 import { v4 as uuidv4 } from 'uuid';
@@ -47,6 +48,17 @@ export function sanitizeLocation(): { url: string; query_string: string } {
     if (url.searchParams.has(param)) url.searchParams.set(param, 'redacted');
   }
   return { url: url.toString(), query_string: url.search };
+}
+
+// A goto() that only changes the hash is an in-page section jump whose caller logs its
+// own event (e.g. api.toc_click); page.navigate would only say /api → /api.
+export function isHashOnlyGoto({ from, to, type }: Pick<AfterNavigate, 'from' | 'to' | 'type'>) {
+  return (
+    type === 'goto' &&
+    from?.url.pathname === to?.url.pathname &&
+    from?.url.search === to?.url.search &&
+    from?.url.hash !== to?.url.hash
+  );
 }
 
 export function log(event: LogEvent, opts?: { keepalive?: boolean }): void {

@@ -7,7 +7,7 @@
   import { config } from '$lib/configuration.svelte';
   import GoogleTracking from '$lib/components/tracking/GoogleTracking.svelte';
   import ExternalLinkWarning from '$lib/components/ExternalLinkWarning.svelte';
-  import { log, createLog } from '$lib/logger';
+  import { log, createLog, isHashOnlyGoto } from '$lib/logger';
   import { resumeAfterWafCaptcha } from '$lib/wafCaptcha';
 
   let { children }: { children?: Snippet } = $props();
@@ -30,15 +30,7 @@
   });
 
   afterNavigate(({ from, to, type }) => {
-    // A goto() that only changes the hash is an in-page section jump whose caller logs
-    // its own event (e.g. api.toc_click); page.navigate would only say /api → /api.
-    if (
-      type === 'goto' &&
-      from?.url.pathname === to?.url.pathname &&
-      from?.url.search === to?.url.search &&
-      from?.url.hash !== to?.url.hash
-    )
-      return;
+    if (isHashOnlyGoto({ from, to, type })) return;
     log(
       createLog('NAVIGATION', 'page.navigate', {
         from: from?.url?.pathname,
