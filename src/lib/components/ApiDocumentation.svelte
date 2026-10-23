@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import type { SwaggerComponent, SwaggerSystem } from 'swagger-ui-dist/swagger-ui-bundle.js';
   import { createLog, log } from '$lib/logger';
-  import { toggleLoggingPlugin, trackDocsInteractions } from '$lib/apiDocsLogging';
+  import { createDocsLogging } from '$lib/apiDocsLogging';
 
   const services = [
     { name: 'hpds-query-service', title: 'HPDS queries' },
@@ -19,6 +19,7 @@
   let viewer: SwaggerSystem | undefined;
   let disposeViewer: (() => void) | undefined;
   let shownService = '';
+  const docsLogging = createDocsLogging(() => shownService);
 
   class DocumentationResponseError extends Error {
     readonly status: number;
@@ -116,7 +117,7 @@
           throw new Error('Requests are disabled in this documentation viewer.');
         },
         plugins: [
-          () => toggleLoggingPlugin(() => shownService),
+          () => docsLogging.plugin,
           (system) => {
             const { createElement, useLayoutEffect, useRef, useState } = system.React;
             return {
@@ -185,7 +186,7 @@
 
   onMount(() => {
     void load(true);
-    const stopTracking = trackDocsInteractions(host, () => shownService);
+    const stopTracking = docsLogging.track(host);
     return () => {
       stopTracking();
       generation++;

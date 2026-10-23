@@ -12,7 +12,7 @@ vi.mock('$lib/logger', () => ({
 }));
 
 import { log } from '$lib/logger';
-import { toggleLoggingPlugin, trackDocsInteractions, type LayoutSystem } from '$lib/apiDocsLogging';
+import { createDocsLogging, type LayoutSystem } from '$lib/apiDocsLogging';
 
 // Stands in for the Immutable.js maps Swagger keeps its operations in.
 function immutable(value: Record<string, unknown>) {
@@ -53,15 +53,17 @@ function logged() {
   return vi.mocked(log).mock.calls.map(([event]) => event);
 }
 
-describe('toggleLoggingPlugin', () => {
-  // Records the state the way Swagger's layout reducer does.
-  const original = vi.fn((thing: unknown, shown?: boolean) => {
-    if (Array.isArray(thing)) shownState.set(thing.join('/'), shown!);
-  });
-  const show = toggleLoggingPlugin(() => 'hpds-query-service').statePlugins.layout.wrapActions.show(
-    original,
-    system,
-  );
+// Records the state the way Swagger's layout reducer does.
+const original = vi.fn((thing: unknown, shown?: boolean) => {
+  if (Array.isArray(thing)) shownState.set(thing.join('/'), shown!);
+});
+
+function showFor(docsLogging: ReturnType<typeof createDocsLogging>) {
+  return docsLogging.plugin.statePlugins.layout.wrapActions.show(original, system);
+}
+
+describe('the Swagger plugin', () => {
+  const show = showFor(createDocsLogging(() => 'hpds-query-service'));
 
   beforeEach(() => {
     vi.mocked(log).mockClear();
@@ -135,8 +137,9 @@ describe('toggleLoggingPlugin', () => {
   });
 });
 
-describe('trackDocsInteractions', () => {
+describe('the click and change listeners', () => {
   let host: HTMLDivElement;
+  let docsLogging: ReturnType<typeof createDocsLogging>;
   let stop: () => void;
 
   beforeEach(() => {
@@ -154,11 +157,11 @@ describe('trackDocsInteractions', () => {
           <span data-path="/query">/query</span>
           <div class="copy-to-clipboard"><button id="copy-path"></button></div>
         </div>
-        <button class="tablinks" data-name="model" id="schema-tab">Schema</button>
-        <button class="tablinks" data-name="example" id="example-tab">Example Value</button>
-        <button class="tablinks" id="unnamed-tab"> Callbacks </button>
+        <button class="tablinks" data-name="model" aria-selected="false" id="schema-tab">Schema</button>
+        <button class="tablinks" data-name="example" aria-selected="true" id="example-tab">Example Value</button>
         <div class="tab-header">
           <div class="tab-item active"><h4 id="parameters-tab"><span>Parameters</span></h4></div>
+          <div class="tab-item"><h4 id="callbacks-tab"><span> Callbacks </span></h4></div>
         </div>
         <button class="model-box-control" aria-expanded="false" id="nested">
           <span class="model-title"><span class="model-hint">#/x</span><span class="model-title__text">Detail</span></span>
@@ -168,15 +171,17 @@ describe('trackDocsInteractions', () => {
         <select aria-label="Other control" id="labelled"><option>a</option></select>
         <select id="bare"><option>b</option></select>
         <button id="plain">Plain</button>
-        <div class="json-schema-2020-12">
-          <button class="json-schema-2020-12-accordion" id="accordion">
-            <div class="json-schema-2020-12-accordion__children">
-              <strong class="json-schema-2020-12__title">Child</strong>
-            </div>
-            <span class="json-schema-2020-12-accordion__icon json-schema-2020-12-accordion__icon--collapsed"></span>
-          </button>
-          <button class="json-schema-2020-12-expand-deep-button" id="expand-all">Expand all</button>
-        </div>
+        <article class="json-schema-2020-12" data-json-schema-level="0">
+          <div class="json-schema-2020-12-head">
+            <button class="json-schema-2020-12-accordion" id="accordion">
+              <div class="json-schema-2020-12-accordion__children">
+                <strong class="json-schema-2020-12__title">Child</strong>
+              </div>
+              <span class="json-schema-2020-12-accordion__icon json-schema-2020-12-accordion__icon--collapsed"></span>
+            </button>
+            <button class="json-schema-2020-12-expand-deep-button" id="expand-all">Expand all</button>
+          </div>
+        </article>
       </div>
       <section class="models">
         <div class="model-container">
@@ -185,17 +190,29 @@ describe('trackDocsInteractions', () => {
         </div>
         <div class="no-margin">
           <article class="json-schema-2020-12" data-json-schema-level="0">
-            <button class="json-schema-2020-12-accordion" id="top-31-schema"></button>
-            <button class="json-schema-2020-12-expand-deep-button" id="top-31-expand">Expand all</button>
-            <article class="json-schema-2020-12" data-json-schema-level="1">
-              <button class="json-schema-2020-12-expand-deep-button" id="inner-collapse-all">Collapse all</button>
-            </article>
+            <div class="json-schema-2020-12-head">
+              <button class="json-schema-2020-12-accordion" id="top-31-schema"></button>
+              <button class="json-schema-2020-12-expand-deep-button" id="top-31-expand">Expand all</button>
+            </div>
+            <div class="json-schema-2020-12-body">
+              <button class="json-schema-2020-12-accordion" id="keyword">
+                <span class="json-schema-2020-12-keyword__name">All of</span>
+                <span class="json-schema-2020-12-accordion__icon json-schema-2020-12-accordion__icon--expanded"></span>
+              </button>
+              <article class="json-schema-2020-12" data-json-schema-level="1">
+                <div class="json-schema-2020-12-head">
+                  <strong class="json-schema-2020-12__title">note</strong>
+                  <button class="json-schema-2020-12-expand-deep-button" id="inner-collapse-all">Collapse all</button>
+                </div>
+              </article>
+            </div>
           </article>
         </div>
       </section>
       <p id="text">Text</p>`;
     document.body.append(host);
-    stop = trackDocsInteractions(host, () => 'dictionary');
+    docsLogging = createDocsLogging(() => 'dictionary');
+    stop = docsLogging.track(host);
   });
 
   afterEach(() => {
@@ -212,9 +229,7 @@ describe('trackDocsInteractions', () => {
   it.each([
     ['link-text', 'api.docs_link_click', { url: 'https://docs.example.org/guide' }],
     ['schema-tab', 'api.docs_tab_select', { tab: 'schema', ...operation }],
-    ['example-tab', 'api.docs_tab_select', { tab: 'example', ...operation }],
-    ['unnamed-tab', 'api.docs_tab_select', { tab: 'Callbacks', ...operation }],
-    ['parameters-tab', 'api.docs_tab_select', { tab: 'parameters', ...operation }],
+    ['callbacks-tab', 'api.docs_tab_select', { tab: 'callbacks', ...operation }],
     ['copy-path', 'api.docs_copy', operation],
     [
       'nested',
@@ -232,7 +247,12 @@ describe('trackDocsInteractions', () => {
       'api.docs_toggle',
       { kind: 'schema_property', name: 'Child', shown: true, all: true, ...operation },
     ],
-    ['inner-collapse-all', 'api.docs_toggle', { kind: 'schema_property', shown: false, all: true }],
+    [
+      'inner-collapse-all',
+      'api.docs_toggle',
+      { kind: 'schema_property', name: 'note', shown: false, all: true },
+    ],
+    ['keyword', 'api.docs_toggle', { kind: 'schema_property', name: 'All of', shown: false }],
   ])('logs a click on #%s', (id, action, metadata) => {
     click(id);
     expect(logged()).toEqual([
@@ -240,13 +260,18 @@ describe('trackDocsInteractions', () => {
     ]);
   });
 
-  it.each(['plain', 'text', 'top-schema', 'top-31-schema', 'top-31-expand'])(
-    'ignores a click on #%s',
-    (id) => {
-      click(id);
-      expect(log).not.toHaveBeenCalled();
-    },
-  );
+  it.each([
+    'plain',
+    'text',
+    'example-tab',
+    'parameters-tab',
+    'top-schema',
+    'top-31-schema',
+    'top-31-expand',
+  ])('ignores a click on #%s', (id) => {
+    click(id);
+    expect(log).not.toHaveBeenCalled();
+  });
 
   it.each([
     ['servers', { control: 'server', value: '/picsure' }],
@@ -263,6 +288,22 @@ describe('trackDocsInteractions', () => {
         action: 'api.docs_select',
         metadata: { service: 'dictionary', ...metadata },
       },
+    ]);
+  });
+
+  it('marks the schema toggle a top-level Expand all causes as one for everything', async () => {
+    const show = showFor(docsLogging);
+    shownState.clear();
+    // Swagger's own handler runs during the click and calls show synchronously.
+    host
+      .querySelector('#top-31-expand')!
+      .addEventListener('click', () => show(['components', 'schemas', 'Detail'], true));
+    click('top-31-expand');
+    await new Promise((resolve) => setTimeout(resolve));
+    show(['components', 'schemas', 'Detail'], false);
+    expect(logged().map((event) => event.metadata)).toEqual([
+      { service: 'dictionary', kind: 'schema', name: 'Detail', shown: true, all: true },
+      { service: 'dictionary', kind: 'schema', name: 'Detail', shown: false },
     ]);
   });
 
