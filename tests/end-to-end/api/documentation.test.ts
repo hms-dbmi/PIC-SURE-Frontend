@@ -667,7 +667,18 @@ test.describe('API documentation activity logging', () => {
   test('logs nested schema toggles in an OpenAPI 3.1 document', async ({ page }) => {
     const events = await collectLogs(page);
     await page.route('**/picsure/openapi/hpds-query-service', (route) =>
-      route.fulfill({ json: { ...interactiveDocument, openapi: '3.1.0' } }),
+      route.fulfill({
+        json: {
+          ...interactiveDocument,
+          openapi: '3.1.0',
+          components: {
+            schemas: {
+              ...interactiveDocument.components.schemas,
+              Combined: { oneOf: [{ type: 'string' }, { type: 'integer' }] },
+            },
+          },
+        },
+      }),
     );
     await page.goto('/api#api-access');
     const viewer = page.getByTestId('api-documentation');
@@ -685,6 +696,11 @@ test.describe('API documentation activity logging', () => {
       })
       .getByRole('button', { name: 'Expand all' })
       .click();
+    const combined = viewer.locator('.models .json-schema-2020-12', {
+      has: page.locator('.json-schema-2020-12__title', { hasText: 'Combined' }),
+    });
+    await combined.locator('.json-schema-2020-12-accordion').first().click();
+    await combined.locator('.json-schema-2020-12-accordion', { hasText: 'One of' }).click();
     const service = 'hpds-query-service';
     await expect
       .poll(() => docsEvents(events))
@@ -707,7 +723,17 @@ test.describe('API documentation activity logging', () => {
         {
           event_type: 'ACTION',
           action: 'api.docs_toggle',
-          metadata: { service, kind: 'schema', name: 'Detail', shown: true },
+          metadata: { service, kind: 'schema', name: 'Detail', shown: true, all: true },
+        },
+        {
+          event_type: 'ACTION',
+          action: 'api.docs_toggle',
+          metadata: { service, kind: 'schema', name: 'Combined', shown: true },
+        },
+        {
+          event_type: 'ACTION',
+          action: 'api.docs_toggle',
+          metadata: { service, kind: 'schema_property', name: 'One of', shown: true },
         },
       ]);
   });

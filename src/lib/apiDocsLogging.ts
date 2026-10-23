@@ -59,9 +59,9 @@ function findOperation(
     const method = String(operation.get('method'));
     const path = String(operation.get('path'));
     const declared =
-      operation.getIn(['operation', '__originalOperationId']) ??
+      operation.getIn(['operation', '__originalOperationId']) ||
       operation.getIn(['operation', 'operationId']);
-    return (declared ?? `${method}${path.replace(/\W/g, '_')}`) === operationId;
+    return (declared || `${method}${path.replace(/\W/g, '_')}`) === operationId;
   }) as ImmutableLike | undefined;
   if (!match) return undefined;
   return { method: String(match.get('method')), path: String(match.get('path')) };
@@ -83,7 +83,7 @@ function describeToggle(
   return undefined;
 }
 
-export function toggleLoggingPlugin(getService: () => string) {
+function toggleLoggingPlugin(getService: () => string, isDeepClick: () => boolean) {
   return {
     statePlugins: {
       layout: {
@@ -100,6 +100,7 @@ export function toggleLoggingPlugin(getService: () => string) {
               // Swagger also calls show without a user action, such as when an expanded schema
               // remounts, and twice for one click on a tag's arrow; neither changes the state.
               if (metadata && system.layoutSelectors.isShown(key) !== shown) {
+                if (metadata.kind === 'schema' && isDeepClick()) metadata.all = true;
                 log(createLog('ACTION', 'api.docs_toggle', { service: getService(), ...metadata }));
               }
               return original(thing, shown);
@@ -127,25 +128,33 @@ const SCHEMA_TOGGLES =
 // fire layout.show, which toggleLoggingPlugin already logs; only nested ones are left to the DOM.
 function isTopLevelSchemaToggle(button: Element): boolean {
   if (!button.closest('.models')) return false;
-  const schema = button.closest('.json-schema-2020-12');
-  if (schema) return schema.getAttribute('data-json-schema-level') === '0';
+  const head = button.closest('.json-schema-2020-12-head');
+  if (head) return head.parentElement?.getAttribute('data-json-schema-level') === '0';
   const container = button.closest('.model-container');
   return !!container && container.querySelector('.model-box-control') === button;
+}
+
+function isTopLevelExpandAll(target: EventTarget | null): boolean {
+  const button =
+    target instanceof Element && target.closest('.json-schema-2020-12-expand-deep-button');
+  return !!button && isTopLevelSchemaToggle(button);
 }
 
 // Read before the click's re-render, so the new state is the opposite of the current one.
 function schemaToggle(button: Element): Metadata {
   if (button.classList.contains('json-schema-2020-12-expand-deep-button')) {
-    const schema = button.closest('.json-schema-2020-12');
+    const head = button.closest('.json-schema-2020-12-head') ?? button.parentElement;
     return {
-      name: trimmed(schema?.querySelector('.json-schema-2020-12__title')?.textContent),
+      name: trimmed(head?.querySelector('.json-schema-2020-12__title')?.textContent),
       shown: trimmed(button.textContent) === 'Expand all',
       all: true,
     };
   }
   if (button.classList.contains('json-schema-2020-12-accordion')) {
+    // A keyword accordion such as All of has a keyword name instead of a title.
+    const label = button.querySelector('.json-schema-2020-12__title') ?? button;
     return {
-      name: trimmed(button.querySelector('.json-schema-2020-12__title')?.textContent),
+      name: trimmed(label.textContent),
       shown: !button.querySelector('.json-schema-2020-12-accordion__icon--expanded'),
     };
   }
@@ -169,6 +178,7 @@ function describeClick(target: EventTarget | null): DocsEvent | undefined {
   // OpenAPI 3 operations show a Parameters tab, plus a Callbacks tab when they have callbacks.
   const tabItem = target.closest('.tab-header .tab-item');
   if (tabItem) {
+    if (tabItem.classList.contains('active')) return undefined;
     const tab = trimmed(tabItem.textContent)?.toLowerCase();
     return { action: 'api.docs_tab_select', metadata: { tab, ...operationContext(tabItem) } };
   }
@@ -176,9 +186,12 @@ function describeClick(target: EventTarget | null): DocsEvent | undefined {
   if (!button) return undefined;
   const context = operationContext(button);
   if (button.classList.contains('tablinks')) {
+    if (button.getAttribute('aria-selected') === 'true') return undefined;
     const name = button.getAttribute('data-name');
-    const tab = name === 'model' ? 'schema' : (name ?? trimmed(button.textContent));
-    return { action: 'api.docs_tab_select', metadata: { tab, ...context } };
+    return {
+      action: 'api.docs_tab_select',
+      metadata: { tab: name === 'model' ? 'schema' : name, ...context },
+    };
   }
   // With requests disabled, the only copy button Swagger renders is the one for a path.
   if (button.closest('.copy-to-clipboard')) {
@@ -213,18 +226,36 @@ function describeChange(target: EventTarget | null): DocsEvent | undefined {
   };
 }
 
-export function trackDocsInteractions(host: HTMLElement, getService: () => string): () => void {
-  const report = (event: DocsEvent | undefined) => {
-    if (event) {
-      log(createLog('ACTION', event.action, { service: getService(), ...event.metadata }));
-    }
-  };
-  const onClick = (event: Event) => report(describeClick(event.target));
-  const onChange = (event: Event) => report(describeChange(event.target));
-  host.addEventListener('click', onClick);
-  host.addEventListener('change', onChange);
-  return () => {
-    host.removeEventListener('click', onClick);
-    host.removeEventListener('change', onChange);
-  };
+// The Swagger plugin to pass to SwaggerUI, and a function that starts listening on the viewer's
+// host element and returns one that stops.
+export function createDocsLogging(getService: () => string) {
+  // Swagger turns a top-level Expand all or Collapse all into the same layout.show as a plain
+  // toggle, so the click marks the show it causes as one that expands or collapses everything.
+  let deepClick = false;
+  const plugin = toggleLoggingPlugin(getService, () => deepClick);
+
+  function track(host: HTMLElement): () => void {
+    const report = (event: DocsEvent | undefined) => {
+      if (event) {
+        log(createLog('ACTION', event.action, { service: getService(), ...event.metadata }));
+      }
+    };
+    // Capture runs before Swagger's own click handlers, which call show synchronously.
+    const markDeep = (event: Event) => {
+      deepClick = isTopLevelExpandAll(event.target);
+      if (deepClick) setTimeout(() => (deepClick = false));
+    };
+    const onClick = (event: Event) => report(describeClick(event.target));
+    const onChange = (event: Event) => report(describeChange(event.target));
+    host.addEventListener('click', markDeep, true);
+    host.addEventListener('click', onClick);
+    host.addEventListener('change', onChange);
+    return () => {
+      host.removeEventListener('click', markDeep, true);
+      host.removeEventListener('click', onClick);
+      host.removeEventListener('change', onChange);
+    };
+  }
+
+  return { plugin, track };
 }
