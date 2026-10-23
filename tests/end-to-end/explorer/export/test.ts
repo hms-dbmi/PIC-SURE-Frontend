@@ -341,7 +341,7 @@ test.describe('Export Page', () => {
       `picsure::runQueryByID(session, queryID, type="participant")`,
     );
     await expect(rCodeBlock).toContainText(`queryID <- "${newDatasetResponse.picsureResultId}"`);
-    await expect(rCodeBlock).toContainText(`platform="${new URL(page.url()).origin}/picsure"`);
+    await expect(rCodeBlock).toContainText(`platform="${new URL(page.url()).origin}"`);
     const tab = tabGroup.getByTestId('tabs-control').nth(2);
     await expect(tab).toBeVisible();
     await expect(tab).toHaveText('Download');
