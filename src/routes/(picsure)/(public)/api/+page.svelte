@@ -327,15 +327,15 @@
                       void navigateSection(event, section);
                     }}>{workflow.docsLabel}</a
                   >
-                {:else}
+                {:else if workflow.docsUrl}
+                  {@const docsUrl = workflow.docsUrl}
                   <!-- eslint-disable svelte/no-navigation-without-resolve -- external docs URL -->
                   <a
                     class="anchor"
-                    href={workflow.docsUrl}
+                    href={docsUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    onclick={() => workflowDocsClick(workflow.id, workflow.docsUrl ?? '')}
-                    >{workflow.docsLabel}</a
+                    onclick={() => workflowDocsClick(workflow.id, docsUrl)}>{workflow.docsLabel}</a
                   >
                   <!-- eslint-enable svelte/no-navigation-without-resolve -->
                   <p class="mx-0 mt-2">
