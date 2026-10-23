@@ -50,6 +50,7 @@ class Auth0 extends AuthProvider implements Auth0Data {
     return webAuth.authorize({
       responseType: 'token',
       connection: this.connection,
+      prompt: 'select_account',
     });
   };
 
