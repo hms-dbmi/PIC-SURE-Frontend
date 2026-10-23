@@ -67,10 +67,16 @@
 
   // tokens are single-use and expire after 5 minutes: every entry into the form view
   // remounts the widget so a fresh token is issued
-  function openForm() {
+  function openForm(source: 'idle' | 'retry') {
+    log(createLog('ACTION', 'api.public_key.open_form', { source }));
     captchaToken = null;
     captchaFailed = false;
     view = 'form';
+  }
+
+  function cancelForm() {
+    log(createLog('ACTION', 'api.public_key.cancel'));
+    view = 'idle';
   }
 
   async function generateKey(event: SubmitEvent) {
@@ -124,7 +130,10 @@
       assessments.
     </p>
     {#if enabled}
-      <button class="btn preset-filled-primary-500 my-auto mx-auto" onclick={openForm}>
+      <button
+        class="btn preset-filled-primary-500 my-auto mx-auto"
+        onclick={() => openForm('idle')}
+      >
         Request Public Key
       </button>
     {:else}
@@ -205,7 +214,7 @@
         <button
           type="button"
           class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-          onclick={() => (view = 'idle')}
+          onclick={cancelForm}
           disabled={submitting}
         >
           Cancel
@@ -232,6 +241,8 @@
       >
       <CopyButton
         itemToCopy={publicKey.apiKey}
+        logAction="api.public_key.copy"
+        logMetadata={{ uuid: publicKey.uuid }}
         class="preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
       />
     </div>
@@ -244,7 +255,7 @@
     <div role="alert">
       <ErrorAlert color="warning">{errorMessage}</ErrorAlert>
     </div>
-    <button class="btn preset-filled-primary-500 my-auto mx-auto" onclick={openForm}>
+    <button class="btn preset-filled-primary-500 my-auto mx-auto" onclick={() => openForm('retry')}>
       Try Again
     </button>
   {/if}

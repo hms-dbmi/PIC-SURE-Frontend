@@ -5,10 +5,21 @@ import { fireEvent, render, screen } from '@testing-library/svelte';
 
 import CodeBlock from '$lib/components/CodeBlock.svelte';
 
+const { log } = vi.hoisted(() => ({ log: vi.fn() }));
+vi.mock('$lib/logger', () => ({
+  log,
+  createLog: (eventType: string, action?: string, metadata?: Record<string, unknown>) => ({
+    event_type: eventType,
+    action,
+    metadata,
+  }),
+}));
+
 const code = 'print("hello world")';
 
 describe('CodeBlock', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     Object.defineProperty(navigator, 'clipboard', {
       value: { writeText: vi.fn() },
       configurable: true,
@@ -57,5 +68,31 @@ describe('CodeBlock', () => {
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(code);
     expect(button.querySelector('i')).toHaveClass('fa-copy');
     expect(button.querySelector('i')).not.toHaveClass('fa-square-check');
+  });
+
+  it('logs the copy with the given action and metadata', async () => {
+    render(CodeBlock, {
+      code,
+      lang: 'python',
+      logAction: 'api.code_copy',
+      logMetadata: { workflow: 'python' },
+    });
+
+    await fireEvent.click(screen.getByTestId('code-block-copy-btn'));
+
+    expect(log).toHaveBeenCalledExactlyOnceWith({
+      event_type: 'ACTION',
+      action: 'api.code_copy',
+      metadata: { workflow: 'python' },
+    });
+  });
+
+  it('does not log a copy without a log action', async () => {
+    render(CodeBlock, { code, lang: 'python' });
+
+    await fireEvent.click(screen.getByTestId('code-block-copy-btn'));
+
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(code);
+    expect(log).not.toHaveBeenCalled();
   });
 });
