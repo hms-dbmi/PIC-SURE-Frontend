@@ -2,6 +2,7 @@ import { expect, type Page } from '@playwright/test';
 
 import { test, mockApiConfig, mockApiSuccess } from '../custom-context';
 import {
+  countResultPath,
   deniedFilterTree,
   facetResultPath,
   facetsResponse,
@@ -81,14 +82,15 @@ test.describe('Filter warning navigation', () => {
     await expect(page.getByTestId('sendfilter-warning')).toBeVisible();
   });
 
-  test('warns for a standalone genomic filter without consent', async ({ page }) => {
+  test('returns to Explore with a genomic filter without warning', async ({ page }) => {
     await seedGenomicFilter(page);
+    await mockApiSuccess(page, countResultPath, 565);
 
-    await page.goto('/discover');
+    await page.goto('/api');
     await page.locator('#nav-link-explorer').click();
 
-    await expect(page).toHaveURL(/\/discover$/);
-    await expect(page.getByTestId('sendfilter-warning')).toBeVisible();
+    await expect(page).toHaveURL(/\/explorer$/);
+    await expect(page.getByTestId('sendfilter-warning')).toBeHidden();
   });
 
   [
