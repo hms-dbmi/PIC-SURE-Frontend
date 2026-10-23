@@ -2,15 +2,9 @@
   import { afterNavigate } from '$app/navigation';
   import { onDestroy, tick } from 'svelte';
   import { bannerPlainText } from '$lib/utilities/BannerHTML';
-  import { truncate } from '$lib/utilities/Strings';
   import { createLog, log } from '$lib/logger';
   import type { ActiveBanner, BannerAudience } from '$lib/models/Banner';
-  import {
-    BANNER_APPEARANCES,
-    BANNER_AUDIENCES,
-    BANNER_ICONS,
-    BANNER_LABEL_LENGTH,
-  } from '$lib/models/Banner';
+  import { BANNER_APPEARANCES, BANNER_AUDIENCES, BANNER_ICONS } from '$lib/models/Banner';
   import { Picsure } from '$lib/paths';
   import { hasValidToken } from '$lib/stores/User';
   import SiteBanner from '$lib/components/banner/SiteBanner.svelte';
@@ -69,8 +63,8 @@
     return `Site announcement ${banners.indexOf(banner) + 1}`;
   }
 
-  function announcementName(banner: PresentedBanner): string {
-    return truncate(banner.title || banner.plainText || untitledName(banner), BANNER_LABEL_LENGTH);
+  function announcementText(banner: PresentedBanner): string {
+    return [banner.title, banner.plainText].filter(Boolean).join('. ') || untitledName(banner);
   }
 
   $effect(() => {
@@ -79,7 +73,7 @@
       (banner) => announced[banner.uuid] !== banner.presentationHash,
     );
     if (newlyVisible.length === 0) return;
-    const names = newlyVisible.slice(0, 2).map((banner) => announcementName(banner));
+    const names = newlyVisible.slice(0, 2).map((banner) => announcementText(banner));
     const message = `${newlyVisible.length} new or updated site ${newlyVisible.length === 1 ? 'announcement' : 'announcements'}. ${names.join('. ')}${newlyVisible.length > 2 ? `. And ${newlyVisible.length - 2} more.` : ''}`;
     announcement = '';
     void tick().then(() => {

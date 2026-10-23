@@ -17,6 +17,7 @@
   } = $props();
 
   const titleId = $props.id();
+  const contentId = `${titleId}-content`;
 
   const toneClasses: Record<BannerAppearance, string> = {
     PRIMARY: 'preset-tonal-primary border-primary-500',
@@ -44,6 +45,7 @@
 <section
   aria-labelledby={banner.title ? titleId : undefined}
   aria-label={banner.title ? undefined : untitledName}
+  aria-describedby={contentId}
   data-testid="site-banner"
   class="w-full border-b-4 px-4 py-1.5 {toneClasses[banner.appearance]}"
 >
@@ -68,7 +70,7 @@
             <h2 id={titleId} class="site-banner-title">{banner.title}</h2>
           {/if}
         {/if}
-        <div class="site-banner-content text-sm leading-5">
+        <div id={contentId} class="site-banner-content text-sm leading-5">
           <!-- eslint-disable-next-line svelte/no-at-html-tags -->
           {@html sanitizeBannerHTML(banner.htmlContent)}
         </div>
@@ -80,6 +82,7 @@
         data-banner-dismiss
         class="site-banner-dismiss flex h-11 w-11 flex-none items-center justify-center rounded-full focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-current"
         aria-label={dismissLabel}
+        aria-describedby={contentId}
         title={dismissLabel}
         onclick={ondismiss}
       >
