@@ -38,6 +38,12 @@ describe('PublicAccessKey', () => {
     vi.clearAllMocks();
     // .env.test configures a sitekey for the e2e build; these tests cover the ungated flow
     vi.stubEnv('VITE_TURNSTILE_SITE_KEY', '');
+    // happy-dom has no Web Animations API; the copy Popover's fade transition needs it
+    Element.prototype.animate = vi.fn().mockReturnValue({
+      cancel: vi.fn(),
+      finish: vi.fn(),
+      finished: Promise.resolve(),
+    });
   });
 
   afterEach(() => {
@@ -108,12 +114,6 @@ describe('PublicAccessKey', () => {
     Object.defineProperty(navigator, 'clipboard', {
       value: { writeText: vi.fn() },
       configurable: true,
-    });
-    // happy-dom has no Web Animations API; the copy Popover's fade transition needs it
-    Element.prototype.animate = vi.fn().mockReturnValue({
-      cancel: vi.fn(),
-      finish: vi.fn(),
-      finished: Promise.resolve(),
     });
     post.mockResolvedValue(mockKeyResponse);
     render(PublicAccessKey, { props: { enabled: true } });

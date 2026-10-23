@@ -30,12 +30,13 @@
   });
 
   afterNavigate(({ from, to, type }) => {
-    // A goto() that keeps the path and query is an in-page section jump whose caller
-    // logs its own event (e.g. api.toc_click); page.navigate would only say /api → /api.
+    // A goto() that only changes the hash is an in-page section jump whose caller logs
+    // its own event (e.g. api.toc_click); page.navigate would only say /api → /api.
     if (
       type === 'goto' &&
       from?.url.pathname === to?.url.pathname &&
-      from?.url.search === to?.url.search
+      from?.url.search === to?.url.search &&
+      from?.url.hash !== to?.url.hash
     )
       return;
     log(

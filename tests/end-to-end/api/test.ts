@@ -1021,6 +1021,15 @@ test.describe('API page logging', () => {
     expect(
       logs.filter((event) => event.action === 'page.navigate' && event.metadata?.type === 'goto'),
     ).toEqual([]);
+
+    // Back between sections is the visitor's own navigation and still logs.
+    await page.goBack();
+    await expect(page).toHaveURL(/\/api$/);
+    await expect
+      .poll(() => logs.filter((event) => event.metadata?.type === 'popstate'))
+      .toEqual([
+        { action: 'page.navigate', metadata: { from: '/api', to: '/api', type: 'popstate' } },
+      ]);
   });
 
   test('The API reference link logs workflow_docs_click without a page.navigate', async ({
@@ -1106,6 +1115,11 @@ test.describe('API page logging', () => {
       await expect
         .poll(() => logs.filter((event) => event.action === 'api.login_click'))
         .toEqual([{ action: 'api.login_click', metadata: { location } }]);
+      await expect
+        .poll(() => logs.filter((event) => event.metadata?.to === '/login'))
+        .toEqual([
+          { action: 'page.navigate', metadata: { from: '/api', to: '/login', type: 'link' } },
+        ]);
     });
   }
 });
