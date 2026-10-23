@@ -344,6 +344,21 @@ describe('mapBranding', () => {
     }
     expect(codeBlocks.RAPI).toContain('platform="https://picsure.example.org/picsure"');
   });
+  it('installs the R adapter from its default branch in every R block', () => {
+    const { codeBlocks } = configJson.explorePage;
+    const install = [
+      '# Requires R 4.1 or later',
+      'install.packages("devtools")',
+      'library(devtools)',
+      'devtools::install_github("hms-dbmi/pic-sure-r-adapter-hpds", force=T, quiet=FALSE)',
+      'library(dplyr)',
+      'library(picsure)',
+      '',
+    ].join('\n');
+    for (const key of ['RExport', 'RAPI', 'RAPIOpen'] as const) {
+      expect(codeBlocks[key].slice(0, install.length), key).toBe(install);
+    }
+  });
   it('fills every placeholder in a code block, not just the first', () => {
     const { codeBlocks } = configJson.explorePage;
     const original = codeBlocks.CurlAPI;
