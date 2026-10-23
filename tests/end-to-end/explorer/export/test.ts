@@ -326,6 +326,22 @@ test.describe('Export Page', () => {
     await expect(codeBlock).toContainText(`queryID = "${newDatasetResponse.picsureResultId}"`);
     await expect(codeBlock).not.toContainText('github.com');
     await expect(codeBlock).toContainText(`platform="${new URL(page.url()).origin}"`);
+    const rTab = tabGroup.getByTestId('tabs-control').nth(1);
+    await expect(rTab).toHaveText('R');
+    await rTab.click();
+    const rCodeBlock = page
+      .getByTestId('tabs-panel')
+      .locator('.code-block')
+      .filter({ visible: true });
+    await expect(rCodeBlock).toContainText(
+      'devtools::install_github("hms-dbmi/pic-sure-r-adapter-hpds", force=T, quiet=FALSE)',
+    );
+    await expect(rCodeBlock).not.toContainText('ref=');
+    await expect(rCodeBlock).toContainText(
+      `picsure::runQueryByID(session, queryID, type="participant")`,
+    );
+    await expect(rCodeBlock).toContainText(`queryID <- "${newDatasetResponse.picsureResultId}"`);
+    await expect(rCodeBlock).toContainText(`platform="${new URL(page.url()).origin}/picsure"`);
     const tab = tabGroup.getByTestId('tabs-control').nth(2);
     await expect(tab).toBeVisible();
     await expect(tab).toHaveText('Download');

@@ -329,6 +329,24 @@ describe('parsersFor', () => {
   });
 });
 
+describe('configuration.json code blocks', () => {
+  it('installs the R adapter without pinning a branch in every R block', () => {
+    const { codeBlocks } = configJson.explorePage;
+    const install = [
+      '# Requires R 4.1 or later',
+      'install.packages("devtools")',
+      'library(devtools)',
+      'devtools::install_github("hms-dbmi/pic-sure-r-adapter-hpds", force=T, quiet=FALSE)',
+      'library(dplyr)',
+      'library(picsure)',
+      '',
+    ].join('\n');
+    for (const key of ['RExport', 'RAPI', 'RAPIOpen'] as const) {
+      expect(codeBlocks[key].slice(0, install.length), key).toBe(install);
+    }
+  });
+});
+
 describe('mapBranding', () => {
   it('replaces hostname when encountered', () => {
     import.meta.env.VITE_CONFIG_MODE = 'override';
@@ -342,21 +360,8 @@ describe('mapBranding', () => {
       expect(codeBlocks[key]).toContain('platform="https://picsure.example.org"');
       expect(codeBlocks[key]).not.toContain('{{PICSURE_ORIGIN}}');
     }
-    expect(codeBlocks.RAPI).toContain('platform="https://picsure.example.org/picsure"');
-  });
-  it('installs the R adapter from its default branch in every R block', () => {
-    const { codeBlocks } = configJson.explorePage;
-    const install = [
-      '# Requires R 4.1 or later',
-      'install.packages("devtools")',
-      'library(devtools)',
-      'devtools::install_github("hms-dbmi/pic-sure-r-adapter-hpds", force=T, quiet=FALSE)',
-      'library(dplyr)',
-      'library(picsure)',
-      '',
-    ].join('\n');
-    for (const key of ['RExport', 'RAPI', 'RAPIOpen'] as const) {
-      expect(codeBlocks[key].slice(0, install.length), key).toBe(install);
+    for (const key of ['RAPI', 'RAPIOpen', 'RExport']) {
+      expect(codeBlocks[key]).toContain('platform="https://picsure.example.org/picsure"');
     }
   });
   it('fills every placeholder in a code block, not just the first', () => {
