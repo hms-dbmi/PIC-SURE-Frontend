@@ -394,3 +394,238 @@ test.describe('API documentation for signed-in visitors', () => {
     }
   });
 });
+
+interface LoggedEvent {
+  event_type: string;
+  action: string;
+  metadata?: Record<string, unknown>;
+}
+
+async function collectLogs(page: Page) {
+  const events: LoggedEvent[] = [];
+  await page.route('**/api/v1/log', (route) => {
+    events.push(route.request().postDataJSON());
+    return route.fulfill({ status: 202, json: { result: 'accepted' } });
+  });
+  return events;
+}
+
+function docsEvents(events: LoggedEvent[]) {
+  return events
+    .filter((event) => event.action.startsWith('api.docs_'))
+    .map(({ event_type, action, metadata }) => ({ event_type, action, metadata }));
+}
+
+const interactiveDocument = {
+  openapi: '3.0.3',
+  info: {
+    title: 'HPDS documentation',
+    version: '1.0',
+    description: 'See [the guide](https://docs.example.org/guide) first.',
+  },
+  servers: [{ url: '/picsure' }, { url: '/picsure/v2' }],
+  tags: [{ name: 'Query' }, { name: 'Search' }],
+  paths: {
+    '/query': {
+      post: {
+        tags: ['Query'],
+        operationId: 'runQuery',
+        summary: 'Run a query',
+        responses: {
+          '200': {
+            description: 'Query result',
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/QueryResult' } },
+              'text/plain': { schema: { type: 'string' } },
+            },
+          },
+        },
+      },
+    },
+    '/search': {
+      get: {
+        tags: ['Search'],
+        summary: 'Search without an operationId',
+        responses: { '200': { description: 'Matches' } },
+      },
+    },
+  },
+  components: {
+    schemas: {
+      QueryResult: {
+        type: 'object',
+        properties: {
+          count: { type: 'integer' },
+          detail: { $ref: '#/components/schemas/Detail' },
+        },
+      },
+      Detail: { type: 'object', properties: { note: { type: 'string' } } },
+    },
+  },
+};
+
+test.describe('API documentation activity logging', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
+  test.beforeEach(async ({ page }) => {
+    await mockApiConfig(page, { features: [{ name: 'OPEN', value: 'true' }] });
+    await mockDocuments(page);
+    await page.route('**/picsure/openapi/hpds-query-service', (route) =>
+      route.fulfill({ json: interactiveDocument }),
+    );
+  });
+
+  test('logs each action a visitor takes in the documentation', async ({ page }) => {
+    const events = await collectLogs(page);
+    await page.goto('/api#api-access');
+    const viewer = page.getByTestId('api-documentation');
+    await expect(viewer.getByRole('heading', { name: 'HPDS documentation' })).toBeVisible();
+    const service = 'hpds-query-service';
+    const expected: LoggedEvent[] = [];
+    const expectLogged = async (event: LoggedEvent) => {
+      expected.push({ ...event, metadata: { service, ...event.metadata } });
+      await expect.poll(() => docsEvents(events)).toEqual(expected);
+    };
+    const query = viewer.locator('.opblock-post');
+
+    await expect(async () => {
+      await query.locator('.opblock-summary-control').click({ timeout: 2000 });
+      await expect(query.getByText('Query result')).toBeVisible({ timeout: 2000 });
+    }).toPass();
+    await expectLogged({
+      event_type: 'ACTION',
+      action: 'api.docs_toggle',
+      metadata: { kind: 'operation', tag: 'Query', method: 'post', path: '/query', shown: true },
+    });
+
+    const operation = { method: 'post', path: '/query' };
+    await query.getByRole('tab', { name: 'Schema', exact: true }).click();
+    await expectLogged({
+      event_type: 'ACTION',
+      action: 'api.docs_tab_select',
+      metadata: { tab: 'schema', ...operation },
+    });
+
+    await query.locator('.model-box-control', { hasText: 'Detail' }).click();
+    await expectLogged({
+      event_type: 'ACTION',
+      action: 'api.docs_toggle',
+      metadata: { kind: 'schema_property', name: 'Detail', shown: true, ...operation },
+    });
+
+    await query.locator('select.content-type').selectOption('text/plain');
+    await expectLogged({
+      event_type: 'ACTION',
+      action: 'api.docs_select',
+      metadata: { control: 'media_type', value: 'text/plain', ...operation },
+    });
+
+    // The path's copy button only appears while the summary is hovered.
+    await query.locator('.opblock-summary').hover();
+    await query.locator('.opblock-summary .copy-to-clipboard button').click();
+    await expectLogged({
+      event_type: 'ACTION',
+      action: 'api.docs_copy',
+      metadata: { target: 'path', ...operation },
+    });
+
+    await query.locator('.opblock-summary-control').click();
+    await expectLogged({
+      event_type: 'ACTION',
+      action: 'api.docs_toggle',
+      metadata: { kind: 'operation', tag: 'Query', shown: false, ...operation },
+    });
+
+    await viewer.locator('.opblock-get .opblock-summary-control').click();
+    await expectLogged({
+      event_type: 'ACTION',
+      action: 'api.docs_toggle',
+      metadata: { kind: 'operation', tag: 'Search', method: 'get', path: '/search', shown: true },
+    });
+
+    await viewer.getByRole('heading', { name: 'Search', level: 3 }).click();
+    await expectLogged({
+      event_type: 'ACTION',
+      action: 'api.docs_toggle',
+      metadata: { kind: 'tag', tag: 'Search', shown: false },
+    });
+
+    await viewer.locator('.models-control').click();
+    await expectLogged({
+      event_type: 'ACTION',
+      action: 'api.docs_toggle',
+      metadata: { kind: 'schemas', shown: false },
+    });
+    await viewer.locator('.models-control').click();
+    await expectLogged({
+      event_type: 'ACTION',
+      action: 'api.docs_toggle',
+      metadata: { kind: 'schemas', shown: true },
+    });
+    await viewer.locator('#model-QueryResult .model-box-control').first().click();
+    await expectLogged({
+      event_type: 'ACTION',
+      action: 'api.docs_toggle',
+      metadata: { kind: 'schema', name: 'QueryResult', shown: true },
+    });
+
+    await viewer.locator('.servers select').selectOption('/picsure/v2');
+    await expectLogged({
+      event_type: 'ACTION',
+      action: 'api.docs_select',
+      metadata: { control: 'server', value: '/picsure/v2' },
+    });
+
+    await page.getByLabel('Select service:').selectOption('dictionary');
+    await expect(viewer.getByRole('heading', { name: 'Dictionary documentation' })).toBeVisible();
+    expected.push({
+      event_type: 'ACTION',
+      action: 'api.docs_service_select',
+      metadata: { from: service, to: 'dictionary' },
+    });
+    await expect.poll(() => docsEvents(events)).toEqual(expected);
+  });
+
+  test('logs a link followed from the documentation', async ({ page }) => {
+    const events = await collectLogs(page);
+    await page.route('https://docs.example.org/**', (route) => route.fulfill({ body: 'guide' }));
+    await page.goto('/api#api-access');
+    const viewer = page.getByTestId('api-documentation');
+    await viewer.getByRole('link', { name: 'the guide' }).click({ modifiers: ['ControlOrMeta'] });
+    await expect
+      .poll(() => docsEvents(events))
+      .toEqual([
+        {
+          event_type: 'ACTION',
+          action: 'api.docs_link_click',
+          metadata: { service: 'hpds-query-service', url: 'https://docs.example.org/guide' },
+        },
+      ]);
+  });
+
+  test('logs documentation that fails to load', async ({ page }) => {
+    const events = await collectLogs(page);
+    await page.route('**/picsure/openapi', (route) => route.fulfill({ status: 503 }));
+    await page.goto('/api#api-access');
+    const viewer = page.getByTestId('api-documentation');
+    await expect(viewer).toContainText('Unable to load API documentation');
+    await page.route('**/picsure/openapi', (route) => route.fulfill({ json: registry }));
+    await page.route('**/picsure/openapi/hpds-query-service', (route) =>
+      route.fulfill({ status: 502 }),
+    );
+    await viewer.getByRole('button', { name: 'Retry' }).click();
+    await expect
+      .poll(() => docsEvents(events))
+      .toEqual([
+        {
+          event_type: 'ERROR',
+          action: 'api.docs_load_failed',
+          metadata: { stage: 'registry', status: 503 },
+        },
+        {
+          event_type: 'ERROR',
+          action: 'api.docs_load_failed',
+          metadata: { service: 'hpds-query-service', stage: 'document', status: 502 },
+        },
+      ]);
+  });
+});
