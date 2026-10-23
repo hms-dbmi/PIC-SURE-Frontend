@@ -329,7 +329,7 @@ export async function logout(authProvider?: AuthProvider, redirect = false) {
           location.replace(redirectURL);
         } else {
           // If no redirect is provided, go to the login page
-          handleErrors(redirectURL);
+          handleLogout(redirect);
         }
       })
       .catch(handleErrors);
