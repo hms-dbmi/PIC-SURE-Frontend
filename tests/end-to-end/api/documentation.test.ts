@@ -107,7 +107,7 @@ test.describe('API documentation for public visitors', () => {
     await expect(viewer.locator('.servers select')).toBeVisible();
     await expect(viewer.locator('.servers select')).toHaveValue('/picsure');
     await expect(page.getByLabel('Select service:').locator('option')).toHaveText([
-      'HPDS queries',
+      'Authorized Queries',
       'Dictionary',
     ]);
     await viewer.locator('.opblock-summary').click();
@@ -175,6 +175,36 @@ test.describe('API documentation for public visitors', () => {
       ).toEqual([]);
     });
   }
+
+  test('lists the HPDS open access document when the registry publishes it', async ({ page }) => {
+    const openAccess = 'Open Queries';
+    await page.route('**/picsure/openapi', (route) =>
+      route.fulfill({
+        json: [
+          ...registry,
+          { name: 'hpds-open-access', title: openAccess, url: 'openapi/hpds-open-access' },
+        ],
+      }),
+    );
+    await page.route('**/picsure/openapi/hpds-open-access', (route) =>
+      route.fulfill({
+        json: openApiDocument('Open access documentation', '/hpds/open/query/sync'),
+      }),
+    );
+    await page.goto('/api#api-access');
+    const serviceSelect = page.getByLabel('Select service:');
+    await expect(serviceSelect.locator('option')).toHaveText([
+      'Authorized Queries',
+      openAccess,
+      'Dictionary',
+    ]);
+    await serviceSelect.selectOption('hpds-open-access');
+    await expect(
+      page
+        .getByTestId('api-documentation')
+        .getByRole('heading', { name: 'Open access documentation' }),
+    ).toBeVisible();
+  });
 
   test('reuses the viewer across switches and renders again after client navigation', async ({
     page,
