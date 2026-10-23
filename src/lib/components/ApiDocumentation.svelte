@@ -155,9 +155,9 @@
     } catch (cause) {
       if (request !== generation) return;
       const status = cause instanceof DocumentationResponseError ? cause.status : undefined;
-      const unavailable = index && status === 404;
       // A deployment without the documentation registry is expected, not a failure.
-      if (!(unavailable && stage === 'registry')) {
+      const unavailable = stage === 'registry' && status === 404;
+      if (!unavailable) {
         log(
           createLog(
             'ERROR',

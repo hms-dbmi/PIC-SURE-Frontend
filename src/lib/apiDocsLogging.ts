@@ -119,40 +119,43 @@ function operationContext(element: Element): Metadata {
   return { method: method?.toLowerCase(), path };
 }
 
-// OpenAPI 3.0 schemas render with .model-box-control, 3.1 schemas with the json-schema-2020-12
+// OpenAPI 3.0 schemas render with a model box control, 3.1 schemas with the json-schema-2020-12
 // accordion and its Expand all button.
-const SCHEMA_TOGGLES =
-  '.model-box-control, .json-schema-2020-12-accordion, .json-schema-2020-12-expand-deep-button';
+const MODEL_BOX = '.model-box-control';
+const SCHEMA_ACCORDION = '.json-schema-2020-12-accordion';
+const SCHEMA_EXPAND = '.json-schema-2020-12-expand-deep-button';
+const SCHEMA_HEAD = '.json-schema-2020-12-head';
+const SCHEMA_TITLE = '.json-schema-2020-12__title';
+const SCHEMA_TOGGLES = `${MODEL_BOX}, ${SCHEMA_ACCORDION}, ${SCHEMA_EXPAND}`;
 
 // The top-level toggles of a schema in the Schemas section (including 3.1's Expand all) also
 // fire layout.show, which toggleLoggingPlugin already logs; only nested ones are left to the DOM.
 function isTopLevelSchemaToggle(button: Element): boolean {
   if (!button.closest('.models')) return false;
-  const head = button.closest('.json-schema-2020-12-head');
+  const head = button.closest(SCHEMA_HEAD);
   if (head) return head.parentElement?.getAttribute('data-json-schema-level') === '0';
   const container = button.closest('.model-container');
-  return !!container && container.querySelector('.model-box-control') === button;
+  return !!container && container.querySelector(MODEL_BOX) === button;
 }
 
 function isTopLevelExpandAll(target: EventTarget | null): boolean {
-  const button =
-    target instanceof Element && target.closest('.json-schema-2020-12-expand-deep-button');
+  const button = target instanceof Element && target.closest(SCHEMA_EXPAND);
   return !!button && isTopLevelSchemaToggle(button);
 }
 
 // Read before the click's re-render, so the new state is the opposite of the current one.
 function schemaToggle(button: Element): Metadata {
-  if (button.classList.contains('json-schema-2020-12-expand-deep-button')) {
-    const head = button.closest('.json-schema-2020-12-head') ?? button.parentElement;
+  if (button.matches(SCHEMA_EXPAND)) {
+    const head = button.closest(SCHEMA_HEAD) ?? button.parentElement;
     return {
-      name: trimmed(head?.querySelector('.json-schema-2020-12__title')?.textContent),
+      name: trimmed(head?.querySelector(SCHEMA_TITLE)?.textContent),
       shown: trimmed(button.textContent) === 'Expand all',
       all: true,
     };
   }
-  if (button.classList.contains('json-schema-2020-12-accordion')) {
+  if (button.matches(SCHEMA_ACCORDION)) {
     // A keyword accordion such as All of has a keyword name instead of a title.
-    const label = button.querySelector('.json-schema-2020-12__title') ?? button;
+    const label = button.querySelector(SCHEMA_TITLE) ?? button;
     return {
       name: trimmed(label.textContent),
       shown: !button.querySelector('.json-schema-2020-12-accordion__icon--expanded'),
