@@ -338,7 +338,7 @@ test.describe('Export Page', () => {
     );
     await expect(rCodeBlock).not.toContainText('ref=');
     await expect(rCodeBlock).toContainText(
-      `picsure::runQueryByID(session, queryID, type="participant")`,
+      'picsure::runQueryByID(session, queryID, type="participant")',
     );
     await expect(rCodeBlock).toContainText(`queryID <- "${newDatasetResponse.picsureResultId}"`);
     await expect(rCodeBlock).toContainText(`platform="${new URL(page.url()).origin}"`);
