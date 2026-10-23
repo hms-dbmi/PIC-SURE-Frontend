@@ -464,14 +464,18 @@ test.describe('API documentation activity logging', () => {
   }
 
   test('logs what a visitor does inside an operation', async ({ page }) => {
+    // Given
     const { viewer, expectLogged } = await openDocs(page);
     const query = viewer.locator('.opblock-post');
     const operation = { method: 'post', path: '/query' };
 
+    // When
     await expect(async () => {
       await query.locator('.opblock-summary-control').click({ timeout: 2000 });
       await expect(query.getByText('Query result')).toBeVisible({ timeout: 2000 });
     }).toPass();
+
+    // Then
     await expectLogged('api.docs_toggle', {
       kind: 'operation',
       tag: 'Query',
@@ -479,11 +483,17 @@ test.describe('API documentation activity logging', () => {
       shown: true,
     });
 
+    // When
     await query.getByRole('tab', { name: 'Schema', exact: true }).click();
+
+    // Then
     await expectLogged('api.docs_tab_select', { tab: 'schema', ...operation });
 
+    // When
     await query.locator('.model-box-control', { hasText: 'Detail' }).click();
     await expect(query.getByText('note', { exact: true })).toBeVisible();
+
+    // Then
     await expectLogged('api.docs_toggle', {
       kind: 'schema_property',
       name: 'Detail',
@@ -491,19 +501,27 @@ test.describe('API documentation activity logging', () => {
       ...operation,
     });
 
+    // When
     await query.locator('select.content-type').selectOption('text/plain');
+
+    // Then
     await expectLogged('api.docs_select', {
       control: 'media_type',
       value: 'text/plain',
       ...operation,
     });
 
-    // Swagger shows the path's copy button only while the summary is hovered.
+    // When: Swagger shows the path's copy button only while the summary is hovered.
     await query.locator('.opblock-summary .copy-to-clipboard button').dispatchEvent('click');
+
+    // Then
     await expectLogged('api.docs_copy', operation);
 
+    // When
     await query.locator('.opblock-summary-control').click();
     await expect(query.getByText('Query result')).toBeHidden();
+
+    // Then
     await expectLogged('api.docs_toggle', {
       kind: 'operation',
       tag: 'Query',
@@ -511,7 +529,10 @@ test.describe('API documentation activity logging', () => {
       shown: false,
     });
 
+    // When
     await viewer.locator('.opblock-get .opblock-summary-control').click();
+
+    // Then
     await expectLogged('api.docs_toggle', {
       kind: 'operation',
       tag: 'Search',
@@ -522,18 +543,26 @@ test.describe('API documentation activity logging', () => {
   });
 
   test('logs each tag and schema toggle once', async ({ page }) => {
+    // Given
     const { viewer, expectLogged } = await openDocs(page);
     const search = viewer.locator('.opblock-tag[data-tag="Search"]');
     const getSearch = viewer.locator('.opblock-get');
 
+    // When
     await viewer.getByRole('heading', { name: 'Search', level: 3 }).click();
     await expect(getSearch).toBeHidden();
+
+    // Then
     await expectLogged('api.docs_toggle', { kind: 'tag', tag: 'Search', shown: false });
-    // Swagger handles a click on the tag's arrow in both the button and its heading.
+
+    // When: Swagger handles a click on the tag's arrow in both the button and its heading.
     await search.locator('.expand-operation').click();
     await expect(getSearch).toBeVisible();
+
+    // Then
     await expectLogged('api.docs_toggle', { kind: 'tag', tag: 'Search', shown: true });
 
+    // Given
     const schemas = viewer.locator('.models-control');
     const queryResult = viewer.locator('#model-QueryResult');
     // Under load Swagger can re-render the section mid-click and drop it, so click again only
@@ -546,31 +575,57 @@ test.describe('API documentation activity logging', () => {
         await expect(schemas).toHaveAttribute('aria-expanded', String(open), { timeout: 2000 });
       }).toPass();
     };
+
+    // When
     await setSchemasOpen(false);
     await expect(queryResult).toHaveCount(0);
+
+    // Then
     await expectLogged('api.docs_toggle', { kind: 'schemas', shown: false });
+
+    // When
     await setSchemasOpen(true);
+
+    // Then
     await expectLogged('api.docs_toggle', { kind: 'schemas', shown: true });
+
+    // When
     await queryResult.locator('.model-box-control').first().click();
     await expect(queryResult).toContainText('count');
+
+    // Then
     await expectLogged('api.docs_toggle', { kind: 'schema', name: 'QueryResult', shown: true });
 
-    // Reopening the section remounts the expanded schema, which is not a new expansion.
+    // When
     await setSchemasOpen(false);
     await expect(queryResult).toHaveCount(0);
+
+    // Then
     await expectLogged('api.docs_toggle', { kind: 'schemas', shown: false });
+
+    // When
     await setSchemasOpen(true);
     await expect(queryResult).toContainText('count');
+
+    // Then: reopening the section remounts the expanded schema, which is not a new expansion.
     await expectLogged('api.docs_toggle', { kind: 'schemas', shown: true });
   });
 
   test('logs server and service switches', async ({ page }) => {
+    // Given
     const { events, viewer, expectLogged } = await openDocs(page);
+
+    // When
     await viewer.locator('.servers select').selectOption('/picsure/v2');
+
+    // Then
     await expectLogged('api.docs_select', { control: 'server', value: '/picsure/v2' });
 
+    // When
     await page.getByLabel('Select service:').selectOption('dictionary');
     await expect(viewer.getByRole('heading', { name: 'Dictionary documentation' })).toBeVisible();
+
+    // Then
     await expect
       .poll(() => docsEvents(events).at(-1))
       .toEqual({
@@ -581,11 +636,16 @@ test.describe('API documentation activity logging', () => {
   });
 
   test('logs a link followed from the documentation', async ({ page }) => {
+    // Given
     const events = await collectLogs(page);
     await page.route('https://docs.example.org/**', (route) => route.fulfill({ body: 'guide' }));
     await page.goto('/api#api-access');
     const viewer = page.getByTestId('api-documentation');
+
+    // When
     await viewer.getByRole('link', { name: 'the guide' }).click({ modifiers: ['ControlOrMeta'] });
+
+    // Then
     await expect
       .poll(() => docsEvents(events))
       .toEqual([
@@ -600,19 +660,34 @@ test.describe('API documentation activity logging', () => {
   test('logs documentation that fails to load, but not a deployment without it', async ({
     page,
   }) => {
+    // Given
     const events = await collectLogs(page);
     await page.route('**/picsure/openapi', (route) => route.fulfill({ status: 404 }));
+
+    // When
     await page.goto('/api#api-access');
+
+    // Then
     const viewer = page.getByTestId('api-documentation');
     await expect(viewer).toContainText('API documentation is unavailable on this deployment.');
+
+    // When
     await page.route('**/picsure/openapi', (route) => route.fulfill({ status: 503 }));
     await viewer.getByRole('button', { name: 'Retry' }).click();
+
+    // Then
     await expect(viewer).toContainText('Unable to load API documentation');
+
+    // When: the registry lists a service whose document is missing.
     await page.route('**/picsure/openapi', (route) => route.fulfill({ json: registry }));
     await page.route('**/picsure/openapi/hpds-query-service', (route) =>
-      route.fulfill({ status: 502 }),
+      route.fulfill({ status: 404 }),
     );
     await viewer.getByRole('button', { name: 'Retry' }).click();
+
+    // Then
+    await expect(viewer).toContainText('Unable to load API documentation. Please try again.');
+    await expect(viewer).not.toContainText('unavailable on this deployment');
     const failures = () =>
       events
         .filter((event) => event.action === 'api.docs_load_failed')
@@ -628,13 +703,14 @@ test.describe('API documentation activity logging', () => {
       {
         event_type: 'ERROR',
         metadata: { service: 'hpds-query-service', stage: 'document' },
-        status: 502,
+        status: 404,
         error: failed,
       },
     ]);
   });
 
   test('logs nested schema toggles in an OpenAPI 3.1 document', async ({ page }) => {
+    // Given
     const events = await collectLogs(page);
     await page.route('**/picsure/openapi/hpds-query-service', (route) =>
       route.fulfill({
@@ -656,6 +732,8 @@ test.describe('API documentation activity logging', () => {
     const queryResult = viewer.locator('.models .json-schema-2020-12', {
       has: page.locator('.json-schema-2020-12__title', { hasText: 'QueryResult' }),
     });
+
+    // When
     await queryResult.locator('.json-schema-2020-12-accordion').first().click();
     const detail = queryResult.locator('.json-schema-2020-12--embedded', { hasText: 'detail' });
     await detail.locator('.json-schema-2020-12-accordion').click();
@@ -671,6 +749,8 @@ test.describe('API documentation activity logging', () => {
     });
     await combined.locator('.json-schema-2020-12-accordion').first().click();
     await combined.locator('.json-schema-2020-12-accordion', { hasText: 'One of' }).click();
+
+    // Then
     const service = 'hpds-query-service';
     await expect
       .poll(() => docsEvents(events))
