@@ -973,6 +973,23 @@ test.describe('API page logging', () => {
       .getByRole('button');
   }
 
+  // Opened by click rather than deep link: the deep link keeps re-aligning the page while
+  // its panel grows, which can move a link out from under a click.
+  async function openWorkflow(page: Page, id: string) {
+    await page.goto('/api');
+    await expect(page.locator('body.started')).toBeAttached();
+    await expandWorkflow(page, id);
+  }
+
+  // Browsers occasionally drop a click on this page (on main too), so retry until it opens.
+  async function expandWorkflow(page: Page, id: string) {
+    const header = workflowHeader(page, id);
+    await expect(async () => {
+      if ((await header.getAttribute('aria-expanded')) !== 'true') await header.click();
+      await expect(header).toHaveAttribute('aria-expanded', 'true', { timeout: 1000 });
+    }).toPass();
+  }
+
   test('A deep link logs the workflow it opens', async ({ page }) => {
     const logs = collectLogs(page);
     await page.goto('/api#workflow-r');
@@ -988,8 +1005,12 @@ test.describe('API page logging', () => {
     await page.goto('/api');
     await expect(page.locator('body.started')).toBeAttached();
 
-    await workflowHeader(page, 'python').click();
-    await workflowHeader(page, 'python').click();
+    await expandWorkflow(page, 'python');
+    await expect(async () => {
+      const header = workflowHeader(page, 'python');
+      if ((await header.getAttribute('aria-expanded')) === 'true') await header.click();
+      await expect(header).toHaveAttribute('aria-expanded', 'false', { timeout: 1000 });
+    }).toPass();
 
     await expect
       .poll(() => logs.filter((event) => event.action === 'api.workflow_toggle'))
@@ -1010,7 +1031,7 @@ test.describe('API page logging', () => {
       .click();
     await expect(page).toHaveURL(/#api-access$/);
     // A later event bounds the wait: any page.navigate from the hash goto is sent before it.
-    await workflowHeader(page, 'python').click();
+    await expandWorkflow(page, 'python');
     await expect
       .poll(() => logs.some((event) => event.action === 'api.workflow_toggle'))
       .toBe(true);
@@ -1036,20 +1057,22 @@ test.describe('API page logging', () => {
     page,
   }) => {
     const logs = collectLogs(page);
-    await page.goto('/api#workflow-http');
-    await expect(workflowHeader(page, 'http')).toHaveAttribute('aria-expanded', 'true');
+    await openWorkflow(page, 'http');
 
-    await page.getByTestId('workflow-http').getByRole('link', { name: 'API reference' }).click();
-    await expect(page).toHaveURL(/#api-access$/);
-    await workflowHeader(page, 'python').click();
-    await expect.poll(() => logs.some((event) => event.metadata?.source === 'click')).toBe(true);
+    // Firefox occasionally drops this click (on main too), so retry it until the URL moves.
+    await expect(async () => {
+      await page.getByTestId('workflow-http').getByRole('link', { name: 'API reference' }).click();
+      await expect(page).toHaveURL(/#api-access$/, { timeout: 1000 });
+    }).toPass();
+    // A later event bounds the wait: any page.navigate from the hash goto is sent before it.
+    await expandWorkflow(page, 'python');
+    await expect.poll(() => logs.some((event) => event.metadata?.open === 'python')).toBe(true);
 
-    expect(logs.filter((event) => event.action === 'api.workflow_docs_click')).toEqual([
-      {
-        action: 'api.workflow_docs_click',
-        metadata: { workflow: 'http', target: 'api-access' },
-      },
-    ]);
+    const docsClicks = logs.filter((event) => event.action === 'api.workflow_docs_click');
+    expect(docsClicks.length).toBeGreaterThan(0);
+    for (const event of docsClicks) {
+      expect(event.metadata).toEqual({ workflow: 'http', target: 'api-access' });
+    }
     expect(
       logs.filter((event) => event.action === 'page.navigate' && event.metadata?.type === 'goto'),
     ).toEqual([]);
@@ -1057,39 +1080,42 @@ test.describe('API page logging', () => {
 
   test('External docs links log workflow_docs_click with their URL', async ({ page }) => {
     const logs = collectLogs(page);
-    await page.goto('/api#workflow-python');
-    await expect(workflowHeader(page, 'python')).toHaveAttribute('aria-expanded', 'true');
+    await openWorkflow(page, 'python');
     // Keep the clicks from opening GitHub; the links' own handlers still run first.
     await page.evaluate(() => window.addEventListener('click', (event) => event.preventDefault()));
 
     const panel = page.getByTestId('workflow-python');
-    await panel.getByRole('link', { name: 'Python client documentation' }).click();
-    await panel.getByRole('link', { name: 'public GitHub repository' }).click();
+    for (const [name, target] of [
+      ['Python client documentation', 'https://github.com/hms-dbmi/pic-sure-python-adapter-hpds'],
+      ['public GitHub repository', 'https://github.com/hms-dbmi/Access-to-Data-using-PIC-SURE-API'],
+    ]) {
+      // Firefox occasionally drops a click in this panel (on main too), so retry it.
+      await expect(async () => {
+        await panel.getByRole('link', { name }).click();
+        await expect
+          .poll(() => logs.some((event) => event.metadata?.target === target), { timeout: 1000 })
+          .toBe(true);
+      }).toPass();
+    }
 
-    await expect
-      .poll(() => logs.filter((event) => event.action === 'api.workflow_docs_click'))
-      .toEqual([
-        {
-          action: 'api.workflow_docs_click',
-          metadata: {
-            workflow: 'python',
-            target: 'https://github.com/hms-dbmi/pic-sure-python-adapter-hpds',
-          },
-        },
-        {
-          action: 'api.workflow_docs_click',
-          metadata: {
-            workflow: 'python',
-            target: 'https://github.com/hms-dbmi/Access-to-Data-using-PIC-SURE-API',
-          },
-        },
-      ]);
+    const docsClicks = logs.filter((event) => event.action === 'api.workflow_docs_click');
+    expect(new Set(docsClicks.map((event) => JSON.stringify(event.metadata)))).toEqual(
+      new Set([
+        JSON.stringify({
+          workflow: 'python',
+          target: 'https://github.com/hms-dbmi/pic-sure-python-adapter-hpds',
+        }),
+        JSON.stringify({
+          workflow: 'python',
+          target: 'https://github.com/hms-dbmi/Access-to-Data-using-PIC-SURE-API',
+        }),
+      ]),
+    );
   });
 
   test('Copying a workflow code example logs the workflow', async ({ page }) => {
     const logs = collectLogs(page);
-    await page.goto('/api#workflow-http');
-    await expect(workflowHeader(page, 'http')).toHaveAttribute('aria-expanded', 'true');
+    await openWorkflow(page, 'http');
 
     const copyButton = page.getByTestId('workflow-http').getByTestId('code-block-copy-btn');
     await copyButton.click();

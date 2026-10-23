@@ -9,7 +9,7 @@ vi.mock('$lib/stores/User', () => ({
 
 vi.mock('$lib/configuration.svelte', () => ({ routes: [] }));
 
-import { sanitizeLocation, createLog } from '$lib/logger';
+import { sanitizeLocation, createLog, isHashOnlyGoto } from '$lib/logger';
 
 function stubLocation(href: string) {
   vi.stubGlobal('window', { location: new URL(href) });
@@ -75,5 +75,33 @@ describe('logger URL sanitization', () => {
     expect(event.url).toBe('https://picsure.test/login/loading?token=redacted');
     expect(event.query_string).toBe('?token=redacted');
     expect(JSON.stringify(event)).not.toContain('SECRET');
+  });
+});
+
+describe('isHashOnlyGoto', () => {
+  const at = (href: string) => ({ url: new URL(href) }) as never;
+
+  it.each([
+    ['a goto that only changes the hash', 'goto', '/api', '/api#api-access', true],
+    ['a goto that keeps the query and changes the hash', 'goto', '/api?a=1', '/api?a=1#x', true],
+    ['a goto to the same URL', 'goto', '/explorer?search=x', '/explorer?search=x', false],
+    ['a goto that changes the query', 'goto', '/explorer', '/explorer?search=x', false],
+    ['a goto to another path', 'goto', '/api', '/login#x', false],
+    ['Back between sections', 'popstate', '/api#a', '/api#b', false],
+    ['a hash link click', 'link', '/api', '/api#a', false],
+  ])('%s', (_name, type, from, to, expected) => {
+    expect(
+      isHashOnlyGoto({
+        type: type as 'goto',
+        from: at(`https://example.org${from}`),
+        to: at(`https://example.org${to}`),
+      }),
+    ).toBe(expected);
+  });
+
+  it('is false on the first page load, which has no from', () => {
+    expect(isHashOnlyGoto({ type: 'enter', from: null, to: at('https://example.org/api#a') })).toBe(
+      false,
+    );
   });
 });
