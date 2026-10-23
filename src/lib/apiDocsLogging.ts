@@ -24,6 +24,7 @@ interface TaggedOperations {
 
 export interface LayoutSystem {
   specSelectors: { taggedOperations(): TaggedOperations };
+  layoutSelectors: { isShown(thing: string[]): boolean | undefined };
 }
 
 type ShowAction = (thing: unknown, shown?: boolean) => unknown;
@@ -67,12 +68,10 @@ function findOperation(
 }
 
 function describeToggle(
-  thing: unknown,
+  key: string[],
   shown: boolean,
   lookup: (tag: string, operationId: string) => OperationRef | undefined,
 ): Metadata | undefined {
-  const key = toKey(thing);
-  if (!key) return undefined;
   const [root, first, second] = key;
   if (root === 'operations' && key.length === 3) {
     return { kind: 'operation', tag: first, ...lookup(first, second), shown };
@@ -92,10 +91,15 @@ export function toggleLoggingPlugin(getService: () => string) {
           show:
             (original: ShowAction, system: LayoutSystem): ShowAction =>
             (thing, shown = true) => {
-              const metadata = describeToggle(thing, shown, (tag, operationId) =>
-                findOperation(system, tag, operationId),
-              );
-              if (metadata) {
+              const key = toKey(thing);
+              const metadata =
+                key &&
+                describeToggle(key, shown, (tag, operationId) =>
+                  findOperation(system, tag, operationId),
+                );
+              // Swagger also calls show without a user action, such as when an expanded schema
+              // remounts, and twice for one click on a tag's arrow; neither changes the state.
+              if (metadata && system.layoutSelectors.isShown(key) !== shown) {
                 log(createLog('ACTION', 'api.docs_toggle', { service: getService(), ...metadata }));
               }
               return original(thing, shown);
@@ -114,11 +118,41 @@ function operationContext(element: Element): Metadata {
   return { method: method?.toLowerCase(), path };
 }
 
-// The top-level toggle of a schema in the Schemas section also fires layout.show, which
-// toggleLoggingPlugin already logs; only nested schema toggles are left to the DOM.
+// OpenAPI 3.0 schemas render with .model-box-control, 3.1 schemas with the json-schema-2020-12
+// accordion and its Expand all button.
+const SCHEMA_TOGGLES =
+  '.model-box-control, .json-schema-2020-12-accordion, .json-schema-2020-12-expand-deep-button';
+
+// The top-level toggles of a schema in the Schemas section (including 3.1's Expand all) also
+// fire layout.show, which toggleLoggingPlugin already logs; only nested ones are left to the DOM.
 function isTopLevelSchemaToggle(button: Element): boolean {
-  const container = button.closest('.models .model-container');
+  if (!button.closest('.models')) return false;
+  const schema = button.closest('.json-schema-2020-12');
+  if (schema) return schema.getAttribute('data-json-schema-level') === '0';
+  const container = button.closest('.model-container');
   return !!container && container.querySelector('.model-box-control') === button;
+}
+
+// Read before the click's re-render, so the new state is the opposite of the current one.
+function schemaToggle(button: Element): Metadata {
+  if (button.classList.contains('json-schema-2020-12-expand-deep-button')) {
+    const schema = button.closest('.json-schema-2020-12');
+    return {
+      name: trimmed(schema?.querySelector('.json-schema-2020-12__title')?.textContent),
+      shown: trimmed(button.textContent) === 'Expand all',
+      all: true,
+    };
+  }
+  if (button.classList.contains('json-schema-2020-12-accordion')) {
+    return {
+      name: trimmed(button.querySelector('.json-schema-2020-12__title')?.textContent),
+      shown: !button.querySelector('.json-schema-2020-12-accordion__icon--expanded'),
+    };
+  }
+  return {
+    name: trimmed(button.querySelector('.model-title__text')?.textContent),
+    shown: button.getAttribute('aria-expanded') !== 'true',
+  };
 }
 
 interface DocsEvent {
@@ -132,6 +166,12 @@ function describeClick(target: EventTarget | null): DocsEvent | undefined {
   if (link) {
     return { action: 'api.docs_link_click', metadata: { url: link.getAttribute('href') } };
   }
+  // OpenAPI 3 operations show a Parameters tab, plus a Callbacks tab when they have callbacks.
+  const tabItem = target.closest('.tab-header .tab-item');
+  if (tabItem) {
+    const tab = trimmed(tabItem.textContent)?.toLowerCase();
+    return { action: 'api.docs_tab_select', metadata: { tab, ...operationContext(tabItem) } };
+  }
   const button = target.closest('button');
   if (!button) return undefined;
   const context = operationContext(button);
@@ -140,26 +180,21 @@ function describeClick(target: EventTarget | null): DocsEvent | undefined {
     const tab = name === 'model' ? 'schema' : (name ?? trimmed(button.textContent));
     return { action: 'api.docs_tab_select', metadata: { tab, ...context } };
   }
+  // With requests disabled, the only copy button Swagger renders is the one for a path.
   if (button.closest('.copy-to-clipboard')) {
-    const copied = button.closest('.opblock-summary') ? 'path' : 'code';
-    return { action: 'api.docs_copy', metadata: { target: copied, ...context } };
+    return { action: 'api.docs_copy', metadata: context };
   }
-  if (button.classList.contains('download-contents')) {
-    return { action: 'api.docs_download', metadata: context };
-  }
-  if (button.classList.contains('model-box-control') && !isTopLevelSchemaToggle(button)) {
-    // Read before the click's re-render, so the new state is the opposite of aria-expanded.
-    const shown = button.getAttribute('aria-expanded') !== 'true';
-    const name = trimmed(button.querySelector('.model-title__text')?.textContent);
+  if (button.matches(SCHEMA_TOGGLES) && !isTopLevelSchemaToggle(button)) {
     return {
       action: 'api.docs_toggle',
-      metadata: { kind: 'schema_property', name, shown, ...context },
+      metadata: { kind: 'schema_property', ...schemaToggle(button), ...context },
     };
   }
   return undefined;
 }
 
 function selectControl(select: HTMLSelectElement): string {
+  if (select.hasAttribute('data-variable')) return 'server_variable';
   if (select.closest('.servers')) return 'server';
   if (select.classList.contains('content-type')) return 'media_type';
   if (select.closest('.examples-select')) return 'example';

@@ -95,6 +95,7 @@
         viewer.specActions.updateSpec(JSON.stringify(document));
         return;
       }
+      stage = 'viewer';
       const [{ default: SwaggerUI }] = await Promise.all([
         import('swagger-ui-dist/swagger-ui-bundle.js'),
         import('swagger-ui-dist/swagger-ui.css'),
@@ -151,17 +152,22 @@
       hasRendered = true;
     } catch (cause) {
       if (request !== generation) return;
-      log(
-        createLog('ERROR', 'api.docs_load_failed', {
-          service: selected || undefined,
-          stage,
-          status: cause instanceof DocumentationResponseError ? cause.status : undefined,
-        }),
-      );
-      error =
-        index && cause instanceof DocumentationResponseError && cause.status === 404
-          ? 'API documentation is unavailable on this deployment.'
-          : 'Unable to load API documentation. Please try again.';
+      const status = cause instanceof DocumentationResponseError ? cause.status : undefined;
+      const unavailable = index && status === 404;
+      // A deployment without the documentation registry is expected, not a failure.
+      if (!(unavailable && stage === 'registry')) {
+        log(
+          createLog(
+            'ERROR',
+            'api.docs_load_failed',
+            { service: selected || undefined, stage },
+            { status, error: { message: cause instanceof Error ? cause.message : String(cause) } },
+          ),
+        );
+      }
+      error = unavailable
+        ? 'API documentation is unavailable on this deployment.'
+        : 'Unable to load API documentation. Please try again.';
     } finally {
       if (request === generation) loading = false;
     }
