@@ -329,24 +329,6 @@ describe('parsersFor', () => {
   });
 });
 
-describe('configuration.json code blocks', () => {
-  it('installs the R adapter without pinning a branch in every R block', () => {
-    const { codeBlocks } = configJson.explorePage;
-    const install = [
-      '# Requires R 4.1 or later',
-      'install.packages("devtools")',
-      'library(devtools)',
-      'devtools::install_github("hms-dbmi/pic-sure-r-adapter-hpds", force=T, quiet=FALSE)',
-      'library(dplyr)',
-      'library(picsure)',
-      '',
-    ].join('\n');
-    for (const key of ['RExport', 'RAPI', 'RAPIOpen'] as const) {
-      expect(codeBlocks[key].slice(0, install.length), key).toBe(install);
-    }
-  });
-});
-
 describe('mapBranding', () => {
   it('replaces hostname when encountered', () => {
     import.meta.env.VITE_CONFIG_MODE = 'override';

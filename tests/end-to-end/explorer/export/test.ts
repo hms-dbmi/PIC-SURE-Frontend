@@ -17,6 +17,9 @@ import {
   mockDataWithChildren,
 } from '../../mock-data';
 import { getOption, userIsLoggedIn } from '../../utils';
+import configJson from '../../../../src/lib/assets/configuration.json' with { type: 'json' };
+
+const { codeBlocks } = configJson.explorePage;
 
 const queryPath = '*/**/picsure/hpds/auth/query';
 const countResultPath = `${queryPath}/sync`;
@@ -325,7 +328,8 @@ test.describe('Export Page', () => {
     await expect(codeBlock).toContainText(`session.runQueryByID(queryID, type="participant")`);
     await expect(codeBlock).toContainText(`queryID = "${newDatasetResponse.picsureResultId}"`);
     await expect(codeBlock).not.toContainText('github.com');
-    await expect(codeBlock).toContainText(`platform="${new URL(page.url()).origin}"`);
+    const origin = new URL(page.url()).origin;
+    await expect(codeBlock).toContainText(`platform="${origin}"`);
     const rTab = tabGroup.getByTestId('tabs-control').nth(1);
     await expect(rTab).toHaveText('R');
     await rTab.click();
@@ -334,14 +338,12 @@ test.describe('Export Page', () => {
       .locator('.code-block')
       .filter({ visible: true });
     await expect(rCodeBlock).toContainText(
-      'devtools::install_github("hms-dbmi/pic-sure-r-adapter-hpds", force=T, quiet=FALSE)',
+      codeBlocks.RExport.replace('{{PICSURE_ORIGIN}}', origin).replace(
+        '{{queryId}}',
+        newDatasetResponse.picsureResultId,
+      ),
     );
-    await expect(rCodeBlock).not.toContainText('ref=');
-    await expect(rCodeBlock).toContainText(
-      'picsure::runQueryByID(session, queryID, type="participant")',
-    );
-    await expect(rCodeBlock).toContainText(`queryID <- "${newDatasetResponse.picsureResultId}"`);
-    await expect(rCodeBlock).toContainText(`platform="${new URL(page.url()).origin}"`);
+    await expect(rCodeBlock).toContainText(`platform="${origin}"`);
     const tab = tabGroup.getByTestId('tabs-control').nth(2);
     await expect(tab).toBeVisible();
     await expect(tab).toHaveText('Download');

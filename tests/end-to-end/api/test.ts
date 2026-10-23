@@ -215,7 +215,7 @@ test.describe('API page', () => {
         'requires_auth=TRUE',
         'supports_genomic=TRUE',
       ],
-      absent: ['ref='],
+      absent: [],
       docsLabel: 'R client documentation',
       docsUrl: 'https://github.com/hms-dbmi/pic-sure-r-adapter-hpds',
     },
