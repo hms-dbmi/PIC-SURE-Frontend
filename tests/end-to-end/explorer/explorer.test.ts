@@ -13,6 +13,7 @@ import {
   hierarchyResponse,
 } from '../../support/mock-data';
 import { type SearchResult } from '../../../src/lib/api/picsure/dictionary.types';
+import { Internal } from '../../../src/lib/api/paths';
 import {
   expectUniqueIds,
   getOption,
@@ -97,6 +98,26 @@ test.describe('Explorer for authenticated users', () => {
 
     // Then
     await expect(page.locator('table')).toBeVisible();
+  });
+  test('Searching again for the current term still logs page.navigate', async ({ page }) => {
+    // Given
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+    await expect(page.locator('table')).toBeVisible();
+    const navigations: unknown[] = [];
+    page.on('request', (request) => {
+      if (request.method() !== 'POST' || !request.url().includes(Internal.Log)) return;
+      const { action, metadata } = JSON.parse(request.postData() || '{}');
+      if (action === 'page.navigate') navigations.push(metadata);
+    });
+
+    // When
+    await page.locator('#explorer-search-submit').click();
+
+    // Then
+    await expect
+      .poll(() => navigations)
+      .toEqual([{ from: '/explorer', to: '/explorer', type: 'goto' }]);
   });
   test('Scrolls to the top of the search results only when changing pages', async ({ page }) => {
     const pageOneResults = {

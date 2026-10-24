@@ -41,6 +41,12 @@ describe('PublicAccessKey', () => {
     vi.clearAllMocks();
     // .env.test configures a sitekey for the e2e build; these tests cover the ungated flow
     vi.stubEnv('VITE_TURNSTILE_SITE_KEY', '');
+    // happy-dom has no Web Animations API; the copy Popover's fade transition needs it
+    Element.prototype.animate = vi.fn().mockReturnValue({
+      cancel: vi.fn(),
+      finish: vi.fn(),
+      finished: Promise.resolve(),
+    });
   });
 
   afterEach(() => {
@@ -102,6 +108,10 @@ describe('PublicAccessKey', () => {
   });
 
   it('never logs the key value, only uuid and displayPrefix', async () => {
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: vi.fn() },
+      configurable: true,
+    });
     requestPublic.mockResolvedValue(mockKeyResponse);
     render(PublicAccessKey, { props: { enabled: true } });
 
@@ -111,7 +121,15 @@ describe('PublicAccessKey', () => {
       expect(screen.getByTestId('api-public-key-value')).toBeInTheDocument();
     });
 
-    expect(log).toHaveBeenCalledTimes(2);
+    await fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
+
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(mockKeyResponse.apiKey);
+    expect(log.mock.calls.map(([event]) => event.action)).toEqual([
+      'api.public_key.open_form',
+      'api.public_key.request',
+      'api.public_key.success',
+      'api.public_key.copy',
+    ]);
     expect(JSON.stringify(log.mock.calls)).not.toContain(mockKeyResponse.apiKey);
     expect(log).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -119,6 +137,25 @@ describe('PublicAccessKey', () => {
         metadata: { uuid: mockKeyResponse.uuid, displayPrefix: mockKeyResponse.displayPrefix },
       }),
     );
+    expect(log).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'api.public_key.copy',
+        metadata: { uuid: mockKeyResponse.uuid },
+      }),
+    );
+  });
+
+  it('logs opening the form from idle and cancelling it', async () => {
+    render(PublicAccessKey, { props: { enabled: true } });
+
+    await openForm();
+    await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(screen.getByRole('button', { name: 'Request Public Key' })).toBeInTheDocument();
+    expect(log.mock.calls.map(([event]) => event)).toEqual([
+      { event_type: 'ACTION', action: 'api.public_key.open_form', metadata: { source: 'idle' } },
+      { event_type: 'ACTION', action: 'api.public_key.cancel', metadata: undefined },
+    ]);
   });
 
   it('shows the server message inline on failure and returns to the form on retry', async () => {
@@ -134,6 +171,12 @@ describe('PublicAccessKey', () => {
 
     await fireEvent.click(screen.getByRole('button', { name: 'Try Again' }));
     expect(screen.getByRole('button', { name: 'Generate Key' })).toBeInTheDocument();
+    expect(log).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        action: 'api.public_key.open_form',
+        metadata: { source: 'retry' },
+      }),
+    );
   });
 
   it('falls back to a generic message when the error body is an HTML page', async () => {

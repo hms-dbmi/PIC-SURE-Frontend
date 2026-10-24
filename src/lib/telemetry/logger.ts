@@ -2,6 +2,7 @@ import { browser } from '$app/env';
 import { Internal } from '#lib/api/paths.ts';
 import { sessionHooks } from '#lib/api/sessionHooks.ts';
 import type { LogEvent } from '#lib/telemetry/types.ts';
+import type { AfterNavigate } from '$app/navigation';
 import { v4 as uuidv4 } from 'uuid';
 import { BDCPrivileges, PicsurePrivileges } from '../auth/model/privilege';
 import type { User } from '../auth/model/user';
@@ -51,6 +52,17 @@ export function sanitizeLocation(): { url: string; query_string: string } {
     if (url.searchParams.has(param)) url.searchParams.set(param, 'redacted');
   }
   return { url: url.toString(), query_string: url.search };
+}
+
+// A goto that only changes the hash is an in-page section jump whose caller logs its
+// own event (e.g. api.toc_click); page.navigate would only say /api → /api.
+export function isHashOnlyGoto({ from, to, type }: Pick<AfterNavigate, 'from' | 'to' | 'type'>) {
+  return (
+    type === 'goto' &&
+    from?.url.pathname === to?.url.pathname &&
+    from?.url.search === to?.url.search &&
+    from?.url.hash !== to?.url.hash
+  );
 }
 
 export function log(event: LogEvent, opts?: { keepalive?: boolean }): void {

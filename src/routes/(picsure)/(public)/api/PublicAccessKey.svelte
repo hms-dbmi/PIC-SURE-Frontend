@@ -62,10 +62,21 @@
 
   // tokens are single-use and expire after 5 minutes: every entry into the form view
   // remounts the widget so a fresh token is issued
-  function openForm() {
+  function openForm(source: 'idle' | 'retry') {
+    log(createLog('ACTION', 'api.public_key.open_form', { source }));
     captchaToken = null;
     captchaFailed = false;
     view = 'form';
+  }
+
+  // The uuid identifies the key; the key itself is never logged.
+  function logKeyCopy() {
+    log(createLog('ACTION', 'api.public_key.copy', { uuid: publicKey?.uuid }));
+  }
+
+  function cancelForm() {
+    log(createLog('ACTION', 'api.public_key.cancel'));
+    view = 'idle';
   }
 
   async function generateKey(event: SubmitEvent) {
@@ -118,7 +129,7 @@
       assessments.
     </p>
     {#if enabled}
-      <Button class="my-auto mx-auto" onclick={openForm}>Request Public Key</Button>
+      <Button class="my-auto mx-auto" onclick={() => openForm('idle')}>Request Public Key</Button>
     {:else}
       <p data-testid="api-public-key-unavailable" class="mx-0 my-auto text-center">
         Public access keys are not available on this deployment. Please log in for authorized
@@ -197,9 +208,7 @@
             Generate Key
           {/if}
         </Button>
-        <Button variant="tonal" onclick={() => (view = 'idle')} disabled={submitting}>
-          Cancel
-        </Button>
+        <Button variant="tonal" onclick={cancelForm} disabled={submitting}>Cancel</Button>
       </div>
     </form>
   {:else if view === 'revealed' && publicKey}
@@ -220,7 +229,7 @@
       <code data-testid="api-public-key-value" class="font-mono text-sm break-all grow"
         >{publicKey.apiKey}</code
       >
-      <CopyButton itemToCopy={publicKey.apiKey} variant="tonal" />
+      <CopyButton itemToCopy={publicKey.apiKey} variant="tonal" oncopy={logKeyCopy} />
     </div>
     <div class="mt-4">
       <span class="font-bold">Expires:</span>
@@ -231,6 +240,6 @@
     <div role="alert">
       <ErrorAlert color="warning">{errorMessage}</ErrorAlert>
     </div>
-    <Button class="my-auto mx-auto" onclick={openForm}>Try Again</Button>
+    <Button class="my-auto mx-auto" onclick={() => openForm('retry')}>Try Again</Button>
   {/if}
 </div>

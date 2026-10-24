@@ -126,6 +126,8 @@
     },
   ];
 
+  const NOTEBOOKS_URL = 'https://github.com/hms-dbmi/Access-to-Data-using-PIC-SURE-API';
+
   let openWorkflows: string[] = $state([]);
 
   const tocEntries = [
@@ -153,6 +155,7 @@
     };
     if (deepLink) {
       openWorkflows = [deepLink[1]];
+      log(createLog('ACTION', 'api.workflow_toggle', { open: deepLink[1], source: 'deep_link' }));
       for (const type of unpinEvents) window.addEventListener(type, unpin, true);
       void tick().then(() => {
         alignDeepLink();
@@ -183,11 +186,19 @@
 
   function toggleWorkflow(value: string[]) {
     openWorkflows = value;
-    log(createLog('ACTION', 'api.workflow_toggle', { open: value[0] ?? null }));
+    log(createLog('ACTION', 'api.workflow_toggle', { open: value[0] ?? null, source: 'click' }));
   }
 
   function tocClick(id: string) {
     log(createLog('NAVIGATION', 'api.toc_click', { section: id }));
+  }
+
+  function workflowDocsClick(workflow: Workflow['id'], target: string) {
+    log(createLog('NAVIGATION', 'api.workflow_docs_click', { workflow, target }));
+  }
+
+  function loginClick(location: 'capabilities' | 'public_notice') {
+    log(createLog('NAVIGATION', 'api.login_click', { location }));
   }
 </script>
 
@@ -243,6 +254,7 @@
               <a
                 class="anchor"
                 href="{resolve('login')}?redirectTo=/api"
+                onclick={() => loginClick('capabilities')}
                 data-testid="api-login-link">Login</a
               >
             </p>
@@ -279,7 +291,11 @@
                 >, and save it {workflow.tokenLocation}. Don't share this file or commit it to
                 GitHub.
               </p>
-              <CodeBlock lang={workflow.lang} code={clientCode[workflow.id]} />
+              <CodeBlock
+                lang={workflow.lang}
+                code={clientCode[workflow.id]}
+                oncopy={() => log(createLog('ACTION', 'api.code_copy', { workflow: workflow.id }))}
+              />
               <p
                 class="mx-0 mt-6 mb-1 text-sm font-bold uppercase tracking-wide text-surface-600-400"
               >
@@ -290,21 +306,31 @@
                 <a
                   class="anchor"
                   href={resolve(`api#${section}`)}
-                  onclick={(event) => void navigateSection(event, section)}>{workflow.docsLabel}</a
+                  onclick={(event) => {
+                    workflowDocsClick(workflow.id, section);
+                    void navigateSection(event, section);
+                  }}>{workflow.docsLabel}</a
                 >
-              {:else}
+              {:else if workflow.docsUrl}
+                {@const docsUrl = workflow.docsUrl}
                 <!-- eslint-disable svelte/no-navigation-without-resolve -- external docs URL -->
-                <a class="anchor" href={workflow.docsUrl} target="_blank" rel="noopener noreferrer"
-                  >{workflow.docsLabel}</a
+                <a
+                  class="anchor"
+                  href={docsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onclick={() => workflowDocsClick(workflow.id, docsUrl)}>{workflow.docsLabel}</a
                 >
                 <!-- eslint-enable svelte/no-navigation-without-resolve -->
                 <p class="mx-0 mt-2">
                   Looking for example notebooks? Check out the
                   <a
                     class="anchor"
-                    href="https://github.com/hms-dbmi/Access-to-Data-using-PIC-SURE-API"
+                    href={NOTEBOOKS_URL}
                     target="_blank"
-                    rel="noopener noreferrer">public GitHub repository</a
+                    rel="noopener noreferrer"
+                    onclick={() => workflowDocsClick(workflow.id, NOTEBOOKS_URL)}
+                    >public GitHub repository</a
                   >.
                 </p>
               {/if}
@@ -329,7 +355,8 @@
               You are browsing as a public user. Only open API endpoints are available. To use
               authorized resources, please <a
                 class="anchor"
-                href="{resolve('login')}?redirectTo=/api">log in</a
+                href="{resolve('login')}?redirectTo=/api"
+                onclick={() => loginClick('public_notice')}>log in</a
               >.
             </p>
           </div>

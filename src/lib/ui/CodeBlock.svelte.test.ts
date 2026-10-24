@@ -58,4 +58,14 @@ describe('CodeBlock', () => {
     expect(button.querySelector('i')).toHaveClass('fa-copy');
     expect(button.querySelector('i')).not.toHaveClass('fa-square-check');
   });
+
+  it('calls oncopy after a copy', async () => {
+    const oncopy = vi.fn();
+    render(CodeBlock, { code, lang: 'python', oncopy });
+
+    await fireEvent.click(screen.getByTestId('ui-code-block-copy-trigger'));
+
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(code);
+    expect(oncopy).toHaveBeenCalledOnce();
+  });
 });

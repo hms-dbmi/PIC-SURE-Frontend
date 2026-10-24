@@ -10,7 +10,7 @@
   import ExternalLinkWarning from '#lib/shell/ExternalLinkWarning.svelte';
   import TermsDialog from '#lib/shell/TermsDialog.svelte';
   import { handleAccessReason } from '#lib/auth/accessReason.ts';
-  import { log, createLog } from '#lib/telemetry/logger.ts';
+  import { log, createLog, isHashOnlyGoto } from '#lib/telemetry/logger.ts';
   import { resumeAfterWafCaptcha } from '#lib/api/wafCaptcha.ts';
 
   let { children }: { children?: Snippet } = $props();
@@ -46,6 +46,7 @@
   });
 
   afterNavigate(({ from, to, type }) => {
+    if (isHashOnlyGoto({ from, to, type })) return;
     log(
       createLog('NAVIGATION', 'page.navigate', {
         from: from?.url?.pathname,
