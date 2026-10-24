@@ -255,7 +255,8 @@ export function mapBranding(hostname: string, apiBranding: ConfigObject[] = []):
   // so a codeBlocks key missing from configJson still falls back to its merged
   // default instead of becoming undefined.
   const codeBlocks: CodeBlockConfig = { ...branding.explorePage.codeBlocks };
-  // The Python client takes the deployment root and adds /picsure and /psama itself.
+  // The Python client, which the R adapter wraps, takes the deployment root and adds
+  // /picsure and /psama itself.
   const origin = hostname.replace(/\/picsure\/?$/, '');
   const replaceHostname = (codeBlock: string) =>
     codeBlock

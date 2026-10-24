@@ -335,13 +335,19 @@ describe('mapBranding', () => {
     const branding = mapBranding('', []);
     expect(branding.explorePage.codeBlocks.PythonAPI).not.toContain('{{PICSURE_NETWORK_URL}}');
   });
-  it('gives Python blocks the deployment root and R blocks the /picsure URL', () => {
+  it('gives Python and R client blocks the deployment root', () => {
     const { codeBlocks } = mapBranding('https://picsure.example.org/picsure', []).explorePage;
-    for (const key of ['PythonAPI', 'PythonAPIOpen', 'PythonExport'] as const) {
-      expect(codeBlocks[key]).toContain('platform="https://picsure.example.org"');
-      expect(codeBlocks[key]).not.toContain('{{PICSURE_ORIGIN}}');
+    for (const key of [
+      'PythonAPI',
+      'PythonAPIOpen',
+      'PythonExport',
+      'RAPI',
+      'RAPIOpen',
+      'RExport',
+    ] as const) {
+      expect(codeBlocks[key], key).toContain('platform="https://picsure.example.org"');
+      expect(codeBlocks[key], key).not.toContain('{{PICSURE_ORIGIN}}');
     }
-    expect(codeBlocks.RAPI).toContain('platform="https://picsure.example.org/picsure"');
   });
   it('fills every placeholder in a code block, not just the first', () => {
     const { codeBlocks } = configJson.explorePage;
