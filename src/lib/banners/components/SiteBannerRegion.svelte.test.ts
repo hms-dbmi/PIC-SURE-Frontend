@@ -890,10 +890,12 @@ describe('public banner accessibility', () => {
     expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
     await navigation.callback?.({ type: 'link' });
     await waitFor(() =>
-      expect(status).toHaveTextContent('1 new or updated site announcement. Service update'),
+      expect(status).toHaveTextContent(
+        '1 new or updated site announcement. Service update. Scheduled maintenance details',
+      ),
     );
     expect(announcements.filter(Boolean)).toEqual([
-      '1 new or updated site announcement. Service update',
+      '1 new or updated site announcement. Service update. Scheduled maintenance details',
     ]);
     observer.disconnect();
   });
@@ -907,7 +909,21 @@ describe('public banner accessibility', () => {
     await navigation.callback?.();
     await waitFor(() =>
       expect(screen.getByRole('status')).toHaveTextContent(
-        '4 new or updated site announcements. First. Second. And 2 more.',
+        '4 new or updated site announcements. First. Scheduled maintenance details. Second. Scheduled maintenance details. And 2 more.',
+      ),
+    );
+  });
+
+  it('announces the full message of a long banner', async () => {
+    const message = 'Scheduled maintenance will interrupt every service. '.repeat(4).trim();
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify([{ ...banner, htmlContent: `<p>${message}</p>` }])),
+    );
+    render(SiteBannerRegion);
+    await navigation.callback?.();
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent(
+        `1 new or updated site announcement. Maintenance. ${message}`,
       ),
     );
   });
@@ -923,7 +939,9 @@ describe('public banner accessibility', () => {
     expect(status.textContent).toBe('');
     await navigation.callback?.();
     await waitFor(() =>
-      expect(status).toHaveTextContent('1 new or updated site announcement. Maintenance'),
+      expect(status).toHaveTextContent(
+        '1 new or updated site announcement. Maintenance. Scheduled maintenance details',
+      ),
     );
     const changes = vi.fn();
     const observer = new MutationObserver(changes);
@@ -934,7 +952,7 @@ describe('public banner accessibility', () => {
     await navigation.callback?.();
     await waitFor(() =>
       expect(status).toHaveTextContent(
-        '2 new or updated site announcements. Maintenance. Service update',
+        '2 new or updated site announcements. Maintenance. Scheduled maintenance details. Service update. Scheduled maintenance details',
       ),
     );
     changes.mockClear();
