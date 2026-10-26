@@ -323,13 +323,13 @@ export async function logout(authProvider?: AuthProvider, redirect = false) {
     await authProvider
       .logout()
       .then((redirectURL) => {
-        log(createLog('AUTH', 'logout.success'));
         if (typeof redirectURL === 'string') {
+          log(createLog('AUTH', 'logout.success'));
           user.set({});
           location.replace(redirectURL);
         } else {
           // If no redirect is provided, go to the login page
-          handleErrors(redirectURL);
+          handleLogout(redirect);
         }
       })
       .catch(handleErrors);
