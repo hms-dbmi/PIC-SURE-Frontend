@@ -163,3 +163,15 @@ it('names an untitled region with a fixed label rather than its content', () => 
   const region = screen.getByRole('region', { name: 'Site announcement' });
   expect(region).toHaveTextContent(htmlContent.replace(/<\/?p>/g, '').trim());
 });
+
+it('describes the region and dismiss button by the full message', () => {
+  const message = 'Scheduled maintenance will interrupt every service. '.repeat(4).trim();
+  render(SiteBanner, {
+    banner: { ...banner, htmlContent: `<p>${message}</p>` },
+    ondismiss: vi.fn(),
+  });
+  expect(screen.getByRole('region', { name: 'Maintenance' })).toHaveAccessibleDescription(message);
+  expect(screen.getByRole('button', { name: 'Dismiss Maintenance' })).toHaveAccessibleDescription(
+    message,
+  );
+});
