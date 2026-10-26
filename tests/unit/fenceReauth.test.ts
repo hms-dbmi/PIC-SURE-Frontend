@@ -50,4 +50,21 @@ describe('Fence re-authentication after logout', () => {
     await fence.login('/', 'FENCE');
     expect(window.location.href).not.toContain('prompt=');
   });
+
+  it('still logs in and logs out when localStorage is unavailable', async () => {
+    const unavailable = () => {
+      throw new Error('blocked');
+    };
+    vi.stubGlobal('localStorage', {
+      getItem: unavailable,
+      setItem: unavailable,
+      removeItem: unavailable,
+    });
+    const fence = newFence();
+
+    await expect(fence.logout()).resolves.toBeUndefined();
+    await fence.login('/', 'FENCE');
+
+    expect(window.location.href).not.toContain('prompt=');
+  });
 });
