@@ -61,6 +61,7 @@ describe('Auth0 login', () => {
     expect(auth0Calls.authorize).toHaveBeenCalledWith({
       responseType: 'token',
       connection: 'mock-auth0',
+      prompt: 'select_account',
     });
   });
 
@@ -78,6 +79,7 @@ describe('Auth0 login', () => {
     expect(auth0Calls.authorize).toHaveBeenCalledWith({
       responseType: 'token',
       connection: 'mock-auth0',
+      prompt: 'select_account',
     });
   });
 });
