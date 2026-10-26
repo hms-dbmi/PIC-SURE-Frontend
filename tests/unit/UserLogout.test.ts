@@ -16,6 +16,7 @@ vi.mock('$lib/api', () => ({ get: (...args: unknown[]) => mockApiGet(...args) })
 vi.mock('$lib/logger', () => ({ createLog: vi.fn(), log: vi.fn() }));
 
 import { accessDenied } from '$lib/accessDenied';
+import { createLog } from '$lib/logger';
 import { logout } from '$lib/stores/User';
 import type AuthProvider from '$lib/models/AuthProvider';
 
@@ -83,6 +84,7 @@ describe('logout after access is denied', () => {
 
   it('goes to the login page once when a provider logout returns no redirect', async () => {
     mockApiGet.mockResolvedValue({});
+    vi.mocked(createLog).mockClear();
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
     onTestFinished(() => consoleError.mockRestore());
     const provider = { logout: async () => undefined } as unknown as AuthProvider;
@@ -94,6 +96,9 @@ describe('logout after access is denied', () => {
     await settle();
 
     expect(navigations).toHaveLength(1);
+    expect(
+      vi.mocked(createLog).mock.calls.filter(([, event]) => event === 'logout.success'),
+    ).toHaveLength(1);
     expect(consoleError).not.toHaveBeenCalled();
   });
 });
