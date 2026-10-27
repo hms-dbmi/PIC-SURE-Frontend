@@ -7,7 +7,7 @@
   import { config } from '$lib/configuration.svelte';
   import GoogleTracking from '$lib/components/tracking/GoogleTracking.svelte';
   import ExternalLinkWarning from '$lib/components/ExternalLinkWarning.svelte';
-  import { log, createLog } from '$lib/logger';
+  import { log, createLog, isHashOnlyGoto } from '$lib/logger';
   import { resumeAfterWafCaptcha } from '$lib/wafCaptcha';
 
   let { children }: { children?: Snippet } = $props();
@@ -30,6 +30,7 @@
   });
 
   afterNavigate(({ from, to, type }) => {
+    if (isHashOnlyGoto({ from, to, type })) return;
     log(
       createLog('NAVIGATION', 'page.navigate', {
         from: from?.url?.pathname,

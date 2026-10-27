@@ -2,6 +2,7 @@ import { expect, type Page } from '@playwright/test';
 import { test, mockApiFail, mockApiSuccess, mockApiConfig } from '../custom-context';
 import { picsureUser, roles as mockRoles, mockExpiredToken, mockToken } from '../mock-data';
 import { userIsLoggedIn } from '../utils';
+import { Internal } from '../../../src/lib/paths';
 import type { Branding } from '../../../src/lib/models/Configuration';
 import brandingJson from '../../../src/lib/assets/configuration.json' with { type: 'json' };
 const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
@@ -31,6 +32,23 @@ function tokenExpiringInDays(days: number) {
   const encode = (part: object) => Buffer.from(JSON.stringify(part)).toString('base64url');
   const exp = Math.floor(Date.now() / 1000) + days * 24 * 60 * 60;
   return `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode({ sub: '1234567890', exp })}.signature`;
+}
+
+interface LoggedEvent {
+  action: string;
+  metadata?: Record<string, unknown>;
+}
+
+// Collects every log POST the page fires, read off the request so events sent just
+// before a navigation are still captured.
+function collectLogs(page: Page): LoggedEvent[] {
+  const events: LoggedEvent[] = [];
+  page.on('request', (request) => {
+    if (request.method() !== 'POST' || !request.url().includes(Internal.Log)) return;
+    const { action, metadata } = JSON.parse(request.postData() || '{}');
+    if (typeof action === 'string') events.push({ action, metadata });
+  });
+  return events;
 }
 
 const placeHolderDots =
@@ -937,4 +955,195 @@ test.describe('API page logged out', () => {
     await page.waitForURL('/api');
     await expect(page).toHaveURL('/api');
   });
+});
+
+test.describe('API page logging', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
+
+  test.beforeEach(async ({ page }) => {
+    await mockApiConfig(page, { features: [{ name: 'OPEN', value: 'true' }] });
+  });
+
+  function workflowHeader(page: Page, id: string) {
+    return page
+      .getByTestId(`workflow-${id}`)
+      .getByRole('heading', { level: 3 })
+      .getByRole('button');
+  }
+
+  // Opened by click rather than deep link: the deep link keeps re-aligning the page while
+  // its panel grows, which can move a link out from under a click.
+  async function openWorkflow(page: Page, id: string) {
+    await page.goto('/api');
+    await expect(page.locator('body.started')).toBeAttached();
+    await expandWorkflow(page, id);
+  }
+
+  // Browsers occasionally drop a click on this page (on main too), so retry until it opens.
+  async function expandWorkflow(page: Page, id: string) {
+    const header = workflowHeader(page, id);
+    await expect(async () => {
+      if ((await header.getAttribute('aria-expanded')) !== 'true') await header.click();
+      await expect(header).toHaveAttribute('aria-expanded', 'true', { timeout: 1000 });
+    }).toPass();
+  }
+
+  test('A deep link logs the workflow it opens', async ({ page }) => {
+    const logs = collectLogs(page);
+    await page.goto('/api#workflow-r');
+    await expect(workflowHeader(page, 'r')).toHaveAttribute('aria-expanded', 'true');
+
+    await expect
+      .poll(() => logs.filter((event) => event.action === 'api.workflow_toggle'))
+      .toEqual([{ action: 'api.workflow_toggle', metadata: { open: 'r', source: 'deep_link' } }]);
+  });
+
+  test('Toggling a workflow logs it as a click', async ({ page }) => {
+    const logs = collectLogs(page);
+    await page.goto('/api');
+    await expect(page.locator('body.started')).toBeAttached();
+
+    await expandWorkflow(page, 'python');
+    await expect(async () => {
+      const header = workflowHeader(page, 'python');
+      if ((await header.getAttribute('aria-expanded')) === 'true') await header.click();
+      await expect(header).toHaveAttribute('aria-expanded', 'false', { timeout: 1000 });
+    }).toPass();
+
+    await expect
+      .poll(() => logs.filter((event) => event.action === 'api.workflow_toggle'))
+      .toEqual([
+        { action: 'api.workflow_toggle', metadata: { open: 'python', source: 'click' } },
+        { action: 'api.workflow_toggle', metadata: { open: null, source: 'click' } },
+      ]);
+  });
+
+  test('A table of contents click logs toc_click without a page.navigate', async ({ page }) => {
+    const logs = collectLogs(page);
+    await page.goto('/api');
+    await expect(page.locator('body.started')).toBeAttached();
+
+    await page
+      .getByTestId('toc')
+      .getByRole('link', { name: 'API Documentation', exact: true })
+      .click();
+    await expect(page).toHaveURL(/#api-access$/);
+    // A later event bounds the wait: any page.navigate from the hash goto is sent before it.
+    await expandWorkflow(page, 'python');
+    await expect
+      .poll(() => logs.some((event) => event.action === 'api.workflow_toggle'))
+      .toBe(true);
+
+    expect(logs.filter((event) => event.action === 'api.toc_click')).toEqual([
+      { action: 'api.toc_click', metadata: { section: 'api-access' } },
+    ]);
+    expect(
+      logs.filter((event) => event.action === 'page.navigate' && event.metadata?.type === 'goto'),
+    ).toEqual([]);
+
+    // Back between sections is the visitor's own navigation and still logs.
+    await page.goBack();
+    await expect(page).toHaveURL(/\/api$/);
+    await expect
+      .poll(() => logs.filter((event) => event.metadata?.type === 'popstate'))
+      .toEqual([
+        { action: 'page.navigate', metadata: { from: '/api', to: '/api', type: 'popstate' } },
+      ]);
+  });
+
+  test('The API reference link logs workflow_docs_click without a page.navigate', async ({
+    page,
+  }) => {
+    const logs = collectLogs(page);
+    await openWorkflow(page, 'http');
+
+    // Firefox occasionally drops this click (on main too), so retry it until the URL moves.
+    await expect(async () => {
+      await page.getByTestId('workflow-http').getByRole('link', { name: 'API reference' }).click();
+      await expect(page).toHaveURL(/#api-access$/, { timeout: 1000 });
+    }).toPass();
+    // A later event bounds the wait: any page.navigate from the hash goto is sent before it.
+    await expandWorkflow(page, 'python');
+    await expect.poll(() => logs.some((event) => event.metadata?.open === 'python')).toBe(true);
+
+    const docsClicks = logs.filter((event) => event.action === 'api.workflow_docs_click');
+    expect(docsClicks.length).toBeGreaterThan(0);
+    for (const event of docsClicks) {
+      expect(event.metadata).toEqual({ workflow: 'http', target: 'api-access' });
+    }
+    expect(
+      logs.filter((event) => event.action === 'page.navigate' && event.metadata?.type === 'goto'),
+    ).toEqual([]);
+  });
+
+  test('External docs links log workflow_docs_click with their URL', async ({ page }) => {
+    const logs = collectLogs(page);
+    await openWorkflow(page, 'python');
+    // Keep the clicks from opening GitHub; the links' own handlers still run first.
+    await page.evaluate(() => window.addEventListener('click', (event) => event.preventDefault()));
+
+    const panel = page.getByTestId('workflow-python');
+    for (const [name, target] of [
+      ['Python client documentation', 'https://github.com/hms-dbmi/pic-sure-python-adapter-hpds'],
+      ['public GitHub repository', 'https://github.com/hms-dbmi/Access-to-Data-using-PIC-SURE-API'],
+    ]) {
+      // Firefox occasionally drops a click in this panel (on main too), so retry it.
+      await expect(async () => {
+        await panel.getByRole('link', { name }).click();
+        await expect
+          .poll(() => logs.some((event) => event.metadata?.target === target), { timeout: 1000 })
+          .toBe(true);
+      }).toPass();
+    }
+
+    const docsClicks = logs.filter((event) => event.action === 'api.workflow_docs_click');
+    expect(new Set(docsClicks.map((event) => JSON.stringify(event.metadata)))).toEqual(
+      new Set([
+        JSON.stringify({
+          workflow: 'python',
+          target: 'https://github.com/hms-dbmi/pic-sure-python-adapter-hpds',
+        }),
+        JSON.stringify({
+          workflow: 'python',
+          target: 'https://github.com/hms-dbmi/Access-to-Data-using-PIC-SURE-API',
+        }),
+      ]),
+    );
+  });
+
+  test('Copying a workflow code example logs the workflow', async ({ page }) => {
+    const logs = collectLogs(page);
+    await openWorkflow(page, 'http');
+
+    const copyButton = page.getByTestId('workflow-http').getByTestId('code-block-copy-btn');
+    await copyButton.click();
+    await expect(copyButton.locator('i')).toHaveClass(/fa-square-check/);
+
+    await expect
+      .poll(() => logs.filter((event) => event.action === 'api.code_copy'))
+      .toEqual([{ action: 'api.code_copy', metadata: { workflow: 'http' } }]);
+  });
+
+  for (const [location, link] of [
+    ['capabilities', (page: Page) => page.getByTestId('api-login-link')],
+    ['public_notice', (page: Page) => page.getByTestId('api-public-notice').getByRole('link')],
+  ] as const) {
+    test(`The ${location} login link logs login_click`, async ({ page }) => {
+      const logs = collectLogs(page);
+      await page.goto('/api');
+      await expect(page.locator('body.started')).toBeAttached();
+
+      await link(page).click();
+
+      await expect(page).toHaveURL(/\/login/);
+      await expect
+        .poll(() => logs.filter((event) => event.action === 'api.login_click'))
+        .toEqual([{ action: 'api.login_click', metadata: { location } }]);
+      await expect
+        .poll(() => logs.filter((event) => event.metadata?.to === '/login'))
+        .toEqual([
+          { action: 'page.navigate', metadata: { from: '/api', to: '/login', type: 'link' } },
+        ]);
+    });
+  }
 });

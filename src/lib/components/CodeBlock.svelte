@@ -19,7 +19,7 @@
   import CopyButton from '$lib/components/buttons/CopyButton.svelte';
   import type { CodeBlockProps } from '$lib/models/CodeBlock';
 
-  let { code = '', lang = 'bash' }: CodeBlockProps = $props();
+  let { code = '', lang = 'bash', logAction, logMetadata }: CodeBlockProps = $props();
 
   const generatedHtml = $derived(shiki.codeToHtml(code, { lang, theme: 'dark-plus' }));
 </script>
@@ -28,6 +28,8 @@
   <CopyButton
     useIcon
     itemToCopy={code}
+    {logAction}
+    {logMetadata}
     data-testid="code-block-copy"
     class="absolute top-2 right-2 text-surface-300"
   />
