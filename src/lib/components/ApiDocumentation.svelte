@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { SwaggerComponent, SwaggerSystem } from 'swagger-ui-dist/swagger-ui-bundle.js';
+  import { createLog, log } from '$lib/logger';
+  import { createDocsLogging } from '$lib/apiDocsLogging';
 
   const services = [
     { name: 'hpds-query-service', title: 'Authorized Queries' },
@@ -17,6 +19,8 @@
   let generation = 0;
   let viewer: SwaggerSystem | undefined;
   let disposeViewer: (() => void) | undefined;
+  let shownService = '';
+  const docsLogging = createDocsLogging(() => shownService);
 
   class DocumentationResponseError extends Error {
     readonly status: number;
@@ -57,6 +61,7 @@
     const request = ++generation;
     loading = true;
     error = '';
+    let stage = index ? 'registry' : 'document';
     try {
       if (index) {
         const registry = await getJson('/picsure/openapi', signal);
@@ -73,6 +78,7 @@
           return;
         }
       }
+      stage = 'document';
       const document = await getJson(`/picsure/openapi/${selected}`, signal);
       if (
         !isObject(document) ||
@@ -86,10 +92,12 @@
         throw new Error('Invalid OpenAPI document');
       }
       if (request !== generation) return;
+      shownService = selected;
       if (viewer) {
         viewer.specActions.updateSpec(JSON.stringify(document));
         return;
       }
+      stage = 'viewer';
       const [{ default: SwaggerUI }] = await Promise.all([
         import('swagger-ui-dist/swagger-ui-bundle.js'),
         import('swagger-ui-dist/swagger-ui.css'),
@@ -110,6 +118,7 @@
           throw new Error('Requests are disabled in this documentation viewer.');
         },
         plugins: [
+          () => docsLogging.plugin,
           (system) => {
             const { createElement, useLayoutEffect, useRef, useState } = system.React;
             return {
@@ -145,18 +154,42 @@
       hasRendered = true;
     } catch (cause) {
       if (request !== generation) return;
-      error =
-        index && cause instanceof DocumentationResponseError && cause.status === 404
-          ? 'API documentation is unavailable on this deployment.'
-          : 'Unable to load API documentation. Please try again.';
+      const status = cause instanceof DocumentationResponseError ? cause.status : undefined;
+      // A deployment without the documentation registry is expected, not a failure.
+      const unavailable = stage === 'registry' && status === 404;
+      if (!unavailable) {
+        log(
+          createLog(
+            'ERROR',
+            'api.docs_load_failed',
+            { service: selected || undefined, stage },
+            { status, error: { message: cause instanceof Error ? cause.message : String(cause) } },
+          ),
+        );
+      }
+      error = unavailable
+        ? 'API documentation is unavailable on this deployment.'
+        : 'Unable to load API documentation. Please try again.';
     } finally {
       if (request === generation) loading = false;
     }
   }
 
+  function selectService() {
+    log(
+      createLog('ACTION', 'api.docs_service_select', {
+        from: shownService || undefined,
+        to: selected,
+      }),
+    );
+    void load(false);
+  }
+
   onMount(() => {
     void load(true);
+    const stopTracking = docsLogging.track(host);
     return () => {
+      stopTracking();
       generation++;
       controller?.abort();
       disposeViewer?.();
@@ -174,7 +207,7 @@
         id="api-document-service"
         class="select w-auto! max-w-full bg-white! py-2!"
         bind:value={selected}
-        onchange={() => void load(false)}
+        onchange={selectService}
       >
         {#each available as service (service.name)}
           <option value={service.name}>{service.title}</option>

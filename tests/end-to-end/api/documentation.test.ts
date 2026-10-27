@@ -394,3 +394,427 @@ test.describe('API documentation for signed-in visitors', () => {
     }
   });
 });
+
+interface LoggedEvent {
+  event_type: string;
+  action: string;
+  metadata?: Record<string, unknown>;
+  status?: number;
+  error?: Record<string, unknown>;
+}
+
+async function collectLogs(page: Page) {
+  const events: LoggedEvent[] = [];
+  await page.route('**/api/v1/log', (route) => {
+    events.push(route.request().postDataJSON());
+    return route.fulfill({ status: 202, json: { result: 'accepted' } });
+  });
+  return events;
+}
+
+function docsEvents(events: LoggedEvent[]) {
+  return events
+    .filter((event) => event.action.startsWith('api.docs_'))
+    .map(({ event_type, action, metadata }) => ({ event_type, action, metadata }));
+}
+
+const interactiveDocument = {
+  openapi: '3.0.3',
+  info: {
+    title: 'HPDS documentation',
+    version: '1.0',
+    description: 'See [the guide](https://docs.example.org/guide) first.',
+  },
+  servers: [{ url: '/picsure' }, { url: '/picsure/v2' }],
+  tags: [{ name: 'Query' }, { name: 'Search' }],
+  paths: {
+    '/query': {
+      post: {
+        tags: ['Query'],
+        operationId: 'runQuery',
+        summary: 'Run a query',
+        responses: {
+          '200': {
+            description: 'Query result',
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/QueryResult' } },
+              'text/plain': { schema: { type: 'string' } },
+            },
+          },
+        },
+      },
+    },
+    '/search': {
+      get: {
+        tags: ['Search'],
+        summary: 'Search without an operationId',
+        responses: { '200': { description: 'Matches' } },
+      },
+    },
+  },
+  components: {
+    schemas: {
+      QueryResult: {
+        type: 'object',
+        properties: {
+          count: { type: 'integer' },
+          detail: { $ref: '#/components/schemas/Detail' },
+        },
+      },
+      Detail: { type: 'object', properties: { note: { type: 'string' } } },
+    },
+  },
+};
+
+test.describe('API documentation activity logging', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
+  test.beforeEach(async ({ page }) => {
+    await mockApiConfig(page, { features: [{ name: 'OPEN', value: 'true' }] });
+    await mockDocuments(page);
+    await page.route('**/picsure/openapi/hpds-query-service', (route) =>
+      route.fulfill({ json: interactiveDocument }),
+    );
+  });
+
+  async function openDocs(page: Page) {
+    const events = await collectLogs(page);
+    await page.goto('/api#api-access');
+    const viewer = page.getByTestId('api-documentation');
+    await expect(viewer.getByRole('heading', { name: 'HPDS documentation' })).toBeVisible();
+    const expected: LoggedEvent[] = [];
+    const expectLogged = async (action: string, metadata: Record<string, unknown>) => {
+      expected.push({
+        event_type: 'ACTION',
+        action,
+        metadata: { service: 'hpds-query-service', ...metadata },
+      });
+      await expect.poll(() => docsEvents(events)).toEqual(expected);
+    };
+    return { events, viewer, expectLogged };
+  }
+
+  test('logs what a visitor does inside an operation', async ({ page }) => {
+    // Given
+    const { viewer, expectLogged } = await openDocs(page);
+    const query = viewer.locator('.opblock-post');
+    const operation = { method: 'post', path: '/query' };
+
+    // When
+    await expect(async () => {
+      await query.locator('.opblock-summary-control').click({ timeout: 2000 });
+      await expect(query.getByText('Query result')).toBeVisible({ timeout: 2000 });
+    }).toPass();
+
+    // Then
+    await expectLogged('api.docs_toggle', {
+      kind: 'operation',
+      tag: 'Query',
+      ...operation,
+      shown: true,
+    });
+
+    // When
+    await query.getByRole('tab', { name: 'Schema', exact: true }).click();
+
+    // Then
+    await expectLogged('api.docs_tab_select', { tab: 'schema', ...operation });
+
+    // When
+    await query.locator('.model-box-control', { hasText: 'Detail' }).click();
+    await expect(query.getByText('note', { exact: true })).toBeVisible();
+
+    // Then
+    await expectLogged('api.docs_toggle', {
+      kind: 'schema_property',
+      name: 'Detail',
+      shown: true,
+      ...operation,
+    });
+
+    // When
+    await query.locator('select.content-type').selectOption('text/plain');
+
+    // Then
+    await expectLogged('api.docs_select', {
+      control: 'media_type',
+      value: 'text/plain',
+      ...operation,
+    });
+
+    // When: Swagger shows the path's copy button only while the summary is hovered.
+    await query.locator('.opblock-summary .copy-to-clipboard button').dispatchEvent('click');
+
+    // Then
+    await expectLogged('api.docs_copy', operation);
+
+    // When
+    await query.locator('.opblock-summary-control').click();
+    await expect(query.getByText('Query result')).toBeHidden();
+
+    // Then
+    await expectLogged('api.docs_toggle', {
+      kind: 'operation',
+      tag: 'Query',
+      ...operation,
+      shown: false,
+    });
+
+    // When
+    await viewer.locator('.opblock-get .opblock-summary-control').click();
+
+    // Then
+    await expectLogged('api.docs_toggle', {
+      kind: 'operation',
+      tag: 'Search',
+      method: 'get',
+      path: '/search',
+      shown: true,
+    });
+  });
+
+  test('logs each tag and schema toggle once', async ({ page }) => {
+    // Given
+    const { viewer, expectLogged } = await openDocs(page);
+    const search = viewer.locator('.opblock-tag[data-tag="Search"]');
+    const getSearch = viewer.locator('.opblock-get');
+
+    // When
+    await viewer.getByRole('heading', { name: 'Search', level: 3 }).click();
+    await expect(getSearch).toBeHidden();
+
+    // Then
+    await expectLogged('api.docs_toggle', { kind: 'tag', tag: 'Search', shown: false });
+
+    // When: Swagger handles a click on the tag's arrow in both the button and its heading.
+    await search.locator('.expand-operation').click();
+    await expect(getSearch).toBeVisible();
+
+    // Then
+    await expectLogged('api.docs_toggle', { kind: 'tag', tag: 'Search', shown: true });
+
+    // Given
+    const schemas = viewer.locator('.models-control');
+    const queryResult = viewer.locator('#model-QueryResult');
+    // Under load Swagger can re-render the section mid-click and drop it, so click again only
+    // while the section is still in the other state; a retry can never toggle it twice.
+    const setSchemasOpen = async (open: boolean) => {
+      await expect(async () => {
+        if ((await schemas.getAttribute('aria-expanded')) !== String(open)) {
+          await schemas.click({ timeout: 2000 });
+        }
+        await expect(schemas).toHaveAttribute('aria-expanded', String(open), { timeout: 2000 });
+      }).toPass();
+    };
+
+    // When
+    await setSchemasOpen(false);
+    await expect(queryResult).toHaveCount(0);
+
+    // Then
+    await expectLogged('api.docs_toggle', { kind: 'schemas', shown: false });
+
+    // When
+    await setSchemasOpen(true);
+
+    // Then
+    await expectLogged('api.docs_toggle', { kind: 'schemas', shown: true });
+
+    // When
+    await queryResult.locator('.model-box-control').first().click();
+    await expect(queryResult).toContainText('count');
+
+    // Then
+    await expectLogged('api.docs_toggle', { kind: 'schema', name: 'QueryResult', shown: true });
+
+    // When
+    await setSchemasOpen(false);
+    await expect(queryResult).toHaveCount(0);
+
+    // Then
+    await expectLogged('api.docs_toggle', { kind: 'schemas', shown: false });
+
+    // When
+    await setSchemasOpen(true);
+    await expect(queryResult).toContainText('count');
+
+    // Then: reopening the section remounts the expanded schema, which is not a new expansion.
+    await expectLogged('api.docs_toggle', { kind: 'schemas', shown: true });
+  });
+
+  test('logs server and service switches', async ({ page }) => {
+    // Given
+    const { events, viewer, expectLogged } = await openDocs(page);
+
+    // When
+    await viewer.locator('.servers select').selectOption('/picsure/v2');
+
+    // Then
+    await expectLogged('api.docs_select', { control: 'server', value: '/picsure/v2' });
+
+    // When
+    await page.getByLabel('Select service:').selectOption('dictionary');
+    await expect(viewer.getByRole('heading', { name: 'Dictionary documentation' })).toBeVisible();
+
+    // Then
+    await expect
+      .poll(() => docsEvents(events).at(-1))
+      .toEqual({
+        event_type: 'ACTION',
+        action: 'api.docs_service_select',
+        metadata: { from: 'hpds-query-service', to: 'dictionary' },
+      });
+  });
+
+  test('logs a link followed from the documentation', async ({ page }) => {
+    // Given
+    const events = await collectLogs(page);
+    await page.route('https://docs.example.org/**', (route) => route.fulfill({ body: 'guide' }));
+    await page.goto('/api#api-access');
+    const viewer = page.getByTestId('api-documentation');
+
+    // When
+    await viewer.getByRole('link', { name: 'the guide' }).click({ modifiers: ['ControlOrMeta'] });
+
+    // Then
+    await expect
+      .poll(() => docsEvents(events))
+      .toEqual([
+        {
+          event_type: 'ACTION',
+          action: 'api.docs_link_click',
+          metadata: { service: 'hpds-query-service', url: 'https://docs.example.org/guide' },
+        },
+      ]);
+  });
+
+  test('logs documentation that fails to load, but not a deployment without it', async ({
+    page,
+  }) => {
+    // Given
+    const events = await collectLogs(page);
+    await page.route('**/picsure/openapi', (route) => route.fulfill({ status: 404 }));
+
+    // When
+    await page.goto('/api#api-access');
+
+    // Then
+    const viewer = page.getByTestId('api-documentation');
+    await expect(viewer).toContainText('API documentation is unavailable on this deployment.');
+
+    // When
+    await page.route('**/picsure/openapi', (route) => route.fulfill({ status: 503 }));
+    await viewer.getByRole('button', { name: 'Retry' }).click();
+
+    // Then
+    await expect(viewer).toContainText('Unable to load API documentation');
+
+    // When: the registry lists a service whose document is missing.
+    await page.route('**/picsure/openapi', (route) => route.fulfill({ json: registry }));
+    await page.route('**/picsure/openapi/hpds-query-service', (route) =>
+      route.fulfill({ status: 404 }),
+    );
+    await viewer.getByRole('button', { name: 'Retry' }).click();
+
+    // Then
+    await expect(viewer).toContainText('Unable to load API documentation. Please try again.');
+    await expect(viewer).not.toContainText('unavailable on this deployment');
+    const failures = () =>
+      events
+        .filter((event) => event.action === 'api.docs_load_failed')
+        .map(({ event_type, metadata, status, error }) => ({
+          event_type,
+          metadata,
+          status,
+          error,
+        }));
+    const failed = { message: 'Documentation request failed' };
+    await expect.poll(failures).toEqual([
+      { event_type: 'ERROR', metadata: { stage: 'registry' }, status: 503, error: failed },
+      {
+        event_type: 'ERROR',
+        metadata: { service: 'hpds-query-service', stage: 'document' },
+        status: 404,
+        error: failed,
+      },
+    ]);
+  });
+
+  test('logs nested schema toggles in an OpenAPI 3.1 document', async ({ page }) => {
+    // Given
+    const events = await collectLogs(page);
+    await page.route('**/picsure/openapi/hpds-query-service', (route) =>
+      route.fulfill({
+        json: {
+          ...interactiveDocument,
+          openapi: '3.1.0',
+          components: {
+            schemas: {
+              ...interactiveDocument.components.schemas,
+              Combined: { oneOf: [{ type: 'string' }, { type: 'integer' }] },
+            },
+          },
+        },
+      }),
+    );
+    await page.goto('/api#api-access');
+    const viewer = page.getByTestId('api-documentation');
+    await expect(viewer.getByRole('heading', { name: 'HPDS documentation' })).toBeVisible();
+    const queryResult = viewer.locator('.models .json-schema-2020-12', {
+      has: page.locator('.json-schema-2020-12__title', { hasText: 'QueryResult' }),
+    });
+
+    // When
+    await queryResult.locator('.json-schema-2020-12-accordion').first().click();
+    const detail = queryResult.locator('.json-schema-2020-12--embedded', { hasText: 'detail' });
+    await detail.locator('.json-schema-2020-12-accordion').click();
+    await detail.getByRole('button', { name: 'Collapse all' }).click();
+    await viewer
+      .locator('.models .json-schema-2020-12', {
+        has: page.locator('.json-schema-2020-12__title', { hasText: /^Detail$/ }),
+      })
+      .getByRole('button', { name: 'Expand all' })
+      .click();
+    const combined = viewer.locator('.models .json-schema-2020-12', {
+      has: page.locator('.json-schema-2020-12__title', { hasText: 'Combined' }),
+    });
+    await combined.locator('.json-schema-2020-12-accordion').first().click();
+    await combined.locator('.json-schema-2020-12-accordion', { hasText: 'One of' }).click();
+
+    // Then
+    const service = 'hpds-query-service';
+    await expect
+      .poll(() => docsEvents(events))
+      .toEqual([
+        {
+          event_type: 'ACTION',
+          action: 'api.docs_toggle',
+          metadata: { service, kind: 'schema', name: 'QueryResult', shown: true },
+        },
+        {
+          event_type: 'ACTION',
+          action: 'api.docs_toggle',
+          metadata: { service, kind: 'schema_property', name: 'detail', shown: true },
+        },
+        {
+          event_type: 'ACTION',
+          action: 'api.docs_toggle',
+          metadata: { service, kind: 'schema_property', name: 'detail', shown: false, all: true },
+        },
+        {
+          event_type: 'ACTION',
+          action: 'api.docs_toggle',
+          metadata: { service, kind: 'schema', name: 'Detail', shown: true, all: true },
+        },
+        {
+          event_type: 'ACTION',
+          action: 'api.docs_toggle',
+          metadata: { service, kind: 'schema', name: 'Combined', shown: true },
+        },
+        {
+          event_type: 'ACTION',
+          action: 'api.docs_toggle',
+          metadata: { service, kind: 'schema_property', name: 'One of', shown: true },
+        },
+      ]);
+  });
+});
