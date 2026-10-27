@@ -392,7 +392,7 @@ test.describe('Export Page', () => {
     await expect(codeBlock).toBeVisible();
     await expect(codeBlock).toContainText('python');
     await expect(codeBlock).toContainText('%pip install picsure');
-    await expect(codeBlock).toContainText(`session.runQueryByID(queryID, type="participant")`);
+    await expect(codeBlock).toContainText(`session.runQueryByID(queryID)`);
     await expect(codeBlock).toContainText(`queryID = "${newDatasetResponse.picsureResultId}"`);
     await expect(codeBlock).not.toContainText('github.com');
     const origin = new URL(page.url()).origin;
