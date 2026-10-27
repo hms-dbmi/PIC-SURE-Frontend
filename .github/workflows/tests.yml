@@ -36,7 +36,10 @@ jobs:
           key: node-modules-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
       - name: Read Playwright version
         id: playwright-version
-        run: echo "version=$(pnpm exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+        run: |
+          version=$(pnpm exec playwright --version | awk '{print $2}')
+          test -n "$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
   audit:
     runs-on: ubuntu-22.04
@@ -126,8 +129,7 @@ jobs:
   playwright:
     runs-on: ubuntu-22.04
     needs: [setup, lint, typecheck]
-    # Playwright's image has the browsers and their OS libraries baked in, so nothing is downloaded
-    # or apt-installed per run. The tag follows the locked @playwright/test, which must match it.
+    # The tag must match the installed @playwright/test, so it comes from the setup job.
     # --user 1001 matches the runner's workspace owner; Firefox refuses to run as root.
     container:
       image: mcr.microsoft.com/playwright:v${{ needs.setup.outputs.playwright-version }}-jammy
@@ -148,8 +150,8 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: 'pnpm'
-      # Not restored from the setup job's cache: the image lacks zstd, so actions/cache would look
-      # for a gzip entry under that key and miss.
+      # The setup job's node_modules cache can't be restored here: the image lacks zstd, so
+      # actions/cache looks for a gzip entry and misses. The pnpm store cache is container-only too.
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Sync SvelteKit
