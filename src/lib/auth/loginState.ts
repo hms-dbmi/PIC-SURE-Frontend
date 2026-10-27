@@ -21,7 +21,11 @@ export function newLoginState(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(STATE_BYTES));
   const state = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
   sessionStorage.setItem(LOGIN_STATE_KEY, state);
-  for (const key of LEGACY_LOCAL_STATE_KEYS) localStorage.removeItem(key);
+  try {
+    for (const key of LEGACY_LOCAL_STATE_KEYS) localStorage.removeItem(key);
+  } catch {
+    // Without localStorage there is no old state to remove, and the login goes on.
+  }
   return state;
 }
 

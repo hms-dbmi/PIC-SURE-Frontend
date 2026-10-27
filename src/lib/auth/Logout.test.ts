@@ -18,6 +18,7 @@ import { findSessionProvider, saveSessionProvider } from '#lib/auth/providers/Au
 import { createInstance } from '#lib/auth/providerRegistry.ts';
 import AUTH0 from '#lib/auth/providers/AUTH0.ts';
 import FENCE from '#lib/auth/providers/FENCE.ts';
+import { FENCE_REAUTH_KEY } from '#lib/auth/token.ts';
 
 /** An unsigned JWT for `sub` that expires in an hour. */
 function jwt(sub: string): string {
@@ -82,6 +83,24 @@ describe('logout', () => {
     expect(navigate).toHaveBeenCalledExactlyOnceWith('/login');
   });
 
+  it('goes to the login page once when a provider logout returns no redirect', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(new Response('{}'))),
+    );
+    vi.mocked(createLog).mockClear();
+    const provider = { logout: async () => undefined };
+
+    await session.logout(provider as unknown as AuthProvider);
+
+    expect(navigate).toHaveBeenCalledExactlyOnceWith('/login');
+    const loggedOut = vi
+      .mocked(createLog)
+      .mock.calls.filter((call) => call[1] === 'logout.success');
+    expect(loggedOut).toHaveLength(1);
+    expect(console.error).not.toHaveBeenCalled();
+  });
+
   const common = { description: 'Log in', enabled: true, alt: false };
   describe.each([
     [
@@ -93,7 +112,7 @@ describe('logout', () => {
       () =>
         new FENCE({ ...common, name: 'FENCE', type: 'FENCE', uri: 'u', clientid: 'c', idp: 'i' }),
     ],
-  ])('through %s, which leaves its IdP session alone', (_, create) => {
+  ])('through %s, which returns no logout URL', (_, create) => {
     it('ends the session once, without an error', async () => {
       vi.stubGlobal(
         'fetch',
@@ -118,6 +137,26 @@ describe('logout', () => {
         .mock.calls.filter((call) => call[1] === 'logout.success');
       expect(loggedOut).toHaveLength(1);
     });
+  });
+
+  it('leaves the flag that makes the next FENCE login ask for the account again', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(new Response('{}'))),
+    );
+    const fence = new FENCE({
+      ...common,
+      name: 'FENCE',
+      type: 'FENCE',
+      uri: 'u',
+      clientid: 'c',
+      idp: 'i',
+    });
+    saveSessionProvider(fence);
+
+    await session.logout(fence);
+
+    expect(localStorage.getItem(FENCE_REAUTH_KEY)).toBe('true');
   });
 
   it('ends the session once when another user logs in through another provider, and once on logout', async () => {

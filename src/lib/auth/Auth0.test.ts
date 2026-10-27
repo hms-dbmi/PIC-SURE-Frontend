@@ -66,6 +66,7 @@ describe('Auth0 login', () => {
       responseType: 'token',
       connection: 'mock-auth0',
       state: expect.any(String),
+      prompt: 'select_account',
     });
   });
 
@@ -84,6 +85,7 @@ describe('Auth0 login', () => {
       responseType: 'token',
       connection: 'mock-auth0',
       state: expect.any(String),
+      prompt: 'select_account',
     });
   });
 });

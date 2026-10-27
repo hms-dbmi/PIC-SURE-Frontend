@@ -15,6 +15,8 @@ export const USER_KEY = 'user';
 export const LOGOUT_REASON_KEY = 'logout-reason';
 /** sessionStorage: the OAuth `state` of the login this tab started. Its callback removes it. */
 export const LOGIN_STATE_KEY = 'loginState';
+/** localStorage: set by a FENCE logout so the next FENCE login asks for the account again. */
+export const FENCE_REAUTH_KEY = 'fence-reauth';
 
 /** The stored session token, or `''` when there is none (always on the server). */
 export function readToken(): string {

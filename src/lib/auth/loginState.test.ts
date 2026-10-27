@@ -1,8 +1,9 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { LoginStateError, newLoginState, verifyLoginState } from '#lib/auth/loginState.ts';
+import { LOGIN_STATE_KEY } from '#lib/auth/token.ts';
 
 function verdict(received: string | undefined) {
   try {
@@ -40,6 +41,18 @@ describe('newLoginState', () => {
 
     expect(localStorage.getItem('oauthState')).toBeNull();
     expect(localStorage.getItem('state')).toBeNull();
+  });
+
+  it('still starts a login when localStorage is unavailable', () => {
+    // restoreAllMocks doesn't restore a spy on happy-dom's localStorage
+    const blocked = vi.spyOn(localStorage, 'removeItem').mockImplementation(() => {
+      throw new Error('blocked');
+    });
+    onTestFinished(() => blocked.mockRestore());
+
+    const state = newLoginState();
+
+    expect(sessionStorage.getItem(LOGIN_STATE_KEY)).toBe(state);
   });
 });
 

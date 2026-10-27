@@ -55,6 +55,7 @@ class Auth0 extends AuthProvider implements Auth0Data {
       responseType: 'token',
       connection: this.connection,
       state: newLoginState(),
+      prompt: 'select_account',
     });
   };
 
