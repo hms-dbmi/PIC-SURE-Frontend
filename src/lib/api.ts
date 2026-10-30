@@ -196,6 +196,16 @@ async function handleResponse(res: Response, openRequest = false) {
       return new Promise(() => {});
     }
     // Loop guard tripped: deliberately fall through to the normal error path.
+  } else if (res.status === 429) {
+    // waiting is the fix, so tell the user how long; a throttled request never ends a login
+    const retryAfter = retryAfterSeconds(res.headers.get('Retry-After'));
+    log(createLog('ERROR', 'request.rate_limited', { retryAfter }, { status: 429 }));
+    error(
+      429,
+      retryAfter === undefined
+        ? "You've made too many requests. Try again shortly."
+        : `You've made too many requests. Try again in ${retryAfter} ${retryAfter === 1 ? 'second' : 'seconds'}.`,
+    );
   } else if (res.status === 401 && openRequest) {
     // an anonymous data request has no login to end: logging out would only bounce the visitor to
     // the login page, or sign out a logged-in user querying the open variant
@@ -228,6 +238,14 @@ async function handleResponse(res: Response, openRequest = false) {
 function fail(status: number, resText: string): never {
   log(createLog('ERROR', 'error.unknown', undefined, { status, error: { message: resText } }));
   error(status as NumericRange<400, 599>, resText);
+}
+
+// only the delay-seconds form; an HTTP-date or anything else counts as no usable header
+function retryAfterSeconds(header: string | null): number | undefined {
+  const value = header?.trim();
+  if (!value || !/^\d+$/.test(value)) return undefined;
+  const seconds = Number(value);
+  return seconds > 0 ? seconds : undefined;
 }
 
 function parseConsentDenial(responseBody: string): string | undefined {

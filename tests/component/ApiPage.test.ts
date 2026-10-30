@@ -33,6 +33,7 @@ vi.mock('$lib/components/ApiDocumentation.svelte', async () => ({
   default: (await import('./fixtures/StubComponent.svelte')).default,
 }));
 
+import { config } from '$lib/configuration.svelte';
 import ApiPage from '../../src/routes/(picsure)/(public)/api/+page.svelte';
 
 function actions(name: string) {
@@ -132,5 +133,38 @@ describe('API page logging', () => {
         target: 'https://github.com/hms-dbmi/Access-to-Data-using-PIC-SURE-API',
       },
     ]);
+  });
+});
+
+describe('API page rate limits', () => {
+  const LIMITS =
+    '60 requests per minute and 3,000 requests per day per key. The daily limit resets at midnight UTC.';
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    window.location.hash = '';
+  });
+
+  it('publishes the configured limits on the page and beside the public key', async () => {
+    config.branding.apiPage = {
+      ...config.branding.apiPage,
+      publicKeyEnabled: true,
+      rateLimits: { perMinute: 60, perDay: 3000 },
+    };
+    render(ApiPage);
+    await tick();
+
+    expect(screen.getByTestId('api-rate-limits')).toHaveTextContent(LIMITS);
+    expect(screen.getByTestId('public-key-rate-limits')).toHaveTextContent(LIMITS);
+  });
+
+  it('publishes nothing under the default configuration', async () => {
+    render(ApiPage);
+    await tick();
+
+    expect(screen.getByTestId('api-public-notice')).toBeInTheDocument();
+    expect(screen.queryByTestId('api-rate-limits')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('public-key-rate-limits')).not.toBeInTheDocument();
+    expect(screen.queryByText(/requests per minute/)).not.toBeInTheDocument();
   });
 });

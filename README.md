@@ -77,6 +77,8 @@ Features and settings are each resolved from up to three layers: hardcoded defau
 
 **Branding is the exception to this layering.** It defaults to whatever is in [`configuration.json`](https://github.com/hms-dbmi/PIC-SURE-Frontend/blob/dev/src/lib/assets/configuration.json), and only a narrow set of fields — currently just the logo (`VITE_LOGO`/`LOGO` and `VITE_LOGO_ALT`/`LOGO_ALT`) — can be seeded/overridden via env var or the API. Everything else under branding (sitemap, footer, landing page copy, etc.) is sourced from `configuration.json` and isn't wired up to env/API resolution at this time.
 
+The API page's keys live under `branding.apiPage` (types in `src/lib/types.ts`): `capabilities`, `publicKeyEnabled`, and the optional `rateLimits` (`{ "perMinute": 60, "perDay": 3000 }`). Set `rateLimits` only on a deployment whose gateway enforces open-access rate limiting (`rate.limit.enabled`), with the same numbers; the API page and the public key card then publish them. It's absent from the default `configuration.json` because the limiter is off by default.
+
 This system is under active development and subject to change.
 
 ### Testing configuration

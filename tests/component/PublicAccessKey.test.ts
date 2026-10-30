@@ -67,6 +67,29 @@ describe('PublicAccessKey', () => {
     expect(post).not.toHaveBeenCalled();
   });
 
+  describe('published rate limits', () => {
+    const LIMITS = '60 requests per minute and 3,000 requests per day per key.';
+
+    it('shows the limits beside the request button and the revealed key', async () => {
+      post.mockResolvedValue(mockKeyResponse);
+      render(PublicAccessKey, { props: { enabled: true, rateLimits: LIMITS } });
+
+      expect(screen.getByTestId('public-key-rate-limits')).toHaveTextContent(LIMITS);
+
+      await openForm();
+      await submitForm();
+      await screen.findByTestId('public-key-value');
+
+      expect(screen.getByTestId('public-key-rate-limits')).toHaveTextContent(LIMITS);
+    });
+
+    it('shows nothing when no limits are configured', () => {
+      render(PublicAccessKey, { props: { enabled: true } });
+
+      expect(screen.queryByTestId('public-key-rate-limits')).not.toBeInTheDocument();
+    });
+  });
+
   it('requests an unauthenticated key with a null captcha token and reveals it', async () => {
     post.mockResolvedValue(mockKeyResponse);
     render(PublicAccessKey, { props: { enabled: true } });

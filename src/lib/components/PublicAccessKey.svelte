@@ -17,8 +17,9 @@
 
   type View = 'idle' | 'form' | 'revealed' | 'error';
 
-  // deployment capability from branding config; the backend independently enforces its own flag
-  let { enabled = false }: { enabled?: boolean } = $props();
+  // deployment capability from branding config; the backend independently enforces its own flag.
+  // rateLimits is the published limits text, shown only when the deployment configures it
+  let { enabled = false, rateLimits }: { enabled?: boolean; rateLimits?: string } = $props();
 
   // when a Turnstile sitekey is configured the widget gates submission; empty keeps the
   // ungated flow (valid against a PSAMA running captcha.provider=disabled)
@@ -112,6 +113,12 @@
   }
 </script>
 
+{#snippet limits()}
+  {#if rateLimits}
+    <p data-testid="public-key-rate-limits" class="mx-0 mt-4 text-sm">{rateLimits}</p>
+  {/if}
+{/snippet}
+
 <div
   data-testid="public-access-key"
   class="card border border-surface-200 bg-surface-50-950 p-6 min-h-80 flex flex-col"
@@ -130,6 +137,7 @@
       assessments.
     </p>
     {#if enabled}
+      {@render limits()}
       <button
         class="btn preset-filled-primary-500 my-auto mx-auto"
         onclick={() => openForm('idle')}
@@ -250,6 +258,7 @@
       <span class="font-bold">Expires:</span>
       <span data-testid="public-key-expires">{expires}</span>
     </div>
+    {@render limits()}
   {:else if view === 'error'}
     <!-- ErrorAlert has no live region of its own; announce the async failure -->
     <div role="alert">
