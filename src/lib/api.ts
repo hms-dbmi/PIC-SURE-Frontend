@@ -202,9 +202,7 @@ async function handleResponse(res: Response, openRequest = false) {
     log(createLog('ERROR', 'request.rate_limited', { retryAfter }, { status: 429 }));
     error(
       429,
-      retryAfter === undefined
-        ? "You've made too many requests. Try again shortly."
-        : `You've made too many requests. Try again in ${retryAfter} ${retryAfter === 1 ? 'second' : 'seconds'}.`,
+      `You've made too many requests. Try again ${retryAfter === undefined ? 'shortly' : `in ${waitText(retryAfter)}`}.`,
     );
   } else if (res.status === 401 && openRequest) {
     // an anonymous data request has no login to end: logging out would only bounce the visitor to
@@ -246,6 +244,17 @@ function retryAfterSeconds(header: string | null): number | undefined {
   if (!value || !/^\d+$/.test(value)) return undefined;
   const seconds = Number(value);
   return seconds > 0 ? seconds : undefined;
+}
+
+// a spent daily limit waits until midnight UTC, so long waits read in minutes or hours, rounded up
+function waitText(seconds: number): string {
+  const [amount, unit] =
+    seconds < 60
+      ? [seconds, 'second']
+      : seconds < 3600
+        ? [Math.ceil(seconds / 60), 'minute']
+        : [Math.ceil(seconds / 3600), 'hour'];
+  return `${amount} ${unit}${amount === 1 ? '' : 's'}`;
 }
 
 function parseConsentDenial(responseBody: string): string | undefined {

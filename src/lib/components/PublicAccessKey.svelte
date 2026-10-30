@@ -17,8 +17,7 @@
 
   type View = 'idle' | 'form' | 'revealed' | 'error';
 
-  // deployment capability from branding config; the backend independently enforces its own flag.
-  // rateLimits is the published limits text, shown only when the deployment configures it
+  // deployment capability from branding config; the backend independently enforces its own flag
   let { enabled = false, rateLimits }: { enabled?: boolean; rateLimits?: string } = $props();
 
   // when a Turnstile sitekey is configured the widget gates submission; empty keeps the

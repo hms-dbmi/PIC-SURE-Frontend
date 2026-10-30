@@ -447,10 +447,17 @@ describe('api', () => {
       expectNoLogout();
     });
 
-    it('uses the singular for a one-second wait', async () => {
-      fetchMock.mockResolvedValue(tooMany({ 'Retry-After': '1' }));
+    it.each([
+      ['1', '1 second'],
+      ['59', '59 seconds'],
+      ['60', '1 minute'],
+      ['61', '2 minutes'],
+      ['3600', '1 hour'],
+      ['52200', '15 hours'],
+    ])('reads Retry-After: %s as %s', async (header, wait) => {
+      fetchMock.mockResolvedValue(tooMany({ 'Retry-After': header }));
 
-      await expect(get('picsure/test')).rejects.toThrow('Try again in 1 second.');
+      await expect(get('picsure/test')).rejects.toThrow(`Try again in ${wait}.`);
     });
 
     it.each([
