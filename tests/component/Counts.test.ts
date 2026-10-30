@@ -25,6 +25,7 @@ const mockState = vi.hoisted(() => ({
       descriptorKey: 'k',
       count: 0 as number | string | Record<string, number | string>,
       summary: { total: 0 as number | string, hasNonZero: true, hasError: false },
+      errorMessage: undefined as string | undefined,
     },
   },
 }));
@@ -37,7 +38,12 @@ vi.mock('$lib/state/resultCounts.svelte', () => ({
 
 import Counts from '$lib/components/explorer/results/Counts.svelte';
 
-function setSnapshot(count: number | string, total: number | string, hasError = false) {
+function setSnapshot(
+  count: number | string,
+  total: number | string,
+  hasError = false,
+  errorMessage?: string,
+) {
   mockState.current = {
     loading: false,
     total,
@@ -46,6 +52,7 @@ function setSnapshot(count: number | string, total: number | string, hasError = 
       descriptorKey: 'k',
       count,
       summary: { total, hasNonZero: true, hasError },
+      errorMessage,
     },
   };
 }
@@ -84,5 +91,21 @@ describe('Counts.svelte rendering', () => {
     expect(node).toBeInTheDocument();
     // The numeric count span must NOT render in the error branch.
     expect(screen.queryByText('0')).not.toBeInTheDocument();
+  });
+
+  it("shows a 429's wait message in the error alert", async () => {
+    const message = "You've made too many requests. Try again in 30 seconds.";
+    setSnapshot(0, 0, true, message);
+    render(Counts);
+
+    expect(await screen.findByText(message)).toBeInTheDocument();
+    expect(screen.queryByText(/contact your PIC-SURE admin/)).not.toBeInTheDocument();
+  });
+
+  it('keeps the configured query error text for other failures', async () => {
+    setSnapshot(0, 0, true);
+    render(Counts);
+
+    expect(await screen.findByText(/contact your PIC-SURE admin/)).toBeInTheDocument();
   });
 });

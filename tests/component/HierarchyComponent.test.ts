@@ -2,7 +2,6 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
-import { error } from '@sveltejs/kit';
 
 const { getHierarchyConcepts, getConceptTree, toastError } = vi.hoisted(() => ({
   getHierarchyConcepts: vi.fn(),
@@ -21,16 +20,9 @@ vi.mock('$lib/toaster', () => ({ toaster: { error: toastError } }));
 
 import type { SearchResult } from '$lib/models/Search';
 import HierarchyComponent from '$lib/components/explorer/HierarchyComponent.svelte';
+import { rejection } from './helpers';
 
 const data = { dataset: 'phs000001', conceptPath: '\\phs000001\\age\\' } as SearchResult;
-
-function rejection(status: 429 | 500, message: string): unknown {
-  try {
-    error(status, message);
-  } catch (e) {
-    return e;
-  }
-}
 
 describe('HierarchyComponent', () => {
   beforeEach(() => {

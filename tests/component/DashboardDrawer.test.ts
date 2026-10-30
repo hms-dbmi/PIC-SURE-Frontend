@@ -2,7 +2,6 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
-import { error } from '@sveltejs/kit';
 
 const { getDatasetDetails } = vi.hoisted(() => ({ getDatasetDetails: vi.fn() }));
 
@@ -14,14 +13,7 @@ vi.mock('$lib/stores/Dashboard', async () => {
 });
 
 import DashboardDrawer from '$lib/components/dashboard/DashboardDrawer.svelte';
-
-function rejection(status: 429 | 500, message: string): unknown {
-  try {
-    error(status, message);
-  } catch (e) {
-    return e;
-  }
-}
+import { rejection } from './helpers';
 
 describe('DashboardDrawer', () => {
   beforeEach(() => {

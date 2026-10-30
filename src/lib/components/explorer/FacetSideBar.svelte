@@ -101,10 +101,13 @@
     </Accordion>
   {/if}
 {:catch error}
+  {@const waitMessage = rateLimitMessage(error)}
   <ErrorAlert
-    title={rateLimitMessage(error) ?? 'Something went wrong loading your search options.'}
+    title={waitMessage ?? 'Something went wrong loading your search options.'}
     color="secondary"
   >
-    Please wait a moment, refresh the page, and try again.
+    {#if !waitMessage}
+      Please wait a moment, refresh the page, and try again.
+    {/if}
   </ErrorAlert>
 {/await}

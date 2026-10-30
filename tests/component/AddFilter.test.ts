@@ -8,8 +8,7 @@ import { getConceptDetails } from '$lib/stores/Dictionary';
 import { addFilter, enrichFilterDetails } from '$lib/stores/Filter';
 import type { SearchResult } from '$lib/models/Search';
 import { toaster } from '$lib/toaster';
-import { error } from '@sveltejs/kit';
-import { optionsIn } from './helpers';
+import { optionsIn, rejection } from './helpers';
 
 vi.mock('$app/environment', () => ({ browser: false }));
 
@@ -130,14 +129,6 @@ describe('AddFilter', () => {
   });
 
   describe('when the values fail to load', () => {
-    function rejection(status: 429 | 500, message: string): unknown {
-      try {
-        error(status, message);
-      } catch (e) {
-        return e;
-      }
-    }
-
     beforeEach(() => {
       vi.spyOn(console, 'error').mockImplementation(() => {});
     });
@@ -159,6 +150,12 @@ describe('AddFilter', () => {
       const message = "You've made too many requests. Try again in 30 seconds.";
 
       expect(await loadRejectedWith(rejection(429, message))).toEqual({ title: message });
+    });
+
+    it('stops loading the options list', async () => {
+      await loadRejectedWith(rejection(429, 'Try again later.'));
+
+      await vi.waitFor(() => expect(screen.queryByTestId('progress-ring')).toBeNull());
     });
 
     it('keeps the generic toast for other failures', async () => {

@@ -81,6 +81,7 @@
         }
       } catch (e) {
         console.error(e);
+        loading = false;
         toaster.error({
           title:
             rateLimitMessage(e) ??

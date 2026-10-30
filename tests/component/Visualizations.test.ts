@@ -2,7 +2,6 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, waitFor } from '@testing-library/svelte';
-import { error } from '@sveltejs/kit';
 
 const { post, toastError } = vi.hoisted(() => ({ post: vi.fn(), toastError: vi.fn() }));
 
@@ -17,14 +16,7 @@ vi.mock('$lib/AccessState', () => ({ isOpenAccess: () => true, useOpenAccess: ()
 vi.mock('plotly.js-basic-dist-min', () => ({ newPlot: vi.fn() }));
 
 import Visualizations from '$lib/components/explorer/Visualizations.svelte';
-
-function rejection(status: 429 | 500, message: string): unknown {
-  try {
-    error(status, message);
-  } catch (e) {
-    return e;
-  }
-}
+import { rejection } from './helpers';
 
 describe('Visualizations', () => {
   beforeEach(() => {

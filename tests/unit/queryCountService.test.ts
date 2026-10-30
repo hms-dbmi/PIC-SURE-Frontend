@@ -1,5 +1,4 @@
 import { describe, it, expect, vi } from 'vitest';
-import { error } from '@sveltejs/kit';
 
 vi.mock('$app/environment', () => ({ browser: false }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost') } }));
@@ -9,6 +8,7 @@ vi.mock('$app/paths', () => ({ resolve: (path: string) => path }));
 import { createQueryCountService } from '$lib/services/counts/queryCountService';
 import type { CountProvider } from '$lib/services/counts/providers';
 import type { QueryDescriptor } from '$lib/services/counts/queryDescriptor.svelte';
+import { rejection } from '../component/helpers';
 
 const descriptor: QueryDescriptor = {
   isOpenAccess: false,
@@ -61,13 +61,9 @@ describe('QueryCountService.getCount', () => {
   });
 
   it("carries a 429's message on the error snapshot", async () => {
-    let tooMany: unknown;
-    try {
-      error(429, "You've made too many requests. Try again in 30 seconds.");
-    } catch (e) {
-      tooMany = e;
-    }
-    const transport = vi.fn().mockRejectedValue(tooMany);
+    const transport = vi
+      .fn()
+      .mockRejectedValue(rejection(429, "You've made too many requests. Try again in 30 seconds."));
     const service = createQueryCountService({ transport });
     const snap = await service.getCount(descriptor, makeProvider(), resource);
     expect(snap.summary.hasError).toBe(true);

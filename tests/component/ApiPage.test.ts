@@ -32,8 +32,12 @@ vi.mock('$lib/api', () => ({ post: vi.fn() }));
 vi.mock('$lib/components/ApiDocumentation.svelte', async () => ({
   default: (await import('./fixtures/StubComponent.svelte')).default,
 }));
+vi.mock('$lib/components/UserToken.svelte', async () => ({
+  default: (await import('./fixtures/StubComponent.svelte')).default,
+}));
 
 import { config } from '$lib/configuration.svelte';
+import { tokenStatus } from '$lib/stores/User';
 import ApiPage from '../../src/routes/(picsure)/(public)/api/+page.svelte';
 
 function actions(name: string) {
@@ -156,6 +160,27 @@ describe('API page rate limits', () => {
 
     expect(screen.getByTestId('api-rate-limits')).toHaveTextContent(LIMITS);
     expect(screen.getByTestId('public-key-rate-limits')).toHaveTextContent(LIMITS);
+  });
+
+  it('hides the limits from a logged-in user', async () => {
+    const apiPage = config.branding.apiPage;
+    config.branding.apiPage = {
+      ...apiPage,
+      publicKeyEnabled: true,
+      rateLimits: { perMinute: 60, perDay: 3000 },
+    };
+    tokenStatus.set(true);
+    try {
+      render(ApiPage);
+      await tick();
+
+      expect(screen.queryByTestId('api-rate-limits')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('public-key-rate-limits')).not.toBeInTheDocument();
+      expect(screen.queryByText(/requests per minute/)).not.toBeInTheDocument();
+    } finally {
+      tokenStatus.set(false);
+      config.branding.apiPage = apiPage;
+    }
   });
 
   it('publishes nothing under the default configuration', async () => {

@@ -1,3 +1,5 @@
+// @vitest-environment happy-dom
+
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { get } from 'svelte/store';
 
@@ -20,10 +22,6 @@ const mockState = vi.hoisted(() => {
     facetsPromiseStore: writable<Promise<unknown>>(Promise.resolve([])),
     resetFacetStateSpy: vi.fn(),
     logSpy: vi.fn(),
-    rateLimitMessageSpy: vi.fn((e: unknown): string | undefined => {
-      void e;
-      return undefined;
-    }),
   };
 });
 
@@ -48,12 +46,13 @@ vi.mock('$lib/logger', () => ({
   getPageContext: () => 'explorer',
 }));
 
-vi.mock('$lib/api', () => ({
-  isAbortError: (e: unknown) => (e as Error | undefined)?.name === 'AbortError',
-  rateLimitMessage: mockState.rateLimitMessageSpy,
-}));
+vi.mock('$lib/api', async (importOriginal) => {
+  const { isAbortError, rateLimitMessage } = await importOriginal<typeof import('$lib/api')>();
+  return { isAbortError, rateLimitMessage };
+});
 
 import type { State } from '@vincjo/datatables/server';
+import { rejection } from '../component/helpers';
 import type { Facet, SearchResult } from '$lib/models/Search';
 import {
   initHandler,
@@ -288,10 +287,8 @@ describe('error handling', () => {
 
   it("shows a 429's message instead of the generic text", async () => {
     searchTerm.set('age');
-    const tooMany = new Error('rate limited');
-    mockState.searchDictionarySpy.mockRejectedValueOnce(tooMany);
-    mockState.rateLimitMessageSpy.mockImplementationOnce((e) =>
-      e === tooMany ? "You've made too many requests. Try again in 30 seconds." : undefined,
+    mockState.searchDictionarySpy.mockRejectedValueOnce(
+      rejection(429, "You've made too many requests. Try again in 30 seconds."),
     );
 
     await load(makeState().state);

@@ -265,22 +265,27 @@ function waitText(seconds: number): string {
   return `${amount} ${unit}${amount === 1 ? '' : 's'}`;
 }
 
-function parseRequestId(responseBody: string): string | undefined {
+// the gateway's error envelope; undefined when the body isn't a JSON object
+function parseErrorEnvelope(
+  responseBody: string,
+): { errorType?: unknown; message?: unknown; requestId?: unknown } | undefined {
   try {
-    const { requestId } = JSON.parse(responseBody) as { requestId?: unknown };
-    return typeof requestId === 'string' ? requestId : undefined;
+    const body: unknown = JSON.parse(responseBody);
+    return body !== null && typeof body === 'object' ? body : undefined;
   } catch {
     return undefined;
   }
 }
 
+function parseRequestId(responseBody: string): string | undefined {
+  const requestId = parseErrorEnvelope(responseBody)?.requestId;
+  return typeof requestId === 'string' ? requestId : undefined;
+}
+
 function parseConsentDenial(responseBody: string): string | undefined {
-  try {
-    const body = JSON.parse(responseBody) as { errorType?: string; message?: string };
-    return body.errorType === CONSENT_DENIED ? body.message || CONSENT_DENIED_MESSAGE : undefined;
-  } catch {
-    return undefined;
-  }
+  const body = parseErrorEnvelope(responseBody);
+  if (body?.errorType !== CONSENT_DENIED) return undefined;
+  return (typeof body.message === 'string' && body.message) || CONSENT_DENIED_MESSAGE;
 }
 
 function refreshToken(res: Response) {
