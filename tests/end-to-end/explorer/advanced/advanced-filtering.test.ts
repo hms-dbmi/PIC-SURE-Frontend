@@ -1080,8 +1080,12 @@ test.describe('Advanced Query Builder - Drag interactions', () => {
     await expect(afPage.getMoveHereZones()).not.toHaveCount(0);
     // The keyboard sensor picks the next zone by position, so let the zones finish opening
     await page.waitForFunction(() => document.getAnimations().length === 0);
-    await page.keyboard.press('ArrowUp');
-    await expect(afPage.logicTreeText).toHaveText(expected);
+    // Which zone comes first depends on the fonts: on Linux the first ArrowUp lands in the upper
+    // subquery's "Drop into subquery" zone, and the next one reaches "Move here"
+    await expect(async () => {
+      await page.keyboard.press('ArrowUp');
+      await expect(afPage.logicTreeText).toHaveText(expected, { timeout: 1000 });
+    }).toPass();
     await page.keyboard.press('Enter');
 
     await expect(afPage.getMoveHereZones()).toHaveCount(0);
