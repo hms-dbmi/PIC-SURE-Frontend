@@ -116,7 +116,7 @@ export function createQueryCountService(options: QueryCountServiceOptions): Quer
           descriptorKey: stableHash(descriptor),
           count: outcome.value,
           summary: summarize(outcome.value, outcome.error),
-          ...(outcome.errorMessage && { errorMessage: outcome.errorMessage }),
+          errorMessage: outcome.errorMessage,
         };
         if (!snapshot.summary.hasError && generation === startedGeneration) {
           cache.set(key, snapshot);
