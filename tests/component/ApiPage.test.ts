@@ -163,9 +163,8 @@ describe('API page rate limits', () => {
   });
 
   it('hides the limits from a logged-in user', async () => {
-    const apiPage = config.branding.apiPage;
     config.branding.apiPage = {
-      ...apiPage,
+      ...config.branding.apiPage,
       publicKeyEnabled: true,
       rateLimits: { perMinute: 60, perDay: 3000 },
     };
@@ -179,7 +178,6 @@ describe('API page rate limits', () => {
       expect(screen.queryByText(/requests per minute/)).not.toBeInTheDocument();
     } finally {
       tokenStatus.set(false);
-      config.branding.apiPage = apiPage;
     }
   });
 

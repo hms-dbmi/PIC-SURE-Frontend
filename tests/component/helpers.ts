@@ -1,4 +1,4 @@
-// Shared helpers for component tests. Not a test file - vitest only collects *.test.ts.
+// Shared test helpers, used by unit tests too. Not a test file - vitest only collects *.test.ts.
 
 import { error } from '@sveltejs/kit';
 
