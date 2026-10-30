@@ -414,13 +414,10 @@ describe('api', () => {
 
   describe('rate limiting', () => {
     const SESSION = 'picsure_s_header.payload.signature';
-    const tooMany = (headers: Record<string, string> = {}) =>
-      mockFetchResponse({
-        ok: false,
-        status: 429,
-        headers,
-        body: JSON.stringify({ errorType: 'rate_limited', message: 'x', requestId: 'r1' }),
-      });
+    const tooMany = (
+      headers: Record<string, string> = {},
+      body = JSON.stringify({ errorType: 'rate_limited', message: 'x', requestId: 'r1' }),
+    ) => mockFetchResponse({ ok: false, status: 429, headers, body });
 
     function expectNoLogout() {
       expect(mockLogout).not.toHaveBeenCalled();
@@ -440,7 +437,7 @@ describe('api', () => {
       expect(mockCreateLog).toHaveBeenCalledWith(
         'ERROR',
         'request.rate_limited',
-        { retryAfter: 30 },
+        { retryAfter: 30, requestId: 'r1' },
         { status: 429 },
       );
       expect(mockCreateLog.mock.calls.map((call) => call[1])).not.toContain('error.unknown');
@@ -452,7 +449,11 @@ describe('api', () => {
       ['59', '59 seconds'],
       ['60', '1 minute'],
       ['61', '2 minutes'],
+      ['3540', '59 minutes'],
+      ['3541', '1 hour'],
+      ['3599', '1 hour'],
       ['3600', '1 hour'],
+      ['3601', '2 hours'],
       ['52200', '15 hours'],
     ])('reads Retry-After: %s as %s', async (header, wait) => {
       fetchMock.mockResolvedValue(tooMany({ 'Retry-After': header }));
@@ -476,10 +477,28 @@ describe('api', () => {
       expect(mockCreateLog).toHaveBeenCalledWith(
         'ERROR',
         'request.rate_limited',
-        { retryAfter: undefined },
+        { retryAfter: undefined, requestId: 'r1' },
         { status: 429 },
       );
       expectNoLogout();
+    });
+
+    it.each([
+      ['no requestId', JSON.stringify({ errorType: 'rate_limited', message: 'x' })],
+      ['a null requestId', JSON.stringify({ errorType: 'rate_limited', requestId: null })],
+      ['a non-JSON body', 'Too Many Requests'],
+      ['an empty body', ''],
+    ])('still reports the 429 for %s', async (_, body) => {
+      fetchMock.mockResolvedValue(tooMany({ 'Retry-After': '30' }, body));
+
+      await expect(get('picsure/test')).rejects.toThrow('Try again in 30 seconds.');
+
+      expect(mockCreateLog).toHaveBeenCalledWith(
+        'ERROR',
+        'request.rate_limited',
+        { retryAfter: 30, requestId: undefined },
+        { status: 429 },
+      );
     });
 
     it('does not log out a logged-in user', async () => {

@@ -4,6 +4,7 @@
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Loading from '../Loading.svelte';
   import { log, createLog } from '$lib/logger';
+  import { rateLimitMessage } from '$lib/api';
 
   const datasetId = ($activeRow?.dataset_id as string) || '';
   const title = ($activeRow?.name as string) || '';
@@ -68,8 +69,8 @@
       >
     </div>
   {/if}
-{:catch}
-  <ErrorAlert title="An Error Occured">
+{:catch error}
+  <ErrorAlert title={rateLimitMessage(error) ?? 'An Error Occured'}>
     We're having trouble fetching the dataset details right now. Please try again later.
   </ErrorAlert>
 {/await}

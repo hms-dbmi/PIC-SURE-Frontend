@@ -204,7 +204,9 @@ async function handleResponse(res: Response, openRequest = false) {
   } else if (res.status === 429) {
     // waiting is the fix, so tell the user how long; a throttled request never ends a login
     const retryAfter = retryAfterSeconds(res.headers.get('Retry-After'));
-    log(createLog('ERROR', 'request.rate_limited', { retryAfter }, { status: 429 }));
+    // the gateway's requestId ties this report to its 429 audit event
+    const requestId = parseRequestId(await res.text());
+    log(createLog('ERROR', 'request.rate_limited', { retryAfter, requestId }, { status: 429 }));
     error(
       429,
       `You've made too many requests. Try again ${retryAfter === undefined ? 'shortly' : `in ${waitText(retryAfter)}`}.`,
@@ -253,13 +255,23 @@ function retryAfterSeconds(header: string | null): number | undefined {
 
 // a spent daily limit waits until midnight UTC, so long waits read in minutes or hours, rounded up
 function waitText(seconds: number): string {
+  const minutes = Math.ceil(seconds / 60);
   const [amount, unit] =
     seconds < 60
       ? [seconds, 'second']
-      : seconds < 3600
-        ? [Math.ceil(seconds / 60), 'minute']
+      : minutes < 60
+        ? [minutes, 'minute']
         : [Math.ceil(seconds / 3600), 'hour'];
   return `${amount} ${unit}${amount === 1 ? '' : 's'}`;
+}
+
+function parseRequestId(responseBody: string): string | undefined {
+  try {
+    const { requestId } = JSON.parse(responseBody) as { requestId?: unknown };
+    return typeof requestId === 'string' ? requestId : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function parseConsentDenial(responseBody: string): string | undefined {

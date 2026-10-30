@@ -113,6 +113,7 @@
         console.error('Error adding selection: ', error instanceof Error ? error.message : error);
         toaster.error({
           description:
+            rateLimitMessage(error) ??
             'Something went wrong when adding the filter. If the problem persists, please contact your administrator.',
         });
       }

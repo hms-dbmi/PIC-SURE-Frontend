@@ -13,6 +13,7 @@
   } from '$lib/models/Filter.svelte';
   import { getConceptDetails } from '$lib/stores/Dictionary';
   import { panelOpen } from '$lib/stores/SidePanel';
+  import { rateLimitMessage } from '$lib/api';
 
   import Loading from '$lib/components/Loading.svelte';
   import OptionsSelectionList from '$lib/components/OptionsSelectionList.svelte';
@@ -81,7 +82,9 @@
       } catch (e) {
         console.error(e);
         toaster.error({
-          title: 'An error occured while loading the filter. Please try again later.',
+          title:
+            rateLimitMessage(e) ??
+            'An error occured while loading the filter. Please try again later.',
         });
       }
     }
