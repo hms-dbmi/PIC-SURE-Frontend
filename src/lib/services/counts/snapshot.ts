@@ -12,6 +12,8 @@ export interface ResultCountSnapshot {
   descriptorKey: string;
   count: CountValue;
   summary: ResultCountSummary;
+  // set when the error has text worth showing the user (a 429's wait time)
+  errorMessage?: string;
 }
 
 function isNonZeroCell(value: CountValue): boolean {

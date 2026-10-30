@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { error } from '@sveltejs/kit';
 
 vi.mock('$app/environment', () => ({ browser: false }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost') } }));
@@ -57,6 +58,27 @@ describe('QueryCountService.getCount', () => {
     const snap = await service.getCount(descriptor, makeProvider(), resource);
     expect(snap.count).toBe(0);
     expect(snap.summary.hasError).toBe(true);
+  });
+
+  it("carries a 429's message on the error snapshot", async () => {
+    let tooMany: unknown;
+    try {
+      error(429, "You've made too many requests. Try again in 30 seconds.");
+    } catch (e) {
+      tooMany = e;
+    }
+    const transport = vi.fn().mockRejectedValue(tooMany);
+    const service = createQueryCountService({ transport });
+    const snap = await service.getCount(descriptor, makeProvider(), resource);
+    expect(snap.summary.hasError).toBe(true);
+    expect(snap.errorMessage).toBe("You've made too many requests. Try again in 30 seconds.");
+  });
+
+  it('carries no message for other failures', async () => {
+    const transport = vi.fn().mockRejectedValue(new Error('network'));
+    const service = createQueryCountService({ transport });
+    const snap = await service.getCount(descriptor, makeProvider(), resource);
+    expect(snap.errorMessage).toBeUndefined();
   });
 
   it('coerces a throw from provider.buildRequest to 0 + hasError', async () => {

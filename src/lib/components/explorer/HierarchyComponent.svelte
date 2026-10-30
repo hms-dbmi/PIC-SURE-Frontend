@@ -15,6 +15,7 @@
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import { sortHierarchyDeepestFirst } from '$lib/utilities/Hierarchy';
   import { log, createLog, getPageContext } from '$lib/logger';
+  import { rateLimitMessage } from '$lib/api';
   interface Props {
     data?: SearchResult;
     onclose?: () => void;
@@ -174,7 +175,7 @@
       />
     {:catch error}
       <ErrorAlert color="error">
-        <p class="m-0">Error loading hierarchy</p>
+        <p class="m-0">{rateLimitMessage(error) ?? 'Error loading hierarchy'}</p>
         <span class="text-sm text-gray-500 hidden"
           >{error instanceof Error ? error.message : String(error)}</span
         >

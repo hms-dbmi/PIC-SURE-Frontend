@@ -165,19 +165,20 @@ export class ResultCounts {
     try {
       const descriptor = prebuiltDescriptor ?? this.#buildCurrentDescriptor(isOpenAccess);
       const result = await this.load(descriptor, isOpenAccess);
-      if (result.kind === 'error') this.#showErrorToast();
+      if (result.kind === 'error') this.#showErrorToast(result.snapshot.errorMessage);
     } catch (error) {
       console.error(error);
       this.#showErrorToast();
     }
   }
 
-  #showErrorToast(): void {
+  #showErrorToast(message?: string): void {
     if (isToastShowing('query-error')) return;
     toaster.error({
       id: 'query-error',
       duration: 4000,
       title:
+        message ??
         'An error occured while loading patient counts. If this problem persists, please contact an administrator.',
       closable: true,
     });

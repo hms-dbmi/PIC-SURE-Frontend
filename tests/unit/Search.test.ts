@@ -20,6 +20,10 @@ const mockState = vi.hoisted(() => {
     facetsPromiseStore: writable<Promise<unknown>>(Promise.resolve([])),
     resetFacetStateSpy: vi.fn(),
     logSpy: vi.fn(),
+    rateLimitMessageSpy: vi.fn((e: unknown): string | undefined => {
+      void e;
+      return undefined;
+    }),
   };
 });
 
@@ -46,6 +50,7 @@ vi.mock('$lib/logger', () => ({
 
 vi.mock('$lib/api', () => ({
   isAbortError: (e: unknown) => (e as Error | undefined)?.name === 'AbortError',
+  rateLimitMessage: mockState.rateLimitMessageSpy,
 }));
 
 import type { State } from '@vincjo/datatables/server';
@@ -279,6 +284,26 @@ describe('error handling', () => {
 
     await expect(load(makeState().state)).resolves.toBeUndefined();
     expect(get(error)).not.toBe('');
+  });
+
+  it("shows a 429's message instead of the generic text", async () => {
+    searchTerm.set('age');
+    const tooMany = new Error('rate limited');
+    mockState.searchDictionarySpy.mockRejectedValueOnce(tooMany);
+    mockState.rateLimitMessageSpy.mockImplementationOnce((e) =>
+      e === tooMany ? "You've made too many requests. Try again in 30 seconds." : undefined,
+    );
+
+    await load(makeState().state);
+    expect(get(error)).toBe("You've made too many requests. Try again in 30 seconds.");
+  });
+
+  it('keeps the generic text for other failures', async () => {
+    searchTerm.set('age');
+    mockState.searchDictionarySpy.mockRejectedValueOnce(new Error('boom'));
+
+    await load(makeState().state);
+    expect(get(error)).toContain('An error occurred while searching');
   });
 
   it('does not surface an error from a superseded failure', async () => {

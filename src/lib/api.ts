@@ -29,6 +29,11 @@ export function consentDeniedMessage(e: unknown): string | undefined {
   return isHttpError(e, 403) && e.body.errorType === CONSENT_DENIED ? e.body.message : undefined;
 }
 
+// handleResponse's 429 text says how long to wait, which a caller's generic error text would lose
+export function rateLimitMessage(e: unknown): string | undefined {
+  return isHttpError(e, 429) ? e.body.message : undefined;
+}
+
 // TODO: fix any types
 /* eslint-disable @typescript-eslint/no-explicit-any */
 async function send({
