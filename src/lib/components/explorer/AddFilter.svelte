@@ -13,6 +13,7 @@
   } from '$lib/models/Filter.svelte';
   import { getConceptDetails } from '$lib/stores/Dictionary';
   import { panelOpen } from '$lib/stores/SidePanel';
+  import { rateLimitMessage } from '$lib/api';
 
   import Loading from '$lib/components/Loading.svelte';
   import OptionsSelectionList from '$lib/components/OptionsSelectionList.svelte';
@@ -73,7 +74,6 @@
       try {
         loading = true;
         data = await getConceptDetails(data.conceptPath, data.dataset);
-        loading = false;
         unselectedOptions = data?.values || [];
         if (unselectedOptions.length >= 50) {
           unselectedOptions = unselectedOptions.slice(0, pageSize);
@@ -81,8 +81,12 @@
       } catch (e) {
         console.error(e);
         toaster.error({
-          title: 'An error occured while loading the filter. Please try again later.',
+          title:
+            rateLimitMessage(e) ??
+            'An error occured while loading the filter. Please try again later.',
         });
+      } finally {
+        loading = false;
       }
     }
     min = data.min !== undefined && data.min !== null ? data.min.toString() : '';

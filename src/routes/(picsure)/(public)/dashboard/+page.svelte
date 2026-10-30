@@ -17,6 +17,7 @@
 
   import { subscribeOnChange } from '$lib/utilities/Subscribers';
   import { log, createLog } from '$lib/logger';
+  import { rateLimitMessage } from '$lib/api';
 
   const tableName = 'ExplorerTable';
 
@@ -70,8 +71,8 @@
         rowClickHandler={config.features.dashboardDrawer ? rowClickHandler : undefined}
         isClickable={config.features.dashboardDrawer}
       />
-    {:catch}
-      <ErrorAlert title="An Error Occured">
+    {:catch error}
+      <ErrorAlert title={rateLimitMessage(error) ?? 'An Error Occured'}>
         We're having trouble fetching the data dashboard items right now. Please try again later.
       </ErrorAlert>
     {/await}

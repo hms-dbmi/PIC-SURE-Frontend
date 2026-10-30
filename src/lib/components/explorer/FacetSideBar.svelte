@@ -6,6 +6,7 @@
   import { selectedFacets } from '$lib/stores/Search';
   import { facetsPromise, openFacets } from '$lib/stores/Dictionary';
   import { log, createLog } from '$lib/logger';
+  import { rateLimitMessage } from '$lib/api';
 
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import FacetCategory from '$lib/components/explorer/FacetCategory.svelte';
@@ -99,8 +100,14 @@
       {/each}
     </Accordion>
   {/if}
-{:catch}
-  <ErrorAlert title="Something went wrong loading your search options." color="secondary">
-    Please wait a moment, refresh the page, and try again.
+{:catch error}
+  {@const waitMessage = rateLimitMessage(error)}
+  <ErrorAlert
+    title={waitMessage ?? 'Something went wrong loading your search options.'}
+    color="secondary"
+  >
+    {#if !waitMessage}
+      Please wait a moment, refresh the page, and try again.
+    {/if}
   </ErrorAlert>
 {/await}

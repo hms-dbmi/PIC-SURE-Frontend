@@ -6,6 +6,7 @@ import { summarize } from '$lib/services/counts/snapshot';
 import { LRU } from '$lib/utilities/LRU';
 import { log, createLog } from '$lib/logger';
 import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
+import { rateLimitMessage } from '$lib/api';
 
 export type CountTransport = (path: string, request: QueryRequestInterfaceV3) => Promise<unknown>;
 
@@ -37,6 +38,7 @@ function isApiErrorEnvelope(raw: unknown): raw is { errorType: string; message?:
 interface CellOutcome {
   value: CountValue;
   error: boolean;
+  errorMessage?: string;
 }
 
 export function createQueryCountService(options: QueryCountServiceOptions): QueryCountService {
@@ -84,7 +86,7 @@ export function createQueryCountService(options: QueryCountServiceOptions): Quer
           error: String(e),
         }),
       );
-      return { value: 0, error: true };
+      return { value: 0, error: true, errorMessage: rateLimitMessage(e) };
     }
   }
 
@@ -114,6 +116,7 @@ export function createQueryCountService(options: QueryCountServiceOptions): Quer
           descriptorKey: stableHash(descriptor),
           count: outcome.value,
           summary: summarize(outcome.value, outcome.error),
+          errorMessage: outcome.errorMessage,
         };
         if (!snapshot.summary.hasError && generation === startedGeneration) {
           cache.set(key, snapshot);

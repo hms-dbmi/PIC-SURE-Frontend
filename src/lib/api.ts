@@ -29,6 +29,11 @@ export function consentDeniedMessage(e: unknown): string | undefined {
   return isHttpError(e, 403) && e.body.errorType === CONSENT_DENIED ? e.body.message : undefined;
 }
 
+// handleResponse's 429 text says how long to wait, which a caller's generic error text would lose
+export function rateLimitMessage(e: unknown): string | undefined {
+  return isHttpError(e, 429) ? e.body.message : undefined;
+}
+
 // TODO: fix any types
 /* eslint-disable @typescript-eslint/no-explicit-any */
 async function send({
@@ -196,6 +201,16 @@ async function handleResponse(res: Response, openRequest = false) {
       return new Promise(() => {});
     }
     // Loop guard tripped: deliberately fall through to the normal error path.
+  } else if (res.status === 429) {
+    // waiting is the fix, so tell the user how long; a throttled request never ends a login
+    const retryAfter = retryAfterSeconds(res.headers.get('Retry-After'));
+    // the gateway's requestId ties this report to its 429 audit event
+    const requestId = await res.text().then(parseRequestId, () => undefined);
+    log(createLog('ERROR', 'request.rate_limited', { retryAfter, requestId }, { status: 429 }));
+    error(
+      429,
+      `You've made too many requests. Try again ${retryAfter === undefined ? 'shortly' : `in ${waitText(retryAfter)}`}.`,
+    );
   } else if (res.status === 401 && openRequest) {
     // an anonymous data request has no login to end: logging out would only bounce the visitor to
     // the login page, or sign out a logged-in user querying the open variant
@@ -230,13 +245,47 @@ function fail(status: number, resText: string): never {
   error(status as NumericRange<400, 599>, resText);
 }
 
-function parseConsentDenial(responseBody: string): string | undefined {
+// only the delay-seconds form; an HTTP-date or anything else counts as no usable header
+function retryAfterSeconds(header: string | null): number | undefined {
+  const value = header?.trim();
+  if (!value || !/^\d+$/.test(value)) return undefined;
+  const seconds = Number(value);
+  return seconds > 0 ? seconds : undefined;
+}
+
+// a spent daily limit waits until midnight UTC, so long waits read in minutes or hours, rounded up
+function waitText(seconds: number): string {
+  const minutes = Math.ceil(seconds / 60);
+  const [amount, unit] =
+    seconds < 60
+      ? [seconds, 'second']
+      : minutes < 60
+        ? [minutes, 'minute']
+        : [Math.ceil(seconds / 3600), 'hour'];
+  return `${amount} ${unit}${amount === 1 ? '' : 's'}`;
+}
+
+// the gateway's error envelope; undefined when the body isn't a JSON object
+function parseErrorEnvelope(
+  responseBody: string,
+): { errorType?: unknown; message?: unknown; requestId?: unknown } | undefined {
   try {
-    const body = JSON.parse(responseBody) as { errorType?: string; message?: string };
-    return body.errorType === CONSENT_DENIED ? body.message || CONSENT_DENIED_MESSAGE : undefined;
+    const body: unknown = JSON.parse(responseBody);
+    return body !== null && typeof body === 'object' ? body : undefined;
   } catch {
     return undefined;
   }
+}
+
+function parseRequestId(responseBody: string): string | undefined {
+  const requestId = parseErrorEnvelope(responseBody)?.requestId;
+  return typeof requestId === 'string' ? requestId : undefined;
+}
+
+function parseConsentDenial(responseBody: string): string | undefined {
+  const body = parseErrorEnvelope(responseBody);
+  if (body?.errorType !== CONSENT_DENIED) return undefined;
+  return (typeof body.message === 'string' && body.message) || CONSENT_DENIED_MESSAGE;
 }
 
 function refreshToken(res: Response) {

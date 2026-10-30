@@ -1,3 +1,5 @@
+// @vitest-environment happy-dom
+
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { get } from 'svelte/store';
 
@@ -44,11 +46,13 @@ vi.mock('$lib/logger', () => ({
   getPageContext: () => 'explorer',
 }));
 
-vi.mock('$lib/api', () => ({
-  isAbortError: (e: unknown) => (e as Error | undefined)?.name === 'AbortError',
-}));
+vi.mock('$lib/api', async (importOriginal) => {
+  const { isAbortError, rateLimitMessage } = await importOriginal<typeof import('$lib/api')>();
+  return { isAbortError, rateLimitMessage };
+});
 
 import type { State } from '@vincjo/datatables/server';
+import { rejection } from '../component/helpers';
 import type { Facet, SearchResult } from '$lib/models/Search';
 import {
   initHandler,
@@ -279,6 +283,24 @@ describe('error handling', () => {
 
     await expect(load(makeState().state)).resolves.toBeUndefined();
     expect(get(error)).not.toBe('');
+  });
+
+  it("shows a 429's message instead of the generic text", async () => {
+    searchTerm.set('age');
+    mockState.searchDictionarySpy.mockRejectedValueOnce(
+      rejection(429, "You've made too many requests. Try again in 30 seconds."),
+    );
+
+    await load(makeState().state);
+    expect(get(error)).toBe("You've made too many requests. Try again in 30 seconds.");
+  });
+
+  it('keeps the generic text for other failures', async () => {
+    searchTerm.set('age');
+    mockState.searchDictionarySpy.mockRejectedValueOnce(new Error('boom'));
+
+    await load(makeState().state);
+    expect(get(error)).toContain('An error occurred while searching');
   });
 
   it('does not surface an error from a superseded failure', async () => {

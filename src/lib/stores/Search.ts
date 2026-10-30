@@ -9,7 +9,7 @@ import { searchDictionary } from '$lib/stores/Dictionary';
 import { updateFacetsFromSearch, facetsPromise, resetFacetState } from '$lib/stores/Dictionary';
 import { expandedNestedFacets } from '$lib/stores/NestedFacets';
 import { getDefaultRows } from '$lib/components/datatable/stores';
-import { isAbortError } from '$lib/api';
+import { isAbortError, rateLimitMessage } from '$lib/api';
 import { log, createLog, getPageContext } from '$lib/logger';
 
 export const loading: Writable<boolean> = writable(false);
@@ -221,7 +221,7 @@ async function search(
     }
     console.error(e);
     state.setTotalRows(0);
-    error.set(errorText);
+    error.set(rateLimitMessage(e) ?? errorText);
     throw e;
   });
 

@@ -8,6 +8,7 @@ vi.mock('$app/paths', () => ({ resolve: (path: string) => path }));
 import { createQueryCountService } from '$lib/services/counts/queryCountService';
 import type { CountProvider } from '$lib/services/counts/providers';
 import type { QueryDescriptor } from '$lib/services/counts/queryDescriptor.svelte';
+import { rejection } from '../component/helpers';
 
 const descriptor: QueryDescriptor = {
   isOpenAccess: false,
@@ -57,6 +58,23 @@ describe('QueryCountService.getCount', () => {
     const snap = await service.getCount(descriptor, makeProvider(), resource);
     expect(snap.count).toBe(0);
     expect(snap.summary.hasError).toBe(true);
+  });
+
+  it("carries a 429's message on the error snapshot", async () => {
+    const transport = vi
+      .fn()
+      .mockRejectedValue(rejection(429, "You've made too many requests. Try again in 30 seconds."));
+    const service = createQueryCountService({ transport });
+    const snap = await service.getCount(descriptor, makeProvider(), resource);
+    expect(snap.summary.hasError).toBe(true);
+    expect(snap.errorMessage).toBe("You've made too many requests. Try again in 30 seconds.");
+  });
+
+  it('carries no message for other failures', async () => {
+    const transport = vi.fn().mockRejectedValue(new Error('network'));
+    const service = createQueryCountService({ transport });
+    const snap = await service.getCount(descriptor, makeProvider(), resource);
+    expect(snap.errorMessage).toBeUndefined();
   });
 
   it('coerces a throw from provider.buildRequest to 0 + hasError', async () => {

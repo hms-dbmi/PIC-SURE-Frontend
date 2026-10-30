@@ -419,6 +419,25 @@ describe('ResultCounts', () => {
       expect(mockState.toasterErrorSpy).toHaveBeenCalledTimes(1);
     });
 
+    it("shows a 429's message in the error toast instead of the generic text", async () => {
+      const message = "You've made too many requests. Try again in 30 seconds.";
+      mockService.getCount.mockResolvedValueOnce({ ...snapshot(0, true), errorMessage: message });
+      await state.triggerLoad(() => true);
+      expect(mockState.toasterErrorSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ title: message }),
+      );
+    });
+
+    it('keeps the generic error toast for other failures', async () => {
+      mockService.getCount.mockResolvedValueOnce(snapshot(0, true));
+      await state.triggerLoad(() => true);
+      expect(mockState.toasterErrorSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: expect.stringContaining('An error occured while loading patient counts'),
+        }),
+      );
+    });
+
     it('stop() mid-flight resets status to "idle" so spinners do not get stuck', async () => {
       const d = deferred<ResultCountSnapshot>();
       mockService.getCount.mockReturnValueOnce(d.promise);

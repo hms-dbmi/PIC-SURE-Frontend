@@ -39,8 +39,12 @@
 {#if hasError && !isLoading}
   <ErrorAlert color="warning" iconSize="2xl">
     <p class="text-[0.6rem] !m-0">
-      <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-      {@html sanitizeHTML(config.branding.explorePage.queryErrorText)}
+      {#if snapshot.errorMessage}
+        {snapshot.errorMessage}
+      {:else}
+        <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+        {@html sanitizeHTML(config.branding.explorePage.queryErrorText)}
+      {/if}
     </p>
   </ErrorAlert>
 {/if}
