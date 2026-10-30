@@ -79,7 +79,11 @@ test.describe('Rate-limited anonymous visitor', () => {
     await expect(page).toHaveURL(/\/discover\?search=somedata$/);
     // every 429 served is reported; only once they all have can a stray error.unknown be ruled out
     const rateLimited = () => logs.filter((event) => event.action === 'request.rate_limited');
-    await expect.poll(() => rateLimited().length === served).toBe(true);
+    await expect
+      .poll(() => served - rateLimited().length, {
+        message: 'every 429 served is logged as request.rate_limited',
+      })
+      .toBe(0);
     for (const event of rateLimited()) {
       expect(event.metadata).toEqual({ retryAfter: 30, requestId: REQUEST_ID });
     }
