@@ -74,19 +74,19 @@
       try {
         loading = true;
         data = await getConceptDetails(data.conceptPath, data.dataset);
-        loading = false;
         unselectedOptions = data?.values || [];
         if (unselectedOptions.length >= 50) {
           unselectedOptions = unselectedOptions.slice(0, pageSize);
         }
       } catch (e) {
         console.error(e);
-        loading = false;
         toaster.error({
           title:
             rateLimitMessage(e) ??
             'An error occured while loading the filter. Please try again later.',
         });
+      } finally {
+        loading = false;
       }
     }
     min = data.min !== undefined && data.min !== null ? data.min.toString() : '';

@@ -49,9 +49,14 @@ test.describe('Rate-limited anonymous visitor', () => {
 
   test('sees the wait on search, facets and counts, and the 429 is logged', async ({ page }) => {
     const logs = await captureLogs(page);
-    await page.route(searchResultPath, tooManyRequests);
-    await page.route(facetResultPath, tooManyRequests);
-    await page.route(openCountResultPath, tooManyRequests);
+    let served = 0;
+    const countedTooManyRequests = (route: Route) => {
+      served++;
+      return tooManyRequests(route);
+    };
+    await page.route(searchResultPath, countedTooManyRequests);
+    await page.route(facetResultPath, countedTooManyRequests);
+    await page.route(openCountResultPath, countedTooManyRequests);
 
     await page.goto('/discover?search=somedata');
 
@@ -72,9 +77,12 @@ test.describe('Rate-limited anonymous visitor', () => {
     await expect(resultsPanel.getByTestId('error-alert')).toContainText(WAIT_MESSAGE);
 
     await expect(page).toHaveURL(/\/discover\?search=somedata$/);
-    await expect
-      .poll(() => logs.find((event) => event.action === 'request.rate_limited')?.metadata)
-      .toEqual({ retryAfter: 30, requestId: REQUEST_ID });
+    // every 429 served is reported; only once they all have can a stray error.unknown be ruled out
+    const rateLimited = () => logs.filter((event) => event.action === 'request.rate_limited');
+    await expect.poll(() => rateLimited().length === served).toBe(true);
+    for (const event of rateLimited()) {
+      expect(event.metadata).toEqual({ retryAfter: 30, requestId: REQUEST_ID });
+    }
     expect(logs.some((event) => event.action === 'error.unknown')).toBe(false);
   });
 
