@@ -1,0 +1,351 @@
+// @vitest-environment happy-dom
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
+
+import PublicAccessKey from './PublicAccessKey.svelte';
+import { ApiError } from '#lib/api/errors.ts';
+
+const { requestPublic, log } = vi.hoisted(() => ({ requestPublic: vi.fn(), log: vi.fn() }));
+
+vi.mock('#lib/api/psama/apiKeys.ts', () => ({ requestPublic }));
+
+const httpError = (status: number, text: string) => new ApiError(status, 'http', text, text);
+vi.mock('#lib/telemetry/logger.ts', () => ({
+  log,
+  createLog: (eventType: string, action?: string, metadata?: Record<string, unknown>) => ({
+    event_type: eventType,
+    action,
+    metadata,
+  }),
+}));
+
+const mockKeyResponse = {
+  apiKey: 'picsure_0Zx9AbCdEfGhIjKlMnOpQrStUvWxYz0123456789abc',
+  uuid: '0b6cf65e-6f9e-4a3c-9d0e-1f2a3b4c5d6e',
+  displayPrefix: '0Zx9AbCd',
+  keyType: 'USER',
+  expiresAt: '2026-10-11T12:13:14Z',
+};
+
+async function openForm() {
+  await fireEvent.click(screen.getByRole('button', { name: 'Request Public Key' }));
+}
+
+async function submitForm() {
+  await fireEvent.submit(screen.getByTestId('api-public-key').querySelector('form') as Element);
+}
+
+describe('PublicAccessKey', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // .env.test configures a sitekey for the e2e build; these tests cover the ungated flow
+    vi.stubEnv('VITE_TURNSTILE_SITE_KEY', '');
+    // happy-dom has no Web Animations API; the copy Popover's fade transition needs it
+    Element.prototype.animate = vi.fn().mockReturnValue({
+      cancel: vi.fn(),
+      finish: vi.fn(),
+      finished: Promise.resolve(),
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('starts idle with an enabled request button', () => {
+    render(PublicAccessKey, { props: { enabled: true } });
+
+    const button = screen.getByRole('button', { name: 'Request Public Key' });
+    expect(button).toBeEnabled();
+    expect(screen.getByText('Public Access Key')).toBeInTheDocument();
+    expect(screen.getByText('No account required')).toBeInTheDocument();
+  });
+
+  it('shows unavailable content instead of the button when the deployment disables it', () => {
+    render(PublicAccessKey);
+
+    expect(screen.queryByRole('button', { name: 'Request Public Key' })).not.toBeInTheDocument();
+    expect(screen.getByTestId('api-public-key-unavailable')).toBeInTheDocument();
+    expect(requestPublic).not.toHaveBeenCalled();
+  });
+
+  it('requests an unauthenticated key with a null captcha token and reveals it', async () => {
+    requestPublic.mockResolvedValue(mockKeyResponse);
+    render(PublicAccessKey, { props: { enabled: true } });
+
+    await openForm();
+    await submitForm();
+
+    expect(requestPublic).toHaveBeenCalledWith({ captchaToken: null, name: null, email: null });
+    await waitFor(() => {
+      expect(screen.getByTestId('api-public-key-value')).toHaveTextContent(mockKeyResponse.apiKey);
+    });
+    expect(screen.getByTestId('api-public-key-warning')).toHaveTextContent(
+      'This key is shown only once and cannot be recovered.',
+    );
+    expect(screen.getByTestId('api-public-key-expires').textContent).not.toBe('');
+  });
+
+  it('sends trimmed name and email when entered', async () => {
+    requestPublic.mockResolvedValue(mockKeyResponse);
+    render(PublicAccessKey, { props: { enabled: true } });
+
+    await openForm();
+    await fireEvent.input(screen.getByLabelText(/Name/), {
+      target: { value: '  Jane Doe  ' },
+    });
+    await fireEvent.input(screen.getByLabelText(/Email/), {
+      target: { value: '  researcher@example.org  ' },
+    });
+    await submitForm();
+
+    expect(requestPublic).toHaveBeenCalledWith({
+      captchaToken: null,
+      name: 'Jane Doe',
+      email: 'researcher@example.org',
+    });
+  });
+
+  it('never logs the key value, only uuid and displayPrefix', async () => {
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: vi.fn() },
+      configurable: true,
+    });
+    requestPublic.mockResolvedValue(mockKeyResponse);
+    render(PublicAccessKey, { props: { enabled: true } });
+
+    await openForm();
+    await submitForm();
+    await waitFor(() => {
+      expect(screen.getByTestId('api-public-key-value')).toBeInTheDocument();
+    });
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
+
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(mockKeyResponse.apiKey);
+    expect(log.mock.calls.map(([event]) => event.action)).toEqual([
+      'api.public_key.open_form',
+      'api.public_key.request',
+      'api.public_key.success',
+      'api.public_key.copy',
+    ]);
+    expect(JSON.stringify(log.mock.calls)).not.toContain(mockKeyResponse.apiKey);
+    expect(log).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'api.public_key.success',
+        metadata: { uuid: mockKeyResponse.uuid, displayPrefix: mockKeyResponse.displayPrefix },
+      }),
+    );
+    expect(log).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'api.public_key.copy',
+        metadata: { uuid: mockKeyResponse.uuid },
+      }),
+    );
+  });
+
+  it('logs opening the form from idle and cancelling it', async () => {
+    render(PublicAccessKey, { props: { enabled: true } });
+
+    await openForm();
+    await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(screen.getByRole('button', { name: 'Request Public Key' })).toBeInTheDocument();
+    expect(log.mock.calls.map(([event]) => event)).toEqual([
+      { event_type: 'ACTION', action: 'api.public_key.open_form', metadata: { source: 'idle' } },
+      { event_type: 'ACTION', action: 'api.public_key.cancel', metadata: undefined },
+    ]);
+  });
+
+  it('shows the server message inline on failure and returns to the form on retry', async () => {
+    requestPublic.mockRejectedValue(httpError(400, 'CAPTCHA verification failed.'));
+    render(PublicAccessKey, { props: { enabled: true } });
+
+    await openForm();
+    await submitForm();
+
+    const alert = await screen.findByTestId('ui-error-alert');
+    expect(alert).toHaveTextContent('CAPTCHA verification failed.');
+    expect(screen.queryByTestId('api-public-key-value')).not.toBeInTheDocument();
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Try Again' }));
+    expect(screen.getByRole('button', { name: 'Generate Key' })).toBeInTheDocument();
+    expect(log).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        action: 'api.public_key.open_form',
+        metadata: { source: 'retry' },
+      }),
+    );
+  });
+
+  it('falls back to a generic message when the error body is an HTML page', async () => {
+    requestPublic.mockRejectedValue(
+      httpError(
+        404,
+        '<!doctype html> <html lang="en" class="light" data-theme="picsure"> <head><meta charset="utf-8" /><style>.fa-beat{animation-name:fa-beat}</style></head> <body>Not found</body> </html>',
+      ),
+    );
+    render(PublicAccessKey, { props: { enabled: true } });
+
+    await openForm();
+    await submitForm();
+
+    const alert = await screen.findByTestId('ui-error-alert');
+    expect(alert).toHaveTextContent(
+      'Unable to generate a public access key. Please try again later.',
+    );
+    expect(alert.textContent).not.toContain('<');
+  });
+
+  it('falls back to a generic message when the error body is overlong plain text', async () => {
+    requestPublic.mockRejectedValue(
+      httpError(500, 'java.lang.NullPointerException at '.padEnd(500, 'x')),
+    );
+    render(PublicAccessKey, { props: { enabled: true } });
+
+    await openForm();
+    await submitForm();
+
+    const alert = await screen.findByTestId('ui-error-alert');
+    expect(alert).toHaveTextContent(
+      'Unable to generate a public access key. Please try again later.',
+    );
+  });
+
+  it('unwraps a JSON error body from the server', async () => {
+    requestPublic.mockRejectedValue(
+      httpError(400, '{"message":"Public key generation is not enabled."}'),
+    );
+    render(PublicAccessKey, { props: { enabled: true } });
+
+    await openForm();
+    await submitForm();
+
+    const alert = await screen.findByTestId('ui-error-alert');
+    expect(alert).toHaveTextContent('Public key generation is not enabled.');
+  });
+
+  it('renders no Turnstile widget when no sitekey is configured', async () => {
+    render(PublicAccessKey, { props: { enabled: true } });
+
+    await openForm();
+
+    expect(screen.queryByTestId('app-turnstile-widget')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Generate Key' })).toBeEnabled();
+  });
+
+  describe('with a Turnstile sitekey configured', () => {
+    type RenderOptions = {
+      callback: (token: string) => void;
+      'expired-callback': () => void;
+      'error-callback': () => void;
+    };
+    let renderOptions: RenderOptions | undefined;
+    const turnstileRender = vi.fn((_container: HTMLElement, options: RenderOptions) => {
+      renderOptions = options;
+      return 'widget-1';
+    });
+
+    beforeEach(() => {
+      vi.stubEnv('VITE_TURNSTILE_SITE_KEY', '1x00000000000000000000AA');
+      renderOptions = undefined;
+      vi.stubGlobal('turnstile', { render: turnstileRender, remove: vi.fn() });
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('disables Generate until the widget issues a token', async () => {
+      render(PublicAccessKey, { props: { enabled: true } });
+      await openForm();
+
+      expect(screen.getByTestId('app-turnstile-widget')).toBeInTheDocument();
+      const generate = screen.getByRole('button', { name: 'Generate Key' });
+      expect(generate).toBeDisabled();
+
+      renderOptions?.callback('turnstile-token-1');
+      await waitFor(() => expect(generate).toBeEnabled());
+    });
+
+    it('sends the widget token with the request', async () => {
+      requestPublic.mockResolvedValue(mockKeyResponse);
+      render(PublicAccessKey, { props: { enabled: true } });
+      await openForm();
+
+      renderOptions?.callback('turnstile-token-1');
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: 'Generate Key' })).toBeEnabled(),
+      );
+      await submitForm();
+
+      expect(requestPublic).toHaveBeenCalledWith({
+        captchaToken: 'turnstile-token-1',
+        name: null,
+        email: null,
+      });
+    });
+
+    it('re-disables Generate when the token expires', async () => {
+      render(PublicAccessKey, { props: { enabled: true } });
+      await openForm();
+
+      renderOptions?.callback('turnstile-token-1');
+      const generate = screen.getByRole('button', { name: 'Generate Key' });
+      await waitFor(() => expect(generate).toBeEnabled());
+
+      renderOptions?.['expired-callback']();
+      await waitFor(() => expect(generate).toBeDisabled());
+    });
+
+    it('shows the failure message when the widget errors after rendering', async () => {
+      render(PublicAccessKey, { props: { enabled: true } });
+      await openForm();
+
+      renderOptions?.callback('turnstile-token-1');
+      const generate = screen.getByRole('button', { name: 'Generate Key' });
+      await waitFor(() => expect(generate).toBeEnabled());
+
+      renderOptions?.['error-callback']();
+      await screen.findByTestId('api-public-key-captcha-failed');
+      await waitFor(() => expect(generate).toBeDisabled());
+      expect(requestPublic).not.toHaveBeenCalled();
+    });
+
+    it('shows a load-failure message when the widget cannot initialize', async () => {
+      vi.stubGlobal('turnstile', {
+        render: () => {
+          throw new Error('sitekey rejected');
+        },
+        remove: vi.fn(),
+      });
+      render(PublicAccessKey, { props: { enabled: true } });
+      await openForm();
+
+      const message = await screen.findByTestId('api-public-key-captcha-failed');
+      expect(message).toHaveTextContent('The security check could not be loaded.');
+      expect(screen.getByRole('button', { name: 'Generate Key' })).toBeDisabled();
+      expect(requestPublic).not.toHaveBeenCalled();
+    });
+
+    it('requests a fresh widget after a failed submit', async () => {
+      requestPublic.mockRejectedValue(httpError(400, 'CAPTCHA verification failed.'));
+      render(PublicAccessKey, { props: { enabled: true } });
+      await openForm();
+
+      renderOptions?.callback('turnstile-token-1');
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: 'Generate Key' })).toBeEnabled(),
+      );
+      await submitForm();
+      await screen.findByTestId('ui-error-alert');
+
+      // tokens are single-use: re-entering the form must re-render the widget and
+      // hold Generate disabled until a fresh token arrives
+      await fireEvent.click(screen.getByRole('button', { name: 'Try Again' }));
+      expect(turnstileRender).toHaveBeenCalledTimes(2);
+      expect(screen.getByRole('button', { name: 'Generate Key' })).toBeDisabled();
+    });
+  });
+});

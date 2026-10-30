@@ -6,12 +6,12 @@
  * Run with `npm run mock-api`, then enable the matching proxy in vite.config.ts (already
  * wired up) so `/picsure` and `/psama` requests reach this server instead of failing.
  *
- * Responses are built from tests/end-to-end/mock-data.ts so dev and e2e stay backed by the
+ * Responses are built from tests/support/mock-data.ts so dev and e2e stay backed by the
  * same fixtures. Coverage favors "good enough to click through the app" over exactly
  * replicating backend business logic (search relevance, filter math, real query execution).
  */
 import { createServer } from 'node:http';
-import { Picsure, Psama } from '../../../src/lib/paths';
+import { Picsure, Psama } from '../../../src/lib/api/paths';
 import {
   datasetDetails,
   searchResults,
@@ -30,10 +30,10 @@ import {
   variantDataFull,
   newDatasetResponse,
   availableDatasetResponse,
-} from '../mock-data';
+} from '../../support/mock-data';
 import { on, json, text, noContent, dispatch } from './router';
 import { state, nextId } from './state';
-import type { Indexable } from '../../../src/lib/types';
+import type { Indexable } from '../../../src/lib/utils/objects';
 
 const PORT = Number(process.env.MOCK_API_PORT ?? 9000);
 
@@ -285,7 +285,7 @@ on('DELETE', path(`${Picsure.Configuration.Admin}/:uuid`), ({ params, res }) => 
  * Auth / user session
  *
  * Real OAuth redirects (Auth0/Okta/Fence/RAS) go to a real external IDP and can't be
- * satisfied by a local mock - use the MOCK provider (src/lib/auth/MOCK.ts) instead, or
+ * satisfied by a local mock - use the MOCK provider (src/lib/auth/providers/MOCK.ts) instead, or
  * skip the login UI entirely and seed a session from the browser console:
  *   localStorage.setItem('token', '<mockToken from mock-data.ts>')
  * then reload - psama/user/me below will answer as picsureUser either way.
@@ -382,17 +382,17 @@ on('DELETE', path(`${Psama.Role}/:uuid`), ({ params, res }) => {
   noContent(res);
 });
 
-on('GET', path(Psama.Priviege), ({ res }) => json(res, state.privileges));
-on('GET', path(`${Psama.Priviege}/:uuid`), ({ params, res }) => {
+on('GET', path(Psama.Privilege), ({ res }) => json(res, state.privileges));
+on('GET', path(`${Psama.Privilege}/:uuid`), ({ params, res }) => {
   json(res, state.privileges.find((p) => p.uuid === params.uuid) ?? state.privileges[0]);
 });
-on('POST', path(Psama.Priviege), ({ body, res }) => {
+on('POST', path(Psama.Privilege), ({ body, res }) => {
   const [privilege] = body as { name: string; description: string; application?: unknown }[];
   const created = { ...privilege, uuid: nextId() };
   state.privileges.push(created);
   json(res, [created]);
 });
-on('PATCH', path(Psama.Priviege), ({ body, res }) => {
+on('PATCH', path(Psama.Privilege), ({ body, res }) => {
   const [privilege] = body as { uuid: string }[];
   const index = state.privileges.findIndex((p) => p.uuid === privilege.uuid);
   const updated = { ...(index > -1 ? state.privileges[index] : {}), ...privilege };
@@ -400,7 +400,7 @@ on('PATCH', path(Psama.Priviege), ({ body, res }) => {
   else state.privileges.push(updated);
   noContent(res);
 });
-on('DELETE', path(`${Psama.Priviege}/:uuid`), ({ params, res }) => {
+on('DELETE', path(`${Psama.Privilege}/:uuid`), ({ params, res }) => {
   state.privileges = state.privileges.filter((p) => p.uuid !== params.uuid);
   noContent(res);
 });

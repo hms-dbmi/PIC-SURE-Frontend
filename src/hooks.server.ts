@@ -1,14 +1,14 @@
-import type { Handle, HandleServerError, ServerInit } from '@sveltejs/kit';
-import { registerProviderData } from './lib/AuthProviderRegistry';
-import type { AuthData } from './lib/models/AuthProvider';
-import { getConfig } from './lib/server/configCache';
-import { runWithConfig } from './lib/server/configuration';
+import type { Handle, HandleServerError, ServerInit } from '@sveltejs/kit/hooks';
+import { registerProviderData } from './lib/auth/providerRegistry';
+import type { AuthData } from './lib/auth/providers/AuthProvider';
+import { getConfig } from './lib/config/server/cache';
+import { runWithConfig } from './lib/config/server/scope';
 import { findStyleNonceProblem, withStyleNonce } from './lib/server/csp';
 
 const PROVIDER_PREFIX = 'VITE_AUTH_PROVIDER_MODULE_';
 
 // Runs when the server starts. Registers all enabled auth providers in the .env file.
-// Providers are registered in the AuthProviderRegistry on the server and used to build
+// Providers are registered in the providerRegistry on the server and used to build
 // AuthProvider instances for each psrovider when required during login/logout.
 const enabledProviders = Object.keys(import.meta.env)
   .filter((key) => key.startsWith(PROVIDER_PREFIX) && import.meta.env[key] === 'true')
@@ -20,7 +20,7 @@ async function registerEnabledProviders(enabledProviders: string[], viteProvider
     const uppercaseProviderName = providerName.toUpperCase();
     const providerConfigPrefix = `${viteProviderPrefix}${uppercaseProviderName}_`;
     try {
-      const authProviderConfigInterface = {} as AuthData;
+      const settings: Record<string, string | boolean> = {};
 
       Object.keys(import.meta.env)
         .filter((key) => key.startsWith(providerConfigPrefix))
@@ -32,11 +32,10 @@ async function registerEnabledProviders(enabledProviders: string[], viteProvider
               : import.meta.env[key] === 'false'
                 ? false
                 : import.meta.env[key];
-          authProviderConfigInterface[configKey] = value;
+          settings[configKey] = value;
         });
-      authProviderConfigInterface.enabled = true;
-      authProviderConfigInterface.name = uppercaseProviderName;
-      registerProviderData(authProviderConfigInterface);
+      // Not validated here: a provider missing a field it needs fails when it's used.
+      registerProviderData({ ...settings, enabled: true, name: uppercaseProviderName } as AuthData);
     } catch (error) {
       console.error(`Error registering auth provider "${uppercaseProviderName}":`, error);
     }
@@ -45,9 +44,22 @@ async function registerEnabledProviders(enabledProviders: string[], viteProvider
 
 registerEnabledProviders(enabledProviders, PROVIDER_PREFIX);
 
+// The retired /analyze pages. No route matches them, so client navigation falls back to
+// a full page load and lands here too.
+function analyzeRedirect(pathname: string): Response | undefined {
+  let status: number;
+  if (/^\/analyze\/?$/.test(pathname)) status = 302;
+  else if (pathname.startsWith('/analyze/api')) status = 301;
+  else return;
+  return new Response(null, { status, headers: { location: '/api' } });
+}
+
 // Wraps each request in an isolated config store so concurrent requests can't
-// observe each other's config (see lib/server/configuration.ts).
+// observe each other's config (see lib/config/server/scope.ts).
 export const handle: Handle = async ({ event, resolve }) => {
+  const redirect = analyzeRedirect(event.url.pathname);
+  if (redirect) return redirect;
+
   const response = await runWithConfig(() => resolve(event));
   const csp = withStyleNonce(response.headers.get('content-security-policy'));
   if (csp) response.headers.set('content-security-policy', csp);
@@ -61,11 +73,21 @@ export const handle: Handle = async ({ event, resolve }) => {
   return response;
 };
 
-export const handleError: HandleServerError = async ({ error, event, status, message }) => {
-  console.error('Server error: ', error, event, status, message);
-  return {
-    message: message || 'An unknown server error occurred.',
-  };
+// Every error reaches this hook, including 404s and error(...) calls, so only unexpected
+// ones log the error itself. Never log the whole event: its request headers carry bearer
+// tokens and cookies. Returning nothing keeps SvelteKit's status and message.
+export const handleError: HandleServerError = ({ kind, error, event }) => {
+  if (kind === 'unknown') {
+    console.error('Server error: ', error, {
+      method: event.request.method,
+      path: event.url.pathname,
+      route: event.route.id,
+    });
+  } else {
+    console.error(
+      `Server error (${kind}): ${error.status} ${error.message} at ${event.url.pathname}`,
+    );
+  }
 };
 
 export const init: ServerInit = () => {

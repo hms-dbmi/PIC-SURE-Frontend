@@ -1,20 +1,20 @@
 <script lang="ts">
   import { page } from '$app/state';
 
-  import * as api from '$lib/api';
-  import { config } from '$lib/configuration.svelte';
+  import { consentDeniedMessage } from '#lib/api/errors.ts';
+  import { config } from '#lib/config/config.svelte.ts';
 
-  import { QueryVersion, type DataSet } from '$lib/models/Dataset';
-  import { getDataset } from '$lib/stores/Dataset.svelte';
+  import { QueryVersion, type DataSet } from '#lib/api/picsure/datasets.ts';
+  import { datasets } from '#lib/datasets/datasets.svelte.ts';
 
-  import Content from '$lib/components/Content.svelte';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import QuerySummary from '$lib/components/query/QuerySummary.svelte';
-  import Loading from '$lib/components/Loading.svelte';
-  import CopyButton from '$lib/components/buttons/CopyButton.svelte';
+  import Content from '#lib/shell/Content.svelte';
+  import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
+  import QuerySummary from '#lib/datasets/components/QuerySummary.svelte';
+  import Loading from '#lib/ui/Loading.svelte';
+  import CopyButton from '#lib/ui/CopyButton.svelte';
 
-  let dataset: DataSet | undefined = $state({
-    version: QueryVersion.UNKNOWN,
+  let dataset: DataSet | undefined = $state.raw({
+    sourceVersion: QueryVersion.UNKNOWN,
     uuid: '',
     user: '',
     name: '',
@@ -29,7 +29,7 @@
 
   async function loadDataset() {
     if (page.params?.uuid) {
-      dataset = await getDataset(page.params.uuid);
+      dataset = await datasets.get(page.params.uuid);
     }
   }
 </script>
@@ -45,7 +45,7 @@
     {#if dataset?.queryId}
       <section data-testid="dataset-summary-container" class="my-4">
         <h2 class="text-left h4 mb-2 mt-6">Dataset ID Summary</h2>
-        <table class="table bg-transparent">
+        <table class="table">
           <tbody>
             <tr>
               <td>Dataset ID Name:</td>
@@ -56,7 +56,7 @@
               <td class="text-surface-700" data-testid="dataset-summary-uuid">
                 <span class="monospace">{dataset.queryId}</span>
                 <CopyButton
-                  data-testid="{dataset.queryId}-copy"
+                  data-testid="dataset-query-copy-{dataset.queryId}"
                   useIcon
                   itemToCopy={dataset.queryId}
                 />
@@ -67,13 +67,17 @@
       </section>
     {/if}
     {#if dataset?.query && dataset?.queryId}
-      <QuerySummary query={dataset.query} version={dataset.version} name={dataset.name} />
+      <QuerySummary
+        query={dataset.query}
+        sourceVersion={dataset.sourceVersion}
+        name={dataset.name}
+      />
     {:else}
       <ErrorAlert color="warning">Invalid query object.</ErrorAlert>
     {/if}
   {:catch error}
     <ErrorAlert title="API Error">
-      {api.consentDeniedMessage(error) ??
+      {consentDeniedMessage(error) ??
         `An error occurred while retrieving dataset ${page.params.uuid}.`}
     </ErrorAlert>
   {/await}

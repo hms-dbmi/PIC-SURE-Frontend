@@ -1,36 +1,14 @@
 <script lang="ts">
-  import { page } from '$app/state';
+  import { config } from '#lib/config/config.svelte.ts';
+  import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
+  import Content from '#lib/shell/Content.svelte';
+  import UserForm from '#lib/admin/users/UserForm.svelte';
 
-  import { config } from '$lib/configuration.svelte';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import Content from '$lib/components/Content.svelte';
-  import UserForm from '$lib/components/admin/user/UserForm.svelte';
+  import * as admin from '#lib/admin/entities.ts';
+  import Loading from '#lib/ui/Loading.svelte';
+  import type { PageProps } from './$types';
 
-  import type { ExtendedUser } from '$lib/models/User';
-  import UsersStore from '$lib/stores/Users';
-  import RoleStore from '$lib/stores/Roles';
-  import ConnectionsStore from '$lib/stores/Connections';
-  import Loading from '$lib/components/Loading.svelte';
-
-  const { getUser, loadUsers } = UsersStore;
-  const { roleList, loadRoles } = RoleStore;
-  const { connections, loadConnections } = ConnectionsStore;
-
-  let user: ExtendedUser = $state({
-    connection: '',
-    generalMetadata: '',
-    active: false,
-    roles: [],
-  });
-
-  async function load() {
-    await loadUsers();
-    if (page.params?.uuid) {
-      user = await getUser(page.params.uuid);
-    }
-    await loadRoles();
-    await loadConnections();
-  }
+  let { params }: PageProps = $props();
 </script>
 
 <svelte:head>
@@ -38,15 +16,15 @@
 </svelte:head>
 
 <Content title="Edit User" backUrl="/admin/users" backTitle="Back to Users">
-  {#await load()}
+  {#await admin.loadUser(params.uuid)}
     <Loading />
-  {:then}
-    <section id="user-edit">
-      <UserForm connections={$connections} roleList={$roleList} {user} />
+  {:then user}
+    <section id="admin-user-edit">
+      <UserForm connections={admin.connections.items} roleList={admin.roles.options} {user} />
     </section>
   {:catch}
     <ErrorAlert title="API Error">
-      An error occured while retrieving dataset {page.params.uuid}.
+      An error occurred while retrieving user {params.uuid}.
     </ErrorAlert>
   {/await}
 </Content>

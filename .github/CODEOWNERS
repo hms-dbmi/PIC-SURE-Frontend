@@ -15,11 +15,10 @@
 
 # Server-side SvelteKit code
 /src/hooks.*                      @JamesPeck @ramari16 @TDeSain @srpiatt @sharra44 @Gcolon021
-/src/lib/server/                  @JamesPeck @ramari16 @TDeSain @srpiatt @sharra44 @Gcolon021
+/src/lib/**/server/               @JamesPeck @ramari16 @TDeSain @srpiatt @sharra44 @Gcolon021
 /src/routes/**/+server.*          @JamesPeck @ramari16 @TDeSain @srpiatt @sharra44 @Gcolon021
 /src/routes/**/*.server.*         @JamesPeck @ramari16 @TDeSain @srpiatt @sharra44 @Gcolon021
 
 # Auth and token handling
 /src/lib/auth/                    @JamesPeck @ramari16 @TDeSain @srpiatt @sharra44 @Gcolon021
 /src/routes/(authentication)/     @JamesPeck @ramari16 @TDeSain @srpiatt @sharra44 @Gcolon021
-/src/lib/AuthProviderRegistry.ts @JamesPeck @ramari16 @TDeSain @srpiatt @sharra44 @Gcolon021

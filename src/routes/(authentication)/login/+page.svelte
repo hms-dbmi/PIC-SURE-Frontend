@@ -1,20 +1,22 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { onMount } from 'svelte';
   import { fly } from 'svelte/transition';
 
   import { page } from '$app/state';
-  import { browser } from '$app/environment';
+  import { browser } from '$app/env';
 
-  import { config } from '$lib/configuration.svelte';
-  import type { AuthData } from '$lib/models/AuthProvider';
-  import { toaster } from '$lib/toaster';
+  import { config } from '#lib/config/config.svelte.ts';
+  import type { AuthData } from '#lib/auth/providers/AuthProvider.ts';
+  import { LOGOUT_REASON_KEY } from '#lib/auth/token.ts';
+  import { toaster } from '#lib/ui/toaster.ts';
 
-  import { log, createLog } from '$lib/logger';
+  import { log, createLog } from '#lib/telemetry/logger.ts';
 
-  import LoginButton from '$lib/components/buttons/LoginButton.svelte';
-  import Logo from '$lib/components/Logo.svelte';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import Loading from '$lib/components/Loading.svelte';
+  import LoginButton from './LoginButton.svelte';
+  import Logo from '#lib/shell/Logo.svelte';
+  import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
+  import Loading from '#lib/ui/Loading.svelte';
 
   const redirectTo = page.url.searchParams.get('redirectTo') || '/';
   const siteName = $derived(config.branding.applicationName);
@@ -25,10 +27,10 @@
 
   onMount(() => {
     if (browser) {
-      logoutReason = sessionStorage.getItem('logout-reason');
+      logoutReason = sessionStorage.getItem(LOGOUT_REASON_KEY);
       if (logoutReason) {
         toaster.error({ title: logoutReason });
-        sessionStorage.removeItem('logout-reason');
+        sessionStorage.removeItem(LOGOUT_REASON_KEY);
       }
     }
   });
@@ -42,11 +44,11 @@
 </script>
 
 <section
-  id="logins"
+  id="login-page"
   class="flex h-full w-full flex-col items-center place-content-center text-center text-lg"
   in:fly={{ duration: 600, x: '100%' }}
 >
-  <div id="title-box" class="flex flex-col items-center text-center mb-8 max-w-3/4">
+  <div id="login-title" class="flex flex-col items-center text-center mb-8 max-w-3/4">
     <h1 data-testid="login-title" class="mb-6 w-full flex gap-2 items-center justify-center">
       <Logo class="flex-none" height={config.branding.login.logoHeight || 7.5} />
     </h1>
@@ -62,7 +64,7 @@
         {/if}
       </header>
       <div class="flex flex-col items-center justify-center">
-        <div id="main-logins" class="grid grid-cols-1 gap-4 mb-4 w-full">
+        <div id="login-providers" class="grid grid-cols-1 gap-4 mb-4 w-full">
           {#if providers?.length === 0}
             <ErrorAlert>
               No main authentication providers are registered. Please add them to your
@@ -89,7 +91,7 @@
               provider={selectedProvider}
               {redirectTo}
               helpText={selectedProvider?.helptext}
-              class="btn preset-filled-primary-500 w-full"
+              class="w-full"
             />
           {:else}
             {#each providers as provider}
@@ -98,35 +100,37 @@
                 {provider}
                 {redirectTo}
                 helpText={provider.helptext}
-                class="btn preset-filled-primary-500 w-full"
+                class="w-full"
               />
             {/each}
           {/if}
         </div>
         {#if config.features.login.open}
-          <a
+          <Button
+            variant="outlined"
+            class="mb-4 w-full"
             href={config.branding.login.openPicsureLink || '/'}
             rel="external"
-            class="btn preset-outlined-primary-500 text-primary-500 hover:preset-filled-primary-500 hover:text-white mb-4 w-full"
             onclick={() =>
               log(
                 createLog('NAVIGATION', 'login.explore_open', {
                   url: config.branding.login.openPicsureLink || '/',
                 }),
-              )}>{openPicsureLinkText}</a
+              )}>{openPicsureLinkText}</Button
           >
         {/if}
         {#await page.data?.altProviders}
           <Loading ring />
         {:then altProviders}
-          <div id="alt-logins" class="grid grid-cols-1 gap-4 mb-4 w-full">
+          <div id="login-alt-providers" class="grid grid-cols-1 gap-4 mb-4 w-full">
             {#each altProviders as provider}
               <LoginButton
                 buttonText={provider.description || provider.name}
                 {provider}
                 {redirectTo}
                 helpText={provider.helptext}
-                class="btn-sm preset-outlined-primary-500 text-primary-500 hover:preset-filled-primary-500 hover:text-white"
+                variant="outlined"
+                size="compact"
               />
             {/each}
           </div>

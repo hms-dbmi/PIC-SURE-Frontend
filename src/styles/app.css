@@ -6,20 +6,7 @@
 
 @source '../../node_modules/@skeletonlabs/skeleton-svelte/dist';
 
-/* Force generate standard colors */
-@source inline("{hover:,}bg-{primary,secondary,tertiary,success,warning,error,surface}-{50,100,200,300,400,500,600,700,800,900,950}");
-@source inline("{hover:,}text-{primary,secondary,tertiary,success,warning,error,surface}-{50,100,200,300,400,500,600,700,800,900,950}");
-@source inline("border-{primary,secondary,tertiary,success,warning,error,surface}-{50,100,200,300,400,500,600,700,800,900,950}");
-
-/* Force generate color pairings */
-@source inline("{hover:,}bg-{primary,secondary,tertiary,success,warning,error,surface}-{50,100,200,300,400,500,600,700,800,900,950}-{50,100,200,300,400,500,600,700,800,900,950}");
-@source inline("{hover:,}text-{primary,secondary,tertiary,success,warning,error,surface}-{50,100,200,300,400,500,600,700,800,900,950}-{50,100,200,300,400,500,600,700,800,900,950}");
-@source inline("border-{primary,secondary,tertiary,success,warning,error,surface}-{50,100,200,300,400,500,600,700,800,900,950}-{50,100,200,300,400,500,600,700,800,900,950}");
-
-/* Your preset classes if they exist */
-@source inline("preset-tonal-{primary,secondary,tertiary,success,warning,error,surface}-{50,100,200,300,400,500,600,700,800,900,950}");
-@source inline("preset-filled-{primary,secondary,tertiary,success,warning,error,surface}-{50,100,200,300,400,500,600,700,800,900,950}");
-
+@import './tokens.css';
 @import './theme.css';
 
 @custom-variant dark (&:is(.dark *));
@@ -51,97 +38,652 @@
   --color-gic-blue: #338fff;
 }
 
-@layer utilities {
-}
-
-html,
-body {
-  @apply h-full overflow-hidden;
-}
-
-.monospace {
-  font-family: monospace;
-}
-
-.main-content {
-  width: 70%;
-  margin: 2rem auto 0;
-}
-
-.main-content.w-full {
-  width: calc(100% - 4rem);
-  margin: 2rem 1.5rem;
-}
-
-input[type='search'] {
-  width: 100%;
-  @apply input;
-  padding: 0.5rem 1.25rem;
-}
-
-input[type='search'],
-input[type='text'],
-input[type='email'] {
-  background-color: var(--input-bg-color);
-}
-
-input[type='checkbox'] {
-  @apply checkbox bg-surface-50-950;
-}
-
-select {
-  @apply select;
-  @apply py-2;
-}
-
-hr {
-  @apply hr;
-}
-
+/*
+  Element defaults sit in the base layer and the app's own classes in the components layer, so a
+  utility on an element wins over both. Form-element defaults go in the components layer instead,
+  after the base styles of @tailwindcss/forms that they override.
+*/
 @layer base {
+  html,
+  body {
+    @apply h-full overflow-hidden;
+  }
+
   p {
     margin: 1rem;
   }
 }
 
-.code-block pre {
-  @apply rounded-container p-4;
+@layer components {
+  input[type='search'] {
+    width: 100%;
+    @apply input;
+    padding: 0.5rem 1.25rem;
+  }
 
-  code {
-    counter-reset: headerCounter;
-    @apply block whitespace-pre-wrap;
+  input[type='search'],
+  input[type='text'],
+  input[type='email'] {
+    background-color: var(--input-bg-color);
+  }
 
-    span.line {
-      position: relative;
-      counter-increment: headerCounter;
+  input[type='checkbox'] {
+    @apply checkbox;
+  }
+
+  select {
+    @apply select;
+  }
+
+  hr {
+    @apply hr;
+  }
+
+  .monospace {
+    font-family: monospace;
+  }
+
+  .main-content {
+    width: 70%;
+    margin: 2rem auto 0;
+  }
+
+  .main-content-full {
+    width: calc(100% - 4rem);
+    margin: 2rem 1.5rem;
+  }
+
+  .code-block pre {
+    @apply rounded-container p-4;
+
+    code {
+      counter-reset: headerCounter;
+      @apply block whitespace-pre-wrap;
+
+      span.line {
+        position: relative;
+        counter-increment: headerCounter;
+      }
+
+      span.line::before {
+        display: inline;
+        content: counter(headerCounter, decimal);
+        margin-right: 1.5rem;
+        color: var(--color-surface-800);
+      }
+    }
+  }
+
+  .card {
+    border-radius: var(--radius-container);
+    @apply border border-surface-200;
+  }
+
+  /* After .card, whose surface-200 border it overrides. */
+  .warning-message {
+    background-color: var(--color-warning-50);
+    border-color: var(--color-warning-700);
+    color: var(--color-warning-900);
+  }
+
+  .warning-message > i,
+  .warning-message .site-banner-icon {
+    color: var(--color-warning-800);
+  }
+
+  .popover {
+    width: max-content;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 9999;
+    @apply rounded-sm p-4 max-w-md shadow-2xl;
+  }
+
+  #results-sidebar {
+    height: 100%;
+    border-left: 2px solid var(--color-surface-500);
+  }
+  #app-shell > header {
+    border-bottom: 2px solid var(--color-surface-500);
+  }
+
+  /* Loading progress bar animation */
+  .anim-progress-bar {
+    transform-origin: 0% 50%;
+    animation: anim-progress-bar 2s infinite linear;
+  }
+  @keyframes anim-progress-bar {
+    0% {
+      transform: translateX(50%) scaleX(0.5);
+    }
+    50% {
+      transform: translateX(0) scaleX(0.5);
+    }
+    100% {
+      transform: translateX(50%) scaleX(0.5);
+    }
+  }
+
+  /* #app-page is the app's scroll viewport (the nav bar sits outside it). Declaring it
+     a size container lets pages size full-height sections with cqh units. */
+  #app-page {
+    container-type: size;
+  }
+
+  #app-page-footer {
+    border-style: solid;
+    border-top-width: 1px;
+    @apply border-surface-400-600;
+  }
+
+  #app-footer-sitemap {
+    padding: 0.5em 0 0;
+    margin: 0 auto;
+    text-align: center;
+    padding: 1em 15%;
+    @apply bg-primary-50-950;
+  }
+
+  #app-footer-sitemap ul {
+    text-align: left;
+    margin: 0 2em;
+  }
+
+  #app-footer {
+    padding: 0.75rem;
+    margin-top: 0;
+    background-color: var(--color-primary-100-900);
+    color: var(--color-primary-contrast-100-900);
+  }
+
+  #app-footer ul {
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  #app-footer ul li {
+    display: inline;
+    padding: 0 0.45rem;
+    border-style: solid;
+    border-right-width: 1px;
+    @apply border-primary-400-600;
+  }
+  #app-footer ul li:last-child {
+    border-right: none;
+  }
+
+  nav#app-nav {
+    display: flex;
+    flex-flow: row wrap;
+    align-items: stretch;
+    justify-content: flex-end;
+    padding: 0 0.6rem;
+    margin: 0.6rem -0.6rem 0;
+  }
+
+  nav#app-nav ul {
+    list-style-type: none;
+  }
+
+  nav#app-nav li {
+    float: left;
+    margin: 0.4rem 0.2rem;
+  }
+
+  nav#app-nav li a.nav-link {
+    font-size: 1rem;
+    padding: 0 1rem;
+    line-height: 1rem;
+    display: flex;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    height: 2.75rem;
+    width: 8rem;
+    @apply rounded-xl;
+  }
+
+  nav#app-nav a.nav-link[aria-current='page'] {
+    @apply bg-primary-500 text-primary-contrast-500;
+  }
+
+  nav#app-nav a.nav-link:hover,
+  nav#app-nav a.nav-link:active,
+  nav#app-nav a.nav-link:focus-visible,
+  nav#app-nav a.nav-link.highlight {
+    @apply bg-secondary-500 text-secondary-contrast-500;
+  }
+
+  .help-text a {
+    @apply anchor;
+  }
+
+  #explorer-visualizations {
+    .main-svg {
+      border-radius: var(--radius-container);
+      box-shadow: 0 0 2px 0px var(--color-surface-500);
+    }
+    .modebar-group:last-child {
+      background-color: transparent !important;
+    }
+  }
+
+  .main-content .subtitle {
+    font-size: 1.5rem;
+  }
+
+  #user-token span.badge.expired {
+    @apply bg-error-500 text-error-contrast-500;
+  }
+
+  #user-token span.badge.expiring {
+    @apply bg-warning-500 text-warning-contrast-500;
+  }
+
+  #user-token span.badge.valid {
+    @apply bg-success-500 text-success-contrast-500;
+  }
+
+  #user-token #user-token-value {
+    @apply input;
+    overflow: auto;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    padding: 0.5em;
+    background-color: var(--input-bg-color);
+  }
+
+  .required span:after,
+  legend.required:after {
+    content: ' *';
+    display: inline;
+    @apply text-error-500;
+  }
+
+  input.required:invalid,
+  label.required input:invalid,
+  .label.required input:invalid {
+    @apply text-error-500;
+  }
+
+  .top-dots {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: -1;
+  }
+
+  .bottom-dots {
+    position: fixed;
+    bottom: 70px;
+    right: 10px;
+    transform: rotate(180deg);
+    z-index: -1;
+  }
+
+  .btn-icon-color {
+    color: var(--base-font-color);
+
+    &:hover {
+      @apply text-primary-600-400;
     }
 
-    span.line::before {
-      display: inline;
-      content: counter(headerCounter, decimal);
-      margin-right: 1.5rem;
-      color: var(--color-surface-800);
+    &:disabled {
+      @apply text-surface-400;
+    }
+  }
+
+  .dark .btn-icon-color {
+    color: var(--base-font-color-dark);
+  }
+
+  .card-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    text-decoration: none;
+    text-align: center;
+
+    padding: 1rem 0.5rem;
+    margin: 1rem;
+    margin-bottom: 1.3rem;
+    border-radius: var(--radius-container);
+
+    @apply border border-surface-400-600;
+
+    .title {
+      text-wrap: wrap;
+      font-size: 1.5rem;
+      line-height: 1.5rem;
+    }
+
+    .subtitle {
+      text-wrap: wrap;
+      font-size: 1rem;
+      line-height: 1.25rem;
+    }
+  }
+
+  .card-btn:hover {
+    @apply scale-110 disabled:scale-none shadow-lg disabled:shadow-none;
+  }
+
+  .card-btn-sm {
+    width: 6rem;
+    height: 6rem;
+    max-width: 6rem;
+
+    .title {
+      font-size: 1rem;
+      line-height: 1rem;
+      margin-top: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+  }
+
+  .card-btn-md {
+    width: 7rem;
+    height: 7rem;
+    max-width: 7rem;
+
+    .title {
+      font-size: 1rem;
+      line-height: 1rem;
+      margin-top: 0.5rem;
+    }
+
+    .subtitle {
+      font-size: 0.8rem;
+      line-height: 1rem;
+      margin-top: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+  }
+
+  .card-btn-lg {
+    width: 13rem;
+    height: 13rem;
+    max-width: 13rem;
+
+    .title {
+      margin-top: 0.875rem;
+      margin-bottom: 0.875rem;
+    }
+  }
+
+  .pagination {
+    @apply gap-0;
+  }
+
+  .pagination button {
+    font-size: var(--base-font-size);
+    padding: 0.27rem 0.75rem;
+    @apply bg-surface-50 disabled:bg-surface-50 hover:bg-secondary-50 border-surface-300 rounded-none border-y-1 disabled:opacity-100 disabled:text-surface-300;
+  }
+
+  .pagination button.active:not(disabled) {
+    @apply bg-primary-50;
+  }
+
+  .pagination button:first-child {
+    @apply rounded-l-xl border-y-1 border-l-1;
+  }
+
+  .pagination button:last-child {
+    @apply rounded-r-xl border-y-1 border-r-1;
+  }
+
+  #terms-of-service {
+    @apply mx-4;
+
+    .subtitle {
+      @apply font-bold italic mb-4;
+    }
+
+    /* Skeleton's own heading sizes, not the app's fixed .h3/.h4 overrides */
+    h1 {
+      @apply h3 text-2xl md:text-3xl;
+    }
+
+    h2 {
+      @apply h4 text-xl md:text-2xl;
+    }
+
+    h1,
+    h2 {
+      @apply mt-4;
+    }
+
+    ul {
+      @apply list-disc ml-8;
+    }
+
+    ol {
+      @apply list-[lower-roman] ml-8;
+    }
+
+    div,
+    ol,
+    ul {
+      @apply my-2;
+    }
+
+    a {
+      @apply anchor;
     }
   }
 }
 
-.card {
-  border-radius: var(--radius-container);
-  @apply border border-surface-200;
+/*
+  Skeleton's .btn, .table, .input, .select, .checkbox and .h1-.h6 are utilities, so a
+  components-layer rule loses to them. The app's overrides extend the same utilities instead.
+  Tailwind orders utility rules by the properties they set: an override that sets the same
+  properties as Skeleton's rule, or ones Tailwind sorts later, lands right after it and still
+  before single-purpose utilities like text-lg or p-2. That's why btn-sm is split up.
+*/
+/* The app's heading scale, for both the elements and Skeleton's .h1-.h6 classes */
+@layer base {
+  h1 {
+    font-size: 2rem;
+    line-height: 2.75rem;
+  }
+  h2 {
+    font-size: 1.75rem;
+    line-height: 2.25rem;
+  }
+  h3 {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+  h4 {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+  }
+  h5 {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+  }
+  h6 {
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
 }
 
-.w-modal {
-  width: 100%;
-  max-width: 640px;
+@utility h1 {
+  font-size: 2rem;
+  line-height: 2.75rem;
+
+  @variant md {
+    font-size: 2rem;
+    line-height: 2.75rem;
+  }
 }
 
-.popover {
-  width: max-content;
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 9999;
-  @apply rounded-sm p-4 max-w-md shadow-2xl;
+@utility h2 {
+  font-size: 1.75rem;
+  line-height: 2.25rem;
+
+  @variant md {
+    font-size: 1.75rem;
+    line-height: 2.25rem;
+  }
+}
+
+@utility h3 {
+  font-size: 1.5rem;
+  line-height: 2rem;
+
+  @variant md {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+}
+
+@utility h4 {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+
+  @variant md {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+  }
+}
+
+@utility h5 {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+
+  @variant md {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+  }
+}
+
+@utility h6 {
+  font-size: 1rem;
+  line-height: 1.5rem;
+
+  @variant md {
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+}
+
+@utility btn {
+  border-radius: 9999px;
+  font-size: var(--base-font-size);
+  padding-block: 0.5rem;
+  padding-inline: 1.25rem;
+}
+
+@utility btn-xs {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  padding-block: 0.25rem;
+  padding-inline: 0.5rem;
+}
+
+@utility btn-sm {
+  font-size: 0.875rem;
+  line-height: 1rem;
+  padding-block: 0.5rem;
+  padding-inline: 1.25rem;
+}
+
+@utility btn-sm {
+  border-radius: 9999px;
+}
+
+@utility btn-sm {
+  margin: 0 auto;
+  width: fit-content;
+}
+
+@utility input {
+  &:where([type='search']) {
+    padding: 0.5rem 1.25rem;
+  }
+
+  &:where([type='search'], [type='text'], [type='email']) {
+    background-color: var(--input-bg-color);
+  }
+}
+
+@utility checkbox {
+  @apply bg-surface-50-950;
+}
+
+@utility select {
+  padding-block: 0.5rem;
+}
+
+@utility table {
+  overflow: hidden;
+  background-color: var(--color-surface-100);
+  display: table;
+
+  @apply rounded-xl;
+
+  & thead th {
+    font-weight: normal;
+    background-color: var(--color-primary-100);
+    color: var(--base-font-color);
+    padding: 1rem;
+  }
+
+  & thead.sticky-header th {
+    position: sticky;
+    top: 0;
+  }
+
+  & tbody td {
+    font-size: 1rem;
+    line-height: 1.25rem;
+    padding: 1rem;
+  }
+
+  & tbody tr:nth-child(even),
+  & tbody tr.expandable-row {
+    background-color: var(--color-surface-200);
+  }
+
+  &.clickable tbody tr:not(.expandable-row):hover {
+    background-color: var(--color-surface-300);
+  }
+
+  /* Rows in the keyboard-navigable grid are focused programmatically (roving
+     tabindex), which some browsers exclude from :focus-visible — use :focus. */
+  &.clickable tbody tr:not(.expandable-row):focus {
+    background-color: var(--color-surface-300);
+    outline: 2px solid var(--color-surface-500);
+    outline-offset: -2px;
+  }
+}
+
+/*
+  Unlayered on purpose, like before layers: a disabled control keeps the not-allowed cursor whatever
+  cursor a utility or Skeleton class sets, and card button icons keep their size over Font
+  Awesome's unlayered size classes (deployment configs give the help page icons fa-4x).
+*/
+button:disabled,
+input:disabled {
+  cursor: not-allowed;
+}
+
+.card-btn-sm .icon {
+  font-size: 1.5rem;
+}
+
+.card-btn-md .icon {
+  font-size: 2.25rem;
+}
+
+.card-btn-lg .icon {
+  font-size: 5em;
 }
 
 @media print {
@@ -173,557 +715,28 @@ hr {
   }
 
   .btn,
-  #appShell div:has(nav#page-navigation),
-  #appShell div:has(div#user-session-avatar) {
+  #app-shell div:has(nav#app-nav),
+  #app-shell div:has(div#app-nav-user) {
     display: none;
   }
 
-  #page-footer {
+  #app-page-footer {
     display: none;
   }
 
-  header:has(#nav-logo) {
+  header:has(#app-nav-logo) {
     border: none !important;
     content: center;
   }
 
   body.overflow-hidden,
-  #appShell.overflow-hidden,
-  #appShell div.overflow-hidden {
+  #app-shell.overflow-hidden,
+  #app-shell div.overflow-hidden {
     overflow: auto !important;
   }
   body.h-full,
-  #appShell.h-full,
-  #appShell div.h-full {
+  #app-shell.h-full,
+  #app-shell div.h-full {
     height: auto !important;
   }
-}
-
-#sidebar-right {
-  height: 100%;
-  border-left: 2px solid var(--color-surface-500);
-}
-#appShell > header {
-  border-bottom: 2px solid var(--color-surface-500);
-}
-
-h1,
-.h1 {
-  font-size: 2rem;
-  line-height: 2.75rem;
-}
-h2,
-.h2 {
-  font-size: 1.75rem;
-  line-height: 2.25rem;
-}
-h3,
-.h3 {
-  font-size: 1.5rem;
-  line-height: 2rem;
-}
-h4,
-.h4 {
-  font-size: 1.25rem;
-  line-height: 1.75rem;
-}
-h5,
-.h5 {
-  font-size: 1.125rem;
-  line-height: 1.75rem;
-}
-h6,
-.h6 {
-  font-size: 1rem;
-  line-height: 1.5rem;
-}
-
-button:disabled,
-input:disabled {
-  cursor: not-allowed;
-}
-
-ol.primary-list,
-ul.primary-list {
-  padding-left: 3rem;
-}
-ol.primary-list {
-  list-style: decimal;
-}
-ul.primary-list {
-  list-style: disc;
-}
-ol.primary-list li::marker,
-ul.primary-list li::marker {
-  color: var(--color-primary-500);
-}
-
-/* Loading progress bar animation */
-.anim-progress-bar {
-  transform-origin: 0% 50%;
-  animation: anim-progress-bar 2s infinite linear;
-}
-@keyframes anim-progress-bar {
-  0% {
-    transform: translateX(50%) scaleX(0.5);
-  }
-  50% {
-    transform: translateX(0) scaleX(0.5);
-  }
-  100% {
-    transform: translateX(50%) scaleX(0.5);
-  }
-}
-
-.table {
-  overflow: hidden;
-  background-color: var(--color-surface-100);
-  display: table;
-
-  @apply rounded-xl;
-}
-
-.table thead th {
-  font-weight: normal !important;
-  background-color: var(--color-primary-100);
-  color: var(--base-font-color);
-  padding: 1rem;
-}
-
-.table thead.sticky-header th {
-  position: sticky;
-  top: 0;
-}
-
-.table tbody td {
-  font-size: 1rem;
-  line-height: 1.25rem;
-  padding: 1rem;
-}
-
-.table tbody tr:nth-child(even),
-.table tbody tr.expandable-row {
-  background-color: var(--color-surface-200);
-}
-
-.table.clickable tbody tr:not(.expandable-row):hover {
-  background-color: var(--color-surface-300);
-}
-
-/* Rows in the keyboard-navigable grid are focused programmatically (roving
-   tabindex), which some browsers exclude from :focus-visible — use :focus. */
-.table.clickable tbody tr:not(.expandable-row):focus {
-  background-color: var(--color-surface-300);
-  outline: 2px solid var(--color-surface-500);
-  outline-offset: -2px;
-}
-
-.table.align-middle tbody td {
-  vertical-align: middle;
-}
-
-header .app-bar {
-  border-bottom: solid var(--color-surface-400) 2px;
-}
-
-/* #page is the app's scroll viewport (the nav bar sits outside it). Declaring it
-   a size container lets pages size full-height sections with cqh units. */
-#page {
-  container-type: size;
-}
-
-#page-footer {
-  border-style: solid;
-  border-top-width: 1px;
-  @apply border-surface-400-600;
-}
-
-#sitemap-footer {
-  padding: 0.5em 0 0;
-  margin: 0 auto;
-  text-align: center;
-  padding: 1em 15%;
-  @apply bg-primary-50-950;
-}
-
-#sitemap-footer ul {
-  text-align: left;
-  margin: 0 2em;
-}
-
-#main-footer {
-  padding: 0.75rem;
-  margin-top: 0;
-  @apply preset-filled-primary-100-900;
-}
-
-#main-footer ul {
-  margin: 0 auto;
-  text-align: center;
-}
-
-#main-footer ul li {
-  display: inline;
-  padding: 0 0.45rem;
-  border-style: solid;
-  border-right-width: 1px;
-  @apply border-primary-400-600;
-}
-#main-footer ul li:last-child {
-  border-right: none;
-}
-
-nav#page-navigation {
-  display: flex;
-  flex-flow: row wrap;
-  align-items: stretch;
-  justify-content: flex-end;
-  padding: 0 0.6rem;
-  margin: 0.6rem -0.6rem 0;
-}
-
-nav#page-navigation ul {
-  list-style-type: none;
-}
-
-nav#page-navigation li {
-  float: left;
-  margin: 0.4rem 0.2rem;
-}
-
-nav#page-navigation li a.nav-link {
-  font-size: 1rem;
-  padding: 0 1rem;
-  line-height: 1rem;
-  display: flex;
-  text-align: center;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
-  height: 2.75rem;
-  width: 8rem;
-  @apply rounded-xl;
-}
-
-nav#page-navigation a.nav-link[aria-current='page'] {
-  @apply preset-filled-primary-500;
-}
-
-nav#page-navigation a.nav-link:hover,
-nav#page-navigation a.nav-link:active,
-nav#page-navigation a.nav-link:focus-visible,
-nav#page-navigation li.open a.nav-link,
-nav#page-navigation a.nav-link.highlight {
-  @apply preset-filled-secondary-500;
-}
-
-nav#page-navigation li .nav-dropdown {
-  position: absolute;
-  padding-bottom: var(--radius-container);
-  width: 8rem;
-  @apply rounded-container bg-primary-400-600;
-
-  /* link top padding (from nav#page-navigation li: 0.4rem) + link height (from nav#page-navigation li a.nav-link: 2.75rem) */
-  top: 3.15rem;
-}
-nav#page-navigation li .nav-dropdown li {
-  display: block;
-  width: 100%;
-  margin: 0;
-}
-
-nav#page-navigation li.open > .nav-dropdown {
-  border-radius: 0 0 var(--radius-container) var(--radius-container);
-}
-
-nav#page-navigation li.open a.nav-link {
-  border-radius: var(--radius-container) var(--radius-container) 0 0;
-}
-
-nav#page-navigation li .nav-dropdown a {
-  display: block;
-  text-align: center;
-  padding: 0.2em;
-}
-
-nav#page-navigation li .nav-dropdown a:hover,
-nav#page-navigation li .nav-dropdown a:focus {
-  @apply bg-secondary-400-600;
-}
-
-.help-text a {
-  @apply anchor;
-}
-
-#visualizations {
-  .main-svg {
-    border-radius: var(--radius-container);
-    box-shadow: 0 0 2px 0px var(--color-surface-500);
-  }
-  .modebar-group:last-child {
-    background-color: transparent !important;
-  }
-}
-
-.main-content .subtitle {
-  font-size: 1.5rem;
-}
-
-#user-token span.badge.expired {
-  @apply preset-filled-error-500;
-}
-
-/* Must stay unlayered and after .card, whose surface-200 border overrides Tailwind border utilities. */
-.warning-message {
-  background-color: var(--color-warning-50);
-  border-color: var(--color-warning-700);
-  color: var(--color-warning-900);
-}
-
-.warning-message > i,
-.warning-message .site-banner-icon {
-  color: var(--color-warning-800);
-}
-
-#user-token span.badge.expiring {
-  @apply preset-filled-warning-500;
-}
-
-#user-token span.badge.valid {
-  @apply preset-filled-success-500;
-}
-
-.input-border,
-#user-token #token {
-  @apply input;
-  overflow: auto;
-  overflow-wrap: break-word;
-  word-wrap: break-word;
-  padding: 0.5em;
-  background-color: var(--input-bg-color);
-}
-
-.btn {
-  border-radius: 9999px;
-  font-size: var(--base-font-size);
-  padding: 0.5rem 1.25rem;
-}
-
-.btn-xs {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
-  line-height: 1rem;
-}
-
-.btn-sm {
-  border-radius: 9999px;
-  padding: 0.5rem 1.25rem;
-  line-height: 1rem;
-  font-size: 0.875rem;
-  margin: 0 auto;
-  width: fit-content;
-}
-
-.rounded-xl {
-  border-radius: 0.75rem;
-}
-
-.required span:after,
-legend.required:after {
-  content: ' *';
-  display: inline;
-  @apply text-error-500;
-}
-
-input.required:invalid,
-label.required input:invalid,
-.label.required input:invalid {
-  @apply text-error-500;
-}
-
-.top-dots {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: -1;
-}
-
-.bottom-dots {
-  position: fixed;
-  bottom: 70px;
-  right: 10px;
-  transform: rotate(180deg);
-  z-index: -1;
-}
-
-.btn-icon-color {
-  color: var(--base-font-color);
-
-  &:hover {
-    @apply text-primary-600-400;
-  }
-
-  &:disabled {
-    @apply text-surface-400;
-  }
-}
-
-.dark .btn-icon-color {
-  color: var(--base-font-color-dark);
-}
-
-.card-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-
-  text-decoration: none;
-  text-align: center;
-
-  padding: 1rem 0.5rem;
-  margin: 1rem;
-  margin-bottom: 1.3rem;
-  border-radius: var(--radius-container);
-
-  @apply border border-surface-400-600;
-
-  .title {
-    text-wrap: wrap;
-    font-size: 1.5rem;
-    line-height: 1.5rem;
-  }
-
-  .subtitle {
-    text-wrap: wrap;
-    font-size: 1rem;
-    line-height: 1.25rem;
-  }
-}
-
-.card-btn:hover {
-  @apply scale-110 disabled:scale-none shadow-lg disabled:shadow-none;
-}
-
-.card-btn-sm {
-  width: 6rem;
-  height: 6rem;
-  max-width: 6rem;
-
-  .icon {
-    font-size: 1.5rem;
-  }
-
-  .title {
-    font-size: 1rem;
-    line-height: 1rem;
-    margin-top: 0.5rem;
-    margin-bottom: 0.5rem;
-  }
-}
-
-.card-btn-md {
-  width: 7rem;
-  height: 7rem;
-  max-width: 7rem;
-
-  .icon {
-    font-size: 2.25rem;
-  }
-
-  .title {
-    font-size: 1rem;
-    line-height: 1rem;
-    margin-top: 0.5rem;
-  }
-
-  .subtitle {
-    font-size: 0.8rem;
-    line-height: 1rem;
-    margin-top: 0.5rem;
-    margin-bottom: 0.5rem;
-  }
-}
-
-.card-btn-lg {
-  width: 13rem;
-  height: 13rem;
-  max-width: 13rem;
-
-  .icon {
-    font-size: 5em;
-  }
-
-  .title {
-    margin-top: 0.875rem;
-    margin-bottom: 0.875rem;
-  }
-}
-
-.pagination {
-  @apply gap-0;
-}
-
-.pagination button {
-  font-size: var(--base-font-size);
-  padding: 0.27rem 0.75rem;
-  @apply bg-surface-50 disabled:bg-surface-50 hover:bg-secondary-50 border-surface-300 rounded-none border-y-1 disabled:opacity-100 disabled:text-surface-300;
-}
-
-.pagination button.active:not(disabled) {
-  @apply bg-primary-50;
-}
-
-.pagination button:first-child {
-  @apply rounded-l-xl border-y-1 border-l-1;
-}
-
-.pagination button:last-child {
-  @apply rounded-r-xl border-y-1 border-r-1;
-}
-
-#terms-of-service {
-  @apply mx-4;
-
-  .subtitle {
-    @apply font-bold italic mb-4;
-  }
-
-  h1 {
-    @apply h3;
-  }
-
-  h2 {
-    @apply h4;
-  }
-
-  h1,
-  h2 {
-    @apply mt-4;
-  }
-
-  ul {
-    @apply list-disc ml-8;
-  }
-
-  ol {
-    @apply list-[lower-roman] ml-8;
-  }
-
-  div,
-  ol,
-  ul {
-    @apply my-2;
-  }
-
-  a {
-    @apply anchor;
-  }
-}
-
-.operator-select {
-  @apply my-2 ml-8 w-32 px-2 py-1 bg-surface-200;
-}
-.filter-group-or {
-  @apply p-1 border border-surface-200-800;
 }

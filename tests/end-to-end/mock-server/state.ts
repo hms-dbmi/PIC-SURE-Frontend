@@ -6,7 +6,7 @@ import {
   privileges as privilegesSeed,
   applications as applicationsSeed,
   users as usersSeed,
-} from '../mock-data';
+} from '../../support/mock-data';
 
 // Loosely typed on purpose: handlers build partial rows (a create request plus a
 // generated uuid) that don't match the full fixture shape, and this is a mock, not a
@@ -25,7 +25,7 @@ export const state = {
   users: structuredClone(usersSeed) as Row[],
   // Keyed by the raw `kind` string the app sends (e.g. "ui:featureFlag", from
   // VITE_API_CONFIG_FEATURES) rather than 'features'/'settings'/'branding' - that mapping
-  // lives in Configuration.ts behind `import.meta.env`, which only Vite resolves, not this
+  // lives in config/resolve.ts behind `import.meta.env`, which only Vite resolves, not this
   // plain Node process. Matching the wire string directly sidesteps needing it here.
   configRows: [] as {
     uuid: string;

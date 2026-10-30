@@ -1,0 +1,246 @@
+import { expect, type Page, type Route } from '@playwright/test';
+import { test, mockApiSuccess, mockApiConfig } from '../custom-context';
+import {
+  facetResultPath,
+  facetsResponse,
+  detailResponseCat,
+  searchResultPath,
+  tourSearchResults as mockData,
+  conceptsDetailPath,
+  hierarchyResponse,
+} from '../../support/mock-data';
+import { userIsLoggedIn } from '../utils';
+
+test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
+
+test.beforeEach(async ({ page }) => {
+  await mockApiConfig(page);
+  await mockApiSuccess(page, facetResultPath, facetsResponse);
+  await mockApiSuccess(page, '*/**/picsure/dictionary/concepts*', detailResponseCat);
+  await mockApiSuccess(page, '*/**/picsure/hpds/auth/query/sync', '9999');
+});
+
+const HIERARCHY_AND_EXPORT_FEATURES = [
+  { name: 'ENABLE_HIERARCHY', value: 'true' },
+  { name: 'ALLOW_EXPORT_ENABLED', value: 'true' },
+];
+
+// Tracks the highlighted element, not popover visibility: driver.js falls back to an
+// invisible dummy element when a step's selector fails to resolve, and separately
+// blips the popover to `display: none` mid-transition - so visibility alone can't
+// signal a bad selector or real progress.
+async function walkTourAssertingRealHighlights(page: Page) {
+  const progressText = page.locator('#driver-popover-content .driver-popover-progress-text');
+  await expect(progressText).toBeVisible();
+
+  async function readProgress(): Promise<{ current: number; total: number }> {
+    const text = await progressText.textContent();
+    const match = text?.match(/(\d+)\s*of\s*(\d+)/);
+    if (!match) throw new Error(`Could not parse tour progress from "${text}"`);
+    return { current: Number(match[1]), total: Number(match[2]) };
+  }
+
+  const seenElementIds = new Set<string | null>();
+  const deadline = Date.now() + 45000;
+  let { current, total } = await readProgress();
+
+  // driver.js ignores presses that land during its ~200ms step animation, so
+  // advance by outcome rather than pressing a fixed number of times on a timer.
+  while (current < total) {
+    if (Date.now() > deadline) {
+      throw new Error(`Tour got stuck at step ${current} of ${total}`);
+    }
+    seenElementIds.add(
+      await page.evaluate(() => document.querySelector('.driver-active-element')?.id ?? null),
+    );
+    const before = current;
+    await page.keyboard.press('ArrowRight');
+    // Wait for the step to advance. Some steps (a categorical row in tourActions.ts's
+    // applyFilterThenNext) advance via an internal 200ms setTimeout; if the press landed during
+    // an animation and was ignored, the loop presses again.
+    await expect
+      .poll(async () => (await readProgress()).current, { timeout: 1000 })
+      .toBeGreaterThan(before)
+      .catch(() => {});
+    ({ current, total } = await readProgress());
+  }
+  seenElementIds.add(
+    await page.evaluate(() => document.querySelector('.driver-active-element')?.id ?? null),
+  );
+
+  // The last step's button reads "Done", and - unlike every preceding step -
+  // ArrowRight does not close the tour here (confirmed empirically; only the
+  // button's click handler does), so finish by clicking it directly.
+  await page.locator('#driver-popover-content footer button', { hasText: 'Done' }).click();
+  await expect(page.locator('#driver-popover-content')).not.toBeVisible({ timeout: 10000 });
+  expect(seenElementIds.has('driver-dummy-element')).toBe(false);
+}
+
+test('Explorer tour button opens instruction modal', async ({ page }) => {
+  // Given
+  await page.goto('/explorer');
+  await userIsLoggedIn(page);
+  await expect(page.getByTestId('explorer-tour-start')).toBeVisible();
+
+  // When
+  await page.getByTestId('explorer-tour-start').click();
+
+  // Then
+  await expect(page.getByRole('dialog')).toBeVisible();
+});
+test('startTour=true opens the tour instructions on load', async ({ page }) => {
+  // When
+  await page.goto('/explorer?startTour=true');
+  await userIsLoggedIn(page);
+
+  // Then
+  await expect(page.getByRole('dialog').getByRole('button', { name: 'Start Tour' })).toBeVisible();
+});
+test('startTour=true opens the tour instructions only once', async ({ page }) => {
+  // Given
+  await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+  await page.goto('/explorer?startTour=true');
+  await userIsLoggedIn(page);
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
+  await expect(dialog).toBeHidden();
+
+  // When a search hides the tour button and a reset brings it back
+  await page.locator('#explorer-search-box').fill('somedata');
+  await page.locator('#explorer-search-box').press('Enter');
+  await expect(page.getByTestId('explorer-tour-start')).toBeHidden();
+  await page.getByRole('button', { name: 'You are on the reset button' }).click();
+
+  // Then
+  await expect(page.getByTestId('explorer-tour-start')).toBeVisible();
+  await expect(dialog).toBeHidden();
+});
+test('Learn How opens the tour instructions after a search hid the tour button', async ({
+  page,
+}) => {
+  // Given
+  await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+  await page.goto('/explorer?search=somedata');
+  await userIsLoggedIn(page);
+  await expect(page.getByTestId('explorer-tour-start')).toBeHidden();
+  // Client-side navigation keeps the search state, as following an in-app link would
+  await page.evaluate(() => {
+    const link = Object.assign(document.createElement('a'), { href: '/explorer/export' });
+    document.body.append(link);
+    link.click();
+  });
+
+  const searchReloaded = page.waitForResponse(searchResultPath);
+
+  // When
+  await page.getByRole('button', { name: 'Learn How' }).click();
+
+  // Then
+  await searchReloaded;
+  await expect(page.getByRole('dialog').getByRole('button', { name: 'Start Tour' })).toBeVisible();
+});
+test('Tour Finishes', async ({ page }) => {
+  // Given
+  await mockApiConfig(page, { features: HIERARCHY_AND_EXPORT_FEATURES });
+  await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+  await page.route(facetResultPath, async (route: Route) =>
+    route.fulfill({ json: facetsResponse }),
+  );
+  await page.route(`${conceptsDetailPath}/${detailResponseCat.dataset}`, async (route: Route) =>
+    route.fulfill({ json: detailResponseCat }),
+  );
+  await mockApiSuccess(page, '*/**/picsure/dictionary/concepts/hierarchy/*', hierarchyResponse);
+  await page.goto('/explorer');
+  await userIsLoggedIn(page);
+  await page.getByTestId('explorer-tour-start').click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.getByRole('dialog').getByRole('button', { name: 'Start Tour' }).click();
+
+  // Then
+  await walkTourAssertingRealHighlights(page);
+});
+test('Tour Finishes for BDC-Auth, with every step highlighting a real element', async ({
+  page,
+}) => {
+  // Given
+  await mockApiConfig(page, {
+    settings: [{ name: 'AUTH_TOUR_NAME', value: 'BDC-Auth' }],
+    features: HIERARCHY_AND_EXPORT_FEATURES,
+  });
+  await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+  await page.route(facetResultPath, async (route: Route) =>
+    route.fulfill({ json: facetsResponse }),
+  );
+  await page.route(`${conceptsDetailPath}/${detailResponseCat.dataset}`, async (route: Route) =>
+    route.fulfill({ json: detailResponseCat }),
+  );
+  await mockApiSuccess(page, '*/**/picsure/dictionary/concepts/hierarchy/*', hierarchyResponse);
+  await page.goto('/explorer');
+  await userIsLoggedIn(page);
+  await page.getByTestId('explorer-tour-start').click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.getByRole('dialog').getByRole('button', { name: 'Start Tour' }).click();
+
+  // Then
+  await walkTourAssertingRealHighlights(page);
+});
+test('Explorer tour starts from modal', async ({ page }) => {
+  // Given
+  await page.goto('/explorer');
+  await userIsLoggedIn(page);
+  await expect(page.getByTestId('explorer-tour-start')).toBeVisible();
+  await page.getByTestId('explorer-tour-start').click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+
+  // When
+  await page.getByRole('dialog').getByRole('button', { name: 'Start Tour' }).click();
+
+  // Then
+  await expect(page.locator('#driver-popover-content')).toBeVisible({ timeout: 10000 });
+});
+test('Escape key closes tour', async ({ page }) => {
+  // Given
+  await page.goto('/explorer');
+  await userIsLoggedIn(page);
+  await expect(page.getByTestId('explorer-tour-start')).toBeVisible();
+  await page.getByTestId('explorer-tour-start').click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.getByRole('dialog').getByRole('button', { name: 'Start Tour' }).click();
+  await expect(page.locator('#driver-popover-content')).toBeVisible({ timeout: 10000 });
+
+  // When
+  await page.keyboard.press('Escape');
+
+  // Then
+  await expect(page.locator('#driver-popover-content')).not.toBeVisible();
+});
+test('EXPLORE_TOUR=false hides the tour button entirely', async ({ page }) => {
+  // Given
+  await mockApiConfig(page, {
+    features: [{ name: 'EXPLORE_TOUR', value: 'false' }],
+  });
+
+  // When
+  await page.goto('/explorer');
+  await userIsLoggedIn(page);
+
+  // Then
+  await expect(page.getByTestId('explorer-tour-start')).not.toBeVisible();
+});
+
+test.describe('AUTH_TOUR_NAME', () => {
+  test('A recognized AUTH_TOUR_NAME override swaps in that tour', async ({ page }) => {
+    // Given
+    await mockApiConfig(page, { settings: [{ name: 'AUTH_TOUR_NAME', value: 'BDC-Auth' }] });
+    await page.goto('/explorer');
+    await userIsLoggedIn(page);
+
+    await page.getByTestId('explorer-tour-start').click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+
+    // Then
+    await expect(page.getByTestId('ui-modal-header')).toContainText(
+      'Welcome to BioData Catalyst Powered by PIC-SURE',
+    );
+  });
+});

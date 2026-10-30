@@ -1,17 +1,17 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { resolve } from '$app/paths';
-  import ExportStepper from '$lib/components/explorer/export/ExportStepper.svelte';
-  import { allFilters } from '$lib/stores/Filter';
-  import { exports } from '$lib/stores/Export';
-  import { stepperState } from '$lib/stores/Stepper';
-  import type { ExportRowInterface } from '$lib/models/ExportRow';
-  import Content from '$lib/components/Content.svelte';
-  import { config } from '$lib/configuration.svelte';
-  import { isUserLoggedIn } from '$lib/stores/User';
+  import ExportStepper from '#lib/explorer/export/ExportStepper.svelte';
+  import { filterState } from '#lib/query/filters.svelte.ts';
+  import { exportState } from '#lib/explorer/export/export.svelte.ts';
+  import type { ExportRowInterface } from '#lib/explorer/export/ExportRow.ts';
+  import Content from '#lib/shell/Content.svelte';
+  import { config } from '#lib/config/config.svelte.ts';
+  import { session } from '#lib/auth/session.svelte.ts';
   import { goto } from '$app/navigation';
 
   const exportRows: ExportRowInterface[] = $derived(
-    $exports.map((exp) => ({
+    exportState.variables.map((exp) => ({
       ref: exp,
       selected: true,
       variableId: exp.conceptPath,
@@ -21,7 +21,7 @@
     })),
   );
   const filterRows: ExportRowInterface[] = $derived(
-    $allFilters.map((filter) => ({
+    filterState.all.map((filter) => ({
       ref: filter,
       selected: true,
       variableId: filter.id,
@@ -44,30 +44,22 @@
     description: 'Patient identifier.',
     type: 'Categorical',
   };
-  stepperState.set({ ...$stepperState, current: 0, total: 0 });
 </script>
 
-<Content
-  backUrl="/explorer"
-  backTitle="Back to Explore"
-  backAction={() => {
-    $stepperState.current = 0;
-  }}
-  title="Export Data for Research Analysis"
->
-  {#if !isUserLoggedIn()}
+<Content backUrl="/explorer" backTitle="Back to Explore" title="Export Data for Research Analysis">
+  {#if !session.isLoggedIn}
     <div class="flex flex-col items-center justify-center m-8">
       <p>You are not logged in. To export the data for your selected cohort, please log in.</p>
       <div class="flex gap-4">
-        <button
-          class="btn preset-filled-primary-500 m-4"
+        <Button
+          class="m-4"
           onclick={() => {
-            goto(resolve('/login'));
-          }}>Go to Login</button
+            goto(resolve('login'));
+          }}>Go to Login</Button
         >
       </div>
     </div>
-  {:else if $exports.length > 0 || $allFilters.length > 0}
+  {:else if exportState.variables.length > 0 || filterState.all.length > 0}
     <section class="flex justify-center items-center w-full h-full mt-8">
       <ExportStepper rows={[patientIdRow, ...systemFieldRows, ...filterRows, ...exportRows]} />
     </section>
@@ -75,11 +67,11 @@
     <div class="flex flex-col items-center justify-center m-8">
       <p>No filters or exports have been created.</p>
       <div class="flex gap-4">
-        <button
-          class="btn preset-filled-primary-500 m-4"
+        <Button
+          class="m-4"
           onclick={() => {
-            goto(resolve('/explorer?startTour=true'));
-          }}>Learn How</button
+            goto(resolve('explorer?startTour=true'));
+          }}>Learn How</Button
         >
       </div>
     </div>

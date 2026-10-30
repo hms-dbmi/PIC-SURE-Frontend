@@ -1,0 +1,174 @@
+# DOM id renames to {area}-{entity}-{action}, applied by rename-ids.ts (rename-testids.ts's header
+# has the syntax and the rebase recipe). Ids that already follow the convention keep their names.
+# The first matching line wins.
+#
+# URL fragment targets are bookmarked, so they keep their names: the /api TOC anchors and deep
+# links, which OnThisPage navigates to.
+authentication -> keep
+capabilities -> keep
+choose-your-workflow -> keep
+workflow-<id> -> keep
+# AdvancedGroup's `id` prop is the filter tree's node id, not a DOM id.
+root -> keep
+# TabItem copies Skeleton's own tab ids so Skeleton's content panel finds it; PR 14 retires it.
+tabs:s5:<part> -> keep
+
+# Shell, navigation and footer
+appShell -> app-shell
+page -> app-page
+page-content -> app-page-content
+page-footer -> app-page-footer
+page-navigation -> app-nav
+nav-logo -> app-nav-logo
+nav-link-<route> -> app-nav-link-<route>
+user-session-avatar -> app-nav-user
+user-logout-btn -> app-nav-logout
+user-login-btn -> app-nav-login
+sitemap-footer -> app-footer-sitemap
+main-footer -> app-footer
+info-cards -> app-help-cards
+
+# Landing and login
+landing -> landing-page
+search-section -> landing-search
+actions-section -> landing-actions
+logins -> login-page
+title-box -> login-title
+main-logins -> login-providers
+alt-logins -> login-alt-providers
+
+# /api and the user token
+public-key-name -> api-public-key-name
+public-key-email -> api-public-key-email
+public-key-email-hint -> api-public-key-email-hint
+public-key-captcha-hint -> api-public-key-captcha-hint
+account -> user-token-account
+token -> user-token-value
+expires -> user-token-expires
+expires-badge -> user-token-expires-badge
+
+# Admin. `role-table` and its siblings are the sections around the tables (those are below).
+role-table -> admin-role-section
+privilege-table -> admin-privilege-section
+connection-table -> admin-connection-section
+role-new -> admin-role-new
+role-edit -> admin-role-edit
+privilege-new -> admin-privilege-new
+privilege-edit -> admin-privilege-edit
+connection-new -> admin-connection-new
+connection-edit -> admin-connection-edit
+user-new -> admin-user-new
+user-edit -> admin-user-edit
+role-view -> admin-user-view
+site-banners-title -> banner-management-title
+# The users page named each connection's wrapper and table from its label; the table is now
+# `admin-user-table-<position>` (its testid too) and the wrapper has no id.
+user-table-<label> -> !
+Users-<label> -> !
+
+# Tables: RemoteTable took its ids from `tableName`, which is also the rows-per-page storage key
+# and the caption; it takes an `id` prop now. Its rows are `<id>-row-<n>`, their cells
+# `<id>-row-<n>-col-<m>`, an expanded row `<id>-active-row-<n>`, the keyboard help `<id>-kbd-help`.
+# The dashboard's table was also `ExplorerTable`; it is `dashboard-table` now (renamed by hand).
+ExplorerTable-table -> explorer-table
+ExplorerTable-row-<part> -> explorer-table-row-<part>
+ExplorerTable-active-row-<part> -> explorer-table-active-row-<part>
+ExplorerTable-kbd-help -> explorer-table-kbd-help
+ExportSummary-table -> export-summary-table
+ExportSummary-row-<part> -> export-summary-table-row-<part>
+ExportSummary-active-row-<part> -> export-summary-table-active-row-<part>
+ExportSummary-kbd-help -> export-summary-table-kbd-help
+variant-explorer-table -> explorer-variant-table
+variant-explorer-row-<part> -> explorer-variant-table-row-<part>
+variant-explorer-active-row-<part> -> explorer-variant-table-active-row-<part>
+variant-explorer-kbd-help -> explorer-variant-table-kbd-help
+ActiveDatasets-table -> dataset-active-table
+ActiveDatasets-row-<part> -> dataset-active-table-row-<part>
+ActiveDatasets-active-row-<part> -> dataset-active-table-active-row-<part>
+ActiveDatasets-kbd-help -> dataset-active-table-kbd-help
+ArchivedDatasets-table -> dataset-archived-table
+ArchivedDatasets-row-<part> -> dataset-archived-table-row-<part>
+ArchivedDatasets-active-row-<part> -> dataset-archived-table-active-row-<part>
+ArchivedDatasets-kbd-help -> dataset-archived-table-kbd-help
+PlatformApiKeys-table -> admin-api-key-platform-table
+PlatformApiKeys-row-<part> -> admin-api-key-platform-table-row-<part>
+PlatformApiKeys-active-row-<part> -> admin-api-key-platform-table-active-row-<part>
+PlatformApiKeys-kbd-help -> admin-api-key-platform-table-kbd-help
+UserApiKeys-table -> admin-api-key-user-table
+UserApiKeys-row-<part> -> admin-api-key-user-table-row-<part>
+UserApiKeys-active-row-<part> -> admin-api-key-user-table-active-row-<part>
+UserApiKeys-kbd-help -> admin-api-key-user-table-kbd-help
+Roles-table -> admin-role-table
+Roles-row-<part> -> admin-role-table-row-<part>
+Roles-active-row-<part> -> admin-role-table-active-row-<part>
+Roles-kbd-help -> admin-role-table-kbd-help
+Privileges-table -> admin-privilege-table
+Privileges-row-<part> -> admin-privilege-table-row-<part>
+Privileges-active-row-<part> -> admin-privilege-table-active-row-<part>
+Privileges-kbd-help -> admin-privilege-table-kbd-help
+Connections-table -> admin-connection-table
+Connections-row-<part> -> admin-connection-table-row-<part>
+Connections-active-row-<part> -> admin-connection-table-active-row-<part>
+Connections-kbd-help -> admin-connection-table-kbd-help
+
+# Explorer and the results panel
+search-container -> explorer-main
+facet-side-bar -> explorer-facet-sidebar
+search-results-col -> explorer-results
+search-bar -> explorer-search-bar
+search-button -> explorer-search-submit
+tourBtn -> explorer-tour-start
+visualizations -> explorer-visualizations
+plot-<index> -> explorer-plot-<index>
+sidebar-right -> results-sidebar
+side-panel -> results-side-panel
+side-panel-bar -> results-side-panel-bar
+advanced-query-btn -> results-advanced-filtering-open
+explorer-distributions-btn -> results-distributions-open
+export-data-button -> results-export-open
+export-filters -> results-export-filters
+result-count -> results-count
+result-count-number -> results-count-number
+data-container -> dashboard-data
+
+# Export
+first-step-container -> export-review-step
+sample-ids-checkbox -> export-sample-ids
+stats -> export-summary-stats
+summary -> export-summary
+participants -> export-summary-participants
+variables -> export-summary-variables
+dataPoints -> export-summary-data-points
+dataset-name -> export-dataset-name
+dataset-id -> export-dataset-id
+
+# Genomic filters
+snp-search -> genomic-snp-search
+gene-search -> genomic-gene-search
+Rare -> genomic-frequency-rare
+Common -> genomic-frequency-common
+Novel -> genomic-frequency-novel
+selected-variant -> genomic-summary-variant
+selected-consequence -> genomic-summary-consequence
+selected-frequency -> genomic-summary-frequency
+
+# Advanced filtering
+group-controls-<uuid> -> filter-group-controls-<uuid>
+drop-preview-<id> -> filter-drop-preview-<id>
+
+# Internal ids of reusable components, removed by hand: they now come from `$props.id()` (or
+# Skeleton's own), and tests find these elements by role or testid. Each line makes the script
+# report a test or selector that still names one.
+row-count-select -> !
+modal-component -> !
+drawer -> !
+select-all -> !
+options-container -> !
+selected-options-container -> !
+clear -> !
+option-<value> -> !
+checkbox:<name>-<value> -> !
+tree-item-btn:<name>-<value> -> !
+radio:<name> -> !
+min -> !
+max -> !

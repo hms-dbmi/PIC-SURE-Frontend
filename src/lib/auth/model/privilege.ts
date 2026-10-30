@@ -1,0 +1,23 @@
+export interface Privilege {
+  uuid?: string;
+  name: string;
+  description: string;
+  queryScope?: string;
+  application: string;
+}
+
+// PIC-SURE & BDCPrivileges Privileges are used for authorization of functionalty rather than data access
+export enum PicsurePrivileges {
+  QUERY = 'PIC_SURE_ANY_QUERY',
+  API_ACCESS = 'API_ACCESS',
+  NAMED_DATASET = 'NAMED_DATASET',
+  ADMIN = 'ADMIN',
+  SUPER = 'SUPER_ADMIN',
+}
+
+export enum BDCPrivileges {
+  AUTHORIZED_ACCESS = 'AUTHORIZED_ACCESS',
+  OPEN = 'MANAGED_PRIV_OPEN_ACCESS',
+  NAMED_DATASET = 'MANUAL_PRIV_NAMED_DATASET',
+  DICTIONARY = 'MANAGED_PRIV_DICTIONARY',
+}

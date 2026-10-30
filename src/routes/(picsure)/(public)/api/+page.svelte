@@ -1,25 +1,27 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
-  import { Accordion } from '@skeletonlabs/skeleton-svelte';
-
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
 
-  import { config, PROJECT_HOSTNAME } from '$lib/configuration.svelte';
-  import { getApiConnectionResource } from '$lib/stores/Resources';
-  import { tokenStatus } from '$lib/stores/User';
-  import { log, createLog } from '$lib/logger';
+  import { config } from '#lib/config/config.svelte.ts';
+  import { PROJECT_HOSTNAME } from '#lib/config/deployment.ts';
+  import { getApiConnectionResource } from '#lib/explorer/Resources.ts';
+  import { session } from '#lib/auth/session.svelte.ts';
+  import { log, createLog } from '#lib/telemetry/logger.ts';
 
-  import ApiDocumentation from '$lib/components/ApiDocumentation.svelte';
-  import UserToken from '$lib/components/UserToken.svelte';
-  import PublicAccessKey from '$lib/components/PublicAccessKey.svelte';
-  import CodeBlock from '$lib/components/CodeBlock.svelte';
-  import TocLayout from '$lib/components/toc/TocLayout.svelte';
-  import TocSection from '$lib/components/toc/TocSection.svelte';
+  import ApiDocumentation from './ApiDocumentation.svelte';
+  import UserToken from '#lib/auth/components/UserToken.svelte';
+  import PublicAccessKey from './PublicAccessKey.svelte';
+  import CodeBlock from '#lib/ui/CodeBlock.svelte';
+  import CollapsibleGroup from '#lib/ui/CollapsibleGroup.svelte';
+  import CollapsiblePanel from '#lib/ui/CollapsiblePanel.svelte';
+  import TocLayout from '#lib/ui/toc/TocLayout.svelte';
+  import TocSection from '#lib/ui/toc/TocSection.svelte';
+  import { tones } from '#lib/ui/surface.ts';
 
   let mounted = $state(false);
-  let loggedIn = $derived(mounted && $tokenStatus);
+  let loggedIn = $derived(mounted && session.isLoggedIn);
   const capabilities = config.branding.apiPage?.capabilities || [];
 
   const codeBlocks = $derived(config.branding.explorePage.codeBlocks);
@@ -178,7 +180,7 @@
     )
       return;
     event.preventDefault();
-    await goto(resolve(`/api#${id}`), { noScroll: true, keepFocus: true });
+    await goto(resolve(`api#${id}`), { reset: false });
     document.getElementById(id)?.scrollIntoView();
   }
 
@@ -229,11 +231,11 @@
           </div>
         {/if}
         <div id="capabilities" class="flex-1 min-w-64">
-          <h3 class="text-lg font-bold mb-3">What you can do</h3>
+          <h3 class="font-bold mb-3">What you can do</h3>
           <ul class="space-y-3">
             {#each capabilities as capability}
               {@const locked = !loggedIn && capability.requiresLogin}
-              <li data-testid="capability-item" class="flex items-center gap-3">
+              <li data-testid="api-capability-item" class="flex items-center gap-3">
                 {#if locked}
                   <i class="fa-regular fa-circle-xmark shrink-0 text-xl text-surface-400"></i>
                 {:else}
@@ -251,7 +253,7 @@
               Looking for authorized access?
               <a
                 class="anchor"
-                href="{resolve('/login')}?redirectTo=/api"
+                href="{resolve('login')}?redirectTo=/api"
                 onclick={() => loginClick('capabilities')}
                 data-testid="api-login-link">Login</a
               >
@@ -264,32 +266,17 @@
     <TocSection id="choose-your-workflow" tinted>
       <h2>Choose Your Workflow</h2>
       <p class="mx-0">Select the access method that fits your project.</p>
-      <Accordion
-        value={openWorkflows}
-        onValueChange={(e) => toggleWorkflow(e.value)}
-        collapsible
-        spaceY="space-y-4"
-        classes="mt-4"
-      >
-        {#snippet iconOpen()}<i class="fa-solid fa-angle-up text-xl"></i>{/snippet}
-        {#snippet iconClosed()}<i class="fa-solid fa-angle-down text-xl"></i>{/snippet}
+      <CollapsibleGroup value={openWorkflows} onchange={toggleWorkflow} collapsible variant="card">
         {#each workflows as workflow}
-          <div id="workflow-{workflow.id}" data-testid="workflow-{workflow.id}">
-            <Accordion.Item
-              value={workflow.id}
-              base="rounded-container border border-surface-200 bg-white dark:bg-surface-950 data-[state=open]:border-primary-500"
-              controlHover="hover:bg-surface-100-900"
-              controlPadding="p-6"
-              controlRounded="rounded-container"
-              panelPadding="px-6 pb-6"
-            >
-              {#snippet control()}
+          <div id="workflow-{workflow.id}" data-testid="api-workflow-{workflow.id}">
+            <CollapsiblePanel value={workflow.id}>
+              {#snippet heading()}
                 <span class="flex flex-wrap items-center gap-3">
                   <span class="text-xl font-bold">{workflow.title}</span>
                   <span
                     class="badge shrink-0 {workflow.id === 'http'
-                      ? 'preset-tonal-warning'
-                      : 'preset-tonal-primary'}"
+                      ? tones['tonal-warning']
+                      : tones['tonal-primary']}"
                   >
                     {workflow.id === 'http' ? 'Advanced' : 'Recommended'}
                   </span>
@@ -299,62 +286,58 @@
                   {workflow.requirements}
                 </span>
               {/snippet}
-              {#snippet panel()}
-                <p class="mx-0 mb-4 p-4 rounded-base preset-tonal-primary">
-                  Copy your token above, paste it into a file named <code class="code"
-                    >token.txt</code
-                  >, and save it {workflow.tokenLocation}. Don't share this file or commit it to
-                  GitHub.
-                </p>
-                <CodeBlock
-                  lang={workflow.lang}
-                  code={clientCode[workflow.id]}
-                  logAction="api.code_copy"
-                  logMetadata={{ workflow: workflow.id }}
-                />
-                <p
-                  class="mx-0 mt-6 mb-1 text-sm font-bold uppercase tracking-wide text-surface-600-400"
+              <p class="mx-0 mb-4 p-4 rounded-base {tones['tonal-primary']}">
+                Copy your token above, paste it into a file named <code class="code">token.txt</code
+                >, and save it {workflow.tokenLocation}. Don't share this file or commit it to
+                GitHub.
+              </p>
+              <CodeBlock
+                lang={workflow.lang}
+                code={clientCode[workflow.id]}
+                oncopy={() => log(createLog('ACTION', 'api.code_copy', { workflow: workflow.id }))}
+              />
+              <p
+                class="mx-0 mt-6 mb-1 text-sm font-bold uppercase tracking-wide text-surface-600-400"
+              >
+                More info
+              </p>
+              {#if workflow.docsSection}
+                {@const section = workflow.docsSection}
+                <a
+                  class="anchor"
+                  href={resolve(`api#${section}`)}
+                  onclick={(event) => {
+                    workflowDocsClick(workflow.id, section);
+                    void navigateSection(event, section);
+                  }}>{workflow.docsLabel}</a
                 >
-                  More info
-                </p>
-                {#if workflow.docsSection}
-                  {@const section = workflow.docsSection}
+              {:else if workflow.docsUrl}
+                {@const docsUrl = workflow.docsUrl}
+                <!-- eslint-disable svelte/no-navigation-without-resolve -- external docs URL -->
+                <a
+                  class="anchor"
+                  href={docsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onclick={() => workflowDocsClick(workflow.id, docsUrl)}>{workflow.docsLabel}</a
+                >
+                <!-- eslint-enable svelte/no-navigation-without-resolve -->
+                <p class="mx-0 mt-2">
+                  Looking for example notebooks? Check out the
                   <a
                     class="anchor"
-                    href={resolve(`/api#${section}`)}
-                    onclick={(event) => {
-                      workflowDocsClick(workflow.id, section);
-                      void navigateSection(event, section);
-                    }}>{workflow.docsLabel}</a
-                  >
-                {:else if workflow.docsUrl}
-                  {@const docsUrl = workflow.docsUrl}
-                  <!-- eslint-disable svelte/no-navigation-without-resolve -- external docs URL -->
-                  <a
-                    class="anchor"
-                    href={docsUrl}
+                    href={NOTEBOOKS_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    onclick={() => workflowDocsClick(workflow.id, docsUrl)}>{workflow.docsLabel}</a
-                  >
-                  <!-- eslint-enable svelte/no-navigation-without-resolve -->
-                  <p class="mx-0 mt-2">
-                    Looking for example notebooks? Check out the
-                    <a
-                      class="anchor"
-                      href={NOTEBOOKS_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onclick={() => workflowDocsClick(workflow.id, NOTEBOOKS_URL)}
-                      >public GitHub repository</a
-                    >.
-                  </p>
-                {/if}
-              {/snippet}
-            </Accordion.Item>
+                    onclick={() => workflowDocsClick(workflow.id, NOTEBOOKS_URL)}
+                    >public GitHub repository</a
+                  >.
+                </p>
+              {/if}
+            </CollapsiblePanel>
           </div>
         {/each}
-      </Accordion>
+      </CollapsibleGroup>
     </TocSection>
 
     <TocSection id="api-access">
@@ -372,7 +355,7 @@
               You are browsing as a public user. Only open API endpoints are available. To use
               authorized resources, please <a
                 class="anchor"
-                href="{resolve('/login')}?redirectTo=/api"
+                href="{resolve('login')}?redirectTo=/api"
                 onclick={() => loginClick('public_notice')}>log in</a
               >.
             </p>
@@ -386,7 +369,7 @@
 
 <style>
   @media (prefers-reduced-motion: no-preference) {
-    :global(#page) {
+    :global(#app-page) {
       scroll-behavior: smooth;
     }
   }

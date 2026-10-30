@@ -1,25 +1,19 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { resolve } from '$app/paths';
-  import { derived, readable, type Readable } from 'svelte/store';
 
   import { goto } from '$app/navigation';
 
-  import type { Indexable } from '$lib/types';
-  import { config } from '$lib/configuration.svelte';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import Content from '$lib/components/Content.svelte';
-  import Datatable from '$lib/components/datatable/StaticTable.svelte';
-  import Actions from '$lib/components/admin/user/cell/Actions.svelte';
-  import Status from '$lib/components/admin/user/cell/Status.svelte';
+  import { config } from '#lib/config/config.svelte.ts';
+  import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
+  import Content from '#lib/shell/Content.svelte';
+  import ClientTable from '#lib/ui/datatable/ClientTable.svelte';
+  import type { Column } from '#lib/ui/datatable/types.ts';
+  import Actions from '#lib/admin/users/cell/Actions.svelte';
+  import Status from '#lib/admin/users/cell/Status.svelte';
 
-  import UsersStore from '$lib/stores/Users';
-  import RolesStore from '$lib/stores/Roles';
-  import ConnectionStore from '$lib/stores/Connections';
-  import Loading from '$lib/components/Loading.svelte';
-
-  let { users, loadUsers } = UsersStore;
-  let { connections, loadConnections } = ConnectionStore;
-  let { roles, loadRoles } = RolesStore;
+  import * as admin from '#lib/admin/entities.ts';
+  import Loading from '#lib/ui/Loading.svelte';
 
   interface UserRow {
     uuid: string;
@@ -33,53 +27,57 @@
     users: UserRow[];
   }
 
-  let usersByConnection: Readable<Connection[]> = $state(readable([]));
+  let usersByConnection: Connection[] = $derived(
+    admin.connections.items.map((connection) => ({
+      label: connection.label,
+      users: admin.users.items
+        .filter((user) => connection.uuid === user.connection)
+        .map(
+          (row): UserRow => ({
+            uuid: row.uuid || '',
+            email: row.email || 'uuid:' + row.uuid,
+            roles:
+              row.roles.length === 0
+                ? 'none'
+                : row.roles
+                    .map((role: string) => admin.roles.find(role)?.name)
+                    .sort()
+                    .join(', '),
+            status: row.active ? 'Active' : 'Inactive',
+          }),
+        )
+        .sort((uA, uB) => uA.status.localeCompare(uB.status)),
+    })),
+  );
 
-  const columns = [
+  const columns: Column<UserRow>[] = [
     { dataElement: 'email', label: 'Username', sort: true, class: 'w-1/3' },
     { dataElement: 'roles', label: 'Role(s)', sort: true, class: 'normal-case!' },
-    { dataElement: 'status', label: 'Status', sort: true, class: 'w-24 text-center' },
-    { dataElement: 'uuid', label: 'Actions', sort: false, class: 'w-24 text-center' },
+    { dataElement: 'status', label: 'Status', sort: true, class: 'w-24 text-center', cell: status },
+    {
+      dataElement: 'uuid',
+      label: 'Actions',
+      sort: false,
+      class: 'w-24 text-center',
+      cell: actions,
+    },
   ];
 
-  const cellOverides = {
-    status: Status,
-    uuid: Actions,
-  };
+  const load = () =>
+    Promise.all([admin.connections.load(), admin.roles.load(), admin.users.load()]);
 
-  async function load() {
-    await loadConnections();
-    await loadRoles();
-    await loadUsers();
-    usersByConnection = derived([users, connections, roles], ([$u, $c, $r]) => {
-      return $c.map((connection) => ({
-        label: connection.label,
-        users: $u
-          .filter((user) => connection.uuid === user.connection)
-          .map(
-            (row): UserRow => ({
-              uuid: row.uuid || '',
-              email: row.email || 'uuid:' + row.uuid,
-              roles:
-                row.roles.length === 0
-                  ? 'none'
-                  : row.roles
-                      .map((role: string) => $r.find((r) => r.uuid === role)?.name)
-                      .sort()
-                      .join(', '),
-              status: row.active ? 'Active' : 'Inactive',
-            }),
-          )
-          .sort((uA, uB) => uA.status.localeCompare(uB.status)),
-      }));
-    });
-  }
-
-  const rowClickHandler = (row: Indexable) => {
-    const uuid = row?.uuid;
-    goto(resolve(`/admin/users/${uuid}/edit`));
+  const rowClickHandler = ({ uuid }: UserRow) => {
+    goto(resolve('/(picsure)/(authorized)/(admin)/admin/users/[uuid]/edit', { uuid }));
   };
 </script>
+
+{#snippet status(row: UserRow)}
+  <Status status={row.status} />
+{/snippet}
+
+{#snippet actions(row: UserRow)}
+  <Actions uuid={row.uuid} email={row.email} status={row.status} />
+{/snippet}
 
 <svelte:head>
   <title>{config.branding.applicationName} | Manage Users</title>
@@ -88,27 +86,27 @@
   {#await load()}<Loading />{:then}
     <div class="flex gap-4 mb-6">
       <div class="flex-auto">
-        <a
-          data-testid="add-user-btn"
-          class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-          href={resolve('/admin/users/new')}
+        <Button
+          variant="tonal"
+          data-testid="admin-user-add"
+          href={resolve('/(picsure)/(authorized)/(admin)/admin/users/new')}
         >
           + Add User
-        </a>
+        </Button>
       </div>
     </div>
-    {#each $usersByConnection as connection}
-      <div id={`user-table-${connection.label.replaceAll(' ', '_')}`} class="mb-10">
-        <Datatable
+    {#each usersByConnection as connection, i (connection.label)}
+      <div class="mb-10">
+        <ClientTable
           tableName="Users-{connection.label}"
-          data={connection.users}
+          data-testid="admin-user-table-{i}"
+          id="admin-user-table-{i}"
+          rows={connection.users}
           {columns}
-          {cellOverides}
           title={connection.label}
           {rowClickHandler}
           isClickable
           searchable
-          tableAuto={false}
         />
       </div>
     {/each}

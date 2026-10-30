@@ -1,22 +1,20 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
-  import { onDestroy, onMount } from 'svelte';
+  import { onMount } from 'svelte';
 
   import { goto } from '$app/navigation';
-  import { config } from '$lib/configuration.svelte';
-  import { isToastShowing, toaster } from '$lib/toaster';
+  import { config } from '#lib/config/config.svelte.ts';
+  import { isToastShowing, toaster } from '#lib/ui/toaster.ts';
 
-  import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
-  import { panelOpen } from '$lib/stores/SidePanel';
+  import { explorerPanel } from '#lib/explorer/panel.svelte.ts';
 
-  import Content from '$lib/components/Content.svelte';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import VariantExplorer from '$lib/components/explorer/variant/VariantExplorer.svelte';
-  import { getQueryRequestV3 } from '$lib/utilities/QueryBuilder';
+  import Content from '#lib/shell/Content.svelte';
+  import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
+  import VariantExplorer from '#lib/explorer/variant/VariantExplorer.svelte';
+  import { filterState } from '#lib/query/filters.svelte.ts';
 
   onMount(() => {
-    const request: QueryRequestInterfaceV3 = getQueryRequestV3();
-    if (request.query.genomicFilters.length === 0) {
+    if (filterState.queryFilters.genomicFilters.length === 0) {
       if (!isToastShowing('no-query')) {
         toaster.error({
           id: 'no-query',
@@ -24,12 +22,12 @@
           closable: true,
         });
       }
-      goto(resolve('/explorer'));
+      goto(resolve('explorer'));
     } else {
-      $panelOpen = false;
+      explorerPanel.hide();
     }
+    return () => explorerPanel.show();
   });
-  onDestroy(() => ($panelOpen = true));
 </script>
 
 <svelte:head>

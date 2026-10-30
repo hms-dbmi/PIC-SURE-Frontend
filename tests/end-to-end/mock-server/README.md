@@ -1,7 +1,7 @@
 # Mock API server
 
 A standalone HTTP server for local dev, backed by the same fixtures Playwright's
-per-test route mocking already uses (`tests/end-to-end/mock-data.ts`). It exists because
+per-test route mocking already uses (`tests/support/mock-data.ts`). It exists because
 `vite dev` alone has no backend to talk to - every page that fetches data errors out.
 Playwright tests don't use this; they mock each route themselves (see `custom-context.ts`).
 
@@ -16,7 +16,7 @@ The proxy is wired up in `vite.config.ts` and only active outside Playwright's `
 so it never affects the e2e suite.
 
 **`VITE_ORIGIN` must point at your `vite dev` server** (e.g. `http://localhost:5173`), not
-a production-style domain. `src/lib/server/configCache.ts` makes a real server-side `fetch`
+a production-style domain. `src/lib/config/server/cache.ts` makes a real server-side `fetch`
 to `${VITE_ORIGIN}/picsure/...` on every page load - if that doesn't resolve to the running
 dev server, requests never reach the proxy (or the mock) at all, and you'll see
 `ECONNREFUSED` in the terminal instead of a 404 in the browser.
@@ -41,7 +41,7 @@ business logic - search relevance, filter math, and real query execution aren't 
 Auth0/Okta/Fence/RAS all redirect to a real external identity provider, which no local mock
 can stand in for - there's no hosted login page to fake. Two ways around that:
 
-**Option 1: the MOCK auth provider.** `src/lib/auth/MOCK.ts` skips the external redirect
+**Option 1: the MOCK auth provider.** `src/lib/auth/providers/MOCK.ts` skips the external redirect
 entirely and jumps straight to the same `/login/loading` callback a real provider would
 eventually land on, with a fabricated token - the rest of the login pipeline
 (`authenticate` -> `psama/authentication/:provider` -> `picsureUser`) runs unmodified

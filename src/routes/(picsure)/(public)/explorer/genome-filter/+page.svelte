@@ -1,33 +1,23 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { resolve } from '$app/paths';
   import { onMount } from 'svelte';
 
-  import { config } from '$lib/configuration.svelte';
+  import { config } from '#lib/config/config.svelte.ts';
 
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
 
-  import Content from '$lib/components/Content.svelte';
-  import FilterType from '$lib/components/explorer/genome-filter/FilterType.svelte';
-  import SnpSearch from '$lib/components/explorer/genome-filter/SNPSearch.svelte';
-  import GeneSearch from '$lib/components/explorer/genome-filter/GeneSearch.svelte';
+  import Content from '#lib/shell/Content.svelte';
+  import FilterType from '#lib/explorer/genomic/FilterType.svelte';
+  import SnpSearch from '#lib/explorer/genomic/SNPSearch.svelte';
+  import GeneSearch from '#lib/explorer/genomic/GeneSearch.svelte';
 
-  import type { GenomicFilterInterface, SnpFilterInterface } from '$lib/models/Filter.svelte';
-  import { Option } from '$lib/models/GenomeFilter';
-  import {
-    selectedGenes,
-    clearGeneFilters,
-    generateGenomicFilter,
-    populateFromGeneFilter,
-  } from '$lib/stores/GeneFilter';
-  import {
-    selectedSNPs,
-    generateSNPFilter,
-    clearSnpFilters,
-    populateFromSNPFilter,
-  } from '$lib/stores/SNPFilter';
-  import { addFilter, getFiltersByType } from '$lib/stores/Filter';
-  import { panelOpen } from '$lib/stores/SidePanel';
+  import type { GenomicFilterInterface, SnpFilterInterface } from '#lib/query/filter.svelte.ts';
+  import { Option } from '#lib/query/genomic.ts';
+  import { genomicDraft } from '#lib/query/genomicDraft.svelte.ts';
+  import { filterState } from '#lib/query/filters.svelte.ts';
+  import { explorerPanel } from '#lib/explorer/panel.svelte.ts';
 
   let edit = page.url.searchParams.get('edit') || '';
   let selectedOption: Option = $state(
@@ -39,26 +29,26 @@
   );
 
   function clearFilters() {
-    clearGeneFilters();
-    clearSnpFilters();
+    genomicDraft.clearGenes();
+    genomicDraft.clearSnps();
   }
 
   function onComplete() {
     const filter =
-      selectedOption === Option.Genomic ? generateGenomicFilter() : generateSNPFilter();
-    addFilter(filter);
+      selectedOption === Option.Genomic ? genomicDraft.toGeneFilter() : genomicDraft.toSnpFilter();
+    filterState.add(filter);
     clearFilters();
-    $panelOpen = true;
-    goto(resolve('/explorer'));
+    explorerPanel.show();
+    goto(resolve('explorer'));
   }
 
   function populateExistingFilters() {
     if (selectedOption === Option.Genomic) {
-      const filters = getFiltersByType('genomic') as GenomicFilterInterface[];
-      filters.length === 1 && populateFromGeneFilter(filters[0]);
+      const filters = filterState.byType('genomic') as GenomicFilterInterface[];
+      filters.length === 1 && genomicDraft.loadGeneFilter(filters[0]);
     } else if (selectedOption === Option.SNP) {
-      const filters = getFiltersByType('snp') as SnpFilterInterface[];
-      filters.length === 1 && populateFromSNPFilter(filters[0]);
+      const filters = filterState.byType('snp') as SnpFilterInterface[];
+      filters.length === 1 && genomicDraft.loadSnpFilter(filters[0]);
     }
   }
 
@@ -70,8 +60,8 @@
   }
 
   let canComplete = $derived(
-    (selectedOption === Option.Genomic && $selectedGenes.length > 0) ||
-      (selectedOption === Option.SNP && $selectedSNPs.length > 0),
+    (selectedOption === Option.Genomic && genomicDraft.genes.length > 0) ||
+      (selectedOption === Option.SNP && genomicDraft.snps.length > 0),
   );
 </script>
 
@@ -98,22 +88,22 @@
     {/if}
     {#if edit}
       <div class="flex justify-end my-4">
-        <button
-          data-testid="save-filter-btn"
-          type="button"
-          class="btn btn-sm preset-filled-primary-500 text-lg disabled:opacity-75"
+        <Button
+          size="sm"
+          class="disabled:opacity-75"
+          data-testid="genomic-filter-save"
           onclick={onComplete}
           disabled={!canComplete}
         >
           Save Filter <i class="fa-solid fa-plus ml-3"></i>
-        </button>
+        </Button>
       </div>
     {:else}
-      <div class="flex justify-end my-4" data-testid="filter-options-container">
-        <button
-          data-testid="add-filter-btn"
-          type="button"
-          class="btn btn-sm preset-filled-primary-500 text-lg disabled:opacity-75"
+      <div class="flex justify-end my-4" data-testid="genomic-filter-options">
+        <Button
+          size="sm"
+          class="disabled:opacity-75"
+          data-testid="genomic-filter-add"
           title={canComplete
             ? 'Add Filter'
             : selectedOption === Option.Genomic
@@ -123,7 +113,7 @@
           disabled={!canComplete}
         >
           Add Filter <i class="fa-solid fa-plus ml-3"></i>
-        </button>
+        </Button>
       </div>
     {/if}
   {/if}

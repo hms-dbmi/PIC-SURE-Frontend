@@ -1,0 +1,234 @@
+<script lang="ts">
+  import { buttonClass } from '#lib/ui/button.ts';
+  import Button from '#lib/ui/Button.svelte';
+  import { slide } from 'svelte/transition';
+  import ConfirmDialog from '#lib/ui/dialog/ConfirmDialog.svelte';
+  import { BANNER_AUDIENCE_LABELS, type ManagementRecord } from '#lib/banners/model/banner.ts';
+  import {
+    BANNER_APPEARANCE_PRESENTATION,
+    BANNER_LIFECYCLE_PRESENTATION,
+  } from '#lib/banners/components/presentation.ts';
+  import { truncate } from '#lib/utils/strings.ts';
+  import { createSortable } from '#lib/ui/sortable/sortable.ts';
+  import SortableHandle from '#lib/ui/sortable/SortableHandle.svelte';
+  import DropPreview from '#lib/ui/sortable/DropPreview.svelte';
+
+  interface Props {
+    banner: ManagementRecord;
+    actionLabel: string;
+    open: boolean;
+    ontoggle: () => void;
+    onedit: () => void;
+    ondisable: () => void;
+    onarchive: () => void;
+    onrestore: () => void;
+    orderable?: boolean;
+    position?: number | null;
+    index?: number;
+    activeId?: string | null;
+    isOverlay?: boolean;
+    busy?: boolean;
+    disableDisabled?: boolean;
+    restoreDisabled?: boolean;
+    archiveDisabled?: boolean;
+  }
+
+  let {
+    banner,
+    actionLabel,
+    open,
+    ontoggle,
+    onedit,
+    ondisable,
+    onarchive,
+    onrestore,
+    orderable = false,
+    position = null,
+    index = 0,
+    activeId = null,
+    isOverlay = false,
+    busy = false,
+    disableDisabled = false,
+    restoreDisabled = false,
+    archiveDisabled = false,
+  }: Props = $props();
+
+  const sortable = createSortable({
+    get id() {
+      return banner.uuid;
+    },
+    get index() {
+      return index;
+    },
+    type: 'banner',
+    accept: 'banner',
+    group: 'banner-order',
+    get disabled() {
+      return !orderable || isOverlay;
+    },
+  });
+  const noopAttachment = () => {};
+  const lifecycle = $derived(BANNER_LIFECYCLE_PRESENTATION[banner.lifecycle]);
+  const panelId = $derived(`banner-${banner.uuid}-details`);
+  const editable = $derived(banner.lifecycle === 'SAVED' || banner.status === 'PUBLISHED');
+  const disableable = $derived(banner.lifecycle === 'ACTIVE' || banner.lifecycle === 'SCHEDULED');
+  const archiveable = $derived(
+    banner.lifecycle === 'SAVED' ||
+      banner.lifecycle === 'DISABLED' ||
+      banner.lifecycle === 'EXPIRED',
+  );
+  const restorable = $derived(banner.lifecycle === 'DISABLED' || banner.lifecycle === 'EXPIRED');
+
+  function scheduleSummary() {
+    if (banner.lifecycle === 'SAVED') return 'Not published';
+    const start = banner.startAt ? new Date(banner.startAt).toLocaleString() : 'No start date';
+    const end = banner.endAt ? new Date(banner.endAt).toLocaleString() : 'No end date';
+    return `${start} · ${end}`;
+  }
+
+  function pageTargetSummary() {
+    if (banner.pageTargets[0]?.kind === 'ALL') return 'All pages';
+    const values = banner.pageTargets
+      .slice(0, 4)
+      .map((target) => {
+        if (target.kind === 'ALL') return 'All pages';
+        const label =
+          target.kind === 'EXACT'
+            ? 'Exact'
+            : target.kind === 'SUBTREE'
+              ? 'Subtree'
+              : 'Parameterized';
+        return `${label}: ${truncate(target.path, 48)}`;
+      })
+      .join(' · ');
+    return `${values}${banner.pageTargets.length > 4 ? ' · + more' : ''}`;
+  }
+</script>
+
+{#snippet bannerContext()}
+  <span class="sr-only">for {actionLabel}</span>
+{/snippet}
+
+<div class="relative min-w-0" {@attach orderable && !isOverlay ? sortable.attach : noopAttachment}>
+  <article
+    class="min-w-0 overflow-hidden rounded-xl border border-surface-300 bg-white dark:bg-surface-950 {activeId ===
+      banner.uuid && !isOverlay
+      ? 'invisible'
+      : ''}"
+  >
+    <div class="flex min-h-24 items-center gap-3 p-3">
+      {#if orderable}
+        <div class="flex w-20 shrink-0 flex-col items-center gap-1">
+          <SortableHandle
+            handle={sortable.attachHandle}
+            class="rounded p-2 text-surface-600 focus-visible:ring-3 focus-visible:ring-primary-500 focus-visible:outline-none"
+            aria-label={`Reorder banner: ${actionLabel}`}
+            aria-roledescription="sortable"
+            title="Drag or use the keyboard to reorder"
+          />
+          {#if position !== null}
+            <span class="whitespace-nowrap text-xs font-bold">Position {position}</span>
+          {/if}
+        </div>
+      {/if}
+      <div class="min-w-0 flex-1">
+        <p class="m-0 overflow-hidden text-ellipsis whitespace-nowrap font-bold">
+          {banner.excerpt}
+        </p>
+        <div class="mt-2 flex flex-wrap items-center gap-2 text-sm text-surface-600">
+          <span class="rounded-full px-2 py-1 font-bold uppercase {lifecycle.badgeClass}">
+            {lifecycle.label}
+          </span>
+          <span
+            >{BANNER_APPEARANCE_PRESENTATION[banner.appearance].label} · {banner.dismissible
+              ? 'Dismissible'
+              : 'Permanent'}</span
+          >
+        </div>
+        <p class="m-0 mt-2 text-sm text-surface-600">{scheduleSummary()}</p>
+      </div>
+      <Button variant="tint" aria-expanded={open} aria-controls={panelId} onclick={ontoggle}>
+        Details {@render bannerContext()}<span aria-hidden="true">{open ? '▴' : '▾'}</span>
+      </Button>
+    </div>
+    {#if open}
+      <section
+        id={panelId}
+        class="grid gap-5 border-t border-primary-200 bg-primary-50 p-5 sm:grid-cols-2"
+        transition:slide={{ axis: 'y' }}
+      >
+        <div>
+          <h3 class="font-bold uppercase tracking-wide">Visibility</h3>
+          <p><strong>Audience:</strong> {BANNER_AUDIENCE_LABELS[banner.audience]}</p>
+          <p><strong>Pages:</strong> {pageTargetSummary()}</p>
+        </div>
+        <div>
+          <h3 class="font-bold uppercase tracking-wide">Last change</h3>
+          <p>{new Date(banner.updatedAt).toLocaleString()}</p>
+          <p>Last changed by {banner.updatedBy}</p>
+          {#if banner.restoredFromUuid}
+            <p>Restored from {banner.restoredFromUuid}</p>
+          {/if}
+        </div>
+        {#if editable || disableable || archiveable || restorable}
+          <div class="flex flex-wrap gap-2 sm:col-span-2">
+            {#if editable}
+              <Button variant="outlined" disabled={busy} onclick={onedit}>
+                Edit banner {@render bannerContext()}
+              </Button>
+            {/if}
+            {#if disableable}
+              <ConfirmDialog
+                data-testid="banner-disable-{banner.uuid}"
+                title="Disable banner?"
+                confirmLabel="Yes"
+                cancelLabel="No"
+                onconfirm={ondisable}
+                triggerClass={buttonClass('outlined-error')}
+                disabled={busy || disableDisabled}
+              >
+                {#snippet trigger()}
+                  Disable banner {@render bannerContext()}
+                {/snippet}
+                Are you sure you want to disable this banner? It stops appearing to visitors immediately
+                and moves to Saved &amp; disabled. Its content and history are kept.
+              </ConfirmDialog>
+            {/if}
+            {#if restorable}
+              <Button variant="outlined" disabled={busy || restoreDisabled} onclick={onrestore}>
+                Restore banner {@render bannerContext()}
+              </Button>
+            {/if}
+            {#if archiveable}
+              <ConfirmDialog
+                data-testid="banner-archive-{banner.uuid}"
+                title="Archive banner?"
+                confirmLabel="Yes"
+                cancelLabel="No"
+                onconfirm={onarchive}
+                triggerClass={buttonClass('outlined-error')}
+                disabled={busy || archiveDisabled}
+              >
+                {#snippet trigger()}
+                  Archive banner {@render bannerContext()}
+                {/snippet}
+                Are you sure you want to archive this banner? It leaves normal management and can no longer
+                be edited, published, or reordered here. Its content and version history are retained
+                in the database for records purposes.
+              </ConfirmDialog>
+            {/if}
+          </div>
+        {/if}
+      </section>
+    {/if}
+    <span
+      class="banner-appearance-bar block h-1 w-full {BANNER_APPEARANCE_PRESENTATION[
+        banner.appearance
+      ].swatchClass}"
+      aria-hidden="true"
+    ></span>
+  </article>
+  {#if orderable && activeId === banner.uuid && !isOverlay}
+    <DropPreview data-testid="banner-drop-preview" class="rounded-xl" label={banner.excerpt} />
+  {/if}
+</div>

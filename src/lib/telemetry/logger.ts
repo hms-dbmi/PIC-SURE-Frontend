@@ -1,0 +1,141 @@
+import { browser } from '$app/env';
+import { Internal } from '#lib/api/paths.ts';
+import { sessionHooks } from '#lib/api/sessionHooks.ts';
+import type { LogEvent } from '#lib/telemetry/types.ts';
+import type { AfterNavigate } from '$app/navigation';
+import { v4 as uuidv4 } from 'uuid';
+import { BDCPrivileges, PicsurePrivileges } from '../auth/model/privilege';
+import type { User } from '../auth/model/user';
+import { routes } from '#lib/auth/nav.ts';
+
+let associatedStudies: () => string[] = () => [];
+export function registerAssociatedStudies(provider: () => string[]) {
+  associatedStudies = provider;
+}
+
+// Registered by the session, which imports the API client, which logs through here
+let signedInUser: () => User | undefined = () => undefined;
+export function registerSignedInUser(provider: () => User | undefined) {
+  signedInUser = provider;
+}
+
+const SESSION_ID_KEY = 'log_session_id';
+
+export function getSessionId(): string {
+  let id = sessionStorage.getItem(SESSION_ID_KEY);
+  if (!id) {
+    id = uuidv4();
+    sessionStorage.setItem(SESSION_ID_KEY, id);
+  }
+  return id;
+}
+
+const RELEVANT_PRIVILEGES = new Set([
+  PicsurePrivileges.SUPER,
+  PicsurePrivileges.ADMIN,
+  PicsurePrivileges.API_ACCESS,
+  BDCPrivileges.AUTHORIZED_ACCESS,
+]);
+
+function getRelevantPrivileges(userData: User): string[] {
+  return userData.privileges?.filter((p) => RELEVANT_PRIVILEGES.has(p as PicsurePrivileges)) ?? [];
+}
+
+// The auth callback (/login/loading) carries credentials in the URL fragment or
+// query string; those must never reach the logging service.
+const REDACTED_PARAMS = ['access_token', 'id_token', 'refresh_token', 'token', 'code'];
+
+export function sanitizeLocation(): { url: string; query_string: string } {
+  const url = new URL(window.location.href);
+  url.hash = '';
+  for (const param of REDACTED_PARAMS) {
+    if (url.searchParams.has(param)) url.searchParams.set(param, 'redacted');
+  }
+  return { url: url.toString(), query_string: url.search };
+}
+
+// A goto that only changes the hash is an in-page section jump whose caller logs its
+// own event (e.g. api.toc_click); page.navigate would only say /api → /api.
+export function isHashOnlyGoto({ from, to, type }: Pick<AfterNavigate, 'from' | 'to' | 'type'>) {
+  return (
+    type === 'goto' &&
+    from?.url.pathname === to?.url.pathname &&
+    from?.url.search === to?.url.search &&
+    from?.url.hash !== to?.url.hash
+  );
+}
+
+export function log(event: LogEvent, opts?: { keepalive?: boolean }): void {
+  if (!browser) return;
+
+  const token = sessionHooks().getToken();
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  fetch(Internal.Log, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(event),
+    keepalive: opts?.keepalive ?? false,
+  }).catch((err) => {
+    console.warn('[logger] Failed to send log event:', err);
+  });
+}
+
+export function createLog(
+  eventType: string,
+  action?: string,
+  metadata?: Record<string, unknown>,
+  overrides?: Partial<LogEvent>,
+): LogEvent {
+  const event: LogEvent = {
+    _time: new Date().toISOString(),
+    event_type: eventType,
+    client_type: 'frontend',
+    app: 'PIC-SURE',
+  };
+  if (action) event.action = action;
+  const userData = signedInUser();
+  event.logged_in = !!userData;
+  if (userData) {
+    const type = sessionStorage.getItem('type') ?? undefined;
+    event.user_id = userData.userId ? userData.userId : userData.email;
+    event.user_email = userData.email?.includes('@') ? userData.email : undefined;
+    event.user_id_provider = type;
+    event.roles = getRelevantPrivileges(userData);
+    event.idp = sessionStorage.getItem('idp') || undefined;
+  }
+  if (metadata) event.metadata = metadata;
+  const studies = associatedStudies();
+  event.associated_study = studies.length ? studies : undefined;
+
+  if (browser) {
+    event.session_id = getSessionId();
+    event.hostname = window.location.hostname;
+    event.http_user_agent = navigator.userAgent;
+    event.referrer = document.referrer || undefined;
+    const { url, query_string } = sanitizeLocation();
+    event.url = url;
+    event.query_string = query_string;
+  }
+
+  if (overrides) Object.assign(event, overrides);
+
+  return event;
+}
+
+export function getPageContext(): string {
+  if (typeof window === 'undefined') return 'Unknown';
+  const path = window.location.pathname;
+  if (path === '/') return 'Landing';
+  if (path.startsWith('/login')) return 'Login';
+
+  // Match against configured routes, longest path first
+  const match = routes
+    .filter((r) => path.startsWith(r.path))
+    .sort((a, b) => b.path.length - a.path.length)[0];
+
+  return match?.text ?? 'Other';
+}

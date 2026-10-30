@@ -1,38 +1,22 @@
 <script lang="ts">
-  import { page } from '$app/state';
-  import { config } from '$lib/configuration.svelte';
+  import { config } from '#lib/config/config.svelte.ts';
 
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import Content from '$lib/components/Content.svelte';
-  import type { ExtendedUser } from '$lib/models/User';
-  import type { Role } from '$lib/models/Role';
-  import type { Connection } from '$lib/models/Connection';
+  import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
+  import Content from '#lib/shell/Content.svelte';
 
-  import UsersStore from '$lib/stores/Users';
-  import RolesStore from '$lib/stores/Roles';
-  import ConnectionStore from '$lib/stores/Connections';
-  import Loading from '$lib/components/Loading.svelte';
+  import * as admin from '#lib/admin/entities.ts';
+  import Loading from '#lib/ui/Loading.svelte';
+  import type { PageProps } from './$types';
 
-  const { loadUsers, getUser } = UsersStore;
-  const { getRole } = RolesStore;
-  const { getConnection } = ConnectionStore;
+  let { params }: PageProps = $props();
 
-  let user: ExtendedUser = $state({
-    connection: '',
-    generalMetadata: '',
-    active: false,
-    roles: [],
-  });
-  let roles: Role[] = $state([]);
-  let connection: Connection | string = $state('');
-
-  async function load() {
-    await loadUsers();
-    if (page.params?.uuid) {
-      user = await getUser(page.params.uuid);
-      connection = (await getConnection(user.connection)) || '';
-      roles = await Promise.all(user.roles.map(getRole));
-    }
+  async function load(uuid: string) {
+    const user = await admin.loadUser(uuid);
+    return {
+      user,
+      connection: await admin.connections.get(user.connection),
+      roles: await Promise.all(user.roles.map((role) => admin.roles.get(role))),
+    };
   }
 </script>
 
@@ -41,11 +25,11 @@
 </svelte:head>
 
 <Content title="User Summary" backUrl="/admin/users" backTitle="Back to Users">
-  {#await load()}
+  {#await load(params.uuid)}
     <Loading />
-  {:then}
-    <section id="role-view">
-      <table class="table bg-transparent">
+  {:then { user, connection, roles }}
+    <section id="admin-user-view">
+      <table class="table">
         <tbody>
           <tr>
             <td>Id:</td>
@@ -67,7 +51,7 @@
           {/if}
           <tr>
             <td>Connection:</td>
-            <td>{typeof connection !== 'string' ? connection.label : user.connection}</td>
+            <td>{connection.label}</td>
           </tr>
           <tr>
             <td>Roles:</td>
@@ -78,7 +62,7 @@
     </section>
   {:catch}
     <ErrorAlert title="API Error">
-      An error occured while retrieving dataset {page.params.uuid}.
+      An error occurred while retrieving user {params.uuid}.
     </ErrorAlert>
   {/await}
 </Content>

@@ -4,26 +4,42 @@ import { expect, type Page, type Locator } from '@playwright/test';
 // Sometimes, the tests are flaky because there is a race condition in the tests that
 // causes the user to not be fully logged in before some test steps.
 export const userIsLoggedIn = async (page: Page) => {
-  await expect(page.locator('#user-session-avatar').getByTestId('user-info-btn')).toBeVisible();
+  await expect(
+    page.locator('#app-nav-user').getByTestId('app-nav-user-menu-trigger'),
+  ).toBeVisible();
+};
+
+export const expectUniqueIds = async (page: Page) => {
+  const duplicates = await page.evaluate(() => {
+    const counts = new Map<string, number>();
+    for (const { id } of document.querySelectorAll('[id]'))
+      counts.set(id, (counts.get(id) ?? 0) + 1);
+    return [...counts].filter(([, count]) => count > 1).map(([id]) => id);
+  });
+  expect(duplicates).toEqual([]);
 };
 
 export const userIsLoggedOut = async (page: Page) => {
-  await expect(page.locator('#user-session-avatar').locator('#user-login-btn')).toBeVisible();
+  await expect(page.locator('#app-nav-user').locator('#app-nav-login')).toBeVisible();
 };
 
-export const optionsHaveLoaded = async (page: Page | Locator, container = 'options-container') => {
+export const optionsHaveLoaded = async (
+  page: Page | Locator,
+  container: 'available' | 'selected' = 'available',
+) => {
   await page
-    .getByTestId('optional-selection-list')
+    .getByTestId('ui-options-selection-list')
     .first()
-    .locator(`#${container} label`)
+    .getByTestId(`ui-options-selection-list-${container}`)
+    .locator('label')
     .first()
     .waitFor({ state: 'visible', timeout: 5000 });
 };
 
 export const getOption = async (page: Page | Locator, optionIndex = 0) => {
   // Use .first() to avoid strict-mode violations when multiple filter panels are briefly open
-  const component = page.getByTestId('optional-selection-list').first();
-  const optionContainer = component.locator('#options-container');
+  const component = page.getByTestId('ui-options-selection-list').first();
+  const optionContainer = component.getByTestId('ui-options-selection-list-available');
   await expect(optionContainer).toBeVisible({ timeout: 15000 });
   await optionsHaveLoaded(page);
   // Wait for at least one option to render before returning
@@ -34,13 +50,71 @@ export const getOption = async (page: Page | Locator, optionIndex = 0) => {
 
 export const nthFilterIcon = async (page: Page, rowIndex = 0) => {
   await expect(page.locator('tbody')).toBeVisible();
-  const tableBody = page.locator('tbody');
-  const firstRow = tableBody.locator('tr').nth(rowIndex);
-  return firstRow.locator('td').last().locator('button').nth(1);
+  // Data rows only: an open (or closing) expansion row between them must not shift the index
+  const row = page.locator('tbody tr[id^="explorer-table-row-"]').nth(rowIndex);
+  return row.locator('td').last().locator('button').nth(1);
 };
 
 export const clickNthFilterIcon = async (page: Page, rowIndex = 0) => {
   const filterIcon = await nthFilterIcon(page, rowIndex);
   await expect(filterIcon).toBeVisible();
   await filterIcon.click();
+};
+
+// How far #app-page is from showing the section at its top (0 without a section), or
+// Infinity while it is still moving (by 1px or more over 5 animation frames).
+const scrollDistance = (page: Page, sectionId?: string) =>
+  page.evaluate(async (sectionId) => {
+    const scroller = document.getElementById('app-page')!;
+    const start = scroller.scrollTop;
+    for (let frame = 0; frame < 5; frame++) {
+      await new Promise(requestAnimationFrame);
+    }
+    if (Math.abs(scroller.scrollTop - start) >= 1) return Infinity;
+    if (!sectionId) return 0;
+    const section = document.getElementById(sectionId)!;
+    const sectionTop =
+      section.getBoundingClientRect().top -
+      scroller.getBoundingClientRect().top +
+      scroller.scrollTop;
+    const destination = Math.min(sectionTop, scroller.scrollHeight - scroller.clientHeight);
+    return Math.abs(scroller.scrollTop - destination);
+  }, sectionId);
+
+// Waits for the scroll to land on the section and stop. A smooth scroll's last few
+// pixels still move the page, and a click Playwright retries then scrolls (smoothly)
+// again and can miss.
+export const expectSectionAligned = async (page: Page, id: string) => {
+  await expect
+    .poll(() => scrollDistance(page, id), {
+      message: `#${id} aligned and at rest (Infinity: still scrolling)`,
+    })
+    .toBeLessThan(4);
+};
+
+// #app-page scrolls smoothly, so a click that starts while it is still moving (from
+// Playwright's own scroll into view, or one already under way) can land mousedown and
+// mouseup on different elements, and the click fires on their common ancestor instead.
+export const scrollIntoViewAtRest = async (page: Page, target: Locator) => {
+  await target.scrollIntoViewIfNeeded();
+  await expect
+    .poll(() => scrollDistance(page), { message: 'page at rest (Infinity: still scrolling)' })
+    .toBe(0);
+};
+
+// Slide transitions run as Web Animations and move or clip what they contain; a click
+// that starts mid-slide can land its mouseup on another element.
+export const expectAnimationsFinished = async (locator: Locator) => {
+  await expect
+    .poll(() => locator.evaluate((element) => element.getAnimations({ subtree: true }).length))
+    .toBe(0);
+};
+
+// The genomic-filter page is reached by a client-side navigation, and a click that lands on its
+// type card while the pages are still swapping is dropped. Click until the chosen panel shows.
+export const chooseGenomicFilterType = async (page: Page, type: 'gene' | 'snp') => {
+  await expect(async () => {
+    await page.getByTestId(`genomic-type-${type}`).click();
+    await expect(page.getByTestId(`genomic-${type}-panel`)).toBeVisible({ timeout: 1000 });
+  }).toPass();
 };

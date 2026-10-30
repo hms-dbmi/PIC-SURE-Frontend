@@ -1,20 +1,13 @@
 <script lang="ts">
-  import { config } from '$lib/configuration.svelte';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import Content from '$lib/components/Content.svelte';
-  import UserForm from '$lib/components/admin/user/UserForm.svelte';
+  import { config } from '#lib/config/config.svelte.ts';
+  import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
+  import Content from '#lib/shell/Content.svelte';
+  import UserForm from '#lib/admin/users/UserForm.svelte';
 
-  import RoleStore from '$lib/stores/Roles';
-  import ConnectionsStore from '$lib/stores/Connections';
-  import Loading from '$lib/components/Loading.svelte';
+  import * as admin from '#lib/admin/entities.ts';
+  import Loading from '#lib/ui/Loading.svelte';
 
-  const { roleList, loadRoles } = RoleStore;
-  const { connections, loadConnections } = ConnectionsStore;
-
-  async function load() {
-    await loadConnections();
-    await loadRoles();
-  }
+  const load = () => Promise.all([admin.connections.load(), admin.roles.load()]);
 </script>
 
 <svelte:head>
@@ -25,8 +18,8 @@
   {#await load()}
     <Loading />
   {:then}
-    <section id="user-new">
-      <UserForm connections={$connections} roleList={$roleList} />
+    <section id="admin-user-new">
+      <UserForm connections={admin.connections.items} roleList={admin.roles.options} />
     </section>
   {:catch}
     <ErrorAlert title="API Error">Something went wrong when sending your request.</ErrorAlert>

@@ -1,0 +1,246 @@
+# Testid renames to {area}-{entity}-{action}, applied by rename-testids.ts (its header has the syntax
+# and the rebase recipe). Testids that already follow the convention keep their names.
+# The first matching line wins.
+
+# A Modal's or Popover's trigger is `<its testid>-trigger`. This line has to come before the
+# lines that would match a trigger too (`any-record-of-filter-modal-<id>` matches
+# `any-record-of-filter-modal-1-btn`), and after the testids that end in `-btn` but aren't a
+# trigger although their stem is a testid.
+add-filter-btn -> genomic-filter-add
+<id>-btn -> <id>-trigger
+
+# Shared UI
+copy -> ui-copy
+error-alert -> ui-error-alert
+show-more -> ui-show-more
+modal-wrapper-header -> ui-modal-header
+modal-close-button -> ui-modal-close
+tabs-control -> ui-tabs-control
+tabs-control-label -> ui-tabs-control-label
+optional-selection-list -> ui-options-selection-list
+toc -> ui-toc
+code-block-copy -> ui-code-block-copy
+stepper -> ui-stepper
+step-<n> -> ui-stepper-step-<n>
+# AngleButton built these from its label; its callers now pass them.
+back-btn -> ui-page-back
+next-btn -> ui-stepper-next
+done-btn -> ui-stepper-complete
+tree-item:<name>-<value> -> ui-tree-item-<name>-<value>
+tree-item-btn:<name>-<value> -> ui-tree-toggle-<name>-<value>
+checkbox:<name>-<value> -> ui-tree-checkbox-<name>-<value>
+radio:<name> -> ui-tree-radio-<name>
+tree-item-children:<name> -> ui-tree-children-<name>
+# Tables took their testid from the table name, a DOM id; now their callers pass one.
+ActiveDatasets-table -> dataset-active-table
+ArchivedDatasets-table -> dataset-archived-table
+PlatformApiKeys-table -> admin-api-key-platform-table
+UserApiKeys-table -> admin-api-key-user-table
+Roles-table -> admin-role-table
+Privileges-table -> admin-privilege-table
+Connections-table -> admin-connection-table
+Users-<label>-table -> !
+variant-explorer-table -> explorer-variant-table
+ExplorerTable-table -> explorer-results-table
+ExportSummary-table -> export-summary-table
+# HelpInfoPopup took its testid from an `id` prop that is only used for testids.
+cons-help-popup-content -> genomic-consequence-help-content
+cons-help-popup -> genomic-consequence-help
+freq-help-popup-content -> genomic-frequency-help-content
+freq-help-popup -> genomic-frequency-help
+result-count-error -> !
+
+# App shell
+nav-logo -> app-nav-logo
+logo-home-link -> app-nav-home
+user-info -> app-nav-user-menu
+terms-of-service -> app-footer-terms
+external-link-warning -> app-external-link-warning
+turnstile-widget -> app-turnstile-widget
+consentModal -> app-consent-modal
+acceptGoogleConsent -> app-consent-accept
+rejectGoogleConsent -> app-consent-reject
+
+# Landing, login, terms, user, API page
+# Built from the action title before; now by position. Renamed by hand.
+landing-action-<title>-btn -> !
+# Built from the stat label before; now by position (stat keys can repeat). Renamed by hand.
+value-<auth>-<key>-<label> -> !
+data-summary-<auth> -> landing-summary-<auth>
+login-button-<provider> -> login-provider-<provider>
+terms-reject-btn -> terms-reject
+terms-accept-btn -> terms-accept
+terms-close-btn -> terms-close
+expires-badge -> user-token-expires
+refresh -> user-token-refresh
+reveal-btn -> user-token-reveal
+public-access-key -> api-public-key
+public-key-unavailable -> api-public-key-unavailable
+public-key-captcha-failed -> api-public-key-captcha-failed
+public-key-warning -> api-public-key-warning
+public-key-value -> api-public-key-value
+public-key-expires -> api-public-key-expires
+capability-item -> api-capability-item
+workflow-<id> -> api-workflow-<id>
+
+# Admin: users, roles, privileges, connections
+add-user-btn -> admin-user-add
+user-form -> admin-user-form
+user-<id>-edit-btn -> admin-user-edit-<id>
+user-<id>-Deactivate -> admin-user-deactivate-<id>
+user-<id>-Reactivate -> admin-user-reactivate-<id>
+add-role -> admin-role-add
+role-form -> admin-role-form
+role-save-btn -> admin-role-save
+role-cancel-btn -> admin-role-cancel
+role-<id>-edit-btn -> admin-role-edit-<id>
+role-<id>-delete -> admin-role-delete-<id>
+add-privilege -> admin-privilege-add
+privilege-form -> admin-privilege-form
+privilege-save-btn -> admin-privilege-save
+privilege-cancel-btn -> admin-privilege-cancel
+# The role form's privileges; the user form's roles are admin-user-role-checkboxes.
+privilege-checkboxes -> admin-role-privilege-checkboxes
+privilege-<id>-edit-btn -> admin-privilege-edit-<id>
+privilege-<id>-delete -> admin-privilege-delete-<id>
+add-connection -> admin-connection-add
+connection-form -> admin-connection-form
+connection-save-btn -> admin-connection-save
+connection-cancel-btn -> admin-connection-cancel
+connection-<id>-edit-btn -> admin-connection-edit-<id>
+connection-<id>-delete -> admin-connection-delete-<id>
+validation-error -> admin-form-validation-error
+top-admin-only-error -> admin-top-admin-required
+
+# Admin: API keys
+api-key-list-error -> admin-api-key-list-error
+api-key-<id>-revoke -> admin-api-key-revoke-<id>
+mint-platform-key -> admin-api-key-mint
+mint-key-reveal -> admin-api-key-minted
+minted-key-warning -> admin-api-key-minted-warning
+minted-api-key -> admin-api-key-minted-value
+copy-minted-api-key -> admin-api-key-minted-copy
+done-minted-key -> admin-api-key-minted-done
+mint-key-error -> admin-api-key-mint-error
+expiry-never -> admin-api-key-expiry-never
+
+# Admin: configuration, required fields, terms, banners
+config-invalidate-cache-<kinds> -> admin-config-invalidate-cache-<kinds>
+config-api-unavailable-<kinds> -> admin-config-api-unavailable-<kinds>
+config-branding-scope-note -> admin-config-branding-scope-note
+config-search-<kinds> -> admin-config-search-<kinds>
+config-tab-<kinds> -> admin-config-tab-<kinds>
+config-group-<kinds> -> admin-config-group-<kinds>
+config-no-results-<kinds> -> admin-config-no-results-<kinds>
+config-deprecated-row-<name> -> admin-config-deprecated-row-<name>
+config-deprecated-delete-<name> -> admin-config-deprecated-delete-<name>
+config-deprecated-<kinds> -> admin-config-deprecated-<kinds>
+config-field-row-<name> -> admin-config-field-row-<name>
+config-field-description-<name> -> admin-config-field-description-<name>
+config-field-expand-<name> -> admin-config-field-expand-<name>
+config-field-origin-<name> -> admin-config-field-origin-<name>
+config-field-toggle-<name> -> admin-config-field-toggle-<name>
+config-field-input-<name> -> admin-config-field-input-<name>
+config-field-prettify-<name> -> admin-config-field-prettify-<name>
+config-field-error-<name> -> admin-config-field-error-<name>
+config-field-save-<name> -> admin-config-field-save-<name>
+config-field-reset-<name> -> admin-config-field-reset-<name>
+required-field-row-<id> -> admin-required-field-row-<id>
+required-field-new-btn -> admin-required-field-new
+required-field-save-btn -> admin-required-field-save
+required-field-reset-btn -> admin-required-field-reset
+required-field-cancel-btn -> admin-required-field-cancel
+required-field-edit-btn -> admin-required-field-edit
+required-field-delete-btn -> admin-required-field-delete
+validation-warn -> admin-required-field-validation-warning
+publish-terms -> admin-terms-publish
+appearance-swatch -> banner-appearance-swatch
+banner-<uuid>-disable -> banner-disable-<uuid>
+banner-<uuid>-archive -> banner-archive-<uuid>
+site-banner-region -> banner-region
+site-banner -> banner-item
+
+# Explorer: search, facets, variable info, hierarchy, visualizations, variants, tour
+search-box -> ui-search-input
+genomic-filter-btn -> explorer-genomic-filter-open
+show-more-facets -> explorer-facets-show-more
+facet-<name>-label -> explorer-facet-label-<name>
+facet-<name>-arrow -> explorer-facet-toggle-<name>
+facet-<name>-children -> explorer-facet-children-<name>
+facet-placeholder -> explorer-facet-placeholder
+facet-placeholder-header -> explorer-facet-placeholder-header
+facet-placeholder-content -> explorer-facet-placeholder-content
+facet-placeholder-search-button -> explorer-facet-placeholder-search
+facet-placeholder-show-more-button -> explorer-facet-placeholder-show-more
+facet-placeholder-item-<i> -> explorer-facet-placeholder-item-<i>
+variable-info -> explorer-variable-info
+show-more-variable-info -> explorer-variable-info-show-more
+show-more-dataset-info -> explorer-dataset-info-show-more
+study-info -> explorer-study-info
+show-more-study-info -> explorer-study-info-show-more
+hierarchy-component-error-modal-content -> explorer-hierarchy-error-content
+hierarchy-component-error-modal -> explorer-hierarchy-error-modal
+hierarchy-component -> explorer-hierarchy
+sendfilter-warning -> explorer-filter-warning
+excluded-visualizations-warning -> explorer-visualizations-excluded-warning
+variant-count -> explorer-variant-count
+variant-download-btn -> explorer-variant-download
+explorer-tour-btn -> explorer-tour-start
+
+# Adding a filter, the results panel, advanced filtering
+categoical-filter -> filter-categorical
+numerical-filter -> filter-numerical
+min-input -> filter-numerical-min
+max-input -> filter-numerical-max
+add-filter -> filter-add
+added-filter-<id> -> results-filter-item-<id>
+added-export-<path> -> results-export-item-<path>
+any-record-of-filter-modal-<id> -> results-filter-any-record-of-<id>
+any-record-of-filter-modal -> results-any-record-of-view
+operator-label -> results-filter-operator
+advanced-filtering-btn -> results-advanced-filtering-open
+# Two buttons shared this testid: "Reset" (filters and exports) and "Clear" (exports only, now
+# results-exports-clear). Tests used it for "Reset".
+clear-all-results-btn -> results-reset
+export-header -> results-exports-header
+distributions-btn -> results-distributions-open
+variant-explorer-btn -> results-variant-explorer-open
+genomic-filters-section -> filter-genomic-section
+genomic-and-separator -> filter-genomic-separator
+genomic-filter-item -> filter-genomic-item
+drop-preview -> filter-drop-preview
+group-drop-zone -> filter-group-drop-zone
+logic-tree-summary -> filter-logic-summary
+logic-tree-text -> filter-logic-text
+
+# Genomic filter page
+gene-variant-option -> genomic-type-gene
+snp-option -> genomic-type-snp
+search-for-gene-with-variant -> genomic-gene-panel
+select-calculated-consequence -> genomic-consequence-panel
+select-variant-frequency -> genomic-frequency-panel
+search-for-genomic-variants -> genomic-snp-panel
+# The gene and SNP pages each have one.
+summary-of-selected-filters -> genomic-summary-panel
+clear-selected-genes-btn -> genomic-gene-clear-selected
+clear-gene-filters-btn -> genomic-gene-clear-filters
+snp-search-box -> genomic-snp-search-input
+snp-search-btn -> genomic-snp-search
+snp-constraint -> genomic-snp-constraint
+snp-save-btn -> genomic-snp-save
+snp-edit-btn-<snp> -> genomic-snp-edit-<snp>
+snp-delete-btn-<snp> -> genomic-snp-delete-<snp>
+save-filter-btn -> genomic-filter-save
+filter-options-container -> genomic-filter-options
+
+# Export, datasets. The query id copy buttons were `<uuid>-copy`; now dataset-query-copy-<uuid>.
+landing-error -> export-review-error
+sample-ids-label -> export-sample-ids-label
+sample-ids-checkbox -> export-sample-ids-checkbox
+csv-export-option -> export-type-csv
+timeseries-export-option -> export-type-timeseries
+pfb-export-option -> export-type-pfb
+drawer-title -> dashboard-drawer-title
+drawer-details -> dashboard-drawer-details
+restore-filters -> dataset-restore-filters
+restore-popover -> dataset-restore-popover
