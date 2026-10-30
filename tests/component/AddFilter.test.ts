@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 
 import AddFilter from '$lib/components/explorer/AddFilter.svelte';
@@ -138,8 +138,15 @@ describe('AddFilter', () => {
       }
     }
 
-    async function loadRejectedWith(e: unknown) {
+    beforeEach(() => {
       vi.spyOn(console, 'error').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    async function loadRejectedWith(e: unknown) {
       mockGetConceptDetails.mockRejectedValue(e);
       render(AddFilter, {
         data: { ...categoricalSearchResult, values: undefined } as SearchResult,

@@ -419,6 +419,10 @@ describe('api', () => {
       body = JSON.stringify({ errorType: 'rate_limited', message: 'x', requestId: 'r1' }),
     ) => mockFetchResponse({ ok: false, status: 429, headers, body });
 
+    // toStrictEqual, unlike toHaveBeenCalledWith, tells a requestId: undefined key from a missing one
+    const rateLimitedLog = () =>
+      mockCreateLog.mock.calls.find((call) => call[1] === 'request.rate_limited')?.[2];
+
     function expectNoLogout() {
       expect(mockLogout).not.toHaveBeenCalled();
       expect(mockSetAccessDenied).not.toHaveBeenCalled();
@@ -493,12 +497,17 @@ describe('api', () => {
 
       await expect(get('picsure/test')).rejects.toThrow('Try again in 30 seconds.');
 
-      expect(mockCreateLog).toHaveBeenCalledWith(
-        'ERROR',
-        'request.rate_limited',
-        { retryAfter: 30, requestId: undefined },
-        { status: 429 },
-      );
+      expect(rateLimitedLog()).toStrictEqual({ retryAfter: 30, requestId: undefined });
+    });
+
+    it('still reports the 429 when its body cannot be read', async () => {
+      const response = tooMany({ 'Retry-After': '30' });
+      response.text = vi.fn().mockRejectedValue(new TypeError('terminated'));
+      fetchMock.mockResolvedValue(response);
+
+      await expect(get('picsure/test')).rejects.toThrow('Try again in 30 seconds.');
+
+      expect(rateLimitedLog()).toStrictEqual({ retryAfter: 30, requestId: undefined });
     });
 
     it('does not log out a logged-in user', async () => {

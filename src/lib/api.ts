@@ -205,7 +205,7 @@ async function handleResponse(res: Response, openRequest = false) {
     // waiting is the fix, so tell the user how long; a throttled request never ends a login
     const retryAfter = retryAfterSeconds(res.headers.get('Retry-After'));
     // the gateway's requestId ties this report to its 429 audit event
-    const requestId = parseRequestId(await res.text());
+    const requestId = await res.text().then(parseRequestId, () => undefined);
     log(createLog('ERROR', 'request.rate_limited', { retryAfter, requestId }, { status: 429 }));
     error(
       429,
