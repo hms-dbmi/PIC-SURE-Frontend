@@ -58,6 +58,12 @@ export const applications = createResource({
   label: (application) => application.name,
 });
 
+/** A user, with the connections and roles their pages look up by uuid loaded. */
+export async function loadUser(uuid: string) {
+  const [user] = await Promise.all([users.get(uuid), connections.load(), roles.load()]);
+  return user;
+}
+
 export async function findUserByEmailAndConnection(email: string, connection: string) {
   await users.load();
   return users.items.find((u) => u.email === email && u.connection === connection);

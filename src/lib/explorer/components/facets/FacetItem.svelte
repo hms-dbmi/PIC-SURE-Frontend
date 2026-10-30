@@ -56,32 +56,25 @@
   });
 
   let checked = $derived(checkedState(facet.name) === 'true');
-  let facetsToDisplay = $derived(
-    facet.children
-      ? [
-          ...facet.children
-            .filter((child) => {
-              const matchesFilter =
-                !textFilterValue ||
-                child.display.toLowerCase().includes(textFilterValue.toLowerCase()) ||
-                child.name.toLowerCase().includes(textFilterValue.toLowerCase()) ||
-                child.description?.toLowerCase().includes(textFilterValue.toLowerCase());
-              return matchesFilter && search.selectedFacets.some((f) => f.name === child.name);
-            })
-            .sort((a, b) => (b.count || 0) - (a.count || 0)),
-          ...facet.children
-            .filter((child) => {
-              const matchesFilter =
-                !textFilterValue ||
-                child.display.toLowerCase().includes(textFilterValue.toLowerCase()) ||
-                child.name.toLowerCase().includes(textFilterValue.toLowerCase()) ||
-                child.description?.toLowerCase().includes(textFilterValue.toLowerCase());
-              return matchesFilter && !search.selectedFacets.some((f) => f.name === child.name);
-            })
-            .sort((a, b) => (b.count || 0) - (a.count || 0)),
-        ]
-      : [],
-  );
+  function matchesFilter(child: Facet) {
+    const text = textFilterValue?.toLowerCase();
+    return (
+      !text ||
+      child.display.toLowerCase().includes(text) ||
+      child.name.toLowerCase().includes(text) ||
+      child.description?.toLowerCase().includes(text)
+    );
+  }
+  const isSelected = (child: Facet) => search.selectedFacets.some((f) => f.name === child.name);
+  const byCount = (a: Facet, b: Facet) => (b.count || 0) - (a.count || 0);
+  // Selected children first, each part by count
+  let facetsToDisplay = $derived.by(() => {
+    const shown = facet.children?.filter(matchesFilter) ?? [];
+    return [
+      ...shown.filter(isSelected).sort(byCount),
+      ...shown.filter((child) => !isSelected(child)).sort(byCount),
+    ];
+  });
   const uid = $props.id();
 </script>
 
