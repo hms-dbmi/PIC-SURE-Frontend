@@ -4,10 +4,11 @@
   import { createLog, log } from '$lib/logger';
   import { createDocsLogging } from '$lib/apiDocsLogging';
 
+  // The first listed service is shown on load: the dictionary, which every visitor can use.
   const services = [
+    { name: 'dictionary', title: 'Dictionary' },
     { name: 'hpds-query-service', title: 'Authorized Queries' },
     { name: 'hpds-open-access', title: 'Open Queries' },
-    { name: 'dictionary', title: 'Dictionary' },
   ];
   let available = $state<typeof services>([]);
   let selected = $state('');
