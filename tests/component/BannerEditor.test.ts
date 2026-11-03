@@ -23,6 +23,7 @@ import {
   restoreBanner,
   saveBanner,
   updatePublishedBanner,
+  updateSavedBanner,
 } from '$lib/services/BannerManagement';
 import { toaster } from '$lib/toaster';
 
@@ -85,6 +86,7 @@ beforeEach(() => {
   vi.mocked(updatePublishedBanner).mockReset();
   vi.mocked(restoreBanner).mockReset();
   vi.mocked(saveBanner).mockReset();
+  vi.mocked(updateSavedBanner).mockReset();
   vi.mocked(toaster.success).mockReset();
   vi.mocked(toaster.error).mockReset();
 });
@@ -660,33 +662,83 @@ describe('BannerEditor', () => {
     expect(screen.getByRole('button', { name: 'Save for later' })).toBeEnabled();
   });
 
-  it('rechecks a future end against the wall clock at submit time', async () => {
-    const now = vi.spyOn(Date, 'now');
-    now.mockReturnValue(new Date('2026-08-28T16:00:30Z').getTime());
-    vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
-      locale: 'en-US',
-      calendar: 'gregory',
-      numberingSystem: 'latn',
-      timeZone: 'America/New_York',
-    });
-    render(BannerEditor);
-    const editor = await screen.findByRole('textbox', { name: 'Banner content' });
-    editor.innerHTML = '<p>Draft content</p>';
-    await fireEvent.input(editor);
-    await fireEvent.input(screen.getByLabelText('End'), {
-      target: { value: '2026-08-28T12:01' },
-    });
-    const save = screen.getByRole('button', { name: 'Save for later' });
-    expect(save).toBeEnabled();
+  it.each([
+    ['Save for later', saveBanner],
+    ['Publish now', publishBanner],
+  ] as const)(
+    'rechecks a future end against the wall clock when clicking %s',
+    async (label, submit) => {
+      const now = vi.spyOn(Date, 'now');
+      now.mockReturnValue(new Date('2026-08-28T16:00:30Z').getTime());
+      vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+        locale: 'en-US',
+        calendar: 'gregory',
+        numberingSystem: 'latn',
+        timeZone: 'America/New_York',
+      });
+      render(BannerEditor);
+      const editor = await screen.findByRole('textbox', { name: 'Banner content' });
+      editor.innerHTML = '<p>Draft content</p>';
+      await fireEvent.input(editor);
+      await fireEvent.input(screen.getByLabelText('End'), {
+        target: { value: '2026-08-28T12:01' },
+      });
+      const button = screen.getByRole('button', { name: label });
+      expect(button).toBeEnabled();
 
-    now.mockReturnValue(new Date('2026-08-28T16:01:00Z').getTime());
-    await fireEvent.click(save);
+      now.mockReturnValue(new Date('2026-08-28T16:01:00Z').getTime());
+      await fireEvent.click(button);
 
-    expect(saveBanner).not.toHaveBeenCalled();
+      expect(submit).not.toHaveBeenCalled();
+      expect(
+        screen.getByText('End must be in the future — this banner would expire immediately.'),
+      ).toBeInTheDocument();
+      expect(button).toBeDisabled();
+    },
+  );
+
+  it('lets a saved draft with an unchanged past end save content but not publish', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-09-01T12:00:00Z').getTime());
+    vi.mocked(updateSavedBanner).mockResolvedValue({ ...saved, title: 'Corrected title' });
+    render(BannerEditor, { props: { banner: { ...saved, endAt: '2026-08-30T12:00:00Z' } } });
+
     expect(
       screen.getByText('End must be in the future — this banner would expire immediately.'),
     ).toBeInTheDocument();
-    expect(save).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Publish now' })).toBeDisabled();
+
+    await fireEvent.input(screen.getByRole('textbox', { name: 'Title' }), {
+      target: { value: 'Corrected title' },
+    });
+    await fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    await waitFor(() =>
+      expect(updateSavedBanner).toHaveBeenCalledWith(
+        saved.uuid,
+        expect.objectContaining({ title: 'Corrected title', endAt: '2026-08-30T12:00:00Z' }),
+      ),
+    );
+  });
+
+  it('saves a published banner whose unchanged end passes while editing', async () => {
+    const now = vi.spyOn(Date, 'now');
+    now.mockReturnValue(new Date('2026-09-10T11:55:00Z').getTime());
+    vi.mocked(updatePublishedBanner).mockResolvedValue(published);
+    render(BannerEditor, { props: { banner: { ...published, endAt: '2026-09-10T12:00:00Z' } } });
+    await fireEvent.input(screen.getByRole('textbox', { name: 'Title' }), {
+      target: { value: 'Corrected title' },
+    });
+
+    now.mockReturnValue(new Date('2026-09-10T12:01:00Z').getTime());
+    await fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    await waitFor(() =>
+      expect(updatePublishedBanner).toHaveBeenCalledWith(
+        published.uuid,
+        expect.objectContaining({ title: 'Corrected title', endAt: '2026-09-10T12:00:00Z' }),
+      ),
+    );
+    expect(screen.queryByText(/End must be in the future/)).not.toBeInTheDocument();
   });
 
   it.each(audienceCases)('submits %s as %s', async (label, audience) => {

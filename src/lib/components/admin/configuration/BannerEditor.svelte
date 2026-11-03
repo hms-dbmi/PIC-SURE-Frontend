@@ -143,6 +143,7 @@
   const initialEndChoice = untrack(() =>
     editorMode !== 'restore' && banner?.endAt ? new Date(banner.endAt).toISOString() : '',
   );
+  const storedEnd = untrack(() => (editorMode === 'restore' ? null : (banner?.endAt ?? null)));
   const initialPageTargets = untrack(() => banner?.pageTargets ?? [{ kind: 'ALL' as const }]);
 
   let htmlContent = $state(
@@ -214,13 +215,13 @@
   );
   const scheduleDisabled = $derived(editorMode !== 'restore' && banner?.lifecycle === 'EXPIRED');
   const restoreStartNotFuture = $derived(restoreStartIsNotFuture(scheduleValidationNow));
-  const endNotFuture = $derived(endIsNotFuture(scheduleValidationNow));
+  const endNotFuture = $derived(pastEndBlocks('publish', scheduleValidationNow));
+  const endBlocksSave = $derived(pastEndBlocks('save', scheduleValidationNow));
   const scheduleInvalid = $derived(
     (editorMode === 'edit' && banner?.status === 'PUBLISHED' && resolvedStart === null) ||
       (startLocal !== '' && resolvedStart === null) ||
       (endLocal !== '' && resolvedEnd === null) ||
       restoreStartNotFuture ||
-      endNotFuture ||
       (resolvedStart !== null &&
         resolvedEnd !== null &&
         Date.parse(resolvedEnd) <= Date.parse(resolvedStart)),
@@ -318,15 +319,18 @@
     );
   }
 
-  function endIsNotFuture(now: number) {
-    return !scheduleDisabled && resolvedEnd !== null && Date.parse(resolvedEnd) <= now;
+  function pastEndBlocks(action: 'save' | 'publish', now: number) {
+    if (scheduleDisabled || resolvedEnd === null || Date.parse(resolvedEnd) > now) return false;
+    const endChanged = storedEnd === null || Date.parse(resolvedEnd) !== Date.parse(storedEnd);
+    return endChanged || (action === 'publish' && banner?.status === 'SAVED');
   }
 
-  function scheduleExpiredBySubmit() {
+  function scheduleLapsedBeforeSubmit(action: 'save' | 'publish') {
     const now = Date.now();
-    if (!restoreStartIsNotFuture(now) && !endIsNotFuture(now)) return false;
-    scheduleValidationNow = now;
-    return true;
+    const lapsed =
+      (action === 'publish' && restoreStartIsNotFuture(now)) || pastEndBlocks(action, now);
+    if (lapsed) scheduleValidationNow = now;
+    return lapsed;
   }
 
   function snapshot() {
@@ -399,7 +403,7 @@
   }
 
   async function saveForLater() {
-    if (working || scheduleExpiredBySubmit()) return;
+    if (working || scheduleLapsedBeforeSubmit('save')) return;
     working = 'save';
     try {
       const saved = banner
@@ -420,7 +424,7 @@
   }
 
   async function publish() {
-    if (working || scheduleExpiredBySubmit()) return;
+    if (working || scheduleLapsedBeforeSubmit('publish')) return;
     working = 'publish';
     try {
       const published =
@@ -609,6 +613,7 @@
             !hasContent ||
             sanitizedLength > 5_000 ||
             scheduleInvalid ||
+            endBlocksSave ||
             pageTargetsInvalid}
           onclick={saveForLater}
         >
@@ -623,6 +628,7 @@
           !hasContent ||
           sanitizedLength > 5_000 ||
           scheduleInvalid ||
+          endNotFuture ||
           pageTargetsInvalid}
       >
         {working === 'publish' ? publishCopy.busyLabel : publishCopy.submitLabel}
