@@ -2,6 +2,7 @@ import { error, type NumericRange } from '@sveltejs/kit';
 import type { ConfigObject, ConfigCache, ConfigKind } from '$lib/models/Configuration';
 import { CONFIG_API_KIND } from '$lib/models/Configuration';
 import { Picsure, joinUrl } from '$lib/paths';
+import { CLIENT_TYPE_HEADERS } from '$lib/clientType';
 import { withBackoff } from '$lib/utilities/backoff';
 
 const ORIGIN = import.meta.env?.VITE_ORIGIN;
@@ -44,7 +45,7 @@ async function fetchWithRetry(url: string, type: string): Promise<ConfigObject[]
   try {
     // +1 because MAX_RETRIES counts retries after the first attempt, not total attempts.
     return await withBackoff(
-      () => fetch(url, { method: 'GET' }).then(handleResponse),
+      () => fetch(url, { method: 'GET', headers: CLIENT_TYPE_HEADERS }).then(handleResponse),
       MAX_RETRIES + 1,
       INITIAL_DELAY,
       MAX_DELAY,

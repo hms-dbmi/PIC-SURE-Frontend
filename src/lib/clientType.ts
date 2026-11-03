@@ -1,3 +1,3 @@
-// The backend audit log records this header as the event's caller, the same way the Python and R
-// adapters identify themselves, so a request without it reads as a direct API call.
+// Backend audit logs read this header to tell frontend traffic from direct API calls; the Python
+// and R adapters send PYTHON_ADAPTER and R_ADAPTER.
 export const CLIENT_TYPE_HEADERS = { 'X-Client-Type': 'FRONTEND' } as const;
