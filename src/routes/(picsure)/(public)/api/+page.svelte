@@ -381,7 +381,7 @@
                 onclick={() => loginClick('public_notice')}>log in</a
               >.
             </p>
-            {#if rateLimits}
+            {#if rateLimits && !config.branding.apiPage.publicKeyEnabled}
               <p class="mx-0 mt-2" data-testid="api-rate-limits">{rateLimits}</p>
             {/if}
           </div>

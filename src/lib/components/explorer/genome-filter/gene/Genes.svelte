@@ -59,7 +59,9 @@
       allOptionsLoaded = newGenes.length < pageSize;
     } catch (error) {
       console.error(error);
-      toaster.error({ title: 'An error occurred while loading genes list.' });
+      toaster.error({
+        title: api.userMessage(error, 'An error occurred while loading genes list.'),
+      });
     } finally {
       loading = false;
     }

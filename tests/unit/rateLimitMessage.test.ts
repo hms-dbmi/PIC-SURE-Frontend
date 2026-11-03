@@ -20,7 +20,7 @@ vi.mock('$lib/wafCaptcha', () => ({
 }));
 
 // @sveltejs/kit is left unmocked on purpose: error() must throw a real HttpError.
-import { get, rateLimitMessage } from '$lib/api';
+import { get, rateLimitMessage, userMessage } from '$lib/api';
 
 describe('rateLimitMessage', () => {
   let fetchMock: Mock;
@@ -63,5 +63,26 @@ describe('rateLimitMessage', () => {
     expect(rateLimitMessage(new Error('429: slow down'))).toBeUndefined();
     expect(rateLimitMessage(undefined)).toBeUndefined();
     expect(rateLimitMessage('a string')).toBeUndefined();
+  });
+});
+
+describe('userMessage', () => {
+  it.each([
+    [403, { errorType: 'consent_denied', message: 'Consent required' }, 'Consent required'],
+    [429, { message: 'Wait 30 seconds' }, 'Wait 30 seconds'],
+    [500, { message: 'Internal error' }, 'Fallback'],
+    [403, { message: 'Forbidden' }, 'Fallback'],
+  ])('selects the user message for HTTP %s', async (status, body, expected) => {
+    const { error } = await import('@sveltejs/kit');
+    let rejection: unknown;
+    try {
+      error(status, body);
+    } catch (e) {
+      rejection = e;
+    }
+    expect(userMessage(rejection, 'Fallback')).toBe(expected);
+  });
+  it.each([undefined, 'oops', new Error('failure')])('uses fallback for %s', (e) => {
+    expect(userMessage(e, 'Fallback')).toBe('Fallback');
   });
 });

@@ -149,18 +149,23 @@ describe('API page rate limits', () => {
     window.location.hash = '';
   });
 
-  it('publishes the configured limits on the page and beside the public key', async () => {
-    config.branding.apiPage = {
-      ...config.branding.apiPage,
-      publicKeyEnabled: true,
-      rateLimits: { perMinute: 60, perDay: 3000 },
-    };
-    render(ApiPage);
-    await tick();
+  it.each([true, false])(
+    'publishes limits once with publicKeyEnabled=%s',
+    async (publicKeyEnabled) => {
+      config.branding.apiPage = {
+        ...config.branding.apiPage,
+        publicKeyEnabled,
+        rateLimits: { perMinute: 60, perDay: 3000 },
+      };
+      render(ApiPage);
+      await tick();
 
-    expect(screen.getByTestId('api-rate-limits')).toHaveTextContent(LIMITS);
-    expect(screen.getByTestId('public-key-rate-limits')).toHaveTextContent(LIMITS);
-  });
+      expect(screen.getAllByText(LIMITS)).toHaveLength(1);
+      expect(
+        screen.getByTestId(publicKeyEnabled ? 'public-key-rate-limits' : 'api-rate-limits'),
+      ).toHaveTextContent(LIMITS);
+    },
+  );
 
   it('hides the limits from a logged-in user', async () => {
     config.branding.apiPage = {

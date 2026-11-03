@@ -29,9 +29,9 @@ vi.mock('$lib/wafCaptcha', () => ({
 }));
 
 // @sveltejs/kit is left unmocked on purpose: error() must throw a real HttpError.
-import { get, consentDeniedMessage, CONSENT_DENIED_MESSAGE } from '$lib/api';
+import { get, userMessage, CONSENT_DENIED_MESSAGE } from '$lib/api';
 
-describe('consentDeniedMessage', () => {
+describe('userMessage', () => {
   let fetchMock: Mock;
 
   beforeEach(() => {
@@ -62,7 +62,7 @@ describe('consentDeniedMessage', () => {
     const e = await rejectionFrom(
       JSON.stringify({ errorType: 'consent_denied', message: CONSENT_DENIED_MESSAGE }),
     );
-    expect(consentDeniedMessage(e)).toBe(CONSENT_DENIED_MESSAGE);
+    expect(userMessage(e, 'Fallback')).toBe(CONSENT_DENIED_MESSAGE);
   });
 
   it('keeps a study-specific message from the server', async () => {
@@ -72,12 +72,12 @@ describe('consentDeniedMessage', () => {
         message: 'Consent for phs000007 was withdrawn',
       }),
     );
-    expect(consentDeniedMessage(e)).toBe('Consent for phs000007 was withdrawn');
+    expect(userMessage(e, 'Fallback')).toBe('Consent for phs000007 was withdrawn');
   });
 
   it('falls back to the default message when the server omits one', async () => {
     const e = await rejectionFrom(JSON.stringify({ errorType: 'consent_denied' }));
-    expect(consentDeniedMessage(e)).toBe(CONSENT_DENIED_MESSAGE);
+    expect(userMessage(e, 'Fallback')).toBe(CONSENT_DENIED_MESSAGE);
   });
 
   it('preserves the session on a denial', async () => {
@@ -87,26 +87,26 @@ describe('consentDeniedMessage', () => {
 
   it('ignores a 403 that is not a consent denial', async () => {
     const e = await rejectionFrom(JSON.stringify({ errorType: 'other', message: 'nope' }));
-    expect(consentDeniedMessage(e)).toBeUndefined();
+    expect(userMessage(e, 'Fallback')).toBe('Fallback');
   });
 
   it('ignores a plain-text 403', async () => {
     const e = await rejectionFrom('Forbidden');
-    expect(consentDeniedMessage(e)).toBeUndefined();
+    expect(userMessage(e, 'Fallback')).toBe('Fallback');
   });
 
   it('ignores a 500', async () => {
     const e = await rejectionFrom('Internal Server Error', 500);
-    expect(consentDeniedMessage(e)).toBeUndefined();
+    expect(userMessage(e, 'Fallback')).toBe('Fallback');
   });
 
   it('ignores an ordinary Error that happens to quote the consent wording', () => {
-    expect(consentDeniedMessage(new Error(`403: ${CONSENT_DENIED_MESSAGE}`))).toBeUndefined();
+    expect(userMessage(new Error(`403: ${CONSENT_DENIED_MESSAGE}`), 'Fallback')).toBe('Fallback');
   });
 
   it('ignores values that are not errors', () => {
-    expect(consentDeniedMessage(undefined)).toBeUndefined();
-    expect(consentDeniedMessage(null)).toBeUndefined();
-    expect(consentDeniedMessage('a string')).toBeUndefined();
+    expect(userMessage(undefined, 'Fallback')).toBe('Fallback');
+    expect(userMessage(null, 'Fallback')).toBe('Fallback');
+    expect(userMessage('a string', 'Fallback')).toBe('Fallback');
   });
 });

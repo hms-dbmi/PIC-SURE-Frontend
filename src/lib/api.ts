@@ -24,12 +24,13 @@ export function isAbortError(e: unknown): boolean {
   return (e as Error | undefined)?.name === 'AbortError';
 }
 
-// HttpError carries its text at body.message; it has no message of its own.
-export function consentDeniedMessage(e: unknown): string | undefined {
-  return isHttpError(e, 403) && e.body.errorType === CONSENT_DENIED ? e.body.message : undefined;
+export function userMessage(e: unknown, fallback: string): string {
+  return isHttpError(e) &&
+    (e.status === 429 || (e.status === 403 && e.body.errorType === CONSENT_DENIED))
+    ? e.body.message
+    : fallback;
 }
 
-// handleResponse's 429 text says how long to wait, which a caller's generic error text would lose
 export function rateLimitMessage(e: unknown): string | undefined {
   return isHttpError(e, 429) ? e.body.message : undefined;
 }

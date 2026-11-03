@@ -37,6 +37,8 @@ describe('HierarchyComponent', () => {
 
     expect(await screen.findByText(message, { selector: 'p' })).toBeInTheDocument();
     expect(screen.queryByText('Error loading hierarchy')).toBeNull();
+    expect(screen.getByText(`429: ${message}`)).toBeInTheDocument();
+    expect(screen.queryByText('[object Object]')).toBeNull();
   });
 
   it('keeps the generic error for other failures', async () => {

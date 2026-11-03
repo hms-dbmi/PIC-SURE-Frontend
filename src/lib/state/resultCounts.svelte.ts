@@ -173,7 +173,10 @@ export class ResultCounts {
   }
 
   #showErrorToast(message?: string): void {
-    if (isToastShowing('query-error')) return;
+    if (isToastShowing('query-error')) {
+      if (message) toaster.update('query-error', { title: message });
+      return;
+    }
     toaster.error({
       id: 'query-error',
       duration: 4000,

@@ -47,8 +47,8 @@ vi.mock('$lib/logger', () => ({
 }));
 
 vi.mock('$lib/api', async (importOriginal) => {
-  const { isAbortError, rateLimitMessage } = await importOriginal<typeof import('$lib/api')>();
-  return { isAbortError, rateLimitMessage };
+  const { isAbortError, userMessage } = await importOriginal<typeof import('$lib/api')>();
+  return { isAbortError, userMessage };
 });
 
 import type { State } from '@vincjo/datatables/server';
