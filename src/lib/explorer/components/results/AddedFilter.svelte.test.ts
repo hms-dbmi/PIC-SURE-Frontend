@@ -1,0 +1,121 @@
+// @vitest-environment happy-dom
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/svelte';
+
+vi.mock('#lib/telemetry/logger.ts', () => ({
+  log: vi.fn(),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  createLog: vi.fn((eventType: any, action: any, metadata: any) => ({
+    event_type: eventType,
+    action,
+    metadata,
+  })),
+}));
+
+vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
+
+vi.mock('#lib/query/genomicDraft.svelte.ts', () => ({
+  genomicDraft: { loadGeneFilter: vi.fn(), loadSnpFilter: vi.fn() },
+}));
+
+vi.mock('#lib/query/filters.svelte.ts', () => ({
+  filterState: { remove: vi.fn(), update: vi.fn(), enrich: vi.fn() },
+}));
+
+vi.mock('#lib/explorer/Dictionary.ts', () => ({ getConceptDetails: vi.fn() }));
+
+import AddedFilter from '#lib/explorer/components/results/AddedFilter.svelte';
+import { log } from '#lib/telemetry/logger.ts';
+import { filterState } from '#lib/query/filters.svelte.ts';
+import { explorerPanel } from '#lib/explorer/panel.svelte.ts';
+import type { Filter } from '#lib/query/filter.svelte.ts';
+import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
+
+const searchResult = {
+  conceptPath: '\\test\\concept\\',
+  dataset: 'dataset-1',
+  name: 'variable-accession',
+  display: 'Variable Display',
+  description: 'Variable description',
+  type: 'Categorical',
+  allowFiltering: true,
+  values: ['value-1', 'value-2', 'value-3'],
+} as SearchResult;
+
+const categoricalFilter = {
+  parent: undefined,
+  uuid: 'filter-uuid',
+  id: searchResult.conceptPath,
+  filterType: 'Categorical',
+  displayType: 'restrict',
+  searchResult,
+  categoryValues: ['value-1'],
+  variableName: 'Variable Display',
+  description: searchResult.description,
+  allowFiltering: true,
+  dataset: 'dataset-1',
+} as Filter;
+
+const genomicFilter = {
+  parent: undefined,
+  uuid: 'genomic-uuid',
+  id: 'genomic-id',
+  filterType: 'genomic',
+  variableName: 'Gene With Variant',
+  categoryValues: [],
+} as unknown as Filter;
+
+describe('AddedFilter', () => {
+  beforeEach(() => vi.mocked(log).mockClear());
+
+  // Regression guard for ALS-12904: the edit control for phenotypic filters is
+  // Dialog's trigger button, which is a different code path from the genomic
+  // button below and previously logged nothing.
+  it('logs filter.edit_click when a phenotypic filter is edited', async () => {
+    render(AddedFilter, { filter: categoricalFilter });
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Edit Filter' }));
+
+    expect(log).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event_type: 'ACTION',
+        action: 'filter.edit_click',
+        metadata: { variable: 'Variable Display' },
+      }),
+    );
+  });
+
+  it('logs filter.edit_click when a genomic filter is edited', async () => {
+    render(AddedFilter, { filter: genomicFilter });
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Edit Filter' }));
+
+    expect(log).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event_type: 'ACTION',
+        action: 'filter.edit_click',
+        metadata: { variable: 'Gene With Variant' },
+      }),
+    );
+  });
+
+  it('saves an edited filter in place and shows it in the open panel', async () => {
+    explorerPanel.hide();
+    render(AddedFilter, { filter: categoricalFilter });
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Edit Filter' }));
+    await fireEvent.click(await screen.findByRole('checkbox', { name: 'value-2' }));
+    await fireEvent.click(screen.getByTestId('filter-add'));
+
+    const [uuid, edited] = vi.mocked(filterState.update).mock.calls[0];
+    expect(uuid).toBe('filter-uuid');
+    expect(edited).toMatchObject({
+      displayType: 'restrict',
+      categoryValues: ['value-1', 'value-2'],
+    });
+    expect(filterState.enrich).toHaveBeenCalledWith(edited, searchResult.conceptPath, 'dataset-1');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(explorerPanel.open).toBe(true);
+  });
+});

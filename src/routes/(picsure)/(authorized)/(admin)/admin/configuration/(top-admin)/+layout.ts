@@ -1,15 +1,5 @@
 import type { LayoutLoad } from './$types';
-import { browser } from '$app/environment';
-import { redirect } from '@sveltejs/kit';
-import { isTopAdmin } from '$lib/stores/User';
-import { get } from 'svelte/store';
+import { ACCESS } from '#lib/auth/access.ts';
+import { requireAccess } from '#lib/auth/guard.ts';
 
-// Role, privilege, and connection management is top admin only: PSAMA rejects their writes
-// for plain admins, and the Access Control tab is hidden from them.
-export const load: LayoutLoad = async ({ parent }) => {
-  // Wait for the authorized layout to load the user in a fresh tab.
-  await parent();
-  if (browser && !get(isTopAdmin)) {
-    redirect(302, '/admin/configuration');
-  }
-};
+export const load: LayoutLoad = (event) => requireAccess(event, ACCESS.topAdmin);

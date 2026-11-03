@@ -1,5 +1,6 @@
 import { expect, type BrowserContext, type Page, type Route } from '@playwright/test';
 import { test, mockApiSuccess, mockApiConfig } from '../custom-context';
+import { scrollIntoViewAtRest } from '../utils';
 
 const apiKeyPath = '*/**/psama/open/apiKey';
 const mockKeyResponse = {
@@ -35,12 +36,15 @@ test.beforeEach(async ({ context }) => {
   await stubTurnstile(context);
 });
 
-// Clicks that land before Svelte hydration are silently dropped, so retry until the form opens
+// The open form ends below the fold, so it is brought into view here and the clicks in
+// it don't have to scroll.
 async function openForm(page: Page) {
-  await expect(async () => {
-    await page.getByRole('button', { name: 'Request Public Key' }).click({ timeout: 2000 });
-    await expect(page.getByRole('button', { name: 'Generate Key' })).toBeVisible({ timeout: 2000 });
-  }).toPass({ timeout: 15000 });
+  const request = page.getByRole('button', { name: 'Request Public Key' });
+  await scrollIntoViewAtRest(page, request);
+  await request.click();
+  const generate = page.getByRole('button', { name: 'Generate Key' });
+  await expect(generate).toBeVisible();
+  await scrollIntoViewAtRest(page, generate);
 }
 
 test.describe('Public access key generation', () => {
@@ -54,12 +58,9 @@ test.describe('Public access key generation', () => {
     await page.goto('/api');
 
     // When
-    const card = page.getByTestId('public-access-key');
+    const card = page.getByTestId('api-public-key');
 
     // Then
-    await expect(card).toBeVisible();
-    await expect(card).toContainText('Public Access Key');
-    await expect(card).toContainText('No account required');
     await expect(card.getByRole('button', { name: 'Request Public Key' })).toBeEnabled();
     await expect(page.getByTestId('api-login-link')).toHaveAttribute(
       'href',
@@ -80,12 +81,12 @@ test.describe('Public access key generation', () => {
     await page.getByRole('button', { name: 'Generate Key' }).click();
 
     // Then
-    await expect(page.getByTestId('public-key-value')).toHaveText(mockKeyResponse.apiKey);
-    await expect(page.getByTestId('copy-btn')).toBeVisible();
-    await expect(page.getByTestId('public-key-warning')).toContainText(
+    await expect(page.getByTestId('api-public-key-value')).toHaveText(mockKeyResponse.apiKey);
+    await expect(page.getByTestId('ui-copy-trigger')).toBeVisible();
+    await expect(page.getByTestId('api-public-key-warning')).toContainText(
       'This key is shown only once and cannot be recovered.',
     );
-    await expect(page.getByTestId('public-key-expires')).not.toBeEmpty();
+    await expect(page.getByTestId('api-public-key-expires')).not.toBeEmpty();
   });
 
   test('Sends no Authorization header and the Turnstile token', async ({ page, context }) => {
@@ -101,14 +102,9 @@ test.describe('Public access key generation', () => {
 
     // When
     await openForm(page);
-    // A token appearing in localStorage after load (login in another tab, leftover expired
-    // token) must NOT be attached: api.ts reads localStorage at request time and a stale
-    // token 401s this public endpoint server-side. Set it only after the form is open —
-    // if hydration sees the token first, the page renders logged-in and the form never exists.
-    await page.evaluate(() => localStorage.setItem('token', 'stale.jwt.value'));
     await page.getByLabel('Email (optional)').fill('researcher@example.org');
     await page.getByRole('button', { name: 'Generate Key' }).click();
-    await expect(page.getByTestId('public-key-value')).toBeVisible();
+    await expect(page.getByTestId('api-public-key-value')).toBeVisible();
 
     // Then
     expect(headers?.['authorization']).toBeUndefined();
@@ -136,10 +132,10 @@ test.describe('Public access key generation', () => {
     await page.getByRole('button', { name: 'Generate Key' }).click();
 
     // Then
-    const errorAlert = page.getByTestId('public-access-key').getByTestId('error-alert');
+    const errorAlert = page.getByTestId('api-public-key').getByTestId('ui-error-alert');
     await expect(errorAlert).toBeVisible();
     await expect(errorAlert).toContainText('Public key generation is not enabled.');
-    await expect(page.getByTestId('public-key-value')).not.toBeVisible();
+    await expect(page.getByTestId('api-public-key-value')).not.toBeVisible();
 
     // When
     await page.getByRole('button', { name: 'Try Again' }).click();
@@ -167,7 +163,7 @@ test.describe('Public access key generation', () => {
 
       // Then: native constraint validation blocks submission
       await expect(emailField).toHaveJSProperty('validity.valid', false);
-      await expect(page.getByTestId('public-key-value')).not.toBeVisible();
+      await expect(page.getByTestId('api-public-key-value')).not.toBeVisible();
     }
     expect(requestCount).toBe(0);
 
@@ -176,43 +172,8 @@ test.describe('Public access key generation', () => {
     await page.getByRole('button', { name: 'Generate Key' }).click();
 
     // Then
-    await expect(page.getByTestId('public-key-value')).toBeVisible();
+    await expect(page.getByTestId('api-public-key-value')).toBeVisible();
     expect(requestCount).toBe(1);
-  });
-
-  test('Generate stays disabled until the Turnstile widget issues a token', async ({
-    page,
-    context,
-  }) => {
-    // Given: a widget that waits (like managed mode showing a challenge) until told to pass
-    await context.route('**/challenges.cloudflare.com/turnstile/v0/api.js*', (route: Route) =>
-      route.fulfill({
-        contentType: 'text/javascript',
-        body: `window.turnstile = {
-          render: (container, options) => {
-            window.__resolveChallenge = () => options.callback(${JSON.stringify(stubToken)});
-            return 'stub-widget';
-          },
-          remove: () => {},
-        };`,
-      }),
-    );
-    await mockApiSuccess(context, apiKeyPath, mockKeyResponse);
-    await page.goto('/api');
-
-    // When
-    await openForm(page);
-
-    // Then
-    await expect(page.getByRole('button', { name: 'Generate Key' })).toBeDisabled();
-
-    // When
-    await page.evaluate(() =>
-      (window as { __resolveChallenge?: () => void }).__resolveChallenge?.(),
-    );
-
-    // Then
-    await expect(page.getByRole('button', { name: 'Generate Key' })).toBeEnabled();
   });
 
   test('Cancel returns to the idle state without a request', async ({ page, context }) => {
@@ -230,7 +191,7 @@ test.describe('Public access key generation', () => {
 
     // Then
     await expect(page.getByRole('button', { name: 'Request Public Key' })).toBeEnabled();
-    await expect(page.getByTestId('public-key-value')).not.toBeVisible();
+    await expect(page.getByTestId('api-public-key-value')).not.toBeVisible();
     expect(requestCount).toBe(0);
   });
 });

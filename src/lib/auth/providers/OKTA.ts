@@ -1,0 +1,35 @@
+import OktaBaseProvider, { type OktaBaseData as OktaData } from './OktaBaseProvider';
+
+class OKTA extends OktaBaseProvider {
+  constructor(data: OktaData) {
+    if (
+      data.uri === undefined ||
+      data.clientid === undefined ||
+      data.idp === undefined ||
+      data.oktalogouturl === undefined
+    ) {
+      throw new Error('Missing required OKTA parameter(s).');
+    }
+    super(data);
+    this.logouturl = data.logouturl || '';
+  }
+
+  protected get psamaProvider(): string {
+    return this.idp;
+  }
+
+  protected get logoutRedirectUri(): string {
+    return encodeURI(
+      this.logouturl ||
+        `${window.location.protocol}//${window.location.hostname}${
+          window.location.port ? ':' + window.location.port : ''
+        }/login`,
+    );
+  }
+
+  // OKTA logout flow: App -> Okta -> (this.logouturl || App)
+  logout = (): Promise<string> => Promise.resolve(this.oktaLogoutRedirectURI);
+}
+
+export default OKTA;
+export type { OktaData as AuthType };

@@ -1,0 +1,168 @@
+<script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
+  import { buttonClass } from '#lib/ui/button.ts';
+  import Dialog from '#lib/ui/dialog/Dialog.svelte';
+  import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
+  import CopyButton from '#lib/ui/CopyButton.svelte';
+
+  import { session } from '#lib/auth/session.svelte.ts';
+  import { apiKeys } from '#lib/admin/apiKeys/apiKeys.svelte.ts';
+  import {
+    extractApiError,
+    formatInstant,
+    formatKeyPrefix,
+    toPlatformKeyRequest,
+    type MintedPlatformKey,
+    type PlatformKeyExpiry,
+  } from '#lib/admin/apiKeys/model.ts';
+  import { cardClass, warningMessageClass } from '#lib/ui/surface.ts';
+
+  let open = $state(false);
+  let name = $state('');
+  let email = $state('');
+  let expiryMode: PlatformKeyExpiry['mode'] = $state('default');
+  let expiryDate = $state('');
+  let mintError = $state('');
+  let isSubmitting = $state(false);
+  // once set, the same dialog swaps from the form to the see-once reveal; keeping it a single
+  // Dialog instance avoids a second dialog whose layer collides with the closing form dialog
+  let minted: MintedPlatformKey | null = $state(null);
+  let mintedPrefix = $derived.by(() =>
+    minted ? formatKeyPrefix(minted.keyType, minted.displayPrefix) : '',
+  );
+
+  // keys expire at 00:00 UTC, so the earliest selectable day must be computed in UTC too
+  const minExpiryDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+  function clearState() {
+    name = '';
+    email = '';
+    expiryMode = 'default';
+    expiryDate = '';
+    mintError = '';
+    minted = null;
+  }
+
+  function close() {
+    open = false;
+    clearState();
+  }
+
+  async function submit(event: SubmitEvent) {
+    event.preventDefault();
+    if (isSubmitting) return;
+
+    isSubmitting = true;
+    mintError = '';
+    const expiry: PlatformKeyExpiry =
+      expiryMode === 'date' ? { mode: 'date', date: expiryDate } : { mode: expiryMode };
+    try {
+      minted = await apiKeys.mintPlatform(toPlatformKeyRequest(name, email, expiry));
+    } catch (error) {
+      mintError = extractApiError(error);
+    } finally {
+      isSubmitting = false;
+    }
+  }
+</script>
+
+<Dialog
+  bind:open
+  data-testid="admin-api-key-mint"
+  title={minted ? 'Platform API Key Created' : 'Mint Platform API Key'}
+  size="form"
+  disabled={!session.isTopAdmin}
+  closeable={!minted && !isSubmitting}
+  onclose={clearState}
+  triggerClass={buttonClass('tonal')}
+>
+  {#snippet trigger()}+ Mint Platform Key{/snippet}
+  {#if minted}
+    <div data-testid="admin-api-key-minted">
+      <div
+        role="alert"
+        data-testid="admin-api-key-minted-warning"
+        class="{cardClass} {warningMessageClass} p-3 my-4 font-bold"
+      >
+        This key is shown only once and cannot be recovered. Copy it now and store it securely.
+      </div>
+      <div class="flex items-center gap-2 my-4">
+        <code data-testid="admin-api-key-minted-value" class="code font-mono break-all p-2 grow"
+          >{minted.apiKey}</code
+        >
+        <CopyButton
+          itemToCopy={minted.apiKey}
+          data-testid="admin-api-key-minted-copy"
+          variant="filled"
+        />
+      </div>
+      <p class="my-2">
+        Key prefix: <code class="code">{mintedPrefix}</code>
+        &middot; Expires: {formatInstant(minted.expiresAt, 'Never')}
+      </p>
+      <footer class="flex justify-end mt-6">
+        <Button data-testid="admin-api-key-minted-done" onclick={close}>Done</Button>
+      </footer>
+    </div>
+  {:else}
+    <form onsubmit={submit} class="mt-4">
+      {#if mintError}
+        <ErrorAlert title="Unable to mint key" data-testid="admin-api-key-mint-error">
+          <p>{mintError}</p>
+        </ErrorAlert>
+      {/if}
+      <fieldset class="grid gap-4 my-3" disabled={isSubmitting}>
+        <label class="label required">
+          <span>Name:</span>
+          <input type="text" bind:value={name} class="input" required maxlength="255" />
+        </label>
+        <label class="label required">
+          <span>Email:</span>
+          <input type="email" bind:value={email} class="input" required maxlength="255" />
+        </label>
+        <div class="grid gap-2" role="radiogroup" aria-label="Expiration">
+          <span class="font-semibold">Expiration:</span>
+          <label class="flex items-center gap-2">
+            <input type="radio" class="radio" bind:group={expiryMode} value="default" />
+            <span>Default (server policy)</span>
+          </label>
+          <label class="flex items-center gap-2">
+            <input type="radio" class="radio" bind:group={expiryMode} value="date" />
+            <span>Custom date</span>
+          </label>
+          {#if expiryMode === 'date'}
+            <label class="label ml-7">
+              <span>Expiration date (expires at 00:00 UTC):</span>
+              <input
+                type="date"
+                bind:value={expiryDate}
+                class="input"
+                min={minExpiryDate}
+                required
+              />
+            </label>
+          {/if}
+          <label class="flex items-center gap-2">
+            <input
+              type="radio"
+              class="radio"
+              bind:group={expiryMode}
+              value="never"
+              data-testid="admin-api-key-expiry-never"
+            />
+            <span>
+              Never expires
+              <span class="text-warning-600 font-semibold">— not recommended</span>
+            </span>
+          </label>
+        </div>
+      </fieldset>
+      <footer class="flex justify-end space-x-2 mt-6">
+        <Button variant="soft" onclick={close} disabled={isSubmitting}>Cancel</Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Minting…' : 'Mint Key'}
+        </Button>
+      </footer>
+    </form>
+  {/if}
+</Dialog>

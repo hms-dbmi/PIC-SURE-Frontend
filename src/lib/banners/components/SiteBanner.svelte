@@ -1,0 +1,143 @@
+<script lang="ts">
+  import type { BannerIcon, BannerPresentation } from '#lib/banners/model/banner.ts';
+  import { BANNER_LABEL_LENGTH } from '#lib/banners/model/limits.ts';
+  import { BANNER_APPEARANCE_PRESENTATION } from '#lib/banners/components/presentation.ts';
+  import { sanitizeBannerHTML } from '#lib/banners/model/html.ts';
+  import { truncate } from '#lib/utils/strings.ts';
+
+  let {
+    banner,
+    ondismiss,
+    untitledName = 'Site announcement',
+    titleLevel = 2,
+  }: {
+    banner: BannerPresentation;
+    ondismiss?: (event: MouseEvent) => void;
+    untitledName?: string;
+    titleLevel?: 2 | 3;
+  } = $props();
+
+  const titleId = $props.id();
+  const contentId = `${titleId}-content`;
+
+  const iconClasses: Record<BannerIcon, string | undefined> = {
+    NONE: undefined,
+    INFORMATION: 'fa-circle-info',
+    SUCCESS: 'fa-circle-check',
+    WARNING: 'fa-triangle-exclamation',
+    ERROR: 'fa-circle-exclamation',
+  };
+
+  const dismissLabel = $derived(
+    `Dismiss ${banner.title ? truncate(banner.title, BANNER_LABEL_LENGTH) : untitledName}`,
+  );
+</script>
+
+<section
+  aria-labelledby={banner.title ? titleId : undefined}
+  aria-label={banner.title ? undefined : untitledName}
+  aria-describedby={contentId}
+  data-testid="banner-item"
+  class="w-full border-b-4 px-4 py-1.5 {BANNER_APPEARANCE_PRESENTATION[banner.appearance]
+    .toneClass}"
+>
+  <div
+    class="site-banner-layout mx-auto grid w-full items-center gap-3"
+    class:has-dismiss={banner.dismissible && !!ondismiss}
+  >
+    <div
+      class="site-banner-message flex min-w-0 max-w-full items-center gap-3 justify-self-center text-left"
+    >
+      {#if iconClasses[banner.icon]}
+        <i
+          class="site-banner-icon fa-solid {iconClasses[banner.icon]} flex-none text-lg"
+          aria-hidden="true"
+        ></i>
+      {/if}
+      <div class="min-w-0">
+        {#if banner.title}
+          {#if titleLevel === 3}
+            <h3 id={titleId} class="site-banner-title">{banner.title}</h3>
+          {:else}
+            <h2 id={titleId} class="site-banner-title">{banner.title}</h2>
+          {/if}
+        {/if}
+        <div id={contentId} class="site-banner-content text-sm leading-5">
+          <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+          {@html sanitizeBannerHTML(banner.htmlContent)}
+        </div>
+      </div>
+    </div>
+    {#if banner.dismissible && ondismiss}
+      <button
+        type="button"
+        data-banner-dismiss
+        class="site-banner-dismiss flex h-11 w-11 flex-none items-center justify-center rounded-full focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-current"
+        aria-label={dismissLabel}
+        aria-describedby={contentId}
+        title={dismissLabel}
+        onclick={ondismiss}
+      >
+        <span
+          class="site-banner-dismiss-visual flex h-8 w-8 items-center justify-center rounded-full border border-current"
+          aria-hidden="true"
+        >
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </span>
+      </button>
+    {/if}
+  </div>
+</section>
+
+<style>
+  .site-banner-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .site-banner-layout.has-dismiss {
+    grid-template-columns: 2.75rem minmax(0, 1fr) 2.75rem;
+  }
+
+  .has-dismiss .site-banner-message {
+    grid-column: 2;
+  }
+
+  .site-banner-dismiss {
+    box-sizing: border-box;
+    padding: 0;
+  }
+
+  .site-banner-content {
+    white-space: pre-wrap;
+  }
+
+  .site-banner-content :global(p) {
+    margin: 0;
+  }
+
+  .site-banner-title {
+    margin: 0 0 0.125rem;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.25rem;
+  }
+
+  .site-banner-content :global(ul) {
+    list-style: disc;
+  }
+
+  .site-banner-content :global(ol) {
+    list-style: decimal;
+  }
+
+  .site-banner-content :global(ul),
+  .site-banner-content :global(ol) {
+    margin-left: 1.5rem;
+  }
+
+  .site-banner-content :global(a) {
+    color: inherit;
+    font-weight: 650;
+    text-decoration: underline;
+  }
+</style>
