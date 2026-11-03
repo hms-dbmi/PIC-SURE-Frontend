@@ -194,6 +194,18 @@ describe('api', () => {
       expect(headers['request-source']).toBe('Open');
     });
 
+    it('identifies authorized and open requests as the frontend', async () => {
+      (localStorage.getItem as Mock).mockReturnValueOnce('my-token').mockReturnValue(null);
+      await get('picsure/test');
+      await get('picsure/test');
+
+      const [authorized, open] = fetchMock.mock.calls.map(([, init]) => init.headers);
+      expect(authorized['request-source']).toBe('Authorized');
+      expect(authorized['X-Client-Type']).toBe('FRONTEND');
+      expect(open['request-source']).toBe('Open');
+      expect(open['X-Client-Type']).toBe('FRONTEND');
+    });
+
     it('always sets X-Session-Id in browser', async () => {
       await get('picsure/test');
 

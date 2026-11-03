@@ -6,6 +6,7 @@ import { log, createLog, getSessionId } from '$lib/logger';
 import { config } from '$lib/configuration.svelte';
 import { isWafCaptchaResponse, handleWafCaptcha } from '$lib/wafCaptcha';
 import { joinUrl } from '$lib/paths';
+import { CLIENT_TYPE_HEADERS } from '$lib/clientType';
 import {
   acceptSessionRefresh,
   forgetOpenSession,
@@ -60,7 +61,7 @@ async function send({
     redirect?: RequestRedirect;
   } = {
     method,
-    headers: {},
+    headers: { ...CLIENT_TYPE_HEADERS },
   };
 
   if (data) {

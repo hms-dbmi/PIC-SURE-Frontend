@@ -6,6 +6,7 @@
   import type { ActiveBanner, BannerAudience } from '$lib/models/Banner';
   import { BANNER_APPEARANCES, BANNER_AUDIENCES, BANNER_ICONS } from '$lib/models/Banner';
   import { Picsure } from '$lib/paths';
+  import { CLIENT_TYPE_HEADERS } from '$lib/clientType';
   import { hasValidToken } from '$lib/stores/User';
   import SiteBanner from '$lib/components/banner/SiteBanner.svelte';
   import {
@@ -146,7 +147,7 @@
       // 401/403, and cannot express cache: 'no-store'. Failures degrade to no banners below.
       const response = await fetch(`/${Picsure.Banners.Active}`, {
         cache: 'no-store',
-        headers: { Accept: 'application/json' },
+        headers: { ...CLIENT_TYPE_HEADERS, Accept: 'application/json' },
       });
       if (!response.ok) throw new Error(`Banner feed returned HTTP ${response.status}`);
 
