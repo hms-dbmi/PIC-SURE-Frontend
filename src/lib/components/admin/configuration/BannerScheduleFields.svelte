@@ -14,6 +14,7 @@
     description: string;
     startMissingError: boolean;
     restoreStartNotFuture: boolean;
+    endNotFuture: boolean;
   }
 
   let {
@@ -29,6 +30,7 @@
     description,
     startMissingError,
     restoreStartNotFuture,
+    endNotFuture,
   }: Props = $props();
 
   const startInvalid = $derived(
@@ -39,7 +41,9 @@
   const endBeforeStart = $derived(
     !!resolvedStart && !!resolvedEnd && Date.parse(resolvedEnd) <= Date.parse(resolvedStart),
   );
-  const endInvalid = $derived(endBeforeStart || (endLocal !== '' && resolvedEnd === null));
+  const endInvalid = $derived(
+    endNotFuture || endBeforeStart || (endLocal !== '' && resolvedEnd === null),
+  );
 
   function utcText(instant: string) {
     return `Resolved UTC: ${instant.slice(0, 16).replace('T', ' ')} UTC`;
@@ -110,9 +114,7 @@
         step="60"
         bind:value={endLocal}
         aria-invalid={endInvalid}
-        aria-describedby={endBeforeStart
-          ? 'banner-end-help banner-schedule-order-error'
-          : 'banner-end-help'}
+        aria-describedby="banner-end-help"
       />
       <div id="banner-end-help" class="text-sm text-surface-600">
         <span class="text-error-700" aria-live="polite" aria-atomic="true">
@@ -122,6 +124,10 @@
             Enter a valid local date and time.
           {:else if endResolution?.status === 'ambiguous' && resolvedEnd === null}
             Choose a UTC offset for this end time.
+          {:else if endNotFuture}
+            End must be in the future — this banner would expire immediately.
+          {:else if endBeforeStart}
+            End must be after Start — this banner would never be shown.
           {/if}
         </span>
         {#if !endInvalid}
@@ -139,9 +145,7 @@
             class="select"
             value={endChoice}
             aria-invalid={resolvedEnd === null}
-            aria-describedby={endBeforeStart
-              ? 'banner-end-help banner-schedule-order-error'
-              : 'banner-end-help'}
+            aria-describedby="banner-end-help"
             onchange={(event) => (endChoice = event.currentTarget.value)}
           >
             <option value="">Choose an offset</option>
@@ -152,12 +156,5 @@
         </label>
       {/if}
     </div>
-  </div>
-  <div aria-live="polite" aria-atomic="true">
-    {#if endBeforeStart}
-      <p id="banner-schedule-order-error" class="mt-2 text-sm text-error-700">
-        End must be after start.
-      </p>
-    {/if}
   </div>
 </fieldset>

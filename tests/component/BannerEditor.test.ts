@@ -21,6 +21,7 @@ import type { BannerAudience, ManagedBanner } from '$lib/models/Banner';
 import {
   publishBanner,
   restoreBanner,
+  saveBanner,
   updatePublishedBanner,
 } from '$lib/services/BannerManagement';
 import { toaster } from '$lib/toaster';
@@ -83,6 +84,7 @@ beforeEach(() => {
   navigation.goto.mockReset();
   vi.mocked(updatePublishedBanner).mockReset();
   vi.mocked(restoreBanner).mockReset();
+  vi.mocked(saveBanner).mockReset();
   vi.mocked(toaster.success).mockReset();
   vi.mocked(toaster.error).mockReset();
 });
@@ -168,6 +170,7 @@ describe('BannerEditor', () => {
       numberingSystem: 'latn',
       timeZone: 'America/New_York',
     });
+    vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-08-28T12:00:00Z').getTime());
     vi.mocked(publishBanner).mockResolvedValue({
       ...published,
       lifecycle: 'SCHEDULED',
@@ -625,6 +628,65 @@ describe('BannerEditor', () => {
       screen.getByText('Start must be in the future. Leave Start blank to restore now.'),
     ).toBeInTheDocument();
     expect(schedule).toBeDisabled();
+  });
+
+  it('rejects a past end on the End field before submission and clears it when corrected', async () => {
+    vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+      locale: 'en-US',
+      calendar: 'gregory',
+      numberingSystem: 'latn',
+      timeZone: 'America/New_York',
+    });
+    vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-08-28T12:00:00Z').getTime());
+    render(BannerEditor);
+    const editor = await screen.findByRole('textbox', { name: 'Banner content' });
+    editor.innerHTML = '<p>Draft content</p>';
+    await fireEvent.input(editor);
+    const end = screen.getByLabelText('End');
+
+    await fireEvent.input(end, { target: { value: '2026-08-28T07:00' } });
+
+    const message = 'End must be in the future — this banner would expire immediately.';
+    expect(end).toHaveAttribute('aria-invalid', 'true');
+    expect(end).toHaveAccessibleDescription(message);
+    expect(screen.getByRole('button', { name: 'Publish now' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Save for later' })).toBeDisabled();
+
+    await fireEvent.input(end, { target: { value: '2026-08-28T09:00' } });
+
+    expect(end).toHaveAttribute('aria-invalid', 'false');
+    expect(screen.queryByText(message)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Publish now' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Save for later' })).toBeEnabled();
+  });
+
+  it('rechecks a future end against the wall clock at submit time', async () => {
+    const now = vi.spyOn(Date, 'now');
+    now.mockReturnValue(new Date('2026-08-28T16:00:30Z').getTime());
+    vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+      locale: 'en-US',
+      calendar: 'gregory',
+      numberingSystem: 'latn',
+      timeZone: 'America/New_York',
+    });
+    render(BannerEditor);
+    const editor = await screen.findByRole('textbox', { name: 'Banner content' });
+    editor.innerHTML = '<p>Draft content</p>';
+    await fireEvent.input(editor);
+    await fireEvent.input(screen.getByLabelText('End'), {
+      target: { value: '2026-08-28T12:01' },
+    });
+    const save = screen.getByRole('button', { name: 'Save for later' });
+    expect(save).toBeEnabled();
+
+    now.mockReturnValue(new Date('2026-08-28T16:01:00Z').getTime());
+    await fireEvent.click(save);
+
+    expect(saveBanner).not.toHaveBeenCalled();
+    expect(
+      screen.getByText('End must be in the future — this banner would expire immediately.'),
+    ).toBeInTheDocument();
+    expect(save).toBeDisabled();
   });
 
   it.each(audienceCases)('submits %s as %s', async (label, audience) => {
@@ -1085,6 +1147,7 @@ describe('BannerEditor', () => {
 });
 
 it('blocks equal schedule instants when editing changes the timestamp serialization', async () => {
+  vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-09-10T11:00:00Z').getTime());
   render(BannerEditor, {
     banner: {
       ...published,
@@ -1095,6 +1158,8 @@ it('blocks equal schedule instants when editing changes the timestamp serializat
   const end = screen.getByLabelText('End') as HTMLInputElement;
   await fireEvent.input(screen.getByLabelText('Start'), { target: { value: end.value } });
   expect(screen.getByRole('button', { name: 'Save changes' })).toBeDisabled();
-  expect(screen.getByText('End must be after start.')).toBeInTheDocument();
+  expect(
+    screen.getByText('End must be after Start — this banner would never be shown.'),
+  ).toBeInTheDocument();
   expect(updatePublishedBanner).not.toHaveBeenCalled();
 });

@@ -168,7 +168,7 @@
   let startChoice = $state(untrack(() => initialStartChoice));
   let endChoice = $state(untrack(() => initialEndChoice));
   let working: 'save' | 'publish' | null = $state(null);
-  let restoreValidationNow = $state(Date.now());
+  let scheduleValidationNow = $state(Date.now());
   let linkFeedback = $state('');
 
   function reportSanitizedLinks(originalHTML: string, sanitizedHTML: string) {
@@ -212,12 +212,15 @@
       editorMode === 'restore' ? null : (banner?.endAt ?? null),
     ),
   );
-  const restoreStartNotFuture = $derived(restoreStartIsNotFuture(restoreValidationNow));
+  const scheduleDisabled = $derived(editorMode !== 'restore' && banner?.lifecycle === 'EXPIRED');
+  const restoreStartNotFuture = $derived(restoreStartIsNotFuture(scheduleValidationNow));
+  const endNotFuture = $derived(endIsNotFuture(scheduleValidationNow));
   const scheduleInvalid = $derived(
     (editorMode === 'edit' && banner?.status === 'PUBLISHED' && resolvedStart === null) ||
       (startLocal !== '' && resolvedStart === null) ||
       (endLocal !== '' && resolvedEnd === null) ||
       restoreStartNotFuture ||
+      endNotFuture ||
       (resolvedStart !== null &&
         resolvedEnd !== null &&
         Date.parse(resolvedEnd) <= Date.parse(resolvedStart)),
@@ -226,7 +229,6 @@
   const pageTargetsInvalid = $derived(
     !allPages && (pageTargets.length === 0 || pageTargetErrors.some((error) => error !== null)),
   );
-  const scheduleDisabled = $derived(editorMode !== 'restore' && banner?.lifecycle === 'EXPIRED');
   const startMissingError = $derived(editorMode === 'edit' && banner?.status === 'PUBLISHED');
   const scheduleDescription = $derived(
     scheduleDisabled
@@ -316,6 +318,17 @@
     );
   }
 
+  function endIsNotFuture(now: number) {
+    return !scheduleDisabled && resolvedEnd !== null && Date.parse(resolvedEnd) <= now;
+  }
+
+  function scheduleExpiredBySubmit() {
+    const now = Date.now();
+    if (!restoreStartIsNotFuture(now) && !endIsNotFuture(now)) return false;
+    scheduleValidationNow = now;
+    return true;
+  }
+
   function snapshot() {
     const value = draft();
     return JSON.stringify({
@@ -344,9 +357,9 @@
   });
 
   $effect(() => {
-    if (editorMode !== 'restore') return;
     void resolvedStart;
-    restoreValidationNow = Date.now();
+    void resolvedEnd;
+    scheduleValidationNow = Date.now();
   });
 
   $effect(() => {
@@ -386,7 +399,7 @@
   }
 
   async function saveForLater() {
-    if (working) return;
+    if (working || scheduleExpiredBySubmit()) return;
     working = 'save';
     try {
       const saved = banner
@@ -407,12 +420,7 @@
   }
 
   async function publish() {
-    if (working) return;
-    const submitNow = Date.now();
-    if (restoreStartIsNotFuture(submitNow)) {
-      restoreValidationNow = submitNow;
-      return;
-    }
+    if (working || scheduleExpiredBySubmit()) return;
     working = 'publish';
     try {
       const published =
@@ -553,6 +561,7 @@
         description={scheduleDescription}
         {startMissingError}
         {restoreStartNotFuture}
+        {endNotFuture}
       />
 
       <fieldset>
