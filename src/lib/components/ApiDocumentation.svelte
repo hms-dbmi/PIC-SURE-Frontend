@@ -22,6 +22,22 @@
   let shownService = '';
   const docsLogging = createDocsLogging(() => shownService);
 
+  // Swagger's headings nest under the page's "API Documentation" h2: the document title is
+  // level 3, its tags level 4 beside the Schemas h4, and the sections of an operation level 5.
+  const headingLevels = [
+    ['.info .title', '3'],
+    ['.opblock-tag', '4'],
+    ['.opblock h4', '5'],
+  ] as const;
+
+  function setHeadingLevels(root: HTMLElement) {
+    for (const [selector, level] of headingLevels) {
+      for (const heading of root.querySelectorAll(selector)) {
+        if (heading.getAttribute('aria-level') !== level) heading.setAttribute('aria-level', level);
+      }
+    }
+  }
+
   class DocumentationResponseError extends Error {
     readonly status: number;
     constructor(status: number) {
@@ -120,7 +136,7 @@
         plugins: [
           () => docsLogging.plugin,
           (system) => {
-            const { createElement, useLayoutEffect, useRef, useState } = system.React;
+            const { createElement, useLayoutEffect, useState } = system.React;
             return {
               components: {
                 authorizeBtn: () => null,
@@ -128,14 +144,6 @@
                 auths: () => null,
               },
               wrapComponents: {
-                info: (Original: SwaggerComponent) =>
-                  function EmbeddedInfo(props: Record<string, unknown>) {
-                    const container = useRef<HTMLDivElement | null>(null);
-                    useLayoutEffect(() => {
-                      container.current?.querySelector('.title')?.setAttribute('aria-level', '3');
-                    });
-                    return createElement('div', { ref: container }, createElement(Original, props));
-                  },
                 App: (Original: SwaggerComponent) =>
                   function EmbeddedApp(props: Record<string, unknown>) {
                     const [visible, setVisible] = useState(true);
@@ -188,8 +196,12 @@
   onMount(() => {
     void load(true);
     const stopTracking = docsLogging.track(host);
+    // Swagger renders and replaces its headings as the visitor expands sections.
+    const headings = new MutationObserver(() => setHeadingLevels(host));
+    headings.observe(host, { childList: true, subtree: true });
     return () => {
       stopTracking();
+      headings.disconnect();
       generation++;
       controller?.abort();
       disposeViewer?.();
@@ -248,6 +260,21 @@
   }
   .swagger-host :global(.swagger-ui .info) {
     margin: 24px 0;
+  }
+  /* Size Swagger's headings like the page's own headings at the same level (app.css). */
+  .swagger-host :global(.swagger-ui .info .title) {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+  .swagger-host :global(.swagger-ui .info .title small),
+  .swagger-host :global(.swagger-ui .info .title small pre),
+  .swagger-host :global(.swagger-ui .info .base-url),
+  .swagger-host :global(.swagger-ui .info hgroup.main a) {
+    font-size: 1rem;
+  }
+  .swagger-host :global(.swagger-ui .opblock-tag) {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
   }
   .swagger-host :global(.swagger-ui .scheme-container) {
     padding: 12px;

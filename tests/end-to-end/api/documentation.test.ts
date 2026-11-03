@@ -86,7 +86,10 @@ test.describe('API documentation for public visitors', () => {
     await expect(viewer.locator('.info .title')).toHaveAttribute('aria-level', '3');
     await expect(viewer.locator('.info .title')).not.toHaveAttribute('role');
     await expect(viewer.locator('.info .title').locator('..')).not.toHaveAttribute('role');
-    await expect(viewer.getByRole('heading', { name: 'default', level: 3 })).toBeVisible();
+    await expect(viewer.locator('.opblock-tag', { hasText: 'default' })).toHaveAttribute(
+      'aria-level',
+      '4',
+    );
     await expect(page.getByTestId('api-public-notice')).toContainText('Public Access Only');
     await expect(page.getByTestId('api-public-notice').getByRole('link')).toHaveAttribute(
       'href',
@@ -128,6 +131,69 @@ test.describe('API documentation for public visitors', () => {
     expect(
       requests.some((url) => /unexpected\.example|validator\.swagger/.test(new URL(url).hostname)),
     ).toBe(false);
+  });
+
+  test('sizes and nests Swagger headings like the rest of the page', async ({ page }) => {
+    await page.route('**/picsure/openapi/*', (route) =>
+      route.fulfill({
+        json: {
+          ...openApiDocument('Documentation', '/search'),
+          components: { schemas: { Result: { type: 'object' } } },
+        },
+      }),
+    );
+    await page.goto('/api#api-access');
+    const viewer = page.getByTestId('api-documentation');
+    const title = viewer.locator('.info .title');
+    await expect(title).toBeVisible();
+    await viewer.locator('.opblock-summary-control').click();
+    await expect(viewer.locator('.opblock h4', { hasText: 'Responses' })).toBeVisible();
+
+    const fontOf = (locator: ReturnType<Page['locator']>) =>
+      locator.evaluate((element) => {
+        const { fontSize, fontWeight } = getComputedStyle(element);
+        return { size: parseFloat(fontSize), weight: Number(fontWeight) };
+      });
+    const pageHeading = await fontOf(page.getByRole('heading', { name: 'Public Access Only' }));
+    const bodyText = await fontOf(page.locator('#api-access p').first());
+    expect((await fontOf(title)).size).toBe(pageHeading.size);
+    for (const version of await title.locator('small pre').all()) {
+      expect((await fontOf(version)).size).toBe(bodyText.size);
+    }
+    const buttons = await Promise.all(
+      [viewer.locator('.opblock-summary-control'), viewer.locator('.models-control')].map(fontOf),
+    );
+    const lightestButton = Math.min(...buttons.map(({ weight }) => weight));
+    for (const heading of [title, viewer.locator('.opblock-tag'), viewer.locator('.models h4')]) {
+      expect((await fontOf(heading)).weight).toBeLessThanOrEqual(lightestButton);
+    }
+
+    const levels = await page
+      .locator('#api-page')
+      .evaluate((root) =>
+        [...root.querySelectorAll('h1, h2, h3, h4, h5, h6, [role="heading"]')]
+          .filter((heading) => heading.checkVisibility())
+          .map((heading) => Number(heading.getAttribute('aria-level') ?? heading.tagName.slice(1))),
+      );
+    expect(levels[0]).toBe(1);
+    for (let index = 1; index < levels.length; index++) {
+      expect(levels[index] - levels[index - 1]).toBeLessThanOrEqual(1);
+    }
+    const docs = await viewer.evaluate((root) =>
+      [...root.querySelectorAll('.info .title, .opblock-tag, .opblock h4, .models h4')].map(
+        (heading) => [
+          heading.textContent?.trim().split(/\s/)[0],
+          heading.getAttribute('aria-level') ?? heading.tagName.slice(1),
+        ],
+      ),
+    );
+    expect(docs).toEqual([
+      [expect.any(String), '3'],
+      ['default', '4'],
+      ['Parameters', '5'],
+      ['Responses', '5'],
+      ['Schemas', '4'],
+    ]);
   });
 
   const policies = [
@@ -317,7 +383,10 @@ test.describe('API documentation for public visitors', () => {
     await expect(viewer.locator('.info .title')).toHaveAttribute('aria-level', '3');
     await expect(viewer.locator('.info .title')).not.toHaveAttribute('role');
     await expect(viewer.locator('.info .title').locator('..')).not.toHaveAttribute('role');
-    await expect(viewer.getByRole('heading', { name: 'default', level: 3 })).toBeVisible();
+    await expect(viewer.locator('.opblock-tag', { hasText: 'default' })).toHaveAttribute(
+      'aria-level',
+      '4',
+    );
     await viewer.locator('.opblock-summary').click();
     await viewer.getByRole('tab', { name: 'Schema', exact: true }).click();
     await expect(viewer.getByText('count', { exact: true })).toBeVisible();
@@ -380,7 +449,10 @@ test.describe('API documentation for signed-in visitors', () => {
     await expect(viewer.locator('.info .title')).toHaveAttribute('aria-level', '3');
     await expect(viewer.locator('.info .title')).not.toHaveAttribute('role');
     await expect(viewer.locator('.info .title').locator('..')).not.toHaveAttribute('role');
-    await expect(viewer.getByRole('heading', { name: 'default', level: 3 })).toBeVisible();
+    await expect(viewer.locator('.opblock-tag', { hasText: 'default' })).toHaveAttribute(
+      'aria-level',
+      '4',
+    );
     await expect(page.getByTestId('api-public-notice')).toHaveCount(0);
     await viewer.locator('.opblock-summary').click();
     await expect(viewer.getByText('Available data', { exact: true })).toBeVisible();
