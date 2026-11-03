@@ -113,7 +113,6 @@ test.describe('API page', () => {
         // Source formatting may wrap the text, so match any run of whitespace between words.
         const firstEnd = /HTTP\s+client\./;
         const secondStartPattern = /Build\s+reproducible/;
-        // Rect of one character, found by its offset in the paragraph's text.
         const charRect = (textOffset: number) => {
           const walker = document.createTreeWalker(paragraph, NodeFilter.SHOW_TEXT);
           let remaining = textOffset;
