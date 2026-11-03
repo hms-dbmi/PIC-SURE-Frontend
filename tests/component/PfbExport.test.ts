@@ -6,7 +6,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 const { get } = vi.hoisted(() => ({ get: vi.fn() }));
 
 vi.mock('$app/environment', () => ({ browser: true }));
-vi.mock('$lib/api', () => ({ get, consentDeniedMessage: () => null }));
+vi.mock('$lib/api', () => ({ get, userMessage: (_e: unknown, fallback: string) => fallback }));
 vi.mock('$lib/logger', () => ({ log: vi.fn(), createLog: vi.fn() }));
 vi.mock('$lib/configuration.svelte', () => ({
   config: {

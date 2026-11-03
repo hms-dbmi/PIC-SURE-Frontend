@@ -10,6 +10,7 @@ const mockState = vi.hoisted(() => {
   const { writable } = require('svelte/store') as typeof import('svelte/store');
   return {
     toasterErrorSpy: vi.fn(),
+    toasterUpdateSpy: vi.fn(),
     isToastShowingSpy: vi.fn().mockReturnValue(false),
     getCountResourceSpy: vi.fn().mockReturnValue({ name: 'hpds', uuid: 'r1' }),
     logSpy: vi.fn(),
@@ -25,7 +26,7 @@ const mockState = vi.hoisted(() => {
 });
 
 vi.mock('$lib/toaster', () => ({
-  toaster: { error: mockState.toasterErrorSpy },
+  toaster: { error: mockState.toasterErrorSpy, update: mockState.toasterUpdateSpy },
   isToastShowing: mockState.isToastShowingSpy,
 }));
 
@@ -417,6 +418,36 @@ describe('ResultCounts', () => {
       await flushMicrotasks();
       await flushMicrotasks();
       expect(mockState.toasterErrorSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('updates a showing generic toast with a rate-limit message', async () => {
+      mockService.getCount.mockResolvedValueOnce(snapshot(0, true));
+      await state.triggerLoad(() => true);
+      mockState.isToastShowingSpy.mockReturnValue(true);
+      const message = "You've made too many requests. Try again in 30 seconds.";
+      mockService.getCount.mockResolvedValueOnce({ ...snapshot(0, true), errorMessage: message });
+      await state.triggerLoad(() => true);
+      expect(mockState.toasterUpdateSpy).toHaveBeenCalledWith('query-error', { title: message });
+      expect(mockState.toasterErrorSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("shows a 429's message in the error toast instead of the generic text", async () => {
+      const message = "You've made too many requests. Try again in 30 seconds.";
+      mockService.getCount.mockResolvedValueOnce({ ...snapshot(0, true), errorMessage: message });
+      await state.triggerLoad(() => true);
+      expect(mockState.toasterErrorSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ title: message }),
+      );
+    });
+
+    it('keeps the generic error toast for other failures', async () => {
+      mockService.getCount.mockResolvedValueOnce(snapshot(0, true));
+      await state.triggerLoad(() => true);
+      expect(mockState.toasterErrorSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: expect.stringContaining('An error occured while loading patient counts'),
+        }),
+      );
     });
 
     it('stop() mid-flight resets status to "idle" so spinners do not get stuck', async () => {
