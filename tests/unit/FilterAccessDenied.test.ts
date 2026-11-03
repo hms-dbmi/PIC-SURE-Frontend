@@ -16,7 +16,7 @@ vi.mock('$lib/logger', () => ({
   getPageContext: vi.fn(),
 }));
 
-import { accessDenied } from '$lib/accessDenied';
+import { discardingQuery } from '$lib/discardingQuery';
 import { addFilter, clearFilters, filterTree, genomicFilters } from '$lib/stores/Filter';
 import { createCategoricalFilter, createGenomicFilter } from '$lib/models/Filter.svelte';
 import type { SearchResult } from '$lib/models/Search';
@@ -40,7 +40,7 @@ function storedFilterCount() {
 
 describe('filters after a forbidden logout', () => {
   beforeEach(() => {
-    accessDenied.set(false);
+    discardingQuery.set(false);
     clearFilters();
     sessionStorage.clear();
     addFilter(createCategoricalFilter(searchResult, ['Yes']));
@@ -49,7 +49,7 @@ describe('filters after a forbidden logout', () => {
   });
 
   it('removes the stored filters at once and keeps the stores until the logout navigates', () => {
-    accessDenied.set(true);
+    discardingQuery.set(true);
 
     expect(sessionStorage.getItem('filterTree')).toBeNull();
     expect(sessionStorage.getItem('genomicFilters')).toBeNull();
@@ -58,7 +58,7 @@ describe('filters after a forbidden logout', () => {
   });
 
   it('does not store filter changes made before the logout navigates', () => {
-    accessDenied.set(true);
+    discardingQuery.set(true);
 
     addFilter(
       createCategoricalFilter({ ...searchResult, conceptPath: '\\study\\other\\' }, ['No']),
@@ -68,9 +68,9 @@ describe('filters after a forbidden logout', () => {
   });
 
   it('resets the stores once the logout navigates, without logging a user clear', () => {
-    accessDenied.set(true);
+    discardingQuery.set(true);
 
-    accessDenied.set(false);
+    discardingQuery.set(false);
 
     expect(get(filterTree).root.children).toHaveLength(0);
     expect(get(genomicFilters)).toHaveLength(0);
@@ -79,7 +79,7 @@ describe('filters after a forbidden logout', () => {
   });
 
   it('leaves the filters alone after a logout that was not forbidden', () => {
-    accessDenied.set(false);
+    discardingQuery.set(false);
 
     expect(get(filterTree).root.children).toHaveLength(1);
     expect(storedFilterCount()).toBe(1);

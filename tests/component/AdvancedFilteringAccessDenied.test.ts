@@ -17,7 +17,7 @@ vi.mock('$lib/logger', () => ({
 }));
 
 import AdvancedFiltering from '$lib/components/explorer/advanced/AdvancedFiltering.svelte';
-import { accessDenied } from '$lib/accessDenied';
+import { discardingQuery } from '$lib/discardingQuery';
 import { addFilter, clearFilters, filterTree } from '$lib/stores/Filter';
 import { createCategoricalFilter } from '$lib/models/Filter.svelte';
 import type { SearchResult } from '$lib/models/Search';
@@ -45,7 +45,7 @@ function storedFilterCount() {
 
 describe('advanced filtering after a forbidden logout', () => {
   beforeEach(() => {
-    accessDenied.set(false);
+    discardingQuery.set(false);
     clearFilters();
     addFilter(deniedFilter('first'));
     addFilter(deniedFilter('second'));
@@ -56,15 +56,15 @@ describe('advanced filtering after a forbidden logout', () => {
     await fireEvent.click(screen.getAllByTitle('Remove Filter')[0]);
     expect(component.hasUnsavedChanges()).toBe(true);
 
-    accessDenied.set(true);
+    discardingQuery.set(true);
 
     expect(component.hasUnsavedChanges()).toBe(false);
   });
 
   it('does not save the denied filters again once the logout has finished', () => {
     const { component } = render(AdvancedFiltering);
-    accessDenied.set(true);
-    accessDenied.set(false);
+    discardingQuery.set(true);
+    discardingQuery.set(false);
 
     component.applyChanges();
 

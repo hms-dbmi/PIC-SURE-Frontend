@@ -11,6 +11,7 @@ import { expandedNestedFacets } from '$lib/stores/NestedFacets';
 import { getDefaultRows } from '$lib/components/datatable/stores';
 import { isAbortError } from '$lib/api';
 import { log, createLog, getPageContext } from '$lib/logger';
+import { onQueryDiscarded } from '$lib/discardingQuery';
 
 export const loading: Writable<boolean> = writable(false);
 export const searchTerm: Writable<string> = writable('');
@@ -274,6 +275,10 @@ export async function updateFacets(facetsToUpdate: Facet[]) {
 
 export function resetSearch() {
   log(createLog('SEARCH', 'search.reset', { pageContext: getPageContext() }));
+  clearSearch();
+}
+
+function clearSearch() {
   isResetting = true;
   searchTerm.set('');
   selectedFacets.set([]);
@@ -283,6 +288,8 @@ export function resetSearch() {
   isResetting = false;
   tableHandler.setPage(1);
 }
+
+onQueryDiscarded(clearSearch);
 
 export default {
   selectedFacets,
