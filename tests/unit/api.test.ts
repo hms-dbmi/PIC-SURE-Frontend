@@ -437,7 +437,7 @@ describe('api', () => {
 
     function expectNoLogout() {
       expect(mockLogout).not.toHaveBeenCalled();
-      expect(mockSetAccessDenied).not.toHaveBeenCalled();
+      expect(mockSetDiscardingQuery).not.toHaveBeenCalled();
       expect(sessionStorage.setItem).not.toHaveBeenCalled();
       expect(sessionStorage.removeItem).not.toHaveBeenCalled();
     }
