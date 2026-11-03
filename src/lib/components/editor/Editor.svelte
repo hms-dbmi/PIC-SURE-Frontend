@@ -5,6 +5,8 @@
   import 'quill/dist/quill.snow.css';
   import '../../../styles/editor.css';
 
+  import type Keyboard from 'quill/modules/keyboard';
+
   import { sanitizeHTML } from '$lib/utilities/HTML';
 
   let {
@@ -38,16 +40,6 @@
     onsanitize?: (originalHTML: string, sanitizedHTML: string) => void;
     id?: string;
   } = $props();
-
-  const TAB_BINDINGS = [
-    'indent',
-    'outdent',
-    'indent code-block',
-    'outdent code-block',
-    'remove tab',
-    'tab',
-    'table tab',
-  ];
 
   const colors = [
     'surface',
@@ -131,6 +123,13 @@
 
   onMount(async () => {
     const { default: Quill } = await import('quill');
+    const keyboardDefaults = (Quill.import('modules/keyboard') as typeof Keyboard).DEFAULTS;
+    // Quill's default Tab bindings indent or insert a tab, trapping keyboard focus (WCAG 2.1.2).
+    const withoutTabBindings = Object.fromEntries(
+      Object.entries(keyboardDefaults.bindings)
+        .filter(([, binding]) => typeof binding === 'object' && binding.key === 'Tab')
+        .map(([name]) => [name, null]),
+    );
     if (container) {
       // Quill reads initial markup only from its container during construction.
       // eslint-disable-next-line svelte/no-dom-manipulating
@@ -139,9 +138,7 @@
         theme: 'snow',
         modules: {
           toolbar: toolbarOptions,
-          // Quill's Tab bindings indent or insert a tab, trapping keyboard users (WCAG 2.1.2).
-          // Removing them lets Tab and Shift+Tab move focus like any other field.
-          keyboard: { bindings: Object.fromEntries(TAB_BINDINGS.map((name) => [name, null])) },
+          keyboard: { bindings: withoutTabBindings },
         },
       });
       quill.root.setAttribute('role', 'textbox');

@@ -91,6 +91,20 @@ it.each([
   expect(editor.innerHTML).toBe(html);
 });
 
+it('leaves Shift+Tab to the browser right after a tab character', async () => {
+  render(Editor, { content: '<p>Notice</p>' });
+  const editor = await screen.findByRole('textbox', { name: 'Rich text editor' });
+  editor.innerHTML = '<p>Notice\tlater</p>';
+  await fireEvent.input(editor);
+  const text = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT).nextNode()!;
+  await waitFor(() => expect(text.textContent).toBe('Notice\tlater'));
+
+  window.getSelection()!.collapse(text, 'Notice\t'.length);
+  editor.focus();
+  expect(await fireEvent.keyDown(editor, { key: 'Tab', shiftKey: true })).toBe(true);
+  expect(editor).toHaveTextContent('Notice\tlater', { normalizeWhitespace: false });
+});
+
 it('reports sanitization only when content is edited', async () => {
   const onsanitize = vi.fn();
   render(Editor, { content: '<p>Original</p>', onsanitize });
