@@ -142,6 +142,10 @@ async function contrastFailures(page: Page): Promise<Failure[]> {
         (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
       );
       if (ownText) check('text', element, style.color, 4.5);
+      // A control draws its value without a text node of its own.
+      if (element.matches('select, :is(input, textarea):enabled')) {
+        check('text', element, style.color, 4.5);
+      }
       if (element.matches('svg, svg *') && style.fill !== 'none' && element.matches('svg')) {
         check('icon', element, style.fill, 3);
       }
