@@ -16,7 +16,6 @@ vi.mock('$lib/api', async (importOriginal) => ({
   ...(await importOriginal<typeof import('$lib/api')>()),
   get: vi.fn(),
 }));
-vi.mock('$lib/toaster', () => ({ toaster: { error: vi.fn() } }));
 
 vi.mock('$lib/logger', () => ({
   log: vi.fn(),
@@ -111,10 +110,10 @@ describe('Genes', () => {
     await waitFor(() => expect(mockGet).toHaveBeenCalledTimes(2), { timeout: 2000 });
     expect(mockGet.mock.calls[1][0]).toContain('query=BRC');
   });
-});
 
-it('shows the wait message when loading genes is rate limited', async () => {
-  mockGet.mockRejectedValueOnce(rejection(429, 'Wait 30 seconds'));
-  render(Genes);
-  await waitFor(() => expect(toaster.error).toHaveBeenCalledWith({ title: 'Wait 30 seconds' }));
+  it('shows the wait message when loading genes is rate limited', async () => {
+    mockGet.mockRejectedValueOnce(rejection(429, 'Wait 30 seconds'));
+    render(Genes);
+    await waitFor(() => expect(toaster.error).toHaveBeenCalledWith({ title: 'Wait 30 seconds' }));
+  });
 });
