@@ -13,7 +13,7 @@ import { page } from '$app/state';
 import { loginRedirectPath } from '$lib/utilities/LoginRedirect';
 import { log, createLog } from '$lib/logger';
 import { isToastShowing, toaster } from '$lib/toaster';
-import { accessDenied } from '$lib/accessDenied';
+import { discardingQuery } from '$lib/discardingQuery';
 
 const tokenRevision = writable(0);
 
@@ -302,7 +302,16 @@ export async function login(token: string) {
   }
 }
 
-export async function logout(authProvider?: AuthProvider, redirect = false) {
+/**
+ * Pass `discardQuery` for logouts the user chose: the query is dropped once the logout has navigated.
+ * A session timeout keeps it so the user can log back in and carry on.
+ */
+export async function logout(
+  authProvider?: AuthProvider,
+  redirect = false,
+  { discardQuery = false } = {},
+) {
+  if (discardQuery) discardingQuery.set(true);
   discardPendingConsents();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function handleErrors(error: any) {
@@ -351,8 +360,8 @@ async function handleLogout(redirect: boolean) {
       await goto(resolve('/login'));
     }
   } finally {
-    // If a later logout superseded this navigation, the denied page is still mounted, so leave it to that one
-    if (navigation === logoutNavigation) accessDenied.set(false);
+    // If a later logout superseded this navigation, the page being left is still mounted, so leave it to that one
+    if (navigation === logoutNavigation) discardingQuery.set(false);
   }
 }
 

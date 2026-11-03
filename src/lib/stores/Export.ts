@@ -3,6 +3,7 @@ import { get, writable, type Writable } from 'svelte/store';
 import type { ExportInterface } from '$lib/models/Export';
 import type { SearchResult } from '$lib/models/Search';
 import { objectUUID } from '$lib/utilities/UUID';
+import { onQueryDiscarded } from '$lib/discardingQuery';
 
 export const exports: Writable<ExportInterface[]> = writable([]);
 
@@ -49,6 +50,8 @@ export function removeExport(e: ExportInterface) {
 export function clearExports() {
   exports.set([]);
 }
+
+onQueryDiscarded(clearExports);
 
 export function mapSearchResultAsExport(result: SearchResult): ExportInterface {
   return {

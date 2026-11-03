@@ -109,7 +109,7 @@
               title="Logout"
               onclick={() => {
                 log(createLog('AUTH', 'logout.click'));
-                logout(providerInstance, false);
+                logout(providerInstance, false, { discardQuery: true });
               }}>Logout</button
             >
           </div>
