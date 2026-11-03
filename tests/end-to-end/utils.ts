@@ -45,6 +45,9 @@ export const clickNthFilterIcon = async (page: Page, rowIndex = 0) => {
   await filterIcon.click();
 };
 
+// Every theme in src/styles/theme.css; deployments pick one through branding THEME.
+export const themes = ['picsure', 'bdc', 'aim-ahead', 'local'] as const;
+
 // A box that has to stand out from what's behind it: a near-white fill no darker than its
 // backdrop, and a border with at least the 3:1 non-text contrast WCAG 1.4.11 asks of a
 // component's boundary.

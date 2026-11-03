@@ -505,7 +505,7 @@ nav#page-navigation li .nav-dropdown a:focus {
 
 /* a real border instead of the input's faint inset ring, so the value stands out */
 .token-value {
-  border: 1px solid var(--color-surface-600);
+  border: 1px solid var(--color-surface-700);
   box-shadow: none;
 }
 
