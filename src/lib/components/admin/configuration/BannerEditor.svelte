@@ -143,6 +143,7 @@
   const initialEndChoice = untrack(() =>
     editorMode !== 'restore' && banner?.endAt ? new Date(banner.endAt).toISOString() : '',
   );
+  const storedEnd = untrack(() => (editorMode === 'restore' ? null : (banner?.endAt ?? null)));
   const initialPageTargets = untrack(() => banner?.pageTargets ?? [{ kind: 'ALL' as const }]);
 
   let htmlContent = $state(
@@ -168,7 +169,7 @@
   let startChoice = $state(untrack(() => initialStartChoice));
   let endChoice = $state(untrack(() => initialEndChoice));
   let working: 'save' | 'publish' | null = $state(null);
-  let restoreValidationNow = $state(Date.now());
+  let scheduleValidationNow = $state(Date.now());
   let linkFeedback = $state('');
 
   function reportSanitizedLinks(originalHTML: string, sanitizedHTML: string) {
@@ -212,7 +213,10 @@
       editorMode === 'restore' ? null : (banner?.endAt ?? null),
     ),
   );
-  const restoreStartNotFuture = $derived(restoreStartIsNotFuture(restoreValidationNow));
+  const scheduleDisabled = $derived(editorMode !== 'restore' && banner?.lifecycle === 'EXPIRED');
+  const restoreStartNotFuture = $derived(restoreStartIsNotFuture(scheduleValidationNow));
+  const endNotFuture = $derived(pastEndBlocks('publish', scheduleValidationNow));
+  const endBlocksSave = $derived(pastEndBlocks('save', scheduleValidationNow));
   const scheduleInvalid = $derived(
     (editorMode === 'edit' && banner?.status === 'PUBLISHED' && resolvedStart === null) ||
       (startLocal !== '' && resolvedStart === null) ||
@@ -226,7 +230,6 @@
   const pageTargetsInvalid = $derived(
     !allPages && (pageTargets.length === 0 || pageTargetErrors.some((error) => error !== null)),
   );
-  const scheduleDisabled = $derived(editorMode !== 'restore' && banner?.lifecycle === 'EXPIRED');
   const startMissingError = $derived(editorMode === 'edit' && banner?.status === 'PUBLISHED');
   const scheduleDescription = $derived(
     scheduleDisabled
@@ -316,6 +319,20 @@
     );
   }
 
+  function pastEndBlocks(action: 'save' | 'publish', now: number) {
+    if (scheduleDisabled || resolvedEnd === null || Date.parse(resolvedEnd) > now) return false;
+    const endChanged = storedEnd === null || Date.parse(resolvedEnd) !== Date.parse(storedEnd);
+    return endChanged || (action === 'publish' && banner?.status === 'SAVED');
+  }
+
+  function scheduleLapsedBeforeSubmit(action: 'save' | 'publish') {
+    const now = Date.now();
+    const lapsed =
+      (action === 'publish' && restoreStartIsNotFuture(now)) || pastEndBlocks(action, now);
+    if (lapsed) scheduleValidationNow = now;
+    return lapsed;
+  }
+
   function snapshot() {
     const value = draft();
     return JSON.stringify({
@@ -344,9 +361,9 @@
   });
 
   $effect(() => {
-    if (editorMode !== 'restore') return;
     void resolvedStart;
-    restoreValidationNow = Date.now();
+    void resolvedEnd;
+    scheduleValidationNow = Date.now();
   });
 
   $effect(() => {
@@ -386,7 +403,7 @@
   }
 
   async function saveForLater() {
-    if (working) return;
+    if (working || scheduleLapsedBeforeSubmit('save')) return;
     working = 'save';
     try {
       const saved = banner
@@ -407,12 +424,7 @@
   }
 
   async function publish() {
-    if (working) return;
-    const submitNow = Date.now();
-    if (restoreStartIsNotFuture(submitNow)) {
-      restoreValidationNow = submitNow;
-      return;
-    }
+    if (working || scheduleLapsedBeforeSubmit('publish')) return;
     working = 'publish';
     try {
       const published =
@@ -553,6 +565,7 @@
         description={scheduleDescription}
         {startMissingError}
         {restoreStartNotFuture}
+        {endNotFuture}
       />
 
       <fieldset>
@@ -600,6 +613,7 @@
             !hasContent ||
             sanitizedLength > 5_000 ||
             scheduleInvalid ||
+            endBlocksSave ||
             pageTargetsInvalid}
           onclick={saveForLater}
         >
@@ -614,6 +628,7 @@
           !hasContent ||
           sanitizedLength > 5_000 ||
           scheduleInvalid ||
+          endNotFuture ||
           pageTargetsInvalid}
       >
         {working === 'publish' ? publishCopy.busyLabel : publishCopy.submitLabel}

@@ -17,6 +17,7 @@ const props = {
   description: 'Choose a start and end time.',
   startMissingError: true,
   restoreStartNotFuture: false,
+  endNotFuture: false,
 };
 
 describe('BannerScheduleFields', () => {
@@ -63,15 +64,16 @@ describe('BannerScheduleFields', () => {
     await view.rerender({ ...props, resolvedEnd: '2026-09-10T11:00:00Z' });
 
     expect(end).toHaveAttribute('aria-invalid', 'true');
-    expect(end).toHaveAccessibleDescription(/End must be after start/);
-    expect(screen.getByText('End must be after start.').parentElement).toHaveAttribute(
-      'aria-live',
-      'polite',
+    expect(end).toHaveAccessibleDescription(
+      'End must be after Start — this banner would never be shown.',
     );
+    expect(
+      screen.getByText('End must be after Start — this banner would never be shown.'),
+    ).toHaveAttribute('aria-live', 'polite');
 
     await view.rerender(props);
     expect(end).toHaveAttribute('aria-invalid', 'false');
-    expect(end).not.toHaveAccessibleDescription(/End must be after start/);
+    expect(end).not.toHaveAccessibleDescription(/End must be after Start/);
   });
 
   it('announces a missing required start through the persistent error span', async () => {
@@ -174,7 +176,7 @@ describe('BannerScheduleFields', () => {
     });
 
     expect(screen.getByRole('combobox', { name: 'End UTC offset' })).toHaveAccessibleDescription(
-      /End must be after start\./,
+      'End must be after Start — this banner would never be shown.',
     );
   });
 
@@ -216,6 +218,21 @@ describe('BannerScheduleFields', () => {
     });
 
     expect(screen.getByLabelText('End')).toHaveAttribute('aria-invalid', 'true');
-    expect(screen.getByLabelText('End')).toHaveAccessibleDescription(/End must be after start\./);
+    expect(screen.getByLabelText('End')).toHaveAccessibleDescription(
+      'End must be after Start — this banner would never be shown.',
+    );
+  });
+
+  it('explains a past end on the End field and announces it', async () => {
+    const view = render(BannerScheduleFields, { props });
+    const end = screen.getByLabelText('End');
+
+    await view.rerender({ ...props, endNotFuture: true });
+
+    const message = 'End must be in the future — this banner would expire immediately.';
+    expect(end).toHaveAttribute('aria-invalid', 'true');
+    expect(end).toHaveAccessibleDescription(message);
+    expect(screen.getByText(message)).toHaveAttribute('aria-live', 'polite');
+    expect(screen.getByLabelText('Start')).toHaveAttribute('aria-invalid', 'false');
   });
 });
