@@ -124,6 +124,7 @@ test.describe('API documentation for public visitors', () => {
     for (const headers of await Promise.all(documentHeaders)) {
       expect(headers.authorization).toBeUndefined();
       expect(headers.cookie).toBeUndefined();
+      expect(headers['x-client-type']).toBe('FRONTEND');
     }
     expect(
       requests.some((url) => /unexpected\.example|validator\.swagger/.test(new URL(url).hostname)),

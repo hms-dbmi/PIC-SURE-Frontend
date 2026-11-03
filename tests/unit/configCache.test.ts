@@ -82,6 +82,20 @@ describe('configCache', () => {
     expect(result.branding).toEqual([]);
   });
 
+  it('identifies its config requests as the frontend', async () => {
+    fetchMock.mockResolvedValue(jsonResponse([]));
+
+    const { getConfig } = await loadConfigCache();
+    const pending = getConfig();
+    await vi.runAllTimersAsync();
+    await pending;
+
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    for (const [, init] of fetchMock.mock.calls) {
+      expect(init.headers['X-Client-Type']).toBe('FRONTEND');
+    }
+  });
+
   it('retries only the kind that previously failed, leaving already-cached kinds alone', async () => {
     const featuresData = [{ name: 'FEATURE_A', value: 'true' }];
     let settingsAttempts = 0;
