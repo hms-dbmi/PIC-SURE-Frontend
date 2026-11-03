@@ -50,7 +50,7 @@
   function reject() {
     if (browser) {
       log(createLog('AUTH', 'tos.reject'));
-      logout().then(() => {
+      logout(undefined, false, { discardQuery: true }).then(() => {
         if (config.branding.termsOfService.rejectionUrl) {
           window.location.href = config.branding.termsOfService.rejectionUrl;
         } else {
