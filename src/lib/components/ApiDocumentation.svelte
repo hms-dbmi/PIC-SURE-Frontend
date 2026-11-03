@@ -295,15 +295,39 @@
     }
     .swagger-ui :is(.parameter__in, .parameter__extension, .prop-format, .response-undocumented),
     .swagger-ui :is(.model .property.primitive, table.model tr.description),
-    .swagger-ui :is(section.models h4, section.models h5, .model .deprecated span),
-    .swagger-ui :is(.model .deprecated td, .response-control-media-type__accept-message) {
+    .swagger-ui :is(section.models h4, section.models h5, .response__extension),
+    .swagger-ui :is(table.headers .header-example, .response-control-media-type__accept-message),
+    .swagger-ui
+      :is(.json-schema-2020-12-keyword--description, .json-schema-2020-12-expand-deep-button),
+    .swagger-ui
+      :is([class*='json-schema-2020-12-keyword__'], [class*='json-schema-2020-12-json-viewer__']),
+    .swagger-ui .json-schema-2020-12__attribute--muted {
       color: var(--swagger-muted);
+    }
+    /* Swagger greys out deprecated schema properties with !important. */
+    .swagger-ui .model .deprecated :is(span, td) {
+      color: var(--swagger-muted) !important;
+    }
+    .swagger-ui :is(.json-schema-2020-12__title, .json-schema-2020-12__attribute),
+    .swagger-ui :is([class*='json-schema-2020-12'][class*='__name--primary']),
+    .swagger-ui :is([class*='json-schema-2020-12'][class*='__value--primary']) {
+      color: var(--swagger-text);
+    }
+    .swagger-ui .json-schema-2020-12__attribute--primary {
+      color: var(--color-primary-500);
     }
     .swagger-ui .parameter__name.required::after,
     .swagger-ui .parameter__name.required span,
     .swagger-ui :is(table.model tr.property-row .star, .parameter__deprecated),
-    .swagger-ui :is(.model-deprecated-warning, .opblock-deprecated .opblock-title_normal) {
+    .swagger-ui :is(.model-deprecated-warning, .opblock-deprecated .opblock-title_normal),
+    .swagger-ui :is(.json-schema-2020-12__attribute--warning, [class*='__value--warning']),
+    .swagger-ui
+      .json-schema-2020-12-property--required
+      > .json-schema-2020-12:first-of-type
+      > .json-schema-2020-12-head
+      .json-schema-2020-12__title::after {
       color: var(--color-error-700);
+      border-color: var(--color-error-700);
     }
     .swagger-ui :is(.info a, .markdown a, .renderedMarkdown a),
     .swagger-ui :is(.markdown code, .renderedMarkdown code) {
@@ -318,15 +342,15 @@
     .swagger-ui .info .title small.version-stamp {
       background: var(--color-success-900);
     }
-    .swagger-ui .info .title small pre {
-      color: white;
+    .swagger-ui .json-schema-2020-12__constraint {
+      background: var(--color-surface-800);
+    }
+    .swagger-ui .json-schema-2020-12__constraint--string {
+      background: var(--color-warning-900);
     }
     .swagger-ui .opblock-tag,
     .swagger-ui section.models {
       border-color: var(--swagger-line);
-    }
-    .swagger-ui section.models .model-container {
-      background: color-mix(in oklab, var(--color-surface-500) 8%, transparent);
     }
     .swagger-ui .tab li:first-of-type::after {
       background: var(--swagger-line);

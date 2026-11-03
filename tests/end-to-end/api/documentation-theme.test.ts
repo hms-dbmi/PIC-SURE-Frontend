@@ -50,8 +50,9 @@ const themedDocument = {
         type: 'object',
         required: ['name'],
         properties: {
-          name: { type: 'string', example: 'age' },
-          dataset: { type: 'string', format: 'uuid', nullable: true },
+          name: { type: 'string', description: 'Concept name', example: 'age', maxLength: 64 },
+          dataset: { type: 'string', format: 'uuid', description: 'Dataset the concept is in' },
+          code: { type: 'string', description: 'Former identifier', deprecated: true },
         },
       },
     },
@@ -158,7 +159,8 @@ async function contrastFailures(page: Page): Promise<Failure[]> {
 for (const theme of ['picsure', 'bdc', 'aim-ahead']) {
   test.describe(`API documentation in the ${theme} theme`, () => {
     test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
-    test.beforeEach(async ({ page }) => {
+    // Swagger draws OpenAPI 3.1 schemas with a different set of components than 3.0.
+    async function openDocs(page: Page, openapi = '3.0.3') {
       await mockApiConfig(page, {
         features: [{ name: 'OPEN', value: 'true' }],
         branding: [{ name: 'THEME', value: theme }],
@@ -167,7 +169,7 @@ for (const theme of ['picsure', 'bdc', 'aim-ahead']) {
         route.fulfill({ json: [{ name: 'dictionary' }] }),
       );
       await page.route('**/picsure/openapi/dictionary', (route) =>
-        route.fulfill({ json: themedDocument }),
+        route.fulfill({ json: { ...themedDocument, openapi } }),
       );
       await page.goto('/api#api-access');
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
@@ -179,11 +181,25 @@ for (const theme of ['picsure', 'bdc', 'aim-ahead']) {
           await expect(summary).toHaveAttribute('aria-expanded', 'true', { timeout: 2000 });
         }).toPass();
       }
-      await viewer.locator('.models .model-box-control').first().click();
-      await expect(viewer.locator('.models')).toContainText('dataset');
-    });
+      const models = viewer.locator('.models');
+      const is31 = openapi.startsWith('3.1');
+      await models
+        .locator(is31 ? '.json-schema-2020-12-accordion' : '.model-box-control')
+        .first()
+        .click();
+      // Expand every nested property so its description and badges render.
+      const collapsed = is31
+        ? models.getByRole('button', { name: 'Expand all' })
+        : models.locator('.model-toggle.collapsed');
+      await expect(async () => {
+        while ((await collapsed.count()) > 0) await collapsed.first().click({ timeout: 2000 });
+        await expect(models).toContainText('Former identifier', { timeout: 1000 });
+      }).toPass();
+      await expect(models).toContainText('Former identifier');
+    }
 
     test('sits on the page background in the theme colors', async ({ page }) => {
+      await openDocs(page);
       const colors = await page.locator('#api-access').evaluate((section, methods) => {
         const probe = document.createElement('span');
         section.append(probe);
@@ -213,8 +229,11 @@ for (const theme of ['picsure', 'bdc', 'aim-ahead']) {
       for (const [label, palette] of colors.methods) expect(label).toBe(palette);
     });
 
-    test('meets WCAG contrast for text and controls', async ({ page }) => {
-      expect(await contrastFailures(page)).toEqual([]);
-    });
+    for (const openapi of ['3.0.3', '3.1.0']) {
+      test(`meets WCAG contrast for text and controls in OpenAPI ${openapi}`, async ({ page }) => {
+        await openDocs(page, openapi);
+        expect(await contrastFailures(page)).toEqual([]);
+      });
+    }
   });
 }
