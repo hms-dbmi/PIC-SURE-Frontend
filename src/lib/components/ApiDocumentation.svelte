@@ -250,14 +250,17 @@
   .api-documentation {
     min-width: 0;
   }
+  /* Swagger draws in the site theme on the page's own background. Each HTTP method keeps its
+     own semantic color, and every label pairs with text that keeps 4.5:1 in each theme. */
   .swagger-host {
-    background: white;
-    color: #3b4151;
-    border-radius: 0.5rem;
+    --swagger-text: var(--base-font-color);
+    --swagger-muted: var(--color-surface-800);
+    --swagger-line: var(--color-surface-200);
+    color: var(--swagger-text);
     overflow-x: auto;
   }
   .swagger-host :global(.swagger-ui .wrapper) {
-    padding: 0 12px;
+    padding: 0;
   }
   .swagger-host :global(.swagger-ui .info) {
     margin: 24px 0;
@@ -278,8 +281,89 @@
     line-height: 1.75rem;
   }
   .swagger-host :global(.swagger-ui .scheme-container) {
-    padding: 12px;
+    padding: 12px 0;
+    background: transparent;
     box-shadow: none;
+  }
+  .swagger-host :global {
+    .swagger-ui :is(h1, h2, h3, h4, h5, h6, p, li, table, label, .opblock-tag, .tab li),
+    .swagger-ui :is(.opblock-summary-path, .opblock-summary-description, .opblock-description),
+    .swagger-ui :is(.parameter__name, .parameter__type, .response-col_status, .tablinks),
+    .swagger-ui :is(.model, .model-title, .model-box-control, .models-control, .prop-type),
+    .swagger-ui :is(.opblock-summary-operation-id, .opblock-summary-path__deprecated) {
+      color: var(--swagger-text);
+    }
+    .swagger-ui :is(.parameter__in, .parameter__extension, .prop-format, .response-undocumented),
+    .swagger-ui :is(.model .property.primitive, table.model tr.description),
+    .swagger-ui :is(section.models h4, section.models h5, .model .deprecated span),
+    .swagger-ui :is(.model .deprecated td, .response-control-media-type__accept-message) {
+      color: var(--swagger-muted);
+    }
+    .swagger-ui .parameter__name.required::after,
+    .swagger-ui .parameter__name.required span,
+    .swagger-ui :is(table.model tr.property-row .star, .parameter__deprecated),
+    .swagger-ui :is(.model-deprecated-warning, .opblock-deprecated .opblock-title_normal) {
+      color: var(--color-error-700);
+    }
+    .swagger-ui :is(.info a, .markdown a, .renderedMarkdown a),
+    .swagger-ui :is(.markdown code, .renderedMarkdown code) {
+      color: var(--color-primary-500);
+    }
+    .swagger-ui :is(svg, .arrow) {
+      fill: currentColor;
+    }
+    .swagger-ui .info .title small {
+      background: var(--color-surface-800);
+    }
+    .swagger-ui .info .title small.version-stamp {
+      background: var(--color-success-900);
+    }
+    .swagger-ui .info .title small pre {
+      color: white;
+    }
+    .swagger-ui .opblock-tag,
+    .swagger-ui section.models {
+      border-color: var(--swagger-line);
+    }
+    .swagger-ui section.models .model-container {
+      background: color-mix(in oklab, var(--color-surface-500) 8%, transparent);
+    }
+    .swagger-ui .tab li:first-of-type::after {
+      background: var(--swagger-line);
+    }
+    .swagger-ui .opblock {
+      --swagger-method: var(--color-surface-800);
+      background: color-mix(in oklab, var(--swagger-method) 8%, transparent);
+      border-color: var(--swagger-method);
+      opacity: 1;
+    }
+    .swagger-ui .opblock-get {
+      --swagger-method: var(--color-primary-500);
+    }
+    .swagger-ui .opblock-post {
+      --swagger-method: var(--color-success-900);
+    }
+    .swagger-ui .opblock-put {
+      --swagger-method: var(--color-warning-900);
+    }
+    .swagger-ui .opblock-delete {
+      --swagger-method: var(--color-error-500);
+    }
+    .swagger-ui .opblock .opblock-summary {
+      border-color: var(--swagger-method);
+    }
+    .swagger-ui .opblock .opblock-section-header {
+      background: color-mix(in oklab, var(--swagger-method) 6%, transparent);
+      box-shadow: none;
+    }
+    .swagger-ui .opblock .opblock-summary-method {
+      background: var(--swagger-method);
+      color: white;
+      text-shadow: none;
+    }
+    .swagger-ui .opblock .tab-header .tab-item.active h4 span::after {
+      background: var(--swagger-method);
+    }
   }
   .swagger-host :global(.swagger-ui .opblock-summary-path) {
     overflow-wrap: anywhere;
