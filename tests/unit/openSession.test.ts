@@ -295,11 +295,12 @@ describe('open-access sessions through api.ts', () => {
     expect(bearerOf(dataCalls()[0])).toBe(T1);
   });
 
-  it('posts no body, marks issuance as anonymous traffic, and refuses redirects', async () => {
+  it('posts no body, marks issuance as anonymous frontend traffic, and refuses redirects', async () => {
     await api.get('picsure/query/sync');
 
     const init = issuanceCalls()[0];
     expect((init.headers as Record<string, string>)['request-source']).toBe('Open');
+    expect((init.headers as Record<string, string>)['X-Client-Type']).toBe('FRONTEND');
     expect(init.redirect).toBe('error');
     expect(init.method).toBe('POST');
     expect(init.body).toBeUndefined();

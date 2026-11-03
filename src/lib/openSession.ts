@@ -1,5 +1,6 @@
 import { joinUrl, Psama } from '$lib/paths';
 import { log, createLog, getSessionId } from '$lib/logger';
+import { CLIENT_TYPE_HEADERS } from '$lib/clientType';
 
 /**
  * Open-access sessions: a short-lived PSAMA-signed token each anonymous browser gets for itself and
@@ -90,7 +91,11 @@ async function requestSession(): Promise<string | null> {
   try {
     res = await fetch(joinUrl(window.location.origin, Psama.Open.Session), {
       method: 'POST',
-      headers: { 'request-source': 'Open', 'X-Session-Id': getSessionId() },
+      headers: {
+        ...CLIENT_TYPE_HEADERS,
+        'request-source': 'Open',
+        'X-Session-Id': getSessionId(),
+      },
       redirect: 'error',
     });
   } catch {

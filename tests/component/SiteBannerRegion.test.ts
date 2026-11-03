@@ -88,7 +88,7 @@ describe('SiteBannerRegion', () => {
 
     expect(fetchMock).toHaveBeenCalledWith('/picsure/operations/banners/active', {
       cache: 'no-store',
-      headers: { Accept: 'application/json' },
+      headers: { 'X-Client-Type': 'FRONTEND', Accept: 'application/json' },
     });
     expect(screen.getByTestId('site-banner-region')).toHaveClass('w-full');
     const notice = screen.getByRole('region', { name: 'Maintenance' });
