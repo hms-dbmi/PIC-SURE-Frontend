@@ -114,7 +114,7 @@
 
 <div
   data-testid="public-access-key"
-  class="card border border-surface-200 bg-surface-50-950 p-6 min-h-80 flex flex-col"
+  class="rounded-container border border-surface-600 bg-white dark:bg-surface-950 p-6 min-h-80 flex flex-col"
 >
   <header class="flex items-center gap-4 mb-4">
     <i class="fa-solid fa-globe text-3xl text-primary-500"></i>

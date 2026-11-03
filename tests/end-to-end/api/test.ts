@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import { test, mockApiFail, mockApiSuccess, mockApiConfig } from '../custom-context';
 import { picsureUser, roles as mockRoles, mockExpiredToken, mockToken } from '../mock-data';
 import { userIsLoggedIn } from '../utils';
@@ -24,6 +24,47 @@ async function expectSectionAligned(page: Page, id: string) {
       }, id),
     )
     .toBeLessThan(4);
+}
+
+// The Authentication card has to stand out from the page: a fill lighter than the
+// background behind it, and a border with at least the 3:1 non-text contrast WCAG 1.4.11
+// asks of a component's boundary.
+async function expectCardStandsOut(page: Page, card: Locator) {
+  await expect(card).toBeVisible();
+  const colors = await card.evaluate((element) => {
+    const context = document.createElement('canvas').getContext('2d', {
+      willReadFrequently: true,
+    })!;
+    // Computed colors can come back as oklch(); a canvas resolves any CSS color to sRGB.
+    const toLuminance = (color: string) => {
+      context.clearRect(0, 0, 1, 1);
+      context.fillStyle = color;
+      context.fillRect(0, 0, 1, 1);
+      const [r, g, b] = [...context.getImageData(0, 0, 1, 1).data].map((value) => {
+        const channel = value / 255;
+        return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+    const isPainted = (color: string) => color !== 'rgba(0, 0, 0, 0)' && color !== 'transparent';
+    let behind = element.parentElement;
+    while (behind && !isPainted(getComputedStyle(behind).backgroundColor)) {
+      behind = behind.parentElement;
+    }
+    const style = getComputedStyle(element);
+    return {
+      fill: toLuminance(style.backgroundColor),
+      border: toLuminance(style.borderTopColor),
+      borderWidth: parseFloat(style.borderTopWidth),
+      page: toLuminance(getComputedStyle(behind ?? document.body).backgroundColor),
+    };
+  });
+  const contrast = (a: number, b: number) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+
+  expect(colors.fill).toBeGreaterThan(colors.page);
+  expect(colors.borderWidth).toBeGreaterThan(0);
+  expect(contrast(colors.border, colors.page)).toBeGreaterThanOrEqual(3);
+  expect(contrast(colors.border, colors.fill)).toBeGreaterThanOrEqual(3);
 }
 
 // A JWT whose exp claim is the given number of days from now. The page only
@@ -421,6 +462,16 @@ test.describe('API page', () => {
     // Then
     await expect(userToken).toBeVisible();
   });
+
+  test('Personal access token card stands out from the page', async ({ page }) => {
+    // Given
+    await page.goto('/api');
+    await userIsLoggedIn(page);
+
+    // Then
+    await expectCardStandsOut(page, page.locator('#user-token'));
+  });
+
   test('Has expected badge and expiration', async ({ page }) => {
     // Given
     await page.goto('/api');
@@ -712,6 +763,14 @@ test.describe('API page logged out', () => {
     // Then
     await expect(page.getByTestId('public-access-key')).toBeVisible();
     await expect(page.locator('#user-token')).not.toBeVisible();
+  });
+
+  test('Public access key card stands out from the page', async ({ page }) => {
+    // Given
+    await page.goto('/api');
+
+    // Then
+    await expectCardStandsOut(page, page.getByTestId('public-access-key'));
   });
 
   test('Capabilities requiring login show an x icon and login text', async ({ page }) => {
