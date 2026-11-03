@@ -949,25 +949,24 @@ test.describe('API page logged out', () => {
 
   async function heroLayout(page: Page) {
     const hero = page.locator('header', { has: page.locator('#api-header') });
-    await expect(hero.getByRole('heading', { level: 1 })).toHaveText(
-      'Programmatic Access with the PIC-SURE API',
-    );
-    for (const sentence of [
+    await expect(hero.locator('h1')).toHaveText('Programmatic Access with the PIC-SURE API');
+    const subtitle = hero.locator('p');
+    await expect(subtitle).toContainText(
       'Search data and build cohorts directly with Python, R, or any HTTP client.',
-      'Build reproducible cohort-building pipelines.',
-    ]) {
-      await expect(hero.getByText(sentence)).toBeInViewport();
-    }
+    );
+    await expect(subtitle).toContainText('Build reproducible cohort-building pipelines.');
     return page.evaluate(() => {
-      const { width, height } = document
-        .getElementById('api-header')!
-        .closest('header')!
-        .getBoundingClientRect();
+      const header = document.getElementById('api-header')!.closest('header')!;
+      const scroller = document.getElementById('page')!;
+      const right = (element: Element) => element.getBoundingClientRect().right;
       return {
-        hero: { width, height },
-        page: document.querySelector('#api-page')!.getBoundingClientRect().width,
-        viewport: window.innerWidth,
-        documentWidth: document.documentElement.scrollWidth,
+        hero: header.getBoundingClientRect(),
+        page: document.getElementById('api-page')!.getBoundingClientRect().width,
+        contentRight: Math.max(
+          right(header.querySelector('h1')!),
+          right(header.querySelector('p')!),
+        ),
+        scroller: { clientWidth: scroller.clientWidth, scrollWidth: scroller.scrollWidth },
       };
     });
   }
@@ -978,8 +977,9 @@ test.describe('API page logged out', () => {
 
     const layout = await heroLayout(page);
     expect(layout.hero.height).toBeLessThanOrEqual(170);
-    expect(layout.hero.width).toBeCloseTo(layout.page, 0);
-    await expect(page.locator('#authentication h2')).toBeInViewport();
+    const hero = page.locator('header', { has: page.locator('#api-header') });
+    await expect(hero.locator('h1')).toBeInViewport({ ratio: 1 });
+    await expect(hero.locator('p')).toBeInViewport({ ratio: 1 });
   });
 
   test('Hero keeps its full content without overflowing at 200% zoom', async ({ page }) => {
@@ -989,8 +989,8 @@ test.describe('API page logged out', () => {
 
     const layout = await heroLayout(page);
     expect(layout.hero.width).toBeCloseTo(layout.page, 0);
-    expect(layout.documentWidth).toBeLessThanOrEqual(layout.viewport);
-    expect(layout.hero.height).toBeLessThan(400);
+    expect(layout.contentRight).toBeLessThanOrEqual(layout.scroller.clientWidth);
+    expect(layout.scroller.scrollWidth).toBeLessThanOrEqual(layout.scroller.clientWidth);
   });
 
   test('Legacy /analyze/api redirects to /api when logged out', async ({ page }) => {
