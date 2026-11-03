@@ -63,6 +63,34 @@ describe('Editor', () => {
   });
 });
 
+it.each([
+  ['a paragraph', '<p>Notice</p>'],
+  ['a list item', '<ol><li data-list="bullet">Notice</li></ol>'],
+  ['a code block', '<pre data-language="plain">Notice</pre>'],
+])('leaves Tab and Shift+Tab to the browser in %s', async (_, initial) => {
+  render(Editor, { content: initial });
+  const editor = await screen.findByRole('textbox', { name: 'Rich text editor' });
+  await waitFor(() => expect(editor).toHaveTextContent('Notice'));
+  const html = editor.innerHTML;
+  const text = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT).nextNode()!;
+
+  for (const shiftKey of [false, true]) {
+    for (const [index, length] of [
+      [0, 0],
+      [0, 6],
+    ]) {
+      const range = document.createRange();
+      range.setStart(text, index);
+      range.setEnd(text, index + length);
+      window.getSelection()!.removeAllRanges();
+      window.getSelection()!.addRange(range);
+      editor.focus();
+      expect(await fireEvent.keyDown(editor, { key: 'Tab', shiftKey })).toBe(true);
+    }
+  }
+  expect(editor.innerHTML).toBe(html);
+});
+
 it('reports sanitization only when content is edited', async () => {
   const onsanitize = vi.fn();
   render(Editor, { content: '<p>Original</p>', onsanitize });

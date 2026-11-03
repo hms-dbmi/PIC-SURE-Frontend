@@ -39,6 +39,16 @@
     id?: string;
   } = $props();
 
+  const TAB_BINDINGS = [
+    'indent',
+    'outdent',
+    'indent code-block',
+    'outdent code-block',
+    'remove tab',
+    'tab',
+    'table tab',
+  ];
+
   const colors = [
     'surface',
     'primary',
@@ -129,6 +139,9 @@
         theme: 'snow',
         modules: {
           toolbar: toolbarOptions,
+          // Quill's Tab bindings indent or insert a tab, trapping keyboard users (WCAG 2.1.2).
+          // Removing them lets Tab and Shift+Tab move focus like any other field.
+          keyboard: { bindings: Object.fromEntries(TAB_BINDINGS.map((name) => [name, null])) },
         },
       });
       quill.root.setAttribute('role', 'textbox');
