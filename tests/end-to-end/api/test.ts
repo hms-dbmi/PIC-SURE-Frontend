@@ -947,6 +947,52 @@ test.describe('API page logged out', () => {
     expect((await toc.boundingBox())!.x).toBeCloseTo(before.x, 0);
   });
 
+  async function heroLayout(page: Page) {
+    const hero = page.locator('header', { has: page.locator('#api-header') });
+    await expect(hero.getByRole('heading', { level: 1 })).toHaveText(
+      'Programmatic Access with the PIC-SURE API',
+    );
+    for (const sentence of [
+      'Search data and build cohorts directly with Python, R, or any HTTP client.',
+      'Build reproducible cohort-building pipelines.',
+    ]) {
+      await expect(hero.getByText(sentence)).toBeInViewport();
+    }
+    return page.evaluate(() => {
+      const { width, height } = document
+        .getElementById('api-header')!
+        .closest('header')!
+        .getBoundingClientRect();
+      return {
+        hero: { width, height },
+        page: document.querySelector('#api-page')!.getBoundingClientRect().width,
+        viewport: window.innerWidth,
+        documentWidth: document.documentElement.scrollWidth,
+      };
+    });
+  }
+
+  test('Hero stays compact so the page content starts near the top', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/api');
+
+    const layout = await heroLayout(page);
+    expect(layout.hero.height).toBeLessThanOrEqual(170);
+    expect(layout.hero.width).toBeCloseTo(layout.page, 0);
+    await expect(page.locator('#authentication h2')).toBeInViewport();
+  });
+
+  test('Hero keeps its full content without overflowing at 200% zoom', async ({ page }) => {
+    // A 1280x800 window at 200% zoom lays out as a 640x400 CSS viewport.
+    await page.setViewportSize({ width: 640, height: 400 });
+    await page.goto('/api');
+
+    const layout = await heroLayout(page);
+    expect(layout.hero.width).toBeCloseTo(layout.page, 0);
+    expect(layout.documentWidth).toBeLessThanOrEqual(layout.viewport);
+    expect(layout.hero.height).toBeLessThan(400);
+  });
+
   test('Legacy /analyze/api redirects to /api when logged out', async ({ page }) => {
     // When
     await page.goto('/analyze/api');
