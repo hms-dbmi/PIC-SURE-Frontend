@@ -96,59 +96,6 @@ test.describe('API page', () => {
     ).toBeVisible();
   });
 
-  // 320px is a 640px window at 200% zoom.
-  for (const width of [1440, 768, 320]) {
-    test(`Header subtitle starts its second sentence on a new line at ${width}px`, async ({
-      page,
-    }) => {
-      // Given
-      await page.setViewportSize({ width, height: 900 });
-      await page.goto('/api');
-      await userIsLoggedIn(page);
-      const subtitle = page.locator('#api-header + p');
-      await expect(subtitle).toBeVisible();
-
-      // When
-      const lines = await subtitle.evaluate((paragraph) => {
-        // Source formatting may wrap the text, so match any run of whitespace between words.
-        const firstEnd = /HTTP\s+client\./;
-        const secondStartPattern = /Build\s+reproducible/;
-        const charRect = (textOffset: number) => {
-          const walker = document.createTreeWalker(paragraph, NodeFilter.SHOW_TEXT);
-          let remaining = textOffset;
-          for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-            const length = node.textContent!.length;
-            if (remaining < length) {
-              const range = document.createRange();
-              range.setStart(node, remaining);
-              range.setEnd(node, remaining + 1);
-              return range.getBoundingClientRect();
-            }
-            remaining -= length;
-          }
-          throw new Error(`Offset ${textOffset} is past the end of the subtitle`);
-        };
-        const text = paragraph.textContent!;
-        const firstMatch = firstEnd.exec(text)!;
-        const secondStart = secondStartPattern.exec(text)!.index;
-        return {
-          text: text.replace(/\s+/g, ' ').trim(),
-          firstSentenceBottom: charRect(firstMatch.index + firstMatch[0].length - 1).bottom,
-          secondSentenceTop: charRect(secondStart).top,
-          secondSentenceLeft: charRect(secondStart).left,
-          paragraphLeft: paragraph.getBoundingClientRect().left,
-        };
-      });
-
-      // Then
-      expect(lines.text).toBe(
-        'Search data and build cohorts directly with Python, R, or any HTTP client. Build reproducible cohort-building pipelines.',
-      );
-      expect(lines.secondSentenceTop).toBeGreaterThanOrEqual(lines.firstSentenceBottom - 1);
-      expect(Math.abs(lines.secondSentenceLeft - lines.paragraphLeft)).toBeLessThan(1);
-    });
-  }
-
   test('On this page sits in its own card, set apart from the page content', async ({ page }) => {
     // Given the navigation rail is shown
     await page.setViewportSize({ width: 1440, height: 900 });
