@@ -73,8 +73,7 @@
     {/if}
   {:catch error}
     <ErrorAlert title="API Error">
-      {api.consentDeniedMessage(error) ??
-        `An error occurred while retrieving dataset ${page.params.uuid}.`}
+      {api.userMessage(error, `An error occurred while retrieving dataset ${page.params.uuid}.`)}
     </ErrorAlert>
   {/await}
 </Content>

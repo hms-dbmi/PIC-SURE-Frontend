@@ -7,11 +7,13 @@ import { get } from 'svelte/store';
 import Genes from '$lib/components/explorer/genome-filter/gene/Genes.svelte';
 import * as api from '$lib/api';
 import { selectedGenes } from '$lib/stores/GeneFilter';
-import { optionsIn } from './helpers';
+import { toaster } from '$lib/toaster';
+import { optionsIn, rejection } from './helpers';
 
 vi.mock('$app/environment', () => ({ browser: false }));
 
-vi.mock('$lib/api', () => ({
+vi.mock('$lib/api', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('$lib/api')>()),
   get: vi.fn(),
 }));
 
@@ -107,5 +109,11 @@ describe('Genes', () => {
 
     await waitFor(() => expect(mockGet).toHaveBeenCalledTimes(2), { timeout: 2000 });
     expect(mockGet.mock.calls[1][0]).toContain('query=BRC');
+  });
+
+  it('shows the wait message when loading genes is rate limited', async () => {
+    mockGet.mockRejectedValueOnce(rejection(429, 'Wait 30 seconds'));
+    render(Genes);
+    await waitFor(() => expect(toaster.error).toHaveBeenCalledWith({ title: 'Wait 30 seconds' }));
   });
 });

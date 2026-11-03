@@ -105,9 +105,17 @@ export interface ApiCapability {
   requiresLogin?: boolean;
 }
 
+// Requests per open-access key, as the gateway enforces them. Optional: the limiter is off by default,
+// so the API page publishes the limits only when a deployment sets both.
+export interface ApiRateLimits {
+  perMinute: number;
+  perDay: number;
+}
+
 export interface ApiPageConfig {
   capabilities: ApiCapability[];
   publicKeyEnabled?: boolean;
+  rateLimits?: ApiRateLimits;
 }
 
 export interface CodeBlockConfig extends Indexable {

@@ -1,13 +1,14 @@
 // @vitest-environment happy-dom
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 
 import AddFilter from '$lib/components/explorer/AddFilter.svelte';
 import { getConceptDetails } from '$lib/stores/Dictionary';
 import { addFilter, enrichFilterDetails } from '$lib/stores/Filter';
 import type { SearchResult } from '$lib/models/Search';
-import { optionsIn } from './helpers';
+import { toaster } from '$lib/toaster';
+import { optionsIn, rejection } from './helpers';
 
 vi.mock('$app/environment', () => ({ browser: false }));
 
@@ -84,6 +85,7 @@ describe('AddFilter', () => {
     mockGetConceptDetails.mockReset();
     mockAddFilter.mockReset();
     mockEnrichFilterDetails.mockReset();
+    vi.mocked(toaster.error).mockReset();
   });
 
   it('adds a numeric filter immediately and enriches dataset/study in the background', async () => {
@@ -124,5 +126,42 @@ describe('AddFilter', () => {
 
     // Every value, in source order, none missing and none repeated.
     expect(optionsIn('options-container')).toEqual(values);
+  });
+
+  describe('when the values fail to load', () => {
+    beforeEach(() => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    async function loadRejectedWith(e: unknown) {
+      mockGetConceptDetails.mockRejectedValue(e);
+      render(AddFilter, {
+        data: { ...categoricalSearchResult, values: undefined } as SearchResult,
+      });
+      await vi.waitFor(() => expect(toaster.error).toHaveBeenCalledTimes(1));
+      return vi.mocked(toaster.error).mock.calls[0][0];
+    }
+
+    it("toasts a 429's message instead of the generic error", async () => {
+      const message = "You've made too many requests. Try again in 30 seconds.";
+
+      expect(await loadRejectedWith(rejection(429, message))).toEqual({ title: message });
+    });
+
+    it('stops loading the options list', async () => {
+      await loadRejectedWith(rejection(429, 'Try again later.'));
+
+      await vi.waitFor(() => expect(screen.queryByTestId('progress-ring')).toBeNull());
+    });
+
+    it('keeps the generic toast for other failures', async () => {
+      expect(await loadRejectedWith(rejection(500, 'Internal Server Error'))).toEqual({
+        title: 'An error occured while loading the filter. Please try again later.',
+      });
+    });
   });
 });

@@ -105,8 +105,10 @@
       .catch((error) => {
         console.error('Viusalzation failed with query: ' + JSON.stringify(query), error);
         toaster.error({
-          description:
+          description: api.userMessage(
+            error,
             'An error occured while loading your visualization(s). Please try again later. If this problem persists, please contact an administrator.',
+          ),
         });
       })
       .finally(() => {
