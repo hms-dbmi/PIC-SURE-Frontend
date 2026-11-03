@@ -1,5 +1,6 @@
 import { expect, type BrowserContext, type Page, type Route } from '@playwright/test';
 import { test, mockApiSuccess, mockApiConfig } from '../custom-context';
+import { expectStandsOut } from '../utils';
 
 const apiKeyPath = '*/**/psama/open/apiKey';
 const mockKeyResponse = {
@@ -86,6 +87,19 @@ test.describe('Public access key generation', () => {
       'This key is shown only once and cannot be recovered.',
     );
     await expect(page.getByTestId('public-key-expires')).not.toBeEmpty();
+  });
+
+  test('Revealed key value box stands out from its card', async ({ page, context }) => {
+    // Given
+    await mockApiSuccess(context, apiKeyPath, mockKeyResponse);
+    await page.goto('/api');
+
+    // When
+    await openForm(page);
+    await page.getByRole('button', { name: 'Generate Key' }).click();
+
+    // Then
+    await expectStandsOut(page.getByTestId('public-key-value'));
   });
 
   test('Sends no Authorization header and the Turnstile token', async ({ page, context }) => {

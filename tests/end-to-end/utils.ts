@@ -44,3 +44,45 @@ export const clickNthFilterIcon = async (page: Page, rowIndex = 0) => {
   await expect(filterIcon).toBeVisible();
   await filterIcon.click();
 };
+
+// A box that has to stand out from what's behind it: a near-white fill no darker than its
+// backdrop, and a border with at least the 3:1 non-text contrast WCAG 1.4.11 asks of a
+// component's boundary.
+export async function expectStandsOut(box: Locator) {
+  await expect(box).toBeVisible();
+  const colors = await box.evaluate((element) => {
+    const context = document.createElement('canvas').getContext('2d', {
+      willReadFrequently: true,
+    })!;
+    // Computed colors can come back as oklch(); a canvas resolves any CSS color to sRGB.
+    const toLuminance = (color: string) => {
+      context.clearRect(0, 0, 1, 1);
+      context.fillStyle = color;
+      context.fillRect(0, 0, 1, 1);
+      const [r, g, b] = [...context.getImageData(0, 0, 1, 1).data].map((value) => {
+        const channel = value / 255;
+        return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+    const isPainted = (color: string) => color !== 'rgba(0, 0, 0, 0)' && color !== 'transparent';
+    let behind = element.parentElement;
+    while (behind && !isPainted(getComputedStyle(behind).backgroundColor)) {
+      behind = behind.parentElement;
+    }
+    const style = getComputedStyle(element);
+    return {
+      fill: toLuminance(style.backgroundColor),
+      border: toLuminance(style.borderTopColor),
+      borderWidth: parseFloat(style.borderTopWidth),
+      backdrop: toLuminance(getComputedStyle(behind ?? document.body).backgroundColor),
+    };
+  });
+  const contrast = (a: number, b: number) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+
+  expect(colors.fill).toBeGreaterThanOrEqual(0.9);
+  expect(colors.fill).toBeGreaterThanOrEqual(colors.backdrop);
+  expect(colors.borderWidth).toBeGreaterThan(0);
+  expect(contrast(colors.border, colors.backdrop)).toBeGreaterThanOrEqual(3);
+  expect(contrast(colors.border, colors.fill)).toBeGreaterThanOrEqual(3);
+}

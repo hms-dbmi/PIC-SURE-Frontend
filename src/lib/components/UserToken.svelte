@@ -100,7 +100,7 @@
         <label for="account">Account:</label>
         <span id="account" class="w-full">{account}</span>
         <label for="token">Token:</label>
-        <div id="token">{revealed ? token : placeHolderToken}</div>
+        <div id="token" class="token-value">{revealed ? token : placeHolderToken}</div>
         <label for="expires">Expires:</label>
         <div>
           <span id="expires" class="w-1/3 mr-2"

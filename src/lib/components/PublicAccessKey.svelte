@@ -236,9 +236,9 @@
       </p>
     </aside>
     <div class="flex items-center gap-2">
-      <code data-testid="public-key-value" class="font-mono text-sm break-all grow"
-        >{publicKey.apiKey}</code
-      >
+      <div data-testid="public-key-value" class="token-value grow">
+        <code class="font-mono text-sm break-all">{publicKey.apiKey}</code>
+      </div>
       <CopyButton
         itemToCopy={publicKey.apiKey}
         logAction="api.public_key.copy"
