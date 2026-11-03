@@ -51,6 +51,7 @@
     errorDescription: string;
   }
 
+  const TITLE_MAX_LENGTH = 120;
   const RESTORE_ERROR_DESCRIPTION =
     'The source banner is unchanged. Your copied changes are still here.';
   const PUBLISH_COPY: Record<PublishIntent, PublishCopy> = {
@@ -582,11 +583,22 @@
 
       <details class="rounded border border-surface-300 p-4">
         <summary class="font-bold">Advanced options</summary>
-        <div class="mt-4 grid gap-4 sm:grid-cols-2">
-          <label class="grid gap-1">
-            <span class="font-bold">Title</span>
-            <input class="input" type="text" maxlength="120" bind:value={title} />
-          </label>
+        <div class="mt-4 grid items-start gap-4 sm:grid-cols-2">
+          <div class="grid gap-1">
+            <label class="grid gap-1">
+              <span class="font-bold">Title</span>
+              <input
+                class="input"
+                type="text"
+                maxlength={TITLE_MAX_LENGTH}
+                aria-describedby="banner-title-help"
+                bind:value={title}
+              />
+            </label>
+            <p id="banner-title-help" class="mt-0 text-sm text-surface-600">
+              {title.length}/{TITLE_MAX_LENGTH} characters.
+            </p>
+          </div>
           <label class="grid gap-1">
             <span class="font-bold">Icon</span>
             <select class="select" bind:value={icon}>

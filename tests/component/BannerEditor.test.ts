@@ -1175,6 +1175,20 @@ describe('BannerEditor', () => {
     },
   );
 
+  it('counts title characters against the 120-character limit', async () => {
+    const { container } = render(BannerEditor);
+    const title = screen.getByRole('textbox', { name: 'Title' });
+    const titleHelp = container.querySelector('#banner-title-help');
+
+    expect(title).toHaveAttribute('maxlength', '120');
+    expect(title).toHaveAccessibleDescription('0/120 characters.');
+    expect(titleHelp).not.toHaveAttribute('aria-live');
+
+    await fireEvent.input(title, { target: { value: 'Planned maintenance' } });
+
+    expect(title).toHaveAccessibleDescription('19/120 characters.');
+  });
+
   it('announces the over-limit explanation without announcing every character count', async () => {
     const { container } = render(BannerEditor);
     const editor = await screen.findByRole('textbox', { name: 'Banner content' });
