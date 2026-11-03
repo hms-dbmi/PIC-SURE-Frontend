@@ -57,7 +57,7 @@ test.describe('Logging out from the menu', () => {
     // an empty tree rather than null means the in-memory stores were reset and stored
     await expect.poll(() => storedFilterIds(page)).toEqual([]);
 
-    // log back in, as a user without access to the filtered study would
+    // log back in: the discarded filters must not come back
     await page.evaluate((token) => localStorage.setItem('token', token ?? ''), token);
     await page.goto('/explorer');
 

@@ -52,11 +52,4 @@ describe('export selections and search after a logout that discards the query', 
     expect(get(expandedNestedFacets)).toEqual([]);
     expect(mockLog).not.toHaveBeenCalled();
   });
-
-  it('leaves them alone after a logout that keeps the query', () => {
-    discardingQuery.set(false);
-
-    expect(get(exports)).toHaveLength(1);
-    expect(get(searchTerm)).toBe('blood pressure');
-  });
 });

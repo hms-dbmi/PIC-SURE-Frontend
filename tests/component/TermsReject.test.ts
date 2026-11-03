@@ -3,9 +3,10 @@ import { describe, it, expect, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 
 const mockLogout = vi.hoisted(() => vi.fn());
+const mockGoto = vi.hoisted(() => vi.fn());
 
 vi.mock('$app/environment', () => ({ browser: true }));
-vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
+vi.mock('$app/navigation', () => ({ goto: (...args: unknown[]) => mockGoto(...args) }));
 vi.mock('$lib/configuration.svelte', () => ({
   config: {
     features: { enforceTermsOfService: true },
@@ -32,5 +33,15 @@ describe('rejecting the terms of service', () => {
     await fireEvent.click(await screen.findByTestId('terms-reject-btn'));
 
     expect(mockLogout).toHaveBeenCalledWith(undefined, false, { discardQuery: true });
+  });
+
+  it('leaves the navigation to logout, which resets the query only after it has navigated', async () => {
+    mockLogout.mockResolvedValue(undefined);
+    render(Terms);
+
+    await fireEvent.click(await screen.findByTestId('terms-reject-btn'));
+    await Promise.resolve();
+
+    expect(mockGoto).not.toHaveBeenCalled();
   });
 });

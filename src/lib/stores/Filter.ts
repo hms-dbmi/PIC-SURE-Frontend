@@ -66,10 +66,8 @@ export const activeFilter: Writable<Filter | undefined> = writable();
 export const activeSearch: Writable<SearchResult | undefined> = writable();
 export const filterWarning: Writable<string | undefined> = writable();
 
-// Filters must not survive into the next login: a forbidden logout's would rerun the denied query
-// and log the user out again, and a deliberate logout's may name studies the next user can't see.
-// Storage is dropped at once, but the stores are reset only after the logout navigates, or the
-// page being left would rerun its count query.
+// Storage is dropped as soon as a discard is raised, but the stores reset only once the logout has
+// navigated, or the page being left would rerun its count query.
 let discarding = false;
 
 discardingQuery.subscribe((discard) => {

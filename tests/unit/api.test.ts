@@ -17,7 +17,7 @@ vi.mock('$lib/stores/User', () => ({
 
 const mockSetDiscardingQuery = vi.fn();
 vi.mock('$lib/discardingQuery', () => ({
-  discardingQuery: { set: (denied: boolean) => mockSetDiscardingQuery(denied) },
+  discardingQuery: { set: (discard: boolean) => mockSetDiscardingQuery(discard) },
 }));
 
 const mockLog = vi.fn();

@@ -24,14 +24,14 @@ async function settle() {
   await new Promise((resolve) => setTimeout(resolve));
 }
 
-describe('logout after access is denied', () => {
+describe('logout while the query is being discarded', () => {
   beforeEach(() => {
     navigations.length = 0;
     localStorage.setItem('token', 'token');
     discardingQuery.set(true);
   });
 
-  it('lowers access denied once the logout has navigated', async () => {
+  it('lowers the discard once the logout has navigated', async () => {
     mockApiGet.mockResolvedValue({});
 
     const loggedOut = logout(undefined, false);
@@ -44,7 +44,7 @@ describe('logout after access is denied', () => {
     expect(get(discardingQuery)).toBe(false);
   });
 
-  it('lowers access denied when the logout navigation fails', async () => {
+  it('lowers the discard when the logout navigation fails', async () => {
     mockApiGet.mockResolvedValue({});
 
     // logout doesn't await its navigation, so the failure surfaces as an unhandled rejection

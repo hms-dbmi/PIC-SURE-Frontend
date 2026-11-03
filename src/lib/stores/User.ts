@@ -303,8 +303,8 @@ export async function login(token: string) {
 }
 
 /**
- * `discardQuery` drops the user's filters, export selections and search once the logout has
- * navigated, for logouts the user chose. A session timeout keeps them so the user can carry on.
+ * Pass `discardQuery` for logouts the user chose: the query is dropped once the logout has navigated.
+ * A session timeout keeps it so the user can log back in and carry on.
  */
 export async function logout(
   authProvider?: AuthProvider,
@@ -360,7 +360,7 @@ async function handleLogout(redirect: boolean) {
       await goto(resolve('/login'));
     }
   } finally {
-    // If a later logout superseded this navigation, the denied page is still mounted, so leave it to that one
+    // If a later logout superseded this navigation, the page being left is still mounted, so leave it to that one
     if (navigation === logoutNavigation) discardingQuery.set(false);
   }
 }
