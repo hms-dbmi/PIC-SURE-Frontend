@@ -82,17 +82,20 @@ test.describe('API documentation for public visitors', () => {
       '/api?url=https://unexpected.example/spec&configUrl=https://unexpected.example/config#api-access',
     );
     const viewer = page.getByTestId('api-documentation');
-    await expect(viewer.getByRole('heading', { name: 'HPDS documentation' })).toBeVisible();
+    await expect(viewer.getByRole('heading', { name: 'Dictionary documentation' })).toBeVisible();
     await expect(viewer.locator('.info .title')).toHaveAttribute('aria-level', '3');
     await expect(viewer.locator('.info .title')).not.toHaveAttribute('role');
     await expect(viewer.locator('.info .title').locator('..')).not.toHaveAttribute('role');
-    await expect(viewer.getByRole('heading', { name: 'default', level: 3 })).toBeVisible();
+    await expect(viewer.locator('.opblock-tag', { hasText: 'default' })).toHaveAttribute(
+      'aria-level',
+      '4',
+    );
     await expect(page.getByTestId('api-public-notice')).toContainText('Public Access Only');
     await expect(page.getByTestId('api-public-notice').getByRole('link')).toHaveAttribute(
       'href',
       '/login?redirectTo=/api',
     );
-    await expect(page.getByLabel('Select service:')).toHaveValue('hpds-query-service');
+    await expect(page.getByLabel('Select service:')).toHaveValue('dictionary');
     const serviceSelect = page.getByLabel('Select service:');
     await expect(serviceSelect).toHaveCSS('background-color', 'rgb(255, 255, 255)');
     await expect(page.getByTestId('api-public-notice')).toHaveCSS(
@@ -105,10 +108,10 @@ test.describe('API documentation for public visitors', () => {
     expect(selectorBounds!.y).toBeLessThan(labelBounds!.y + labelBounds!.height);
     expect(selectorBounds!.width).toBeLessThan((await viewer.boundingBox())!.width / 2);
     await expect(viewer.locator('.servers select')).toBeVisible();
-    await expect(viewer.locator('.servers select')).toHaveValue('/picsure');
+    await expect(viewer.locator('.servers select')).toHaveValue('/picsure/dictionary');
     await expect(page.getByLabel('Select service:').locator('option')).toHaveText([
-      'Authorized Queries',
       'Dictionary',
+      'Authorized Queries',
     ]);
     await viewer.locator('.opblock-summary').click();
     await expect(viewer.getByText('Available data', { exact: true })).toBeVisible();
@@ -116,10 +119,10 @@ test.describe('API documentation for public visitors', () => {
       0,
     );
     await expect(page).toHaveURL(/#api-access$/);
-    await page.getByLabel('Select service:').selectOption('dictionary');
-    await expect(viewer.getByRole('heading', { name: 'Dictionary documentation' })).toBeVisible();
-    await expect(viewer.locator('.servers select')).toHaveValue('/picsure/dictionary');
-    await expect(viewer.getByRole('heading', { name: 'HPDS documentation' })).toHaveCount(0);
+    await page.getByLabel('Select service:').selectOption('hpds-query-service');
+    await expect(viewer.getByRole('heading', { name: 'HPDS documentation' })).toBeVisible();
+    await expect(viewer.locator('.servers select')).toHaveValue('/picsure');
+    await expect(viewer.getByRole('heading', { name: 'Dictionary documentation' })).toHaveCount(0);
     expect(documentHeaders).toHaveLength(3);
     for (const headers of await Promise.all(documentHeaders)) {
       expect(headers.authorization).toBeUndefined();
@@ -129,6 +132,69 @@ test.describe('API documentation for public visitors', () => {
     expect(
       requests.some((url) => /unexpected\.example|validator\.swagger/.test(new URL(url).hostname)),
     ).toBe(false);
+  });
+
+  test('sizes and nests Swagger headings like the rest of the page', async ({ page }) => {
+    await page.route('**/picsure/openapi/*', (route) =>
+      route.fulfill({
+        json: {
+          ...openApiDocument('Documentation', '/search'),
+          components: { schemas: { Result: { type: 'object' } } },
+        },
+      }),
+    );
+    await page.goto('/api#api-access');
+    const viewer = page.getByTestId('api-documentation');
+    const title = viewer.locator('.info .title');
+    await expect(title).toBeVisible();
+    await viewer.locator('.opblock-summary-control').click();
+    await expect(viewer.locator('.opblock h4', { hasText: 'Responses' })).toBeVisible();
+
+    const fontOf = (locator: ReturnType<Page['locator']>) =>
+      locator.evaluate((element) => {
+        const { fontSize, fontWeight } = getComputedStyle(element);
+        return { size: parseFloat(fontSize), weight: Number(fontWeight) };
+      });
+    const pageHeading = await fontOf(page.getByRole('heading', { name: 'Public Access Only' }));
+    const bodyText = await fontOf(page.locator('#api-access p').first());
+    expect((await fontOf(title)).size).toBe(pageHeading.size);
+    for (const version of await title.locator('small pre').all()) {
+      expect((await fontOf(version)).size).toBe(bodyText.size);
+    }
+    const buttons = await Promise.all(
+      [viewer.locator('.opblock-summary-control'), viewer.locator('.models-control')].map(fontOf),
+    );
+    const lightestButton = Math.min(...buttons.map(({ weight }) => weight));
+    for (const heading of [title, viewer.locator('.opblock-tag'), viewer.locator('.models h4')]) {
+      expect((await fontOf(heading)).weight).toBeLessThanOrEqual(lightestButton);
+    }
+
+    const levels = await page
+      .locator('#api-page')
+      .evaluate((root) =>
+        [...root.querySelectorAll('h1, h2, h3, h4, h5, h6, [role="heading"]')]
+          .filter((heading) => heading.checkVisibility())
+          .map((heading) => Number(heading.getAttribute('aria-level') ?? heading.tagName.slice(1))),
+      );
+    expect(levels[0]).toBe(1);
+    for (let index = 1; index < levels.length; index++) {
+      expect(levels[index] - levels[index - 1]).toBeLessThanOrEqual(1);
+    }
+    const docs = await viewer.evaluate((root) =>
+      [...root.querySelectorAll('.info .title, .opblock-tag, .opblock h4, .models h4')].map(
+        (heading) => [
+          heading.textContent?.trim().split(/\s/)[0],
+          heading.getAttribute('aria-level') ?? heading.tagName.slice(1),
+        ],
+      ),
+    );
+    expect(docs).toEqual([
+      [expect.any(String), '3'],
+      ['default', '4'],
+      ['Parameters', '5'],
+      ['Responses', '5'],
+      ['Schemas', '4'],
+    ]);
   });
 
   const policies = [
@@ -166,7 +232,7 @@ test.describe('API documentation for public visitors', () => {
       const response = await page.goto('/api#api-access');
       if (!policy) expect(response?.headers()['content-security-policy']).toContain("'nonce-");
       const viewer = page.getByTestId('api-documentation');
-      await expect(viewer.getByRole('heading', { name: 'HPDS documentation' })).toBeVisible();
+      await expect(viewer.getByRole('heading', { name: 'Dictionary documentation' })).toBeVisible();
       await viewer.locator('.opblock-summary').click();
       await expect(viewer.locator('.highlight-code')).toBeVisible();
       expect(
@@ -195,9 +261,9 @@ test.describe('API documentation for public visitors', () => {
     await page.goto('/api#api-access');
     const serviceSelect = page.getByLabel('Select service:');
     await expect(serviceSelect.locator('option')).toHaveText([
+      'Dictionary',
       'Authorized Queries',
       openAccess,
-      'Dictionary',
     ]);
     await serviceSelect.selectOption('hpds-open-access');
     await expect(
@@ -207,13 +273,28 @@ test.describe('API documentation for public visitors', () => {
     ).toBeVisible();
   });
 
+  test('shows the first available service when the registry has no dictionary', async ({
+    page,
+  }) => {
+    await page.route('**/picsure/openapi', (route) =>
+      route.fulfill({ json: registry.filter(({ name }) => name !== 'dictionary') }),
+    );
+    await page.goto('/api#api-access');
+    const viewer = page.getByTestId('api-documentation');
+    await expect(viewer.getByRole('heading', { name: 'HPDS documentation' })).toBeVisible();
+    await expect(page.getByLabel('Select service:')).toHaveValue('hpds-query-service');
+    await expect(page.getByLabel('Select service:').locator('option')).toHaveText([
+      'Authorized Queries',
+    ]);
+  });
+
   test('reuses the viewer across switches and renders again after client navigation', async ({
     page,
   }) => {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     await page.goto('/api#api-access');
-    for (const service of ['dictionary', 'hpds-query-service', 'dictionary']) {
+    for (const service of ['hpds-query-service', 'dictionary', 'hpds-query-service']) {
       await page.getByLabel('Select service:').selectOption(service);
       await expect(
         page.getByTestId('api-documentation').getByRole('heading', {
@@ -225,7 +306,9 @@ test.describe('API documentation for public visitors', () => {
     await expect(page.getByTestId('api-documentation')).toHaveCount(0);
     await page.goBack();
     await expect(
-      page.getByTestId('api-documentation').getByRole('heading', { name: 'HPDS documentation' }),
+      page
+        .getByTestId('api-documentation')
+        .getByRole('heading', { name: 'Dictionary documentation' }),
     ).toBeVisible();
     expect(errors).toEqual([]);
   });
@@ -235,48 +318,44 @@ test.describe('API documentation for public visitors', () => {
     const gate = new Promise<void>((resolve) => {
       release = resolve;
     });
-    await page.route('**/picsure/openapi/dictionary', async (route) => {
+    await page.route('**/picsure/openapi/hpds-query-service', async (route) => {
       await gate;
-      await route.fulfill({ json: openApiDocument('Dictionary documentation', '/search') });
+      await route.fulfill({ json: openApiDocument('HPDS documentation', '/query') });
     });
     await page.goto('/api#api-access');
     const viewer = page.getByTestId('api-documentation');
-    await expect(viewer.getByRole('heading', { name: 'HPDS documentation' })).toBeVisible();
-    await page.getByLabel('Select service:').selectOption('dictionary');
+    await expect(viewer.getByRole('heading', { name: 'Dictionary documentation' })).toBeVisible();
+    await page.getByLabel('Select service:').selectOption('hpds-query-service');
     try {
       await expect(viewer.getByRole('status')).toContainText(
-        'Loading API documentation for Dictionary',
+        'Loading API documentation for Authorized Queries',
       );
-      await expect(viewer.getByRole('heading', { name: 'HPDS documentation' })).toBeVisible();
+      await expect(viewer.getByRole('heading', { name: 'Dictionary documentation' })).toBeVisible();
     } finally {
       release();
     }
-    await expect(viewer.getByRole('heading', { name: 'Dictionary documentation' })).toBeVisible();
-    await expect(viewer.getByRole('heading', { name: 'HPDS documentation' })).toHaveCount(0);
+    await expect(viewer.getByRole('heading', { name: 'HPDS documentation' })).toBeVisible();
+    await expect(viewer.getByRole('heading', { name: 'Dictionary documentation' })).toHaveCount(0);
     await expect(viewer.getByRole('status')).toHaveCount(0);
   });
 
   test('a failed service can retry and does not prevent switching to another service', async ({
     page,
   }) => {
-    await page.route('**/picsure/openapi/hpds-query-service', (route) =>
-      route.fulfill({ status: 502 }),
-    );
+    await page.route('**/picsure/openapi/dictionary', (route) => route.fulfill({ status: 502 }));
     await page.goto('/api#api-access');
     const viewer = page.getByTestId('api-documentation');
     await expect(viewer).toContainText('Unable to load API documentation');
-    await page.getByLabel('Select service:').selectOption('dictionary');
-    await expect(viewer.getByRole('heading', { name: 'Dictionary documentation' })).toBeVisible();
     await page.getByLabel('Select service:').selectOption('hpds-query-service');
+    await expect(viewer.getByRole('heading', { name: 'HPDS documentation' })).toBeVisible();
+    await page.getByLabel('Select service:').selectOption('dictionary');
     await expect(viewer.getByRole('button', { name: 'Retry' })).toBeVisible();
-    await expect(
-      viewer.getByRole('heading', { name: 'Dictionary documentation' }),
-    ).not.toBeVisible();
-    await page.route('**/picsure/openapi/hpds-query-service', (route) =>
-      route.fulfill({ json: openApiDocument('Recovered HPDS', '/query') }),
+    await expect(viewer.getByRole('heading', { name: 'HPDS documentation' })).not.toBeVisible();
+    await page.route('**/picsure/openapi/dictionary', (route) =>
+      route.fulfill({ json: openApiDocument('Recovered dictionary', '/search') }),
     );
     await viewer.getByRole('button', { name: 'Retry' }).click();
-    await expect(viewer.getByRole('heading', { name: 'Recovered HPDS' })).toBeVisible();
+    await expect(viewer.getByRole('heading', { name: 'Recovered dictionary' })).toBeVisible();
   });
 
   for (const response of [{ status: 404 }, { json: [] }]) {
@@ -293,7 +372,7 @@ test.describe('API documentation for public visitors', () => {
       );
       await page.route('**/picsure/openapi', (route) => route.fulfill({ json: registry }));
       await page.getByTestId('api-documentation').getByRole('button', { name: 'Retry' }).click();
-      await expect(page.getByRole('heading', { name: 'HPDS documentation' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Dictionary documentation' })).toBeVisible();
     });
   }
 
@@ -306,7 +385,7 @@ test.describe('API documentation for public visitors', () => {
       await expect(viewer).not.toContainText('unavailable on this deployment');
       await page.route('**/picsure/openapi', (route) => route.fulfill({ json: registry }));
       await viewer.getByRole('button', { name: 'Retry' }).click();
-      await expect(viewer.getByRole('heading', { name: 'HPDS documentation' })).toBeVisible();
+      await expect(viewer.getByRole('heading', { name: 'Dictionary documentation' })).toBeVisible();
     });
   }
 
@@ -314,11 +393,14 @@ test.describe('API documentation for public visitors', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/api#api-access');
     const viewer = page.getByTestId('api-documentation');
-    await expect(viewer.getByRole('heading', { name: 'HPDS documentation' })).toBeVisible();
+    await expect(viewer.getByRole('heading', { name: 'Dictionary documentation' })).toBeVisible();
     await expect(viewer.locator('.info .title')).toHaveAttribute('aria-level', '3');
     await expect(viewer.locator('.info .title')).not.toHaveAttribute('role');
     await expect(viewer.locator('.info .title').locator('..')).not.toHaveAttribute('role');
-    await expect(viewer.getByRole('heading', { name: 'default', level: 3 })).toBeVisible();
+    await expect(viewer.locator('.opblock-tag', { hasText: 'default' })).toHaveAttribute(
+      'aria-level',
+      '4',
+    );
     await viewer.locator('.opblock-summary').click();
     await viewer.getByRole('tab', { name: 'Schema', exact: true }).click();
     await expect(viewer.getByText('count', { exact: true })).toBeVisible();
@@ -332,7 +414,7 @@ test.describe('API documentation for public visitors', () => {
   });
 
   test('a stalled request times out into a retryable state', async ({ page }) => {
-    await page.route('**/picsure/openapi/hpds-query-service', () => {});
+    await page.route('**/picsure/openapi/dictionary', () => {});
     await page.goto('/api#api-access');
     await expect(page.getByTestId('api-documentation')).toContainText('Loading API documentation');
     await expect(
@@ -341,7 +423,7 @@ test.describe('API documentation for public visitors', () => {
   });
 
   test('rejects a malformed service document', async ({ page }) => {
-    await page.route('**/picsure/openapi/hpds-query-service', (route) =>
+    await page.route('**/picsure/openapi/dictionary', (route) =>
       route.fulfill({ json: { message: 'not a spec' } }),
     );
     await page.goto('/api#api-access');
@@ -355,17 +437,17 @@ test.describe('API documentation for public visitors', () => {
     const gate = new Promise<void>((resolve) => {
       release = resolve;
     });
-    await page.route('**/picsure/openapi/hpds-query-service', async (route) => {
+    await page.route('**/picsure/openapi/dictionary', async (route) => {
       await gate;
-      await route.fulfill({ json: openApiDocument('Stale HPDS', '/query') }).catch(() => {});
+      await route.fulfill({ json: openApiDocument('Stale dictionary', '/search') }).catch(() => {});
     });
     await page.goto('/api#api-access');
     await expect(page.getByLabel('Select service:')).toBeVisible();
-    await page.getByLabel('Select service:').selectOption('dictionary');
-    await expect(page.getByRole('heading', { name: 'Dictionary documentation' })).toBeVisible();
+    await page.getByLabel('Select service:').selectOption('hpds-query-service');
+    await expect(page.getByRole('heading', { name: 'HPDS documentation' })).toBeVisible();
     release();
-    await expect(page.getByLabel('Select service:')).toHaveValue('dictionary');
-    await expect(page.getByRole('heading', { name: 'Stale HPDS' })).toHaveCount(0);
+    await expect(page.getByLabel('Select service:')).toHaveValue('hpds-query-service');
+    await expect(page.getByRole('heading', { name: 'Stale dictionary' })).toHaveCount(0);
   });
 });
 
@@ -377,11 +459,14 @@ test.describe('API documentation for signed-in visitors', () => {
     const response = await page.goto('/api#api-access');
     expect(await response?.text()).not.toContain('data-testid="api-public-notice"');
     const viewer = page.getByTestId('api-documentation');
-    await expect(viewer.getByRole('heading', { name: 'HPDS documentation' })).toBeVisible();
+    await expect(viewer.getByRole('heading', { name: 'Dictionary documentation' })).toBeVisible();
     await expect(viewer.locator('.info .title')).toHaveAttribute('aria-level', '3');
     await expect(viewer.locator('.info .title')).not.toHaveAttribute('role');
     await expect(viewer.locator('.info .title').locator('..')).not.toHaveAttribute('role');
-    await expect(viewer.getByRole('heading', { name: 'default', level: 3 })).toBeVisible();
+    await expect(viewer.locator('.opblock-tag', { hasText: 'default' })).toHaveAttribute(
+      'aria-level',
+      '4',
+    );
     await expect(page.getByTestId('api-public-notice')).toHaveCount(0);
     await viewer.locator('.opblock-summary').click();
     await expect(viewer.getByText('Available data', { exact: true })).toBeVisible();
@@ -422,7 +507,7 @@ function docsEvents(events: LoggedEvent[]) {
 const interactiveDocument = {
   openapi: '3.0.3',
   info: {
-    title: 'HPDS documentation',
+    title: 'Dictionary documentation',
     version: '1.0',
     description: 'See [the guide](https://docs.example.org/guide) first.',
   },
@@ -472,7 +557,7 @@ test.describe('API documentation activity logging', () => {
   test.beforeEach(async ({ page }) => {
     await mockApiConfig(page, { features: [{ name: 'OPEN', value: 'true' }] });
     await mockDocuments(page);
-    await page.route('**/picsure/openapi/hpds-query-service', (route) =>
+    await page.route('**/picsure/openapi/dictionary', (route) =>
       route.fulfill({ json: interactiveDocument }),
     );
   });
@@ -481,13 +566,13 @@ test.describe('API documentation activity logging', () => {
     const events = await collectLogs(page);
     await page.goto('/api#api-access');
     const viewer = page.getByTestId('api-documentation');
-    await expect(viewer.getByRole('heading', { name: 'HPDS documentation' })).toBeVisible();
+    await expect(viewer.getByRole('heading', { name: 'Dictionary documentation' })).toBeVisible();
     const expected: LoggedEvent[] = [];
     const expectLogged = async (action: string, metadata: Record<string, unknown>) => {
       expected.push({
         event_type: 'ACTION',
         action,
-        metadata: { service: 'hpds-query-service', ...metadata },
+        metadata: { service: 'dictionary', ...metadata },
       });
       await expect.poll(() => docsEvents(events)).toEqual(expected);
     };
@@ -653,8 +738,8 @@ test.describe('API documentation activity logging', () => {
     await expectLogged('api.docs_select', { control: 'server', value: '/picsure/v2' });
 
     // When
-    await page.getByLabel('Select service:').selectOption('dictionary');
-    await expect(viewer.getByRole('heading', { name: 'Dictionary documentation' })).toBeVisible();
+    await page.getByLabel('Select service:').selectOption('hpds-query-service');
+    await expect(viewer.getByRole('heading', { name: 'HPDS documentation' })).toBeVisible();
 
     // Then
     await expect
@@ -662,7 +747,7 @@ test.describe('API documentation activity logging', () => {
       .toEqual({
         event_type: 'ACTION',
         action: 'api.docs_service_select',
-        metadata: { from: 'hpds-query-service', to: 'dictionary' },
+        metadata: { from: 'dictionary', to: 'hpds-query-service' },
       });
   });
 
@@ -683,7 +768,7 @@ test.describe('API documentation activity logging', () => {
         {
           event_type: 'ACTION',
           action: 'api.docs_link_click',
-          metadata: { service: 'hpds-query-service', url: 'https://docs.example.org/guide' },
+          metadata: { service: 'dictionary', url: 'https://docs.example.org/guide' },
         },
       ]);
   });
@@ -711,9 +796,7 @@ test.describe('API documentation activity logging', () => {
 
     // When: the registry lists a service whose document is missing.
     await page.route('**/picsure/openapi', (route) => route.fulfill({ json: registry }));
-    await page.route('**/picsure/openapi/hpds-query-service', (route) =>
-      route.fulfill({ status: 404 }),
-    );
+    await page.route('**/picsure/openapi/dictionary', (route) => route.fulfill({ status: 404 }));
     await viewer.getByRole('button', { name: 'Retry' }).click();
 
     // Then
@@ -733,7 +816,7 @@ test.describe('API documentation activity logging', () => {
       { event_type: 'ERROR', metadata: { stage: 'registry' }, status: 503, error: failed },
       {
         event_type: 'ERROR',
-        metadata: { service: 'hpds-query-service', stage: 'document' },
+        metadata: { service: 'dictionary', stage: 'document' },
         status: 404,
         error: failed,
       },
@@ -743,7 +826,7 @@ test.describe('API documentation activity logging', () => {
   test('logs nested schema toggles in an OpenAPI 3.1 document', async ({ page }) => {
     // Given
     const events = await collectLogs(page);
-    await page.route('**/picsure/openapi/hpds-query-service', (route) =>
+    await page.route('**/picsure/openapi/dictionary', (route) =>
       route.fulfill({
         json: {
           ...interactiveDocument,
@@ -759,7 +842,7 @@ test.describe('API documentation activity logging', () => {
     );
     await page.goto('/api#api-access');
     const viewer = page.getByTestId('api-documentation');
-    await expect(viewer.getByRole('heading', { name: 'HPDS documentation' })).toBeVisible();
+    await expect(viewer.getByRole('heading', { name: 'Dictionary documentation' })).toBeVisible();
     const queryResult = viewer.locator('.models .json-schema-2020-12', {
       has: page.locator('.json-schema-2020-12__title', { hasText: 'QueryResult' }),
     });
@@ -782,7 +865,7 @@ test.describe('API documentation activity logging', () => {
     await combined.locator('.json-schema-2020-12-accordion', { hasText: 'One of' }).click();
 
     // Then
-    const service = 'hpds-query-service';
+    const service = 'dictionary';
     await expect
       .poll(() => docsEvents(events))
       .toEqual([
