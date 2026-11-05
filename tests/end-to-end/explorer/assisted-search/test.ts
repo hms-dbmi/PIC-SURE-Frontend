@@ -1,6 +1,14 @@
 import { expect, type Page } from '@playwright/test';
 import { test, mockApiSuccess, mockApiConfig } from '../../custom-context';
-import { searchResults, facetsResponse, searchResultPath, facetResultPath } from '../../mock-data';
+import {
+  searchResults,
+  facetsResponse,
+  searchResultPath,
+  facetResultPath,
+  conceptsDetailPath,
+  detailResponseCat,
+  countResultPath,
+} from '../../mock-data';
 import { userIsLoggedIn } from '../../utils';
 
 const chatPath = '**/picsure/ai/chat';
@@ -160,7 +168,9 @@ test.describe('Assisted search', () => {
     await expect(reply).not.toContainText('errorType');
   });
 
-  test('a refresh keeps the conversation, and resetting the search ends it', async ({ page }) => {
+  test('a refresh keeps the conversation, and resetting the search does not end it', async ({
+    page,
+  }) => {
     const conversations: string[] = [];
     await page.route(chatPath, async (route) => {
       conversations.push(route.request().postDataJSON().conversationId);
@@ -183,10 +193,78 @@ test.describe('Assisted search', () => {
     expect(conversations[1]).toBe(conversations[0]);
 
     await page.getByLabel('You are on the reset button').click();
-    await expect(page.getByTestId('chat-message-user')).toHaveCount(0);
+    await expect(page.getByTestId('search-box')).toHaveValue('');
+    await expect(page.getByTestId('chat-message-user')).toHaveCount(2);
+
     await page.reload();
     await userIsLoggedIn(page);
-    await expect(page.getByTestId('chat-message-user')).toHaveCount(0);
+    await expect(page.getByTestId('chat-message-user')).toHaveCount(2);
+    await ask(page, 'third question');
+    await expect(page.getByTestId('chat-message-text')).toHaveCount(3);
+    expect(conversations[2]).toBe(conversations[0]);
+  });
+
+  test.describe('Clear all filters', () => {
+    const filterQuery = {
+      select: [],
+      phenotypicClause: {
+        phenotypicFilterType: 'REQUIRED',
+        conceptPath: detailResponseCat.conceptPath,
+      },
+      genomicFilters: [],
+    };
+
+    async function haveFilterAndConversation(page: Page) {
+      await mockApiSuccess(page, `${conceptsDetailPath}/*`, detailResponseCat);
+      await mockApiSuccess(page, countResultPath, '9999');
+      await page.route(chatPath, (route) =>
+        route.fulfill({ json: { response: 'Added it.', query: filterQuery } }),
+      );
+      await openChat(page);
+      await ask(page, 'add the heart attack filter');
+      await expect(page.getByTestId('chat-changed')).toBeVisible();
+      await expect(page.getByTestId('clear-all-results-btn')).toBeVisible();
+    }
+
+    test('warns that the conversation goes too, and clears it on Yes', async ({ page }) => {
+      await haveFilterAndConversation(page);
+
+      await page.getByTestId('clear-all-results-btn').click();
+      const dialog = page.locator('#modal-component');
+      await expect(dialog.getByTestId('clear-all-chat-note')).toHaveText(
+        'This will also clear your conversation with the search assistant.',
+      );
+      await dialog.getByRole('button', { name: 'Yes' }).click();
+
+      await expect(page.getByText('No filters added')).toBeVisible();
+      await expect(page.getByTestId('chat-message-user')).toHaveCount(0);
+      await expect(page.locator('#assisted-search')).toBeVisible();
+    });
+
+    test('keeps the conversation on No', async ({ page }) => {
+      await haveFilterAndConversation(page);
+
+      await page.getByTestId('clear-all-results-btn').click();
+      await page.locator('#modal-component').getByRole('button', { name: 'No' }).click();
+
+      await expect(page.getByTestId('chat-message-user')).toHaveCount(1);
+    });
+
+    test('says nothing about a conversation when there is none', async ({ page }) => {
+      await mockApiSuccess(page, `${conceptsDetailPath}/*`, detailResponseCat);
+      await mockApiSuccess(page, countResultPath, '9999');
+      await page.route(chatPath, (route) =>
+        route.fulfill({ json: { response: 'Added it.', query: filterQuery } }),
+      );
+      await openChat(page);
+      await ask(page, 'add the heart attack filter');
+      await expect(page.getByTestId('clear-all-results-btn')).toBeVisible();
+      await page.getByTestId('chat-new').click();
+
+      await page.getByTestId('clear-all-results-btn').click();
+      await expect(page.locator('#modal-component')).toContainText('clear all filters');
+      await expect(page.getByTestId('clear-all-chat-note')).toHaveCount(0);
+    });
   });
 
   test('New conversation clears the thread and starts a new conversation id', async ({ page }) => {

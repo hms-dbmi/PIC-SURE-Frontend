@@ -20,10 +20,15 @@
   import Modal from '$lib/components/Modal.svelte';
   import Counts from '$lib/components/explorer/results/Counts.svelte';
   import { log, createLog } from '$lib/logger';
+  import { chat } from '$lib/assistedSearch';
 
   let currentPage: string = $state(page.url.pathname);
   let isDiscoverPage = $derived(currentPage.includes('/discover'));
   let modalOpen: boolean = $state(false);
+  // Clearing everything starts the assistant over too, so say so when there is something to lose.
+  let clearsConversation = $derived(
+    config.features.enableAssistedSearch && chat.messages.length > 0,
+  );
 
   let hasFilterOrExport = $derived(
     $allFilters.length !== 0 ||
@@ -100,9 +105,15 @@
   onconfirm={() => {
     clearFilters();
     clearExports();
+    if (config.features.enableAssistedSearch) chat.reset();
   }}
 >
-  Are you sure you want to clear all filters?
+  <p>Are you sure you want to clear all filters?</p>
+  {#if clearsConversation}
+    <p class="mt-2" data-testid="clear-all-chat-note">
+      This will also clear your conversation with the search assistant.
+    </p>
+  {/if}
 </Modal>
 <section
   id="results-panel"

@@ -5,6 +5,7 @@
   import { sanitizeHTML } from '$lib/utilities/HTML';
   import type { AuthData } from '$lib/models/AuthProvider';
   import { resetSearch } from '$lib/stores/Search';
+  import { clearSavedChat } from '$lib/assistedSearch/storage';
   import { log, createLog } from '$lib/logger';
 
   interface Props {
@@ -41,6 +42,8 @@
     let instance = await createInstance(provider!);
     instance.login(redirectTo, providerType).then(() => {
       resetSearch();
+      // A new login starts with no conversation left over from the last one.
+      clearSavedChat();
     });
   };
 
