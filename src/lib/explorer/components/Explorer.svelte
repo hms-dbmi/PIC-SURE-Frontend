@@ -24,6 +24,7 @@
   import ExplorerTour from '#lib/explorer/components/tour/ExplorerTour.svelte';
   import { log, createLog } from '#lib/telemetry/logger.ts';
   import { exploreMode } from '#lib/explorer/mode.ts';
+  import { chat, ChatToggleButton, assistedSearchEnabled } from '#lib/assistedSearch/index.ts';
 
   let { tourConfig }: { tourConfig: TourDataType } = $props();
 
@@ -40,6 +41,7 @@
       : resolve('/(picsure)/(public)/explorer'),
   );
   let allowGenomicFiltering = $derived(genomicFeaturesEnabled && !isDiscoverPage);
+  let assistedSearchOn = $derived(assistedSearchEnabled(isDiscoverPage));
   // ?startTour=true (the export page's "Learn How") opens the tour's instructions. A first search
   // with criteria hides the tour, so then the tour waits for that search to settle.
   let tourStart: 'none' | 'pending' | 'autostart' = $state(
@@ -50,13 +52,18 @@
         : 'autostart',
   );
 
+  function syncUrl(term: string) {
+    goto(term ? `${path}?search=${encodeURIComponent(term)}` : path, { replace: true });
+  }
+
   function update() {
     search.clearError();
     search.setTerm(searchInput);
+    syncUrl(searchInput);
+  }
 
-    goto(searchInput ? `${path}?search=${encodeURIComponent(searchInput)}` : path, {
-      replace: true,
-    });
+  function toggleChat() {
+    chat.setOpen(!chat.open);
   }
 
   function reset() {
@@ -75,6 +82,13 @@
 
   onMount(async () => {
     releaseHandler = search.start();
+    // A search the assistant sets, or undoes, goes in the URL like a typed one.
+    chat.onapply = (parts) => {
+      if (parts.search === undefined) return;
+      searchInput = parts.search;
+      syncUrl(parts.search);
+    };
+    if (assistedSearchOn) chat.restore();
     if (searchInput && searchInput !== search.term) {
       search.setTerm(searchInput);
     } else {
@@ -93,7 +107,10 @@
     }
   });
 
-  onDestroy(() => releaseHandler?.());
+  onDestroy(() => {
+    releaseHandler?.();
+    chat.onapply = undefined;
+  });
 </script>
 
 {#snippet expandedRow(row: SearchResult)}
@@ -133,6 +150,9 @@
         >
           Reset
         </Button>
+        {#if assistedSearchOn}
+          <ChatToggleButton open={chat.open} ontoggle={toggleChat} />
+        {/if}
       </div>
     </div>
     {#if search.error}

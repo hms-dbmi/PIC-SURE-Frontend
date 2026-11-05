@@ -16,6 +16,7 @@
   import SidePanel from '#lib/explorer/components/results/SidePanel.svelte';
   import Footer from '#lib/shell/Footer.svelte';
   import FilterWarning from '#lib/explorer/components/FilterWarning.svelte';
+  import { chat, AssistedSearch, assistedSearchEnabled } from '#lib/assistedSearch/index.ts';
 
   let { children }: { children?: Snippet } = $props();
   let filterWarningModal: boolean = $state(false);
@@ -31,6 +32,13 @@
       !page.url.pathname.includes('/export') &&
       !page.url.pathname.includes('/distributions'),
   );
+
+  let showAssistedSearch = $derived.by(() => {
+    const path = page.url.pathname.replace(/\/$/, '');
+    const onDiscover = path.endsWith('/discover');
+    const onExplorer = path.endsWith('/explorer');
+    return chat.open && (onDiscover || onExplorer) && assistedSearchEnabled(onDiscover);
+  });
 
   beforeNavigate(({ to, cancel }) => {
     const toMode = routeMode(to?.route.id);
@@ -65,6 +73,11 @@
       <div id="results-sidebar" class="flex overflow-auto">
         <SidePanel />
       </div>
+    {/if}
+  {/snippet}
+  {#snippet pageTop()}
+    {#if showAssistedSearch}
+      <AssistedSearch session={chat} />
     {/if}
   {/snippet}
   {@render children?.()}

@@ -216,7 +216,21 @@ export default [
   ]),
   ...importBoundary(
     'explorer',
-    ['explorer', 'query', 'api', 'assets', 'auth', 'config', 'shell', 'telemetry', 'ui', 'utils'],
+    [
+      'explorer',
+      // The assistant sets the search and filters the explorer owns, and the explorer mounts its
+      // toggle; the explorer reaches it only through the public index.
+      'assistedSearch/index.ts',
+      'query',
+      'api',
+      'assets',
+      'auth',
+      'config',
+      'shell',
+      'telemetry',
+      'ui',
+      'utils',
+    ],
     {},
     {
       // The dictionary helpers sit below explorer search; importing it back restores the cycle
