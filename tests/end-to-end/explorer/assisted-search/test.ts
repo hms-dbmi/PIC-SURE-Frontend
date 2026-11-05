@@ -167,6 +167,36 @@ test.describe('Assisted search', () => {
     );
   });
 
+  test('filters the assistant adds can each be removed', async ({ page }) => {
+    const leaf = (n: number) => ({
+      phenotypicFilterType: 'REQUIRED',
+      conceptPath: `\\SOMEDATA\\questionnaire\\disease\\${n}\\`,
+    });
+    await mockApiSuccess(page, `${conceptsDetailPath}/*`, detailResponseCat);
+    await mockApiSuccess(page, countResultPath, '9999');
+    await page.route(chatPath, (route) =>
+      route.fulfill({
+        json: {
+          response: 'Added three.',
+          query: {
+            select: [],
+            genomicFilters: [],
+            phenotypicClause: { phenotypicClauses: [leaf(1), leaf(2), leaf(3)], operator: 'AND' },
+          },
+        },
+      }),
+    );
+    await openChat(page);
+    await ask(page, 'add three filters');
+
+    const filters = page.locator('[data-testid^="added-filter-"]');
+    await expect(filters).toHaveCount(3);
+    for (const remaining of [2, 1, 0]) {
+      await page.getByTitle('Remove Filter').first().click();
+      await expect(filters).toHaveCount(remaining);
+    }
+  });
+
   test('the band only shows while the chat is open', async ({ page }) => {
     await openChat(page);
     await expect(page.locator('#assisted-search')).toBeVisible();
