@@ -26,6 +26,7 @@
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import ExplorerTour from '$lib/components/tour/ExplorerTour.svelte';
   import { log, createLog } from '$lib/logger';
+  import { chat, AssistedSearch, ChatToggleButton } from '$lib/assistedSearch';
 
   let { tourConfig }: { tourConfig: TourDataType } = $props();
 
@@ -43,23 +44,30 @@
   let isDiscoverPage = $derived(page.url.pathname.includes('/discover'));
   let path = $derived(isDiscoverPage ? '/discover' : '/explorer');
   let allowGenomicFiltering = $derived(genomicFeaturesEnabled && !isDiscoverPage);
+  // The assistant builds Explorer queries; the Discover page has no integration yet.
+  let assistedSearchEnabled = $derived(config.features.enableAssistedSearch && !isDiscoverPage);
+
+  function syncUrl(term: string) {
+    goto(resolve((term ? `${path}?search=${encodeURIComponent(term)}` : `${path}`) as '/'), {
+      replaceState: true,
+    });
+  }
 
   function update() {
     if ($error) error.set('');
     searchTerm.set(searchInput);
+    syncUrl(searchInput);
+  }
 
-    goto(
-      resolve(
-        (searchInput ? `${path}?search=${encodeURIComponent(searchInput)}` : `${path}`) as '/',
-      ),
-      {
-        replaceState: true,
-      },
-    );
+  // The chat can change the search term while the search box is hidden.
+  function toggleChat() {
+    chat.open = !chat.open;
+    if (!chat.open) searchInput = $searchTerm;
   }
 
   function reset() {
     resetSearch();
+    chat.reset();
     searchInput = '';
 
     goto(resolve(path as '/'));
@@ -73,6 +81,10 @@
 
   onMount(() => {
     releaseHandler = initHandler();
+    // A search the assistant sets, or undoes, goes in the URL like a typed one.
+    chat.onapply = (parts) => {
+      if (parts.search !== undefined) syncUrl(parts.search);
+    };
     if (searchInput && searchInput !== $searchTerm) {
       searchTerm.set(searchInput);
     } else {
@@ -87,7 +99,10 @@
     }
   });
 
-  onDestroy(() => releaseHandler?.());
+  onDestroy(() => {
+    releaseHandler?.();
+    chat.onapply = undefined;
+  });
 </script>
 
 <section id="search-container" class="flex gap-9">
@@ -97,9 +112,16 @@
   <div id="search-results-col" class="flex-auto">
     <div id="search-bar" class="flex gap-2 mb-6">
       <div class="flex-auto">
-        <Searchbox bind:searchTerm={searchInput} search={update} />
+        {#if assistedSearchEnabled && chat.open}
+          <AssistedSearch session={chat} />
+        {:else}
+          <Searchbox bind:searchTerm={searchInput} search={update} />
+        {/if}
       </div>
       <div class="flex-none">
+        {#if assistedSearchEnabled}
+          <ChatToggleButton open={chat.open} ontoggle={toggleChat} />
+        {/if}
         {#if allowGenomicFiltering}
           <a
             data-testid="genomic-filter-btn"

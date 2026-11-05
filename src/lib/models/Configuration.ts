@@ -14,6 +14,7 @@ export type Features = Indexable & {
   dashboard: boolean;
   dashboardDrawer: boolean;
   discover: boolean;
+  enableAssistedSearch: boolean;
   enableGENEQuery: boolean;
   enableSNPQuery: boolean;
   enforceTermsOfService: boolean;
@@ -407,6 +408,15 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
       description: 'Shows the guided walkthrough tour button on the Explorer/Discover pages.',
     },
 
+    // --- Assisted Search ---
+    ENABLE_ASSISTED_SEARCH: {
+      group: 'Assisted Search',
+      type: 'boolean',
+      default: false,
+      description:
+        'Shows the AI-assisted search chat on the Explorer page, in place of the search box. Needs the AI service deployed behind the gateway.',
+    },
+
     // --- Genomic Search ---
     ENABLE_GENE_QUERY: {
       group: 'Genomic Search',
@@ -710,6 +720,7 @@ export function mapFeatures(apiFeatures: ConfigObject[]): Features {
     discover: parse('DISCOVER'),
     dashboard: parse('DASHBOARD'),
     dashboardDrawer: parse('DASHBOARD_DRAWER'),
+    enableAssistedSearch: parse('ENABLE_ASSISTED_SEARCH'),
     enableGENEQuery: parse('ENABLE_GENE_QUERY'),
     enableSNPQuery: parse('ENABLE_SNP_QUERY'),
     enforceTermsOfService: parse('ENFORCE_TOS_ACCEPT'),

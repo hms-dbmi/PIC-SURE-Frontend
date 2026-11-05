@@ -1,0 +1,52 @@
+import type { GenomicFilterInterfacev3, PhenotypicClause } from '$lib/models/query/Query';
+
+/** The slimmed facet shape the AI service reads and writes; the UI's `Facet` is display state. */
+export type SlimFacet = { category: string; name: string };
+
+/** The three query fields the assistant may set. The rest of the researcher's query is theirs. */
+export type ChatQuery = {
+  select: string[];
+  phenotypicClause: PhenotypicClause | null;
+  genomicFilters: GenomicFilterInterfacev3[];
+};
+
+/** Everything on the researcher's screen that a chat turn can read or change. */
+export type ScreenState = {
+  query: ChatQuery;
+  facets: SlimFacet[];
+  search: string;
+};
+
+export type ScreenPart = keyof ScreenState;
+
+export type ChatRequest = {
+  message: string;
+  conversationId: string;
+  requestId: string;
+  query?: ChatQuery;
+  facets?: SlimFacet[];
+  search?: string;
+};
+
+/** Each of `query`/`facets`/`search` is present only when the turn changed it. */
+export type ChatResponse = {
+  response: string;
+  query?: ChatQuery;
+  facets?: SlimFacet[];
+  search?: string;
+};
+
+export type ChatMessage = {
+  /** The turn's requestId, shared by the user message and its reply. */
+  id: string;
+  role: 'user' | 'assistant';
+  text: string;
+  failed?: boolean;
+  /** Parts of the screen this reply changed. */
+  changed?: ScreenPart[];
+  /** The screen as it was before this reply changed it; present only while undo is possible. */
+  before?: ScreenState;
+  undone?: boolean;
+  /** The reply proposed changes that could not be put on screen. */
+  applyFailed?: boolean;
+};
