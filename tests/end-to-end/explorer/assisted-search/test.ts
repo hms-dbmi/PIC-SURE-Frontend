@@ -390,3 +390,45 @@ test.describe('Assisted search', () => {
     await expect(page.getByTestId('chat-toggle')).toHaveCount(0);
   });
 });
+
+test.describe('Assisted search per page', () => {
+  const discoverFeatures = [
+    { name: 'OPEN', value: 'true' },
+    { name: 'DISCOVER', value: 'true' },
+    { name: 'OPEN_EXPLORER', value: 'false' },
+  ];
+
+  test.beforeEach(async ({ page }) => {
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+    await mockApiSuccess(page, searchResultPath, searchResults);
+  });
+
+  test('the Discover flag alone shows the toggle on Discover but not on Explorer', async ({
+    page,
+  }) => {
+    await mockApiConfig(page, {
+      features: [...discoverFeatures, { name: 'ENABLE_ASSISTED_SEARCH_DISCOVER', value: 'true' }],
+    });
+
+    await page.goto('/discover');
+    await expect(page.getByTestId('chat-toggle')).toBeVisible();
+    await page.getByTestId('chat-toggle').click();
+    await expect(page.getByTestId('chat-window')).toBeVisible();
+
+    await page.goto('/explorer');
+    await userIsLoggedIn(page);
+    await expect(page.getByTestId('search-box')).toBeVisible();
+    await expect(page.getByTestId('chat-toggle')).toHaveCount(0);
+    await expect(page.getByTestId('chat-window')).toHaveCount(0);
+  });
+
+  test('the Explorer flag alone leaves Discover without the assistant', async ({ page }) => {
+    await mockApiConfig(page, {
+      features: [...discoverFeatures, { name: 'ENABLE_ASSISTED_SEARCH', value: 'true' }],
+    });
+
+    await page.goto('/discover');
+    await expect(page.getByTestId('search-box')).toBeVisible();
+    await expect(page.getByTestId('chat-toggle')).toHaveCount(0);
+  });
+});

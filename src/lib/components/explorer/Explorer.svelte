@@ -26,7 +26,7 @@
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import ExplorerTour from '$lib/components/tour/ExplorerTour.svelte';
   import { log, createLog } from '$lib/logger';
-  import { chat, ChatToggleButton } from '$lib/assistedSearch';
+  import { chat, ChatToggleButton, assistedSearchEnabled } from '$lib/assistedSearch';
 
   let { tourConfig }: { tourConfig: TourDataType } = $props();
 
@@ -44,8 +44,7 @@
   let isDiscoverPage = $derived(page.url.pathname.includes('/discover'));
   let path = $derived(isDiscoverPage ? '/discover' : '/explorer');
   let allowGenomicFiltering = $derived(genomicFeaturesEnabled && !isDiscoverPage);
-  // The assistant builds Explorer queries; the Discover page has no integration yet.
-  let assistedSearchEnabled = $derived(config.features.enableAssistedSearch && !isDiscoverPage);
+  let assistedSearchOn = $derived(assistedSearchEnabled(isDiscoverPage));
 
   function syncUrl(term: string) {
     goto(resolve((term ? `${path}?search=${encodeURIComponent(term)}` : `${path}`) as '/'), {
@@ -84,7 +83,7 @@
       searchInput = parts.search;
       syncUrl(parts.search);
     };
-    if (assistedSearchEnabled) chat.restore();
+    if (assistedSearchOn) chat.restore();
     if (searchInput && searchInput !== $searchTerm) {
       searchTerm.set(searchInput);
     } else {
@@ -133,7 +132,7 @@
         >
           Reset
         </button>
-        {#if assistedSearchEnabled}
+        {#if assistedSearchOn}
           <ChatToggleButton open={chat.open} ontoggle={toggleChat} />
         {/if}
       </div>

@@ -58,7 +58,7 @@ describe('ChatWindow', () => {
     expect(chat.messages).toHaveLength(0);
   });
 
-  it('swaps Send for Stop while a turn is pending', async () => {
+  it('offers Stop beside a disabled Send while a turn is pending', async () => {
     let finish!: (r: ChatResponse) => void;
     const chat = session(new Promise<ChatResponse>((r) => (finish = r)));
     render(ChatWindow, { session: chat });
@@ -66,10 +66,10 @@ describe('ChatWindow', () => {
     await fireEvent.input(screen.getByTestId('chat-input'), { target: { value: 'hi' } });
     await fireEvent.click(screen.getByTestId('chat-send'));
     await waitFor(() => expect(screen.getByTestId('chat-stop')).toBeTruthy());
-    expect(screen.queryByTestId('chat-send')).toBeNull();
+    expect((screen.getByTestId('chat-send') as HTMLButtonElement).disabled).toBe(true);
 
     finish({ response: 'done' });
-    await waitFor(() => expect(screen.getByTestId('chat-send')).toBeTruthy());
+    await waitFor(() => expect(screen.queryByTestId('chat-stop')).toBeNull());
   });
 
   it('shows what a reply changed and undoes it', async () => {

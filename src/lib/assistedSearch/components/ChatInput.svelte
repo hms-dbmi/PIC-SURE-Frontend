@@ -1,10 +1,16 @@
 <script lang="ts">
-  import Loading from '../../components/Loading.svelte';
+  import TimedLoading, { type TimedMessage } from '$lib/components/TimedLoading.svelte';
   interface Props {
     pending: boolean;
     onsend: (text: string) => void;
     onstop: () => void;
   }
+
+  const LOADING_MESSAGES: TimedMessage[] = [
+    { afterMs: 0, text: 'Thinking...' },
+    { afterMs: 3000, text: 'Still working on it…' },
+    { afterMs: 7000, text: 'Hang tight…' },
+  ];
 
   let { pending, onsend, onstop }: Props = $props();
 
@@ -55,16 +61,18 @@
       {onkeydown}></textarea>
     <button
       type="submit"
-      class="btn preset-filled-primary-500 chat-button disabled:opacity-50"
+      class="btn preset-filled-primary-500 chat-button {pending
+        ? 'w-52 disabled:opacity-100'
+        : 'disabled:opacity-50'}"
       aria-label="Send"
       title="Send (Enter)"
       data-testid="chat-send"
       disabled={!text.trim()}
     >
       {#if pending}
-        <Loading ring size="micro" label="Thinking..." />
+        <TimedLoading size="micro" color="white" messages={LOADING_MESSAGES} />
       {:else}
-        <i class="fas fa-paper-plane" aria-hidden="true"></i>
+        <i class="fas fa-paper-plane" aria-hidden="true"></i> Send
       {/if}
     </button>
     {#if pending}

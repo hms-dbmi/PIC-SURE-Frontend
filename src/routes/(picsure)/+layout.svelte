@@ -21,8 +21,7 @@
   import Drawer from '$lib/components/Drawer.svelte';
   import DashboardDrawer from '$lib/components/dashboard/DashboardDrawer.svelte';
   import FilterWarning from '$lib/components/explorer/FilterWarning.svelte';
-  import { config } from '$lib/configuration.svelte';
-  import { chat, AssistedSearch } from '$lib/assistedSearch';
+  import { chat, AssistedSearch, assistedSearchEnabled } from '$lib/assistedSearch';
 
   let { children }: { children?: Snippet } = $props();
   let filterWarningModal: boolean = $state(false);
@@ -37,12 +36,14 @@
       !page.url.pathname.includes('/distributions'),
   );
 
-  // Only the Explorer search page has the assistant; its toggle button lives in that page.
-  let showAssistedSearch = $derived(
-    config.features.enableAssistedSearch &&
-      chat.open &&
-      page.url.pathname.replace(/\/$/, '').endsWith('/explorer'),
-  );
+  // Only the Explorer and Discover search pages have the assistant; its toggle button lives in that page.
+  let showAssistedSearch = $derived.by(() => {
+    const path = page.url.pathname.replace(/\/$/, '');
+    const onDiscover = path.endsWith('/discover');
+    return (
+      chat.open && (onDiscover || path.endsWith('/explorer')) && assistedSearchEnabled(onDiscover)
+    );
+  });
 
   beforeNavigate(({ to, cancel }) => {
     const notAuthorized =
