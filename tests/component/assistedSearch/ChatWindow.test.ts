@@ -87,6 +87,19 @@ describe('ChatWindow', () => {
     expect(screen.queryByTestId('chat-undo')).toBeNull();
   });
 
+  it('starts a new conversation on request', async () => {
+    const chat = session({ response: 'x' });
+    render(ChatWindow, { session: chat });
+    expect((screen.getByTestId('chat-new') as HTMLButtonElement).disabled).toBe(true);
+
+    await chat.send('hi');
+    await waitFor(() =>
+      expect((screen.getByTestId('chat-new') as HTMLButtonElement).disabled).toBe(false),
+    );
+    await fireEvent.click(screen.getByTestId('chat-new'));
+    expect(chat.messages).toEqual([]);
+  });
+
   it('toggles full screen on the session', async () => {
     const chat = session({ response: 'x' });
     render(ChatWindow, { session: chat });

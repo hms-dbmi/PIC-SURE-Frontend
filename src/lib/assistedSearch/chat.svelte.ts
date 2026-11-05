@@ -1,5 +1,12 @@
 import { changedParts, partsOf } from './model/screen';
-import type { ChatMessage, ChatRequest, ChatResponse, ScreenState } from './model/types';
+import type { ChatMessage, ChatRequest, ChatResponse, SavedChat, ScreenState } from './model/types';
+
+export type ChatStore = {
+  /** The saved chat, or null when there is none or it has expired. */
+  load: () => SavedChat | null;
+  save: (chat: SavedChat) => void;
+  clear: () => void;
+};
 
 export type ChatDeps = {
   readScreen: () => ScreenState;
@@ -8,6 +15,7 @@ export type ChatDeps = {
   fetchResult: (requestId: string, signal: AbortSignal) => Promise<ChatResponse | undefined>;
   newId: () => string;
   log?: (action: string, details?: Record<string, unknown>) => void;
+  store?: ChatStore;
   /** How long to wait on a turn before asking for its stored reply instead. */
   patienceMs?: number;
   pollMs?: number;
@@ -18,9 +26,18 @@ const FALLBACK_ERROR = 'The assistant could not answer that. Please try again.';
 
 const statusOf = (e: unknown) => (e as { status?: number } | undefined)?.status;
 
+// api.ts raises an HttpError whose message is the response body as text, and the service's body
+// is JSON, so the text to show is one level down.
 function messageOf(e: unknown): string {
-  const body = (e as { body?: { message?: unknown } } | undefined)?.body;
-  return typeof body?.message === 'string' && body.message ? body.message : FALLBACK_ERROR;
+  let text = (e as { body?: { message?: unknown } } | undefined)?.body?.message;
+  if (typeof text === 'string' && text.trimStart().startsWith('{')) {
+    try {
+      text = (JSON.parse(text) as { message?: unknown }).message;
+    } catch {
+      // not JSON after all; show it as it is
+    }
+  }
+  return typeof text === 'string' && text ? text : FALLBACK_ERROR;
 }
 
 const sleep = (ms: number, signal: AbortSignal) =>
@@ -38,7 +55,8 @@ const sleep = (ms: number, signal: AbortSignal) =>
 
 /**
  * One researcher's chat: the thread, the in-flight turn, and the undo of what a reply changed.
- * Lives in memory only, like the service's copy of it; `reset()` starts a new conversation.
+ * The thread is kept in the tab's session storage so a refresh resumes it; `reset()` starts a
+ * new conversation.
  */
 export class ChatSession {
   messages = $state<ChatMessage[]>([]);
@@ -63,36 +81,44 @@ export class ChatSession {
     return latest?.id === id && latest.role === 'assistant';
   }
 
+  setOpen(open: boolean): void {
+    this.open = open;
+    this.#persist();
+  }
+
+  /**
+   * Brings back the saved thread. Called once the page is up rather than on construction, so the
+   * first render matches the server's. A turn that was still being answered is fetched by its
+   * requestId, which the service keeps for as long as it keeps the conversation.
+   */
+  async restore(): Promise<void> {
+    if (this.messages.length || this.pending) return;
+    const saved = this.#deps.store?.load();
+    if (!saved) return;
+    this.#conversationId = saved.conversationId;
+    this.messages = saved.messages;
+    this.open = saved.open;
+
+    const last = this.messages.at(-1);
+    if (last?.role === 'user' && !last.stopped) {
+      await this.#run(last.id, (signal) => this.#recover(last.id, signal));
+    }
+  }
+
   async send(text: string): Promise<void> {
     const message = text.trim();
     if (!message || this.pending) return;
 
     const requestId = this.#deps.newId();
     this.#conversationId ??= this.#deps.newId();
-    const controller = new AbortController();
-    this.#controller = controller;
-    this.#stopped = false;
+    const conversationId = this.#conversationId;
     this.messages.push({ id: requestId, role: 'user', text: message });
-    this.pending = true;
-    this.#deps.log?.('chat.send', { requestId, conversationId: this.#conversationId });
+    this.#persist();
+    this.#deps.log?.('chat.send', { requestId, conversationId });
 
-    try {
-      const response = await this.#ask(
-        { message, conversationId: this.#conversationId, requestId, ...this.#deps.readScreen() },
-        controller.signal,
-      );
-      await this.#accept(requestId, response);
-    } catch (e) {
-      if (this.#stopped) {
-        this.#deps.log?.('chat.stop', { requestId });
-      } else {
-        this.#deps.log?.('chat.error', { requestId, status: statusOf(e) });
-        this.messages.push({ id: requestId, role: 'assistant', text: messageOf(e), failed: true });
-      }
-    } finally {
-      this.pending = false;
-      this.#controller = undefined;
-    }
+    await this.#run(requestId, (signal) =>
+      this.#ask({ message, conversationId, requestId, ...this.#deps.readScreen() }, signal),
+    );
   }
 
   /** Stops waiting for the reply. The service still finishes the turn and keeps its result. */
@@ -110,6 +136,7 @@ export class ChatSession {
     this.onapply?.(reply.before);
     reply.before = undefined;
     reply.undone = true;
+    this.#persist();
     this.#deps.log?.('chat.undo', { requestId: id });
   }
 
@@ -117,7 +144,35 @@ export class ChatSession {
     this.stop();
     this.messages = [];
     this.#conversationId = null;
+    this.#persist();
     this.#deps.log?.('chat.reset');
+  }
+
+  async #run(
+    requestId: string,
+    produce: (signal: AbortSignal) => Promise<ChatResponse>,
+  ): Promise<void> {
+    const controller = new AbortController();
+    this.#controller = controller;
+    this.#stopped = false;
+    this.pending = true;
+
+    try {
+      await this.#accept(requestId, await produce(controller.signal));
+    } catch (e) {
+      if (this.#stopped) {
+        const sent = this.messages.findLast((m) => m.id === requestId && m.role === 'user');
+        if (sent) sent.stopped = true;
+        this.#deps.log?.('chat.stop', { requestId });
+      } else {
+        this.#deps.log?.('chat.error', { requestId, status: statusOf(e) });
+        this.messages.push({ id: requestId, role: 'assistant', text: messageOf(e), failed: true });
+      }
+    } finally {
+      this.pending = false;
+      this.#controller = undefined;
+      this.#persist();
+    }
   }
 
   async #accept(requestId: string, response: ChatResponse): Promise<void> {
@@ -138,6 +193,22 @@ export class ChatSession {
       }
     }
     this.messages.push(reply);
+  }
+
+  // A closed, empty chat has nothing worth keeping.
+  #persist(): void {
+    const store = this.#deps.store;
+    if (!store) return;
+    if (!this.open && !this.messages.length) {
+      store.clear();
+      return;
+    }
+    store.save({
+      conversationId: this.#conversationId,
+      messages: $state.snapshot(this.messages),
+      open: this.open,
+      savedAt: Date.now(),
+    });
   }
 
   // A slow or dropped request is not a lost one: the service keeps each turn's reply under its

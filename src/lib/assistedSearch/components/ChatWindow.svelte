@@ -30,16 +30,25 @@
 >
   <header class="flex items-center justify-between">
     <h2 class="font-bold">Search assistant</h2>
-    <button
-      type="button"
-      class="hover:text-primary-500"
-      data-testid="chat-expand"
-      title={fullScreen ? 'Back to the search page' : 'Expand to full screen'}
-      aria-label={fullScreen ? 'Back to the search page' : 'Expand to full screen'}
-      onclick={() => (session.fullScreen = !session.fullScreen)}
-    >
-      <i class="fas {fullScreen ? 'fa-compress' : 'fa-expand'}" aria-hidden="true"></i>
-    </button>
+    <div class="flex items-center gap-4">
+      <button
+        type="button"
+        class="text-sm underline hover:text-primary-500 disabled:no-underline disabled:opacity-50"
+        data-testid="chat-new"
+        disabled={!session.messages.length}
+        onclick={() => session.reset()}>New conversation</button
+      >
+      <button
+        type="button"
+        class="hover:text-primary-500"
+        data-testid="chat-expand"
+        title={fullScreen ? 'Back to the search page' : 'Expand to full screen'}
+        aria-label={fullScreen ? 'Back to the search page' : 'Expand to full screen'}
+        onclick={() => (session.fullScreen = !session.fullScreen)}
+      >
+        <i class="fas {fullScreen ? 'fa-compress' : 'fa-expand'}" aria-hidden="true"></i>
+      </button>
+    </div>
   </header>
   <div
     bind:this={thread}

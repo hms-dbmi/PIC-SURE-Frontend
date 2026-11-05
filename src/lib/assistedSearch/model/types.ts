@@ -47,6 +47,16 @@ export type ChatMessage = {
   /** The screen as it was before this reply changed it; present only while undo is possible. */
   before?: ScreenState;
   undone?: boolean;
+  /** The researcher stopped waiting on this turn, so a refresh does not bring its reply back. */
+  stopped?: boolean;
   /** The reply proposed changes that could not be put on screen. */
   applyFailed?: boolean;
+};
+
+/** A chat as kept in the tab's session storage. */
+export type SavedChat = {
+  conversationId: string | null;
+  messages: ChatMessage[];
+  open: boolean;
+  savedAt: number;
 };

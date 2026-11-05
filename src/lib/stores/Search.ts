@@ -11,6 +11,7 @@ import { expandedNestedFacets } from '$lib/stores/NestedFacets';
 import { getDefaultRows } from '$lib/components/datatable/stores';
 import { isAbortError } from '$lib/api';
 import { log, createLog, getPageContext } from '$lib/logger';
+import { clearSavedChat } from '$lib/assistedSearch/storage';
 
 export const loading: Writable<boolean> = writable(false);
 export const searchTerm: Writable<string> = writable('');
@@ -272,6 +273,14 @@ export async function updateFacets(facetsToUpdate: Facet[]) {
   selectedFacets.set(currentFacets.sort((a, b) => b.count - a.count));
 }
 
+const resetListeners = new Set<() => void>();
+
+/** Runs `listener` whenever the search is reset; returns a function that stops it. */
+export function onSearchReset(listener: () => void): () => void {
+  resetListeners.add(listener);
+  return () => resetListeners.delete(listener);
+}
+
 export function resetSearch() {
   log(createLog('SEARCH', 'search.reset', { pageContext: getPageContext() }));
   isResetting = true;
@@ -282,6 +291,9 @@ export function resetSearch() {
   tour.set(true);
   isResetting = false;
   tableHandler.setPage(1);
+  // The saved chat goes even when its session was never loaded on this page.
+  clearSavedChat();
+  resetListeners.forEach((listener) => listener());
 }
 
 export default {

@@ -1,3 +1,4 @@
+import { clearSavedChat } from '$lib/assistedSearch/storage';
 import { resolve } from '$app/paths';
 import { get, writable, derived, type Writable, type Readable } from 'svelte/store';
 import { browser } from '$app/environment';
@@ -125,6 +126,7 @@ export function clearSession() {
   discardPendingConsents();
   removeToken();
   sessionStorage.removeItem('user');
+  clearSavedChat();
   user.set({});
 }
 

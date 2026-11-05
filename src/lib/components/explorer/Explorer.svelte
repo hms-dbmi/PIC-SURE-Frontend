@@ -59,15 +59,12 @@
     syncUrl(searchInput);
   }
 
-  // The chat can change the search term while the search box is hidden.
   function toggleChat() {
-    chat.open = !chat.open;
-    if (!chat.open) searchInput = $searchTerm;
+    chat.setOpen(!chat.open);
   }
 
   function reset() {
     resetSearch();
-    chat.reset();
     searchInput = '';
 
     goto(resolve(path as '/'));
@@ -83,8 +80,11 @@
     releaseHandler = initHandler();
     // A search the assistant sets, or undoes, goes in the URL like a typed one.
     chat.onapply = (parts) => {
-      if (parts.search !== undefined) syncUrl(parts.search);
+      if (parts.search === undefined) return;
+      searchInput = parts.search;
+      syncUrl(parts.search);
     };
+    if (assistedSearchEnabled) chat.restore();
     if (searchInput && searchInput !== $searchTerm) {
       searchTerm.set(searchInput);
     } else {
@@ -110,13 +110,14 @@
     <FacetSideBar />
   </div>
   <div id="search-results-col" class="flex-auto">
+    {#if assistedSearchEnabled && chat.open}
+      <div id="assisted-search" class="mb-4">
+        <AssistedSearch session={chat} />
+      </div>
+    {/if}
     <div id="search-bar" class="flex gap-2 mb-6">
       <div class="flex-auto">
-        {#if assistedSearchEnabled && chat.open}
-          <AssistedSearch session={chat} />
-        {:else}
-          <Searchbox bind:searchTerm={searchInput} search={update} />
-        {/if}
+        <Searchbox bind:searchTerm={searchInput} search={update} />
       </div>
       <div class="flex-none">
         {#if assistedSearchEnabled}

@@ -91,6 +91,116 @@ test.describe('Assisted search', () => {
     });
   }
 
+  test('the chat sits above the search box, which stays on screen', async ({ page }) => {
+    await page.route(chatPath, (route) =>
+      route.fulfill({ json: { response: 'Searching.', search: 'age' } }),
+    );
+    await openChat(page);
+    await expect(page.getByTestId('search-box')).toBeVisible();
+
+    await ask(page, 'find age');
+    await expect(page.getByTestId('chat-changed')).toBeVisible();
+    await expect(page.getByTestId('search-box')).toHaveValue('age');
+
+    const chatBox = await page.getByTestId('chat-window').boundingBox();
+    const searchBox = await page.getByTestId('search-box').boundingBox();
+    expect(chatBox!.y + chatBox!.height).toBeLessThanOrEqual(searchBox!.y);
+  });
+
+  test('shows the service’s message, not its raw JSON, when the model is unavailable', async ({
+    page,
+  }) => {
+    await page.route(chatPath, (route) =>
+      route.fulfill({
+        status: 503,
+        json: {
+          errorType: 'model_unavailable',
+          message: 'The AI model is currently unavailable. Please try again.',
+          requestId: '192bda05-f0a6-4254-9a89-ac0d09aa318d',
+        },
+      }),
+    );
+    await openChat(page);
+    await ask(page, 'hello');
+
+    const reply = page.getByTestId('chat-message-text');
+    await expect(reply).toHaveText('The AI model is currently unavailable. Please try again.');
+    await expect(reply).not.toContainText('errorType');
+  });
+
+  test('a refresh keeps the conversation, and resetting the search ends it', async ({ page }) => {
+    const conversations: string[] = [];
+    await page.route(chatPath, async (route) => {
+      conversations.push(route.request().postDataJSON().conversationId);
+      await route.fulfill({
+        json: { response: `Answer ${conversations.length}`, search: 'age' },
+      });
+    });
+    await openChat(page);
+    await ask(page, 'first question');
+    await expect(page.getByTestId('chat-message-text')).toHaveText('Answer 1');
+
+    await page.reload();
+    await userIsLoggedIn(page);
+    await expect(page.getByTestId('chat-window')).toBeVisible();
+    await expect(page.getByTestId('chat-message-user')).toHaveText('first question');
+    await expect(page.getByTestId('chat-message-text')).toHaveText('Answer 1');
+
+    await ask(page, 'second question');
+    await expect(page.getByTestId('chat-message-text')).toHaveCount(2);
+    expect(conversations[1]).toBe(conversations[0]);
+
+    await page.getByLabel('You are on the reset button').click();
+    await expect(page.getByTestId('chat-message-user')).toHaveCount(0);
+    await page.reload();
+    await userIsLoggedIn(page);
+    await expect(page.getByTestId('chat-message-user')).toHaveCount(0);
+  });
+
+  test('New conversation clears the thread and starts a new conversation id', async ({ page }) => {
+    const conversations: string[] = [];
+    await page.route(chatPath, async (route) => {
+      conversations.push(route.request().postDataJSON().conversationId);
+      await route.fulfill({ json: { response: 'ok' } });
+    });
+    await openChat(page);
+    await expect(page.getByTestId('chat-new')).toBeDisabled();
+    await ask(page, 'one');
+    await expect(page.getByTestId('chat-message-text')).toHaveCount(1);
+
+    await page.getByTestId('chat-new').click();
+    await expect(page.getByTestId('chat-message-user')).toHaveCount(0);
+    await ask(page, 'two');
+    await expect(page.getByTestId('chat-message-text')).toHaveCount(1);
+    expect(conversations[1]).not.toBe(conversations[0]);
+  });
+
+  test('a refresh while a reply is pending picks the reply up', async ({ page }) => {
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => (release = resolve));
+    await page.route(`${chatPath}/*`, (route) =>
+      route.fulfill({ json: { response: 'Here it is after the refresh.' } }),
+    );
+    await page.route(chatPath, async (route) => {
+      await held;
+      await route.abort();
+    });
+    await openChat(page);
+    await ask(page, 'slow question');
+    await expect(page.getByTestId('chat-stop')).toBeVisible();
+
+    await page.unroute(chatPath);
+    await page.reload();
+    release();
+    await userIsLoggedIn(page);
+
+    await expect(page.getByTestId('chat-message-user')).toHaveText('slow question');
+    await expect(page.getByTestId('chat-message-text')).toHaveText(
+      'Here it is after the refresh.',
+      { timeout: 10000 },
+    );
+  });
+
   test('a prose-only reply leaves the facets alone', async ({ page }) => {
     await page.route(chatPath, (route) => route.fulfill({ json: { response: 'Just an answer.' } }));
     await openChat(page);

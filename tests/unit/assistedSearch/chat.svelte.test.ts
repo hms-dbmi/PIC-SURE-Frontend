@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ChatSession, type ChatDeps } from '$lib/assistedSearch/chat.svelte';
-import type { ChatResponse, ScreenState } from '$lib/assistedSearch/model/types';
+import type { ChatResponse, SavedChat, ScreenState } from '$lib/assistedSearch/model/types';
 
 const emptyScreen = (): ScreenState => ({
   query: { select: [], phenotypicClause: null, genomicFilters: [] },
@@ -238,5 +238,169 @@ describe('ChatSession', () => {
     await chat.send('two');
     const ids = vi.mocked(deps.send).mock.calls.map(([r]) => r.conversationId);
     expect(ids[0]).not.toBe(ids[1]);
+  });
+  it('shows the service’s message, not its JSON body, when the model is unavailable', async () => {
+    const body = JSON.stringify({
+      errorType: 'model_unavailable',
+      message: 'The AI model is currently unavailable. Please try again.',
+      requestId: 'abc',
+    });
+    const { chat } = setup({
+      send: vi.fn(async () => {
+        throw { status: 503, body: { message: body } };
+      }),
+    });
+    await chat.send('x');
+    expect(chat.messages[1]).toMatchObject({
+      text: 'The AI model is currently unavailable. Please try again.',
+      failed: true,
+    });
+  });
+});
+
+describe('ChatSession persistence', () => {
+  const fakeStore = (initial: SavedChat | null = null) => {
+    let saved = initial;
+    return {
+      load: vi.fn(() => saved),
+      save: vi.fn((chat: SavedChat) => {
+        saved = chat;
+      }),
+      clear: vi.fn(() => {
+        saved = null;
+      }),
+      current: () => saved,
+    };
+  };
+
+  it('saves the thread and conversation id after each turn', async () => {
+    const store = fakeStore();
+    const { chat } = setup({ store });
+    await chat.send('hello');
+    expect(store.current()).toMatchObject({
+      conversationId: 'id-2',
+      open: false,
+      messages: [
+        { role: 'user', text: 'hello' },
+        { role: 'assistant', text: 'hello' },
+      ],
+    });
+  });
+
+  it('saves the user message before the reply arrives', async () => {
+    const store = fakeStore();
+    const { chat } = setup({ store, send: vi.fn(() => new Promise<ChatResponse>(() => {})) });
+    void chat.send('slow');
+    expect(store.current()?.messages).toMatchObject([{ role: 'user', text: 'slow' }]);
+  });
+
+  it('restores the thread, the open state and the same conversation after a refresh', async () => {
+    const store = fakeStore();
+    const first = setup({ store });
+    first.chat.setOpen(true);
+    await first.chat.send('one');
+
+    const second = setup({ store });
+    await second.chat.restore();
+    expect(second.chat.open).toBe(true);
+    expect(second.chat.messages.map((m) => m.text)).toEqual(['one', 'hello']);
+
+    await second.chat.send('two');
+    const sent = vi.mocked(second.deps.send).mock.calls[0][0];
+    expect(sent.conversationId).toBe('id-2');
+  });
+
+  it('keeps undo available across a refresh', async () => {
+    const store = fakeStore();
+    const first = setup({ store, send: vi.fn(async () => ({ response: 'ok', search: 'bmi' })) });
+    await first.chat.send('bmi');
+
+    const second = setup({ store });
+    await second.chat.restore();
+    expect(second.chat.canUndo(second.chat.messages[1].id)).toBe(true);
+  });
+
+  it('fetches the reply to a turn that was still running at the refresh', async () => {
+    const store = fakeStore({
+      conversationId: 'c',
+      open: true,
+      savedAt: Date.now(),
+      messages: [{ id: 'r1', role: 'user', text: 'pending question' }],
+    });
+    const { chat, deps } = setup({
+      store,
+      fetchResult: vi.fn(async () => ({ response: 'finished while away' })),
+    });
+    await chat.restore();
+    expect(deps.fetchResult).toHaveBeenCalledWith('r1', expect.any(AbortSignal));
+    expect(deps.send).not.toHaveBeenCalled();
+    expect(chat.messages.at(-1)).toMatchObject({ role: 'assistant', text: 'finished while away' });
+  });
+
+  it('says so when the stored reply is gone', async () => {
+    const store = fakeStore({
+      conversationId: 'c',
+      open: true,
+      savedAt: Date.now(),
+      messages: [{ id: 'r1', role: 'user', text: 'q' }],
+    });
+    const { chat } = setup({
+      store,
+      fetchResult: vi.fn(async () => {
+        throw {
+          status: 404,
+          body: { message: '{"message":"No reply is stored for this message. Send it again."}' },
+        };
+      }),
+    });
+    await chat.restore();
+    expect(chat.messages.at(-1)).toMatchObject({
+      failed: true,
+      text: 'No reply is stored for this message. Send it again.',
+    });
+  });
+
+  it('does not bring back a turn the researcher stopped', async () => {
+    const store = fakeStore();
+    const first = setup({
+      store,
+      send: vi.fn((_request, signal: AbortSignal) => {
+        return new Promise<ChatResponse>((_, reject) =>
+          signal.addEventListener('abort', () => reject(new DOMException('', 'AbortError'))),
+        );
+      }),
+    });
+    const sent = first.chat.send('slow');
+    first.chat.stop();
+    await sent;
+
+    const second = setup({ store });
+    await second.chat.restore();
+    expect(second.deps.fetchResult).not.toHaveBeenCalled();
+    expect(second.chat.messages).toHaveLength(1);
+  });
+
+  it('reset clears the saved thread but keeps the chat open', async () => {
+    const store = fakeStore();
+    const { chat } = setup({ store });
+    chat.setOpen(true);
+    await chat.send('one');
+    chat.reset();
+    expect(store.current()).toMatchObject({ open: true, messages: [], conversationId: null });
+  });
+
+  it('forgets everything once the chat is closed and empty', async () => {
+    const store = fakeStore();
+    const { chat } = setup({ store });
+    chat.setOpen(true);
+    chat.setOpen(false);
+    expect(store.clear).toHaveBeenCalled();
+    expect(store.current()).toBeNull();
+  });
+
+  it('does nothing when nothing was saved', async () => {
+    const { chat } = setup({ store: fakeStore() });
+    await chat.restore();
+    expect(chat.messages).toEqual([]);
   });
 });
