@@ -21,7 +21,6 @@
   import Counts from '$lib/components/explorer/results/Counts.svelte';
   import { log, createLog } from '$lib/logger';
   import { chat } from '$lib/assistedSearch';
-  import { resetSearch } from '$lib/stores/Search';
 
   let currentPage: string = $state(page.url.pathname);
   let isDiscoverPage = $derived(currentPage.includes('/discover'));
@@ -106,7 +105,6 @@
   onconfirm={() => {
     clearFilters();
     clearExports();
-    resetSearch();
     if (config.features.enableAssistedSearch) chat.reset();
   }}
 >

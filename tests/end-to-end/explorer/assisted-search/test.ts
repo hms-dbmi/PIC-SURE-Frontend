@@ -225,7 +225,9 @@ test.describe('Assisted search', () => {
     await expect(reply).not.toContainText('errorType');
   });
 
-  test('a refresh keeps the conversation', async ({ page }) => {
+  test('a refresh keeps the conversation, and resetting the search does not end it', async ({
+    page,
+  }) => {
     const conversations: string[] = [];
     await page.route(chatPath, async (route) => {
       conversations.push(route.request().postDataJSON().conversationId);
@@ -246,6 +248,10 @@ test.describe('Assisted search', () => {
     await ask(page, 'second question');
     await expect(page.getByTestId('chat-message-text')).toHaveCount(2);
     expect(conversations[1]).toBe(conversations[0]);
+
+    await page.getByLabel('You are on the reset button').click();
+    await expect(page.getByTestId('search-box')).toHaveValue('');
+    await expect(page.getByTestId('chat-message-user')).toHaveCount(2);
 
     await page.reload();
     await userIsLoggedIn(page);

@@ -14,6 +14,7 @@
     initHandler,
     error,
     tour,
+    resetSearch,
     loading as isLoading,
   } from '$lib/stores/Search';
   import type { TourDataType } from '$lib/models/Tour';
@@ -62,12 +63,18 @@
     chat.setOpen(!chat.open);
   }
 
+  function reset() {
+    resetSearch();
+    searchInput = '';
+
+    goto(resolve(path as '/'));
+  }
+
   function scrollToSearchResults() {
     document.getElementById(`${tableName}-table`)?.scrollIntoView({ block: 'start' });
   }
 
   let releaseHandler: (() => void) | undefined;
-  let stopTerm: (() => void) | undefined;
 
   onMount(() => {
     releaseHandler = initHandler();
@@ -77,15 +84,6 @@
       searchInput = parts.search;
       syncUrl(parts.search);
     };
-    // Clearing everything elsewhere on the page (the summary panel's Reset) empties the box too.
-    let firstTerm = true;
-    stopTerm = searchTerm.subscribe((term) => {
-      if (firstTerm) firstTerm = false;
-      else if (!term && searchInput) {
-        searchInput = '';
-        syncUrl('');
-      }
-    });
     if (assistedSearchEnabled) chat.restore();
     if (searchInput && searchInput !== $searchTerm) {
       searchTerm.set(searchInput);
@@ -103,7 +101,6 @@
 
   onDestroy(() => {
     releaseHandler?.();
-    stopTerm?.();
     chat.onapply = undefined;
   });
 </script>
@@ -118,9 +115,6 @@
         <Searchbox bind:searchTerm={searchInput} search={update} />
       </div>
       <div class="flex-none">
-        {#if assistedSearchEnabled}
-          <ChatToggleButton open={chat.open} ontoggle={toggleChat} />
-        {/if}
         {#if allowGenomicFiltering}
           <a
             data-testid="genomic-filter-btn"
@@ -129,6 +123,18 @@
             onclick={() => log(createLog('NAVIGATION', 'explorer.genomic_filter_click'))}
             >Genomic Filtering</a
           >
+        {/if}
+        <button
+          type="button"
+          class="btn preset-tonal-error border border-error-500 hover:preset-filled-error-500"
+          aria-label="You are on the reset button"
+          disabled={!searchInput && $selectedFacets.length === 0}
+          onclick={reset}
+        >
+          Reset
+        </button>
+        {#if assistedSearchEnabled}
+          <ChatToggleButton open={chat.open} ontoggle={toggleChat} />
         {/if}
       </div>
     </div>

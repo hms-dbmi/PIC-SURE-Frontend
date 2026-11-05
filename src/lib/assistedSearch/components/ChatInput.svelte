@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Loading from '../../components/Loading.svelte';
   interface Props {
     pending: boolean;
     onsend: (text: string) => void;
@@ -52,34 +53,31 @@
       data-testid="chat-input"
       bind:value={text}
       {onkeydown}></textarea>
-    {#if pending}
-      <span class="flex items-center px-3" role="status">
-        <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-        <span class="sr-only">The assistant is working</span>
-      </span>
-      <button
-        type="button"
-        class="btn preset-tonal-error border border-error-500 rounded-l-none"
-        data-testid="chat-stop"
-        onclick={onstop}>Stop</button
-      >
-    {:else}
-      <button
-        type="submit"
-        class="btn preset-filled-primary-500 chat-button disabled:opacity-50"
-        aria-label="Send"
-        title="Send (Enter)"
-        data-testid="chat-send"
-        disabled={!text.trim()}
-      >
+    <button
+      type="submit"
+      class="btn preset-filled-primary-500 chat-button disabled:opacity-50"
+      aria-label="Send"
+      title="Send (Enter)"
+      data-testid="chat-send"
+      disabled={!text.trim()}
+    >
+      {#if pending}
+        <Loading ring size="micro" label="Thinking..." />
+      {:else}
         <i class="fas fa-paper-plane" aria-hidden="true"></i>
-      </button>
+      {/if}
+    </button>
+    {#if pending}
+      <button type="button" class="btn preset-tonal-error" data-testid="chat-stop" onclick={onstop}
+        >Stop</button
+      >
     {/if}
   </div>
   <p class="m-1 text-right text-xs text-surface-600-400">
     Enter to send · Shift+Enter for new line
   </p>
 </form>
+
 <style>
   .chat-box {
     border-radius: 9999px;
