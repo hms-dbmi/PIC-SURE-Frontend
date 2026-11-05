@@ -1,26 +1,19 @@
 <script lang="ts">
-  import Modal from '$lib/components/Modal.svelte';
+  import { slide } from 'svelte/transition';
 
   import type { ChatSession } from '../chat.svelte';
   import ChatWindow from './ChatWindow.svelte';
 
   let { session }: { session: ChatSession } = $props();
+
+  const reducedMotion =
+    typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 </script>
 
 <!--
-  One conversation, two views: the full-screen view is the same session, not a second thread.
-  Full screen replaces the band above the page; closing it brings the band back.
+  The panel sits above the page, so search, facets and results stay on screen and editable.
+  The toggle lives in the layout's `{#if}`, not here, so the transition has to be global.
 -->
-{#if session.fullScreen}
-  <Modal bind:open={session.fullScreen} width="w-[90vw]" height="h-[90vh]" data-testid="chat-modal">
-    <ChatWindow {session} fullScreen />
-  </Modal>
-{:else}
-  <div
-    id="assisted-search"
-    class="flex-none px-6 py-4 border-b border-surface-300-700"
-    data-testid="assisted-search"
-  >
-    <ChatWindow {session} />
-  </div>
-{/if}
+<div id="assisted-search" class="flex-none px-6 pt-4 pb-2" data-testid="assisted-search">
+  <ChatWindow {session} />
+</div>

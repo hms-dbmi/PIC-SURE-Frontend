@@ -44,8 +44,10 @@ export type ChatMessage = {
   failed?: boolean;
   /** Parts of the screen this reply changed. */
   changed?: ScreenPart[];
-  /** The screen as it was before this reply changed it; present only while undo is possible. */
+  /** The screen as it was before this reply changed it. */
   before?: ScreenState;
+  /** The screen as it was just after this reply changed it; undo and redo only apply while it holds. */
+  after?: ScreenState;
   undone?: boolean;
   /** The researcher stopped waiting on this turn, so a refresh does not bring its reply back. */
   stopped?: boolean;

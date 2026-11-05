@@ -1,18 +1,25 @@
 <script lang="ts">
-  import { tick } from 'svelte';
+  import { onMount, tick } from 'svelte';
+
+  import Modal from '$lib/components/Modal.svelte';
 
   import type { ChatSession } from '../chat.svelte';
   import ChatInput from './ChatInput.svelte';
   import ChatMessage from './ChatMessage.svelte';
 
-  interface Props {
-    session: ChatSession;
-    fullScreen?: boolean;
-  }
+  let { session }: { session: ChatSession } = $props();
 
-  let { session, fullScreen = false }: Props = $props();
+  const SUGGESTIONS = [
+    'Which studies measure blood pressure?',
+    'Find variables about smoking',
+    'What can you help me with?',
+  ];
 
   let thread: HTMLElement | undefined = $state();
+  let confirmNew = $state(false);
+
+  // The panel follows the researcher's screen only while it is showing.
+  onMount(() => session.watch());
 
   // Follows the newest message, but only on a change in the thread, so scrolling up to reread
   // is not undone by an unrelated re-render.
@@ -21,57 +28,86 @@
     void session.pending;
     tick().then(() => thread?.scrollTo({ top: thread.scrollHeight }));
   });
+
+  const ghost = 'rounded-md px-2 py-1.5 text-sm hover:bg-surface-100-900';
 </script>
 
 <section
-  class="flex flex-col gap-3 {fullScreen ? 'h-[80vh] w-full' : ''}"
+  class="rounded-container border border-surface-300-700 bg-surface-50-950 overflow-hidden"
   aria-label="Search assistant"
   data-testid="chat-window"
 >
-  <header class="flex items-center justify-between">
-    <h2 class="font-bold">Search assistant</h2>
-    <div class="flex items-center gap-4">
+  <header class="flex items-center justify-between border-b border-surface-200-800 py-2 pr-3 pl-4">
+    <h2 class="flex items-center gap-2 text-sm font-semibold">
+      <i class="fas fa-wand-magic-sparkles text-primary-500" aria-hidden="true"></i>
+      Assistant
+    </h2>
+    <div class="flex items-center gap-1">
       <button
         type="button"
-        class="text-sm underline hover:text-primary-500 disabled:no-underline disabled:opacity-50"
+        class="{ghost} disabled:opacity-50 disabled:hover:bg-transparent"
         data-testid="chat-new"
         disabled={!session.messages.length}
-        onclick={() => session.reset()}>New conversation</button
+        onclick={() => (confirmNew = true)}>New conversation</button
       >
       <button
         type="button"
-        class="hover:text-primary-500"
+        class="{ghost} min-w-[4.5rem]"
         data-testid="chat-expand"
-        title={fullScreen ? 'Back to the search page' : 'Expand to full screen'}
-        aria-label={fullScreen ? 'Back to the search page' : 'Expand to full screen'}
-        onclick={() => (session.fullScreen = !session.fullScreen)}
+        aria-pressed={session.tall}
+        title={session.tall
+          ? 'Make the assistant panel shorter'
+          : 'Make the assistant panel taller'}
+        onclick={() => (session.tall = !session.tall)}>{session.tall ? 'Compact' : 'Expand'}</button
       >
-        <i class="fas {fullScreen ? 'fa-compress' : 'fa-expand'}" aria-hidden="true"></i>
-      </button>
+      <button
+        type="button"
+        class="{ghost} size-[30px] !p-0 text-lg leading-none"
+        data-testid="chat-close"
+        aria-label="Hide the assistant"
+        title="Hide the assistant"
+        onclick={() => session.setOpen(false)}>×</button
+      >
     </div>
   </header>
   <div
     bind:this={thread}
-    class="flex flex-col gap-3 overflow-y-auto rounded-container border border-surface-300-700 p-3 {fullScreen
-      ? 'flex-auto'
-      : 'h-72'}"
+    class="flex flex-col overflow-y-auto px-5 pt-4 pb-2 {session.tall
+      ? 'max-h-[62vh]'
+      : 'max-h-[220px]'}"
     role="log"
     aria-live="polite"
     data-testid="chat-thread"
   >
     {#if session.messages.length === 0}
-      <p class="text-surface-600-400 m-auto text-center">
-        Ask a question about the data. I can look things up, then set your search, facets and
-        filters for you.
-      </p>
+      <div class="flex flex-col gap-3 pb-2">
+        <p class="text-surface-700-300">
+          Ask about variables, studies, or your cohort. I can add and edit filters for you.
+        </p>
+        <div class="flex flex-wrap gap-2">
+          {#each SUGGESTIONS as suggestion (suggestion)}
+            <button
+              type="button"
+              class="rounded-full border border-surface-300-700 bg-surface-100-900 px-3 py-1.5 text-sm text-primary-600-400 hover:bg-primary-50-950"
+              data-testid="chat-suggestion"
+              onclick={() => session.send(suggestion)}>{suggestion}</button
+            >
+          {/each}
+        </div>
+      </div>
     {/if}
-    {#each session.messages as message (`${message.id}-${message.role}`)}
+    {#each session.messages as message, i (`${message.id}-${message.role}`)}
       <ChatMessage
         {message}
-        canUndo={message.role === 'assistant' && session.canUndo(message.id)}
+        startsExchange={i > 0 && message.role === 'user'}
+        undoState={message.role === 'assistant' ? session.undoState(message.id) : 'locked'}
         onundo={() => session.undo(message.id)}
+        onredo={() => session.redo(message.id)}
       />
     {/each}
+    {#if session.pending}
+      <p class="mt-2 text-sm text-surface-600-400" data-testid="chat-thinking">Thinking…</p>
+    {/if}
   </div>
   <ChatInput
     pending={session.pending}
@@ -79,3 +115,13 @@
     onstop={() => session.stop()}
   />
 </section>
+
+<Modal
+  bind:open={confirmNew}
+  title="New conversation"
+  withDefault
+  confirmText="Start new"
+  onconfirm={() => session.reset()}
+>
+  <p>Start a new conversation? Your filters stay as they are.</p>
+</Modal>

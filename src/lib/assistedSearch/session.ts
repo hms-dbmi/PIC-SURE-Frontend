@@ -3,7 +3,7 @@ import { genericUUID } from '$lib/utilities/UUID';
 
 import { fetchChatResult, sendChat } from './api';
 import { ChatSession } from './chat.svelte';
-import { applyScreen, readScreen } from './screen';
+import { applyScreen, readScreen, watchScreen } from './screen';
 import { clearSavedChat, loadSavedChat, saveChat } from './storage';
 
 /** The one conversation for this browser tab. */
@@ -14,5 +14,6 @@ export const chat = new ChatSession({
   fetchResult: fetchChatResult,
   newId: genericUUID,
   log: (action, details) => log(createLog('CHAT', action, details)),
+  watch: watchScreen,
   store: { load: loadSavedChat, save: saveChat, clear: clearSavedChat },
 });

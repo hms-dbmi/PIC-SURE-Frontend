@@ -72,12 +72,54 @@ describe('ChatSession', () => {
     expect(deps.applyScreen).toHaveBeenCalledWith({ search: 'bmi' });
     const reply = chat.messages[1];
     expect(reply.changed).toEqual(['search']);
-    expect(chat.canUndo(reply.id)).toBe(true);
+    expect(chat.undoState(reply.id)).toBe('undo');
 
     await chat.undo(reply.id);
     expect(screenNow().search).toBe('');
     expect(reply.undone).toBe(true);
-    expect(chat.canUndo(reply.id)).toBe(false);
+    expect(chat.undoState(reply.id)).toBe('redo');
+
+    await chat.redo(reply.id);
+    expect(screenNow().search).toBe('bmi');
+    expect(reply.undone).toBe(false);
+    expect(chat.undoState(reply.id)).toBe('undo');
+  });
+
+  it('locks undo and redo once the screen is changed by anyone else', async () => {
+    let screen = emptyScreen();
+    const { chat } = setup({
+      readScreen: () => screen,
+      applyScreen: async (parts) => {
+        screen = { ...screen, ...parts };
+      },
+      send: vi.fn(async () => ({ response: 'ok', search: 'bmi' })),
+    });
+    await chat.send('find bmi');
+    const reply = chat.messages[1];
+
+    screen = { ...screen, search: 'bmi age' };
+    expect(chat.undoState(reply.id)).toBe('locked');
+    await chat.undo(reply.id);
+    expect(screen.search).toBe('bmi age');
+    expect(reply.undone).toBeUndefined();
+
+    screen = { ...screen, search: 'bmi' };
+    await chat.undo(reply.id);
+    screen = { ...screen, search: 'other' };
+    expect(chat.undoState(reply.id)).toBe('locked');
+  });
+
+  it('re-reads undo state when the watched screen changes', async () => {
+    let notify = () => {};
+    const stop = vi.fn();
+    const { chat } = setup({
+      watch: (onchange) => {
+        notify = onchange;
+        return stop;
+      },
+    });
+    expect(chat.watch()).toBe(stop);
+    notify();
   });
 
   it('reports what it applied, for a reply and for its undo', async () => {
@@ -113,10 +155,10 @@ describe('ChatSession', () => {
     const { chat, deps } = setup({ send: vi.fn(async () => ({ response: 'ok', search: '' })) });
     await chat.send('hi');
     expect(deps.applyScreen).not.toHaveBeenCalled();
-    expect(chat.canUndo(chat.messages[1].id)).toBe(false);
+    expect(chat.undoState(chat.messages[1].id)).toBe('locked');
   });
 
-  it('allows undoing only the latest change', async () => {
+  it('allows undoing only the latest change, since a later one moves the screen on', async () => {
     const replies = [
       { response: 'a', search: 'one' },
       { response: 'b', search: 'two' },
@@ -125,8 +167,8 @@ describe('ChatSession', () => {
     await chat.send('1');
     await chat.send('2');
     const [, first, , second] = chat.messages;
-    expect(chat.canUndo(first.id)).toBe(false);
-    expect(chat.canUndo(second.id)).toBe(true);
+    expect(chat.undoState(first.id)).toBe('locked');
+    expect(chat.undoState(second.id)).toBe('undo');
   });
 
   it('keeps the reply text and flags it when the changes cannot be applied', async () => {
@@ -139,7 +181,7 @@ describe('ChatSession', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     await chat.send('find bmi');
     expect(chat.messages[1]).toMatchObject({ text: 'ok', applyFailed: true });
-    expect(chat.canUndo(chat.messages[1].id)).toBe(false);
+    expect(chat.undoState(chat.messages[1].id)).toBe('locked');
   });
 
   it('shows the service’s message when it refuses a turn', async () => {
@@ -315,9 +357,9 @@ describe('ChatSession persistence', () => {
     const first = setup({ store, send: vi.fn(async () => ({ response: 'ok', search: 'bmi' })) });
     await first.chat.send('bmi');
 
-    const second = setup({ store });
+    const second = setup({ store, readScreen: () => ({ ...emptyScreen(), search: 'bmi' }) });
     await second.chat.restore();
-    expect(second.chat.canUndo(second.chat.messages[1].id)).toBe(true);
+    expect(second.chat.undoState(second.chat.messages[1].id)).toBe('undo');
   });
 
   it('fetches the reply to a turn that was still running at the refresh', async () => {

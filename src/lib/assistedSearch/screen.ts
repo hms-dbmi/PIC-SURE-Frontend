@@ -55,3 +55,16 @@ export async function applyScreen(parts: Partial<ScreenState>): Promise<void> {
   if (facets) selectedFacets.set(facets);
   if (parts.search !== undefined) searchTerm.set(parts.search);
 }
+
+/** Calls `onchange` whenever a store behind the screen is set; returns the stop. */
+export function watchScreen(onchange: () => void): () => void {
+  const stops = [exports, filterTree, genomicFilters, selectedFacets, searchTerm].map((store) => {
+    let first = true;
+    return store.subscribe(() => {
+      // subscribe reports the current value at once, which is not a change
+      if (first) first = false;
+      else onchange();
+    });
+  });
+  return () => stops.forEach((stop) => stop());
+}

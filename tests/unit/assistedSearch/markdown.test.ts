@@ -10,6 +10,20 @@ describe('renderChatMarkdown', () => {
     expect(html).toContain('<li>one</li>');
   });
 
+  it('renders tables, with paths in cells kept as code', () => {
+    const html = renderChatMarkdown(
+      '| Variable | Path |\n|---|---|\n| Height | `\\Nhanes\\Height (cm)\\` |',
+    );
+    expect(html).toContain('<table>');
+    expect(html).toContain('<th>Variable</th>');
+    expect(html).toContain('<td><code>\\Nhanes\\Height (cm)\\</code></td>');
+  });
+
+  it('still escapes raw HTML inside a table cell', () => {
+    const html = renderChatMarkdown('| a |\n|---|\n| <script>x</script> |');
+    expect(html).not.toContain('<script');
+  });
+
   it('never emits raw HTML from the model', () => {
     const html = renderChatMarkdown(
       '<script>alert(1)</script><img src=x onerror=alert(1)><iframe src="https://evil"></iframe>',

@@ -85,9 +85,26 @@ describe('ChatWindow', () => {
     await fireEvent.click(screen.getByTestId('chat-undo'));
     await waitFor(() => expect(screen.getByTestId('chat-undone')).toBeTruthy());
     expect(screen.queryByTestId('chat-undo')).toBeNull();
+
+    await fireEvent.click(screen.getByTestId('chat-redo'));
+    await waitFor(() => expect(screen.getByTestId('chat-undo')).toBeTruthy());
   });
 
-  it('starts a new conversation on request', async () => {
+  it('disables undo with a reason once the screen has changed', async () => {
+    const chat = session({ response: 'Searching.', search: 'bmi' });
+    render(ChatWindow, { session: chat });
+    await chat.send('bmi');
+    await waitFor(() => expect(screen.getByTestId('chat-undo')).toBeTruthy());
+
+    chat.messages[1].after = { ...chat.messages[1].after!, search: 'something else' };
+    await waitFor(() => {
+      const undo = screen.getByTestId('chat-undo') as HTMLButtonElement;
+      expect(undo.disabled).toBe(true);
+      expect(undo.title).toBe('Disabled after you changed the screen');
+    });
+  });
+
+  it('starts a new conversation only after confirmation', async () => {
     const chat = session({ response: 'x' });
     render(ChatWindow, { session: chat });
     expect((screen.getByTestId('chat-new') as HTMLButtonElement).disabled).toBe(true);
@@ -97,14 +114,30 @@ describe('ChatWindow', () => {
       expect((screen.getByTestId('chat-new') as HTMLButtonElement).disabled).toBe(false),
     );
     await fireEvent.click(screen.getByTestId('chat-new'));
+    expect(chat.messages).toHaveLength(2);
+    await fireEvent.click(await screen.findByText('Start new'));
     expect(chat.messages).toEqual([]);
   });
 
-  it('toggles full screen on the session', async () => {
+  it('toggles the taller transcript in place', async () => {
     const chat = session({ response: 'x' });
     render(ChatWindow, { session: chat });
-    await fireEvent.click(screen.getByTestId('chat-expand'));
-    expect(chat.fullScreen).toBe(true);
+    const expand = screen.getByTestId('chat-expand');
+    expect(expand.textContent).toBe('Expand');
+    await fireEvent.click(expand);
+    expect(chat.tall).toBe(true);
+    expect(expand.textContent).toBe('Compact');
+    expect(screen.getByTestId('chat-thread').className).toContain('max-h-[62vh]');
+  });
+
+  it('sends a suggestion when clicked and hides the panel on close', async () => {
+    const chat = session({ response: 'x' });
+    chat.setOpen(true);
+    render(ChatWindow, { session: chat });
+    await fireEvent.click(screen.getAllByTestId('chat-suggestion')[0]);
+    expect(chat.messages[0].role).toBe('user');
+    await fireEvent.click(screen.getByTestId('chat-close'));
+    expect(chat.open).toBe(false);
   });
 });
 

@@ -1,4 +1,4 @@
-import { changedParts, partsOf } from './model/screen';
+import { changedParts, partsOf, sameScreen } from './model/screen';
 import type { ChatMessage, ChatRequest, ChatResponse, SavedChat, ScreenState } from './model/types';
 
 export type ChatStore = {
@@ -8,6 +8,9 @@ export type ChatStore = {
   clear: () => void;
 };
 
+/** Whether the latest change of a reply can be taken back or redone, or the screen has moved on. */
+export type UndoState = 'undo' | 'redo' | 'locked';
+
 export type ChatDeps = {
   readScreen: () => ScreenState;
   applyScreen: (parts: Partial<ScreenState>) => Promise<void>;
@@ -16,6 +19,8 @@ export type ChatDeps = {
   newId: () => string;
   log?: (action: string, details?: Record<string, unknown>) => void;
   store?: ChatStore;
+  /** Calls back whenever anything on the researcher's screen may have changed; returns a stop. */
+  watch?: (onchange: () => void) => () => void;
   /** How long to wait on a turn before asking for its stored reply instead. */
   patienceMs?: number;
   pollMs?: number;
@@ -62,10 +67,13 @@ export class ChatSession {
   messages = $state<ChatMessage[]>([]);
   pending = $state(false);
   open = $state(false);
-  fullScreen = $state(false);
+  /** The compact panel's transcript is short; expanded it takes most of the viewport. */
+  tall = $state(false);
   /** Called after a reply or an undo has changed the screen, with the parts that were set. */
   onapply: ((parts: Partial<ScreenState>) => void) | undefined;
 
+  // Bumped when the screen changes, so undo state derived from the live screen re-evaluates.
+  #screenVersion = $state(0);
   #conversationId: string | null = null;
   #controller: AbortController | undefined;
   #stopped = false;
@@ -75,10 +83,22 @@ export class ChatSession {
     this.#deps = deps;
   }
 
-  /** Only the latest change can be undone; an older one would also undo what came after it. */
-  canUndo(id: string): boolean {
-    const latest = this.messages.findLast((m) => m.before);
-    return latest?.id === id && latest.role === 'assistant';
+  /**
+   * A reply's change can be undone while the screen is as the reply left it, and redone while it is
+   * as the reply found it. Any other edit, by the researcher or a later reply, locks it.
+   */
+  undoState(id: string): UndoState {
+    void this.#screenVersion;
+    const reply = this.messages.find((m) => m.id === id && m.role === 'assistant');
+    if (!reply?.before || !reply.after) return 'locked';
+    const now = this.#deps.readScreen();
+    if (reply.undone) return sameScreen(now, reply.before) ? 'redo' : 'locked';
+    return sameScreen(now, reply.after) ? 'undo' : 'locked';
+  }
+
+  /** Follows the researcher's screen while the panel is showing; returns the stop. */
+  watch(): () => void {
+    return this.#deps.watch?.(() => this.#screenVersion++) ?? (() => {});
   }
 
   setOpen(open: boolean): void {
@@ -129,15 +149,26 @@ export class ChatSession {
 
   /** Puts the screen back as it was before a reply changed it. */
   async undo(id: string): Promise<void> {
-    if (!this.canUndo(id)) return;
-    const reply = this.messages.findLast((m) => m.id === id && m.role === 'assistant');
+    if (this.undoState(id) !== 'undo') return;
+    const reply = this.messages.find((m) => m.id === id && m.role === 'assistant');
     if (!reply?.before) return;
     await this.#deps.applyScreen(reply.before);
     this.onapply?.(reply.before);
-    reply.before = undefined;
     reply.undone = true;
     this.#persist();
     this.#deps.log?.('chat.undo', { requestId: id });
+  }
+
+  /** Puts a reply's change back after it was undone. */
+  async redo(id: string): Promise<void> {
+    if (this.undoState(id) !== 'redo') return;
+    const reply = this.messages.find((m) => m.id === id && m.role === 'assistant');
+    if (!reply?.after) return;
+    await this.#deps.applyScreen(reply.after);
+    this.onapply?.(reply.after);
+    reply.undone = false;
+    this.#persist();
+    this.#deps.log?.('chat.redo', { requestId: id });
   }
 
   reset(): void {
@@ -187,6 +218,7 @@ export class ChatSession {
         this.onapply?.(changes);
         reply.changed = partsOf(changes);
         reply.before = current;
+        reply.after = this.#deps.readScreen();
       } catch (e) {
         console.error('Could not apply the assistant’s changes', e);
         reply.applyFailed = true;

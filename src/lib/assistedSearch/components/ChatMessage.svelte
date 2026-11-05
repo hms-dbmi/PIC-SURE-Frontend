@@ -1,15 +1,25 @@
 <script lang="ts">
   import CopyButton from '$lib/components/buttons/CopyButton.svelte';
+  import type { UndoState } from '../chat.svelte';
   import { renderChatMarkdown } from '../model/markdown';
   import type { ChatMessage, ScreenPart } from '../model/types';
 
   interface Props {
     message: ChatMessage;
-    canUndo?: boolean;
+    /** True when this user message opens a new exchange, which gets more space above it. */
+    startsExchange?: boolean;
+    undoState?: UndoState;
     onundo?: () => void;
+    onredo?: () => void;
   }
 
-  let { message, canUndo = false, onundo = () => {} }: Props = $props();
+  let {
+    message,
+    startsExchange = false,
+    undoState = 'locked',
+    onundo = () => {},
+    onredo = () => {},
+  }: Props = $props();
 
   const PART_LABELS: Record<ScreenPart, string> = {
     query: 'filters and variables',
@@ -23,61 +33,78 @@
       ? `Updated ${message.changed.map((p) => PART_LABELS[p]).join(', ')}`
       : '',
   );
-  const messageClass = $derived(
-    isUser
-      ? 'bg-primary-50'
-      : message.failed
-        ? 'bg-error-50 border border-error-500'
-        : 'bg-surface-100',
-  );
+  const linkClass = 'underline text-primary-600-400 disabled:no-underline disabled:opacity-50';
 </script>
 
-<div
-  class="flex {isUser ? 'justify-end' : 'justify-start'}"
-  data-testid="chat-message-{message.role}"
->
-  <div class="max-w-[85%] rounded-container px-4 py-2 {messageClass}">
-    {#if isUser}
-      <p class="whitespace-pre-wrap break-words">{message.text}</p>
+{#if isUser}
+  <div
+    class="flex justify-end {startsExchange ? 'mt-3.5' : 'mt-0.5'}"
+    data-testid="chat-message-user"
+  >
+    <p
+      class="max-w-[70%] whitespace-pre-wrap break-words rounded-[14px_14px_4px_14px] bg-primary-100-900 px-3.5 py-2 leading-snug"
+    >
+      {message.text}
+    </p>
+  </div>
+{:else}
+  <div class="group mt-2 max-w-[72ch]" data-testid="chat-message-assistant">
+    {#if message.failed}
+      <p
+        class="rounded-container border border-error-500 bg-error-50 px-3 py-2"
+        data-testid="chat-message-text"
+      >
+        {message.text}
+      </p>
     {:else}
-      <div class="chat-markdown break-words" data-testid="chat-message-text">
+      <div class="chat-markdown break-words leading-relaxed" data-testid="chat-message-text">
         <!-- eslint-disable-next-line svelte/no-at-html-tags -- sanitized in renderChatMarkdown -->
         {@html renderChatMarkdown(message.text)}
       </div>
-      {#if message.applyFailed}
-        <p class="mt-2 text-sm" role="alert">
-          The suggested changes could not be put on your screen.
-        </p>
-      {/if}
-      <div class="mt-1 flex items-center gap-3 text-sm">
-        {#if changedText}
-          <span data-testid="chat-changed">{changedText}</span>
-          {#if canUndo}
-            <button
-              type="button"
-              class="underline hover:text-primary-500"
-              data-testid="chat-undo"
-              onclick={onundo}>Undo</button
-            >
-          {:else if message.undone}
-            <span data-testid="chat-undone">Undone</span>
-          {/if}
+    {/if}
+    {#if message.applyFailed}
+      <p class="mt-2 text-sm" role="alert">
+        The suggested changes could not be put on your screen.
+      </p>
+    {/if}
+    {#if changedText}
+      <div
+        class="mt-2 flex items-center gap-3 rounded-lg border px-3 py-2 text-sm border-surface-300-700 bg-surface-100-900 {message.undone ??
+          'opacity-70'}"
+      >
+        <span
+          class="font-semibold text-primary-600-400 {message.undone ? 'line-through' : ''}"
+          data-testid="chat-changed">{changedText}</span
+        >
+        {#if message.undone}
+          <span class="sr-only" data-testid="chat-undone">Undone</span>
         {/if}
-        {#if !message.failed}
-          <CopyButton
-            itemToCopy={message.text}
-            useIcon
-            triggerTitle="Copy this reply"
-            class="ml-auto"
-            data-testid="chat-copy"
-            logAction="chat.copy"
-            logEventType="CHAT"
-          />
-        {/if}
+        <button
+          type="button"
+          class="{linkClass} ml-auto"
+          data-testid={message.undone ? 'chat-redo' : 'chat-undo'}
+          disabled={undoState === 'locked'}
+          title={undoState === 'locked' ? 'Disabled after you changed the screen' : undefined}
+          onclick={message.undone ? onredo : onundo}>{message.undone ? 'Redo' : 'Undo'}</button
+        >
+      </div>
+    {/if}
+    {#if !message.failed}
+      <div
+        class="mt-1 flex opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+      >
+        <CopyButton
+          itemToCopy={message.text}
+          useIcon
+          triggerTitle="Copy this reply"
+          data-testid="chat-copy"
+          logAction="chat.copy"
+          logEventType="CHAT"
+        />
       </div>
     {/if}
   </div>
-</div>
+{/if}
 
 <style>
   .chat-markdown :global(p + p),
@@ -100,6 +127,29 @@
   }
   .chat-markdown :global(code) {
     font-family: monospace;
+  }
+  .chat-markdown :global(table) {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    margin-top: 0.5rem;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+  }
+  .chat-markdown :global(th),
+  .chat-markdown :global(td) {
+    padding: 0.25rem 0.75rem;
+    text-align: left;
+    vertical-align: top;
+    border: 1px solid light-dark(var(--color-surface-300), var(--color-surface-700));
+  }
+  .chat-markdown :global(th) {
+    font-weight: 600;
+    background: light-dark(var(--color-surface-100), var(--color-surface-900));
+  }
+  /* Concept paths are long and unbroken, so let them wrap inside their cell. */
+  .chat-markdown :global(td code) {
+    word-break: break-all;
   }
   .chat-markdown :global(a) {
     text-decoration: underline;

@@ -74,8 +74,8 @@ test.describe('Assisted search', () => {
     await expect(page).toHaveURL(/\/explorer$/);
   });
 
-  for (const fullScreen of [false, true]) {
-    test(`a link in a reply asks before leaving the site${fullScreen ? ' (full screen)' : ''}`, async ({
+  for (const tall of [false, true]) {
+    test(`a link in a reply asks before leaving the site${tall ? ' (expanded)' : ''}`, async ({
       page,
     }) => {
       await mockApiConfig(page, {
@@ -88,7 +88,7 @@ test.describe('Assisted search', () => {
         route.fulfill({ json: { response: 'See [the docs](https://example.org/docs).' } }),
       );
       await openChat(page);
-      if (fullScreen) await page.getByTestId('chat-expand').click();
+      if (tall) await page.getByTestId('chat-expand').click();
 
       await ask(page, 'where is the documentation?');
       const popup = page.waitForEvent('popup', { timeout: 1500 }).catch(() => null);
@@ -115,7 +115,7 @@ test.describe('Assisted search', () => {
     expect(chatBox!.y + chatBox!.height).toBeLessThanOrEqual(searchBox!.y);
   });
 
-  test('the chat band sits above the page content, and full screen swaps it for the modal', async ({
+  test('the chat band sits above the page content, and expanding keeps it in place', async ({
     page,
   }) => {
     await openChat(page);
@@ -128,16 +128,43 @@ test.describe('Assisted search', () => {
     await expect(page.locator('main#page-content #assisted-search')).toHaveCount(0);
 
     await page.getByTestId('chat-expand').click();
-    await expect(page.getByTestId('chat-modal')).toBeVisible();
-    await expect(band).toHaveCount(0);
+    await expect(page.getByTestId('chat-expand')).toHaveText('Compact');
+    await expect(band).toBeVisible();
+    await expect(page.getByTestId('search-box')).toBeVisible();
 
     await page.getByTestId('chat-expand').click();
-    await expect(page.getByTestId('chat-modal')).toHaveCount(0);
-    await expect(band).toBeVisible();
+    await expect(page.getByTestId('chat-expand')).toHaveText('Expand');
+  });
 
-    await page.getByTestId('chat-expand').click();
-    await page.getByTestId('modal-close-button').click();
-    await expect(band).toBeVisible();
+  test('the toggle keeps its label and width, and the close button hides the panel', async ({
+    page,
+  }) => {
+    await openChat(page);
+    const toggle = page.getByTestId('chat-toggle');
+    await expect(toggle).toHaveText('Assistant');
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+
+    await page.getByTestId('chat-close').click();
+    await expect(page.locator('#assisted-search')).toHaveCount(0);
+    await expect(toggle).toHaveText('Assistant');
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  test('undo is disabled once the researcher changes the search', async ({ page }) => {
+    await page.route(chatPath, (route) =>
+      route.fulfill({ json: { response: 'Searching.', search: 'age' } }),
+    );
+    await openChat(page);
+    await ask(page, 'find age');
+    await expect(page.getByTestId('chat-undo')).toBeEnabled();
+
+    await page.getByTestId('search-box').fill('height');
+    await page.getByTestId('search-box').press('Enter');
+    await expect(page.getByTestId('chat-undo')).toBeDisabled();
+    await expect(page.getByTestId('chat-undo')).toHaveAttribute(
+      'title',
+      'Disabled after you changed the screen',
+    );
   });
 
   test('the band only shows while the chat is open', async ({ page }) => {
@@ -168,9 +195,7 @@ test.describe('Assisted search', () => {
     await expect(reply).not.toContainText('errorType');
   });
 
-  test('a refresh keeps the conversation, and resetting the search does not end it', async ({
-    page,
-  }) => {
+  test('a refresh keeps the conversation', async ({ page }) => {
     const conversations: string[] = [];
     await page.route(chatPath, async (route) => {
       conversations.push(route.request().postDataJSON().conversationId);
@@ -191,10 +216,6 @@ test.describe('Assisted search', () => {
     await ask(page, 'second question');
     await expect(page.getByTestId('chat-message-text')).toHaveCount(2);
     expect(conversations[1]).toBe(conversations[0]);
-
-    await page.getByLabel('You are on the reset button').click();
-    await expect(page.getByTestId('search-box')).toHaveValue('');
-    await expect(page.getByTestId('chat-message-user')).toHaveCount(2);
 
     await page.reload();
     await userIsLoggedIn(page);
@@ -260,6 +281,8 @@ test.describe('Assisted search', () => {
       await ask(page, 'add the heart attack filter');
       await expect(page.getByTestId('clear-all-results-btn')).toBeVisible();
       await page.getByTestId('chat-new').click();
+      await page.getByRole('button', { name: 'Start new' }).click();
+      await expect(page.locator('#modal-component')).toHaveCount(0);
 
       await page.getByTestId('clear-all-results-btn').click();
       await expect(page.locator('#modal-component')).toContainText('clear all filters');
@@ -279,6 +302,7 @@ test.describe('Assisted search', () => {
     await expect(page.getByTestId('chat-message-text')).toHaveCount(1);
 
     await page.getByTestId('chat-new').click();
+    await page.getByRole('button', { name: 'Start new' }).click();
     await expect(page.getByTestId('chat-message-user')).toHaveCount(0);
     await ask(page, 'two');
     await expect(page.getByTestId('chat-message-text')).toHaveCount(1);

@@ -27,6 +27,9 @@ export const sameFacets = (a: SlimFacet[], b: SlimFacet[]) =>
 
 export const sameSearch = (a: string, b: string) => a.trim() === b.trim();
 
+export const sameScreen = (a: ScreenState, b: ScreenState) =>
+  same(a.query, b.query) && sameFacets(a.facets, b.facets) && sameSearch(a.search, b.search);
+
 /**
  * The parts of a response that differ from what is on screen, so a reply that restates the current
  * state is not applied (and gets no undo). A present part replaces that part whole.

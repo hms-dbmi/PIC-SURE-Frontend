@@ -3,7 +3,7 @@ import { marked } from 'marked';
 import { sanitizeHTML } from '$lib/utilities/HTML';
 
 // Model output is untrusted text. Raw HTML in it is escaped by the sanitizer, never rendered:
-// only what markdown itself produces survives, and links are the only thing with attributes.
+// only what markdown itself produces survives, and links and table-cell alignment are the only things with attributes.
 const ALLOWED_TAGS = [
   'p',
   'br',
@@ -24,13 +24,19 @@ const ALLOWED_TAGS = [
   'h5',
   'h6',
   'hr',
+  'table',
+  'thead',
+  'tbody',
+  'tr',
+  'th',
+  'td',
 ];
 
 export function renderChatMarkdown(text: string): string {
   const html = marked.parse(text, { async: false, gfm: true, breaks: true });
   return sanitizeHTML(html, {
     allowedTags: ALLOWED_TAGS,
-    allowedAttributes: { a: ['href', 'title', 'target', 'rel'] },
+    allowedAttributes: { a: ['href', 'title', 'target', 'rel'], th: ['align'], td: ['align'] },
     allowedStyles: {},
     allowedSchemes: ['http', 'https', 'mailto'],
     transformTags: {
