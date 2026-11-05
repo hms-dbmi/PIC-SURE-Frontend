@@ -116,10 +116,13 @@ async function clauseToFilterNode(clause: PhenotypicClause, errors: string[]): P
     const children = await Promise.all(
       clause.phenotypicClauses.map((clause) => clauseToFilterNode(clause, errors)),
     );
-    return createFilterGroup(
+    const group = createFilterGroup(
       children.filter((child) => child !== null),
       clause.operator,
     );
+    // Without a parent a node can't be removed from the tree, and removal fails silently.
+    group.children.forEach((child) => (child.parent = group));
+    return group;
   }
   if (clause.type === 'PhenotypicFilter') {
     return phenotypicFilterToFilter(clause, errors);
@@ -143,6 +146,7 @@ export async function queryToFilterTree(
       clause.phenotypicClauses.map((clause) => clauseToFilterNode(clause, errors)),
     );
     tree.root.children = nodes;
+    nodes.forEach((node) => (node.parent = tree.root));
     tree.root.operator = clause.operator;
   }
   return tree;

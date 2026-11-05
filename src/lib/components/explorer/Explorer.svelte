@@ -26,6 +26,7 @@
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import ExplorerTour from '$lib/components/tour/ExplorerTour.svelte';
   import { log, createLog } from '$lib/logger';
+  import { chat, ChatToggleButton, assistedSearchEnabled } from '$lib/assistedSearch';
 
   let { tourConfig }: { tourConfig: TourDataType } = $props();
 
@@ -43,19 +44,22 @@
   let isDiscoverPage = $derived(page.url.pathname.includes('/discover'));
   let path = $derived(isDiscoverPage ? '/discover' : '/explorer');
   let allowGenomicFiltering = $derived(genomicFeaturesEnabled && !isDiscoverPage);
+  let assistedSearchOn = $derived(assistedSearchEnabled(isDiscoverPage));
+
+  function syncUrl(term: string) {
+    goto(resolve((term ? `${path}?search=${encodeURIComponent(term)}` : `${path}`) as '/'), {
+      replaceState: true,
+    });
+  }
 
   function update() {
     if ($error) error.set('');
     searchTerm.set(searchInput);
+    syncUrl(searchInput);
+  }
 
-    goto(
-      resolve(
-        (searchInput ? `${path}?search=${encodeURIComponent(searchInput)}` : `${path}`) as '/',
-      ),
-      {
-        replaceState: true,
-      },
-    );
+  function toggleChat() {
+    chat.setOpen(!chat.open);
   }
 
   function reset() {
@@ -73,6 +77,13 @@
 
   onMount(() => {
     releaseHandler = initHandler();
+    // A search the assistant sets, or undoes, goes in the URL like a typed one.
+    chat.onapply = (parts) => {
+      if (parts.search === undefined) return;
+      searchInput = parts.search;
+      syncUrl(parts.search);
+    };
+    if (assistedSearchOn) chat.restore();
     if (searchInput && searchInput !== $searchTerm) {
       searchTerm.set(searchInput);
     } else {
@@ -87,7 +98,10 @@
     }
   });
 
-  onDestroy(() => releaseHandler?.());
+  onDestroy(() => {
+    releaseHandler?.();
+    chat.onapply = undefined;
+  });
 </script>
 
 <section id="search-container" class="flex gap-9">
@@ -118,6 +132,9 @@
         >
           Reset
         </button>
+        {#if assistedSearchOn}
+          <ChatToggleButton open={chat.open} ontoggle={toggleChat} />
+        {/if}
       </div>
     </div>
     {#if $error}

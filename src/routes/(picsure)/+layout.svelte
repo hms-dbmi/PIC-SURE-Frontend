@@ -21,6 +21,7 @@
   import Drawer from '$lib/components/Drawer.svelte';
   import DashboardDrawer from '$lib/components/dashboard/DashboardDrawer.svelte';
   import FilterWarning from '$lib/components/explorer/FilterWarning.svelte';
+  import { chat, AssistedSearch, assistedSearchEnabled } from '$lib/assistedSearch';
 
   let { children }: { children?: Snippet } = $props();
   let filterWarningModal: boolean = $state(false);
@@ -34,6 +35,13 @@
       !page.url.pathname.includes('/export') &&
       !page.url.pathname.includes('/distributions'),
   );
+
+  let showAssistedSearch = $derived.by(() => {
+    const path = page.url.pathname.replace(/\/$/, '');
+    const onDiscover = path.endsWith('/discover');
+    const onExplorer = path.endsWith('/explorer');
+    return chat.open && (onDiscover || onExplorer) && assistedSearchEnabled(onDiscover);
+  });
 
   beforeNavigate(({ to, cancel }) => {
     const notAuthorized =
@@ -68,6 +76,11 @@
       <div id="sidebar-right" class="flex overflow-auto">
         <SidePanel />
       </div>
+    {/if}
+  {/snippet}
+  {#snippet pageTop()}
+    {#if showAssistedSearch}
+      <AssistedSearch session={chat} />
     {/if}
   {/snippet}
   {@render children?.()}
