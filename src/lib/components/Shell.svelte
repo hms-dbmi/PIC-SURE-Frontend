@@ -6,6 +6,7 @@
   interface Props {
     header?: Snippet;
     sidebarRight?: Snippet;
+    pageTop?: Snippet;
     pageFooter?: Snippet;
     children?: Snippet;
   }
@@ -14,7 +15,7 @@
     config.features.login.open || (!config.features.login.open && isUserLoggedIn()),
   );
 
-  const { header, sidebarRight, pageFooter, children }: Props = $props();
+  const { header, sidebarRight, pageTop, pageFooter, children }: Props = $props();
 </script>
 
 {#if showShell}
@@ -28,6 +29,7 @@
         {@render header?.()}
         <div class="flex-auto w-full h-full flex overflow-hidden">
           <div id="page" class="flex-1 overflow-x-hidden flex flex-col">
+            {@render pageTop?.()}
             <main id="page-content" class="flex-auto">
               {@render children?.()}
             </main>

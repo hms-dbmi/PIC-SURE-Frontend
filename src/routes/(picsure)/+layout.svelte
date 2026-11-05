@@ -21,6 +21,8 @@
   import Drawer from '$lib/components/Drawer.svelte';
   import DashboardDrawer from '$lib/components/dashboard/DashboardDrawer.svelte';
   import FilterWarning from '$lib/components/explorer/FilterWarning.svelte';
+  import { config } from '$lib/configuration.svelte';
+  import { chat, AssistedSearch } from '$lib/assistedSearch';
 
   let { children }: { children?: Snippet } = $props();
   let filterWarningModal: boolean = $state(false);
@@ -33,6 +35,13 @@
     (page.url.pathname.includes('/explorer') || page.url.pathname.includes('/discover')) &&
       !page.url.pathname.includes('/export') &&
       !page.url.pathname.includes('/distributions'),
+  );
+
+  // Only the Explorer search page has the assistant; its toggle button lives in that page.
+  let showAssistedSearch = $derived(
+    config.features.enableAssistedSearch &&
+      chat.open &&
+      page.url.pathname.replace(/\/$/, '').endsWith('/explorer'),
   );
 
   beforeNavigate(({ to, cancel }) => {
@@ -68,6 +77,11 @@
       <div id="sidebar-right" class="flex overflow-auto">
         <SidePanel />
       </div>
+    {/if}
+  {/snippet}
+  {#snippet pageTop()}
+    {#if showAssistedSearch}
+      <AssistedSearch session={chat} />
     {/if}
   {/snippet}
   {@render children?.()}

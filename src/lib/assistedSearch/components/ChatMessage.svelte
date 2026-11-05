@@ -23,19 +23,20 @@
       ? `Updated ${message.changed.map((p) => PART_LABELS[p]).join(', ')}`
       : '',
   );
+  const messageClass = $derived(
+    isUser
+      ? 'bg-primary-50'
+      : message.failed
+        ? 'bg-error-50 border border-error-500'
+        : 'bg-surface-100',
+  );
 </script>
 
 <div
   class="flex {isUser ? 'justify-end' : 'justify-start'}"
   data-testid="chat-message-{message.role}"
 >
-  <div
-    class="max-w-[85%] rounded-container px-4 py-2 {isUser
-      ? 'preset-filled-primary-500'
-      : message.failed
-        ? 'preset-tonal-error border border-error-500'
-        : 'preset-tonal-surface'}"
-  >
+  <div class="max-w-[85%] rounded-container px-4 py-2 {messageClass}">
     {#if isUser}
       <p class="whitespace-pre-wrap break-words">{message.text}</p>
     {:else}

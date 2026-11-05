@@ -107,6 +107,38 @@ test.describe('Assisted search', () => {
     expect(chatBox!.y + chatBox!.height).toBeLessThanOrEqual(searchBox!.y);
   });
 
+  test('the chat band sits above the page content, and full screen swaps it for the modal', async ({
+    page,
+  }) => {
+    await openChat(page);
+
+    const band = page.locator('#assisted-search');
+    await expect(band).toBeVisible();
+    const bandBox = await band.boundingBox();
+    const contentBox = await page.locator('main#page-content').boundingBox();
+    expect(bandBox!.y + bandBox!.height).toBeLessThanOrEqual(contentBox!.y);
+    await expect(page.locator('main#page-content #assisted-search')).toHaveCount(0);
+
+    await page.getByTestId('chat-expand').click();
+    await expect(page.getByTestId('chat-modal')).toBeVisible();
+    await expect(band).toHaveCount(0);
+
+    await page.getByTestId('chat-expand').click();
+    await expect(page.getByTestId('chat-modal')).toHaveCount(0);
+    await expect(band).toBeVisible();
+
+    await page.getByTestId('chat-expand').click();
+    await page.getByTestId('modal-close-button').click();
+    await expect(band).toBeVisible();
+  });
+
+  test('the band only shows while the chat is open', async ({ page }) => {
+    await openChat(page);
+    await expect(page.locator('#assisted-search')).toBeVisible();
+    await page.getByTestId('chat-toggle').click();
+    await expect(page.locator('#assisted-search')).toHaveCount(0);
+  });
+
   test('shows the service’s message, not its raw JSON, when the model is unavailable', async ({
     page,
   }) => {

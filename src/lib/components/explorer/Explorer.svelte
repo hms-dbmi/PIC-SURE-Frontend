@@ -26,7 +26,7 @@
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import ExplorerTour from '$lib/components/tour/ExplorerTour.svelte';
   import { log, createLog } from '$lib/logger';
-  import { chat, AssistedSearch, ChatToggleButton } from '$lib/assistedSearch';
+  import { chat, ChatToggleButton } from '$lib/assistedSearch';
 
   let { tourConfig }: { tourConfig: TourDataType } = $props();
 
@@ -110,11 +110,6 @@
     <FacetSideBar />
   </div>
   <div id="search-results-col" class="flex-auto">
-    {#if assistedSearchEnabled && chat.open}
-      <div id="assisted-search" class="mb-4">
-        <AssistedSearch session={chat} />
-      </div>
-    {/if}
     <div id="search-bar" class="flex gap-2 mb-6">
       <div class="flex-auto">
         <Searchbox bind:searchTerm={searchInput} search={update} />
