@@ -22,10 +22,15 @@
   import ConfirmDialog from '#lib/ui/dialog/ConfirmDialog.svelte';
   import Counts from '#lib/explorer/components/results/Counts.svelte';
   import { log, createLog } from '#lib/telemetry/logger.ts';
+  import { chat, assistedSearchEnabled } from '#lib/assistedSearch/index.ts';
   import Button from '#lib/ui/Button.svelte';
 
   const isDiscoverPage = $derived(exploreMode() === 'discover');
   let modalOpen: boolean = $state(false);
+  let assistedSearchOn = $derived(assistedSearchEnabled(isDiscoverPage));
+
+  // Clearing everything starts the assistant over too
+  let clearsConversation = $derived(assistedSearchOn && chat.messages.length > 0);
 
   const rules = $derived(
     resultsPanelRules({
@@ -68,9 +73,15 @@
   onconfirm={() => {
     filterState.clear();
     exportState.clear();
+    if (assistedSearchOn) chat.reset();
   }}
 >
-  Are you sure you want to clear all filters?
+  <p>Are you sure you want to clear all filters?</p>
+  {#if clearsConversation}
+    <p class="mt-2" data-testid="clear-all-chat-note">
+      This will also clear your conversation with the search assistant.
+    </p>
+  {/if}
 </ConfirmDialog>
 <section
   id="results-panel"

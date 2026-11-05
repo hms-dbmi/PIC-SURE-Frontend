@@ -7,6 +7,7 @@
   interface Props {
     header?: Snippet;
     sidebarRight?: Snippet;
+    pageTop?: Snippet;
     pageFooter?: Snippet;
     children?: Snippet;
   }
@@ -17,7 +18,7 @@
     !requiresLogin(ACCESS.app, config.features) || untrack(() => session.isLoggedIn),
   );
 
-  const { header, sidebarRight, pageFooter, children }: Props = $props();
+  const { header, sidebarRight, pageTop, pageFooter, children }: Props = $props();
 </script>
 
 {#if showShell}
@@ -31,6 +32,7 @@
         {@render header?.()}
         <div class="flex-auto w-full h-full flex overflow-hidden">
           <div id="app-page" class="flex-1 overflow-x-hidden flex flex-col">
+            {@render pageTop?.()}
             <main id="app-page-content" class="flex-auto">
               {@render children?.()}
             </main>
