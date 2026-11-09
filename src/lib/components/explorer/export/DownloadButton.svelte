@@ -1,10 +1,11 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte';
   import * as api from '$lib/api';
   import { config } from '$lib/configuration.svelte';
   import { browser } from '$app/environment';
   import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
   import { Picsure } from '$lib/paths';
-  import { fetchWhenReady } from '$lib/services/exportStatus';
+  import { fetchWhenReady, trackNotReady } from '$lib/services/exportStatus';
   import Modal from '$lib/components/Modal.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import { toaster } from '$lib/toaster';
@@ -20,7 +21,8 @@
   let modalOpen: boolean = $state(false);
   let isDownloading: boolean = $state(false);
 
-  const NOT_READY_MESSAGE = 'The export is not ready yet. Please try again in a few minutes.';
+  const unmounted = new AbortController();
+  onDestroy(() => unmounted.abort());
 
   const downloadText = $derived(
     query.query.expectedResultType === 'DATAFRAME' ||
@@ -33,7 +35,7 @@
   );
 
   async function download(): Promise<void> {
-    if (!config.features.explorer.allowDownload) {
+    if (!config.features.explorer.allowDownload || isDownloading) {
       return;
     }
     if (!datasetId) {
@@ -44,19 +46,7 @@
       });
       return;
     }
-    let resultRequests = 0;
-    let notReadyAnswers = 0;
-    const requestResult = async () => {
-      resultRequests += 1;
-      try {
-        return await api.get(`${Picsure.Query}/${datasetId}/result`);
-      } catch (error) {
-        if (api.isResultNotReady(error)) {
-          notReadyAnswers += 1;
-        }
-        throw error;
-      }
-    };
+    const result = trackNotReady(() => api.get(`${Picsure.Query}/${datasetId}/result`));
     try {
       isDownloading = true;
       log(
@@ -66,7 +56,10 @@
         }),
       );
       const startTime = performance.now();
-      const res = await fetchWhenReady(datasetId, requestResult);
+      const res = await fetchWhenReady(datasetId, result.fetch, unmounted.signal);
+      if (unmounted.signal.aborted) {
+        return;
+      }
       const duration = Math.round(performance.now() - startTime);
       const blob = new Blob([res], { type: 'octet/stream' });
 
@@ -98,13 +91,13 @@
         ),
       );
     } catch (error) {
+      if (unmounted.signal.aborted) {
+        return;
+      }
       console.error('Error in onCompleteHandler', error);
-      const consentMessage = api.consentDeniedMessage(error);
-      const statusWaitFailed = notReadyAnswers === 1 && resultRequests === 1;
-      if (consentMessage) {
-        toaster.error({ title: consentMessage, closable: true });
-      } else if (notReadyAnswers === 2 || statusWaitFailed) {
-        toaster.error({ title: NOT_READY_MESSAGE, closable: true });
+      const message = api.consentDeniedMessage(error) ?? result.failureMessage(error);
+      if (message) {
+        toaster.error({ title: message, closable: true });
       }
       log(
         createLog(
@@ -140,6 +133,7 @@
     </Modal>
     <button
       class="btn preset-filled-primary-500"
+      disabled={isDownloading}
       onclick={() => (config.features.confirmDownload ? (modalOpen = true) : download())}
       ><i class="fa-solid fa-download mr-1"></i>{downloadText}
       {#if isDownloading}

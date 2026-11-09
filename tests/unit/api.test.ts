@@ -410,6 +410,35 @@ describe('api', () => {
         error: { message: 'Server Error' },
       });
     });
+
+    it('does not log a 409 result_not_ready as an error and still throws it', async () => {
+      const body = '{"errorType":"result_not_ready","message":"The result is being generated"}';
+      fetchMock.mockResolvedValue(mockFetchResponse({ ok: false, status: 409, body }));
+
+      await expect(get('picsure/hpds/auth/query/abc/result')).rejects.toThrow(`409: ${body}`);
+
+      expect(mockCreateLog).not.toHaveBeenCalled();
+      expect(mockLog).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      { name: 'a 409 of another error type', status: 409, body: '{"errorType":"conflict"}' },
+      { name: 'a 409 that is not JSON', status: 409, body: 'Conflict' },
+      {
+        name: 'a result_not_ready body on another status',
+        status: 400,
+        body: '{"errorType":"result_not_ready"}',
+      },
+    ])('logs $name as an error', async ({ status, body }) => {
+      fetchMock.mockResolvedValue(mockFetchResponse({ ok: false, status, body }));
+
+      await expect(get('picsure/test')).rejects.toThrow(`${status}: ${body}`);
+
+      expect(mockCreateLog).toHaveBeenCalledWith('ERROR', 'error.unknown', undefined, {
+        status,
+        error: { message: body },
+      });
+    });
   });
 
   describe('WAF CAPTCHA recovery', () => {

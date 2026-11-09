@@ -1,14 +1,21 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte';
   import { config } from '$lib/configuration.svelte';
   import { Picsure } from '$lib/paths';
   import * as api from '$lib/api';
-  import { fetchWhenReady } from '$lib/services/exportStatus';
+  import { fetchWhenReady, trackNotReady } from '$lib/services/exportStatus';
   import DownloadButton from './DownloadButton.svelte';
   import Loading from '$lib/components/Loading.svelte';
   import { toaster } from '$lib/toaster';
   import { getDatasetId, getQueryRequest } from '$lib/ExportStepperManager.svelte';
   import { log, createLog } from '$lib/logger';
   let exportingIndex: number | null = $state(null);
+
+  const READY_AFTER_WAIT_MESSAGE =
+    'Your export is ready. Click the export button again to open it.';
+
+  const unmounted = new AbortController();
+  onDestroy(() => unmounted.abort());
 
   async function exportSignedToUrl(index: number, url?: string) {
     if (!url) {
@@ -18,32 +25,37 @@
 
     exportingIndex = index;
 
+    const path = `${Picsure.Query}/${getDatasetId()}/signed-url`;
+    const signedUrlRequest = trackNotReady(() => api.get(path));
+
     try {
-      const signedUrl = await getSignedUrl();
-      if (signedUrl) {
-        window.open(url + encodeURIComponent(signedUrl), '_blank');
-      } else {
+      const res = await fetchWhenReady(getDatasetId(), signedUrlRequest.fetch, unmounted.signal);
+      if (unmounted.signal.aborted) {
+        return;
+      }
+      const signedUrl: string | null = res.signedUrl || null;
+      if (!signedUrl) {
         toaster.error({ title: 'Failed to get signed URL for export.', closable: true });
+        return;
+      }
+      const opened = window.open(url + encodeURIComponent(signedUrl), '_blank');
+      if (!opened && signedUrlRequest.waited()) {
+        toaster.info({ title: READY_AFTER_WAIT_MESSAGE, closable: true });
       }
     } catch (error) {
+      if (unmounted.signal.aborted) {
+        return;
+      }
       console.error('Error during export:', error);
       toaster.error({
-        title: api.consentDeniedMessage(error) ?? 'Export failed. Please try again.',
+        title:
+          api.consentDeniedMessage(error) ??
+          signedUrlRequest.failureMessage(error) ??
+          'Export failed. Please try again.',
         closable: true,
       });
     } finally {
       exportingIndex = null;
-    }
-  }
-
-  async function getSignedUrl(): Promise<string | null> {
-    const path = `${Picsure.Query}/${getDatasetId()}/signed-url`;
-    try {
-      const res = await fetchWhenReady(getDatasetId(), () => api.get(path));
-      return res.signedUrl || null;
-    } catch (error) {
-      console.error('Error getting signed URL:', error);
-      throw error; // Re-throw to be handled by caller
     }
   }
 </script>

@@ -33,6 +33,12 @@ const NOT_READY_TOAST = {
   title: 'The export is not ready yet. Please try again in a few minutes.',
   closable: true,
 };
+const PREPARE_FAILED_TOAST = {
+  title:
+    'An error occurred while preparing your dataset. Please try again. If this problem persists, please contact an administrator.',
+  closable: true,
+};
+const STATUS_WAIT_LIMIT_MS = 11 * 60000;
 const query = { query: { expectedResultType: 'DATAFRAME' } } as unknown as QueryRequestInterfaceV3;
 
 describe('DownloadButton', () => {
@@ -48,6 +54,7 @@ describe('DownloadButton', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
@@ -81,15 +88,77 @@ describe('DownloadButton', () => {
     expect(saved).not.toHaveBeenCalled();
   });
 
-  it('shows the not ready toast when the status wait fails', async () => {
+  it('shows the not ready toast when the status wait runs out of attempts', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    get.mockRejectedValueOnce(notReady).mockResolvedValue({ status: 'PENDING' });
+    render(DownloadButton, { query, datasetId: 'dataset-1' });
+
+    await fireEvent.click(screen.getByRole('button', { name: /Download as CSV/ }));
+    await vi.advanceTimersByTimeAsync(STATUS_WAIT_LIMIT_MS);
+
+    expect(toastError).toHaveBeenCalledTimes(1);
+    expect(toastError).toHaveBeenCalledWith(NOT_READY_TOAST);
+    expect(get.mock.calls.map(([path]) => path)).toEqual([
+      RESULT_PATH,
+      ...Array(15).fill(STATUS_PATH),
+    ]);
+    expect(saved).not.toHaveBeenCalled();
+  });
+
+  it('shows the preparation failure when the export reports ERROR', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
     get.mockRejectedValueOnce(notReady).mockResolvedValueOnce({ status: 'ERROR' });
     render(DownloadButton, { query, datasetId: 'dataset-1' });
 
     await fireEvent.click(screen.getByRole('button', { name: /Download as CSV/ }));
 
-    await waitFor(() => expect(toastError).toHaveBeenCalledWith(NOT_READY_TOAST));
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith(PREPARE_FAILED_TOAST));
+    expect(toastError).toHaveBeenCalledTimes(1);
     expect(get.mock.calls.map(([path]) => path)).toEqual([RESULT_PATH, STATUS_PATH]);
     expect(saved).not.toHaveBeenCalled();
+  });
+
+  it('starts no second request when clicked again during the status wait', async () => {
+    let finishStatus: (value: { status: string }) => void = () => {};
+    get
+      .mockRejectedValueOnce(notReady)
+      .mockReturnValueOnce(new Promise((resolve) => (finishStatus = resolve)))
+      .mockResolvedValueOnce('a,b\n1,2\n');
+    render(DownloadButton, { query, datasetId: 'dataset-1' });
+    const button = screen.getByRole('button', { name: /Download as CSV/ });
+
+    await fireEvent.click(button);
+    await waitFor(() => expect(get).toHaveBeenCalledTimes(2));
+    expect(button).toBeDisabled();
+    await fireEvent.click(button);
+    button.removeAttribute('disabled');
+    await fireEvent.click(button);
+
+    expect(get.mock.calls.map(([path]) => path)).toEqual([RESULT_PATH, STATUS_PATH]);
+
+    finishStatus({ status: 'AVAILABLE' });
+    await waitFor(() => expect(saved).toHaveBeenCalledTimes(1));
+    expect(get.mock.calls.map(([path]) => path)).toEqual([RESULT_PATH, STATUS_PATH, RESULT_PATH]);
+    await waitFor(() => expect(button).toBeEnabled());
+  });
+
+  it('starts no download and shows no toast after the page is left during the wait', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    get.mockRejectedValueOnce(notReady).mockResolvedValue({ status: 'PENDING' });
+    const { unmount } = render(DownloadButton, { query, datasetId: 'dataset-1' });
+
+    await fireEvent.click(screen.getByRole('button', { name: /Download as CSV/ }));
+    await vi.advanceTimersByTimeAsync(700);
+    expect(get).toHaveBeenCalledTimes(3);
+    unmount();
+    await vi.advanceTimersByTimeAsync(STATUS_WAIT_LIMIT_MS);
+
+    expect(get).toHaveBeenCalledTimes(3);
+    expect(toastError).not.toHaveBeenCalled();
+    expect(saved).not.toHaveBeenCalled();
+    expect(console.error).not.toHaveBeenCalled();
   });
 
   it('does not retry on 400', async () => {

@@ -8,7 +8,7 @@
   import type { ExportInterface } from '$lib/models/Export';
   import type { ExportRowInterface } from '$lib/models/ExportRow';
   import { searchDictionary } from '$lib/stores/Dictionary';
-  import { QueryV3 } from '$lib/models/query/Query';
+  import { buildCrossCountRequest } from '$lib/ExportStepperManager.svelte';
   import * as api from '$lib/api';
   import { Picsure } from '$lib/paths';
   import { toaster } from '$lib/toaster';
@@ -86,15 +86,13 @@
       return [];
     }
 
-    // Get sample ID counts via cross counts query
-    const crossCountQuery = new QueryV3(structuredClone($state.snapshot(query).query));
-    crossCountQuery.expectedResultType = 'CROSS_COUNT';
-    const crossCountFields = concepts.content.map((concept) => concept.conceptPath);
-    crossCountQuery.select = crossCountFields;
-
-    const crossCountResponse: Record<string, number> = await api.post(Picsure.QuerySync, {
-      query: crossCountQuery,
-    });
+    const crossCountResponse: Record<string, number> = await api.post(
+      Picsure.QuerySync,
+      buildCrossCountRequest(
+        query,
+        concepts.content.map((concept) => concept.conceptPath),
+      ),
+    );
 
     // Filter and return only concepts with counts > 0
     return concepts.content.filter((concept) => crossCountResponse[concept.conceptPath] > 0);

@@ -4,10 +4,35 @@
  */
 
 /**
- * Sleep for a specified number of milliseconds
+ * Gives the value an aborted operation rejects with.
+ *
+ * @param signal The signal that has aborted.
+ * @returns The reason the signal carries, or an `AbortError` when it carries none.
  */
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+function abortReason(signal: AbortSignal): unknown {
+  return signal.reason ?? new DOMException('The operation was aborted.', 'AbortError');
+}
+
+/**
+ * Sleep for a specified number of milliseconds
+ *
+ * @param ms How long to sleep, in milliseconds.
+ * @param signal Ends the sleep early when it aborts.
+ * @returns A promise that resolves after the delay, or rejects with the abort reason when the
+ * signal aborts first.
+ */
+function sleep(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(abortReason(signal as AbortSignal));
+    };
+    const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+    signal?.addEventListener('abort', onAbort, { once: true });
+  });
 }
 
 /**
@@ -40,6 +65,8 @@ function getBackoffDelay(
  * @param baseDelay - Base delay in milliseconds for exponential backoff
  * @param maxDelay - Maximum delay in milliseconds
  * @param shouldRetry - Optional function to determine if an error should trigger a retry
+ * @param signal Optional signal that stops the retries. Once it aborts no further attempt is
+ * made, a pending delay ends at once, and the promise rejects with the abort reason.
  * @returns Promise that resolves with the function result or rejects after max attempts
  */
 export async function withBackoff<T>(
@@ -48,13 +75,20 @@ export async function withBackoff<T>(
   baseDelay: number = 1000,
   maxDelay: number = 30000,
   shouldRetry?: (error: unknown, attempt: number) => boolean,
+  signal?: AbortSignal,
 ): Promise<T> {
   let lastError: unknown;
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    if (signal?.aborted) {
+      throw abortReason(signal);
+    }
     try {
       return await fn();
     } catch (error) {
+      if (signal?.aborted) {
+        throw abortReason(signal);
+      }
       console.warn('Backoff caught: ', error);
       lastError = error;
 
@@ -66,7 +100,7 @@ export async function withBackoff<T>(
       // Don't delay after the last attempt
       if (attempt < maxAttempts - 1) {
         const delay = getBackoffDelay(attempt, baseDelay, maxDelay);
-        await sleep(delay);
+        await sleep(delay, signal);
       }
     }
   }

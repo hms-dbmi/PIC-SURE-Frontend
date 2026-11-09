@@ -39,9 +39,18 @@ export function consentDeniedMessage(e: unknown): string | undefined {
  * @returns True for an HTTP 409 whose JSON body has `errorType` equal to `result_not_ready`.
  */
 export function isResultNotReady(e: unknown): boolean {
-  if (!isHttpError(e, 409)) return false;
+  return isHttpError(e, 409) && isResultNotReadyBody(e.body.message);
+}
+
+/**
+ * Reads the error type out of a response body.
+ *
+ * @param responseBody The raw text of a response.
+ * @returns True when the text is JSON whose `errorType` equals `result_not_ready`.
+ */
+function isResultNotReadyBody(responseBody: string): boolean {
   try {
-    const body = JSON.parse(e.body.message) as { errorType?: unknown } | null;
+    const body = JSON.parse(responseBody) as { errorType?: unknown } | null;
     return body?.errorType === RESULT_NOT_READY;
   } catch {
     return false;
@@ -244,8 +253,20 @@ async function handleResponse(res: Response, openRequest = false) {
   fail(res.status, await res.text());
 }
 
+/**
+ * Rejects a request with the response status and text. Every failure is logged as an unknown
+ * error except a 409 `result_not_ready`, which is the expected answer while an export is still
+ * being prepared.
+ *
+ * @param status The HTTP status of the failed response.
+ * @param resText The raw text of the failed response.
+ * @throws An HttpError carrying `status` and `resText`, always.
+ */
 function fail(status: number, resText: string): never {
-  log(createLog('ERROR', 'error.unknown', undefined, { status, error: { message: resText } }));
+  const expected = status === 409 && isResultNotReadyBody(resText);
+  if (!expected) {
+    log(createLog('ERROR', 'error.unknown', undefined, { status, error: { message: resText } }));
+  }
   error(status as NumericRange<400, 599>, resText);
 }
 

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
-  import { onMount } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { config } from '$lib/configuration.svelte';
   import type { ExportRowInterface } from '$lib/models/ExportRow';
@@ -9,7 +9,11 @@
   import { filters } from '$lib/stores/Filter';
   import { resultCountsState } from '$lib/state/resultCounts.svelte';
   import { createDatasetName } from '$lib/services/datasets';
-  import { isExportFailure, waitUntilAvailable } from '$lib/services/exportStatus';
+  import {
+    EXPORT_PREPARE_FAILED_MESSAGE,
+    isExportFailure,
+    waitUntilAvailable,
+  } from '$lib/services/exportStatus';
   import Stepper from '$lib/components/steppers/horizontal/Stepper.svelte';
   import Step from '$lib/components/steppers/horizontal/Step.svelte';
   import UserToken from '$lib/components/UserToken.svelte';
@@ -40,6 +44,9 @@
   import { QueryV3 } from '$lib/models/query/Query';
 
   const { rows = [] }: { rows?: ExportRowInterface[] } = $props();
+
+  const unmounted = new AbortController();
+  onDestroy(() => unmounted.abort());
 
   let statusPromise: Promise<unknown> = $state(Promise.resolve());
   let preparePromise: Promise<void> = $state(Promise.resolve());
@@ -91,7 +98,7 @@
 
   async function checkExportStatus(lastPicsureResultId?: string): Promise<void> {
     try {
-      await waitUntilAvailable(lastPicsureResultId || getDatasetId());
+      await waitUntilAvailable(lastPicsureResultId || getDatasetId(), unmounted.signal);
     } catch (error) {
       if (isExportFailure(error)) {
         setLockDownload(true);
@@ -186,10 +193,7 @@
           <AnalysisPlatformLinks />
         {:catch e}
           <div class="flex justify-center">
-            <ErrorAlert
-              title="An error occurred while preparing your dataset. Please try again. If this problem persists, please
-            contact an administrator."
-            />
+            <ErrorAlert title={EXPORT_PREPARE_FAILED_MESSAGE} />
             <div class="hidden">{e}</div>
           </div>
         {/await}
