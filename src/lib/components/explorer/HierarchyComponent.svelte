@@ -15,6 +15,8 @@
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import { sortHierarchyDeepestFirst } from '$lib/utilities/Hierarchy';
   import { log, createLog, getPageContext } from '$lib/logger';
+  import { isHttpError } from '@sveltejs/kit';
+  import { userMessage } from '$lib/api';
   interface Props {
     data?: SearchResult;
     onclose?: () => void;
@@ -111,8 +113,10 @@
       } else {
         console.error('Error adding selection: ', error instanceof Error ? error.message : error);
         toaster.error({
-          description:
+          description: userMessage(
+            error,
             'Something went wrong when adding the filter. If the problem persists, please contact your administrator.',
+          ),
         });
       }
     } finally {
@@ -174,9 +178,13 @@
       />
     {:catch error}
       <ErrorAlert color="error">
-        <p class="m-0">Error loading hierarchy</p>
+        <p class="m-0">{userMessage(error, 'Error loading hierarchy')}</p>
         <span class="text-sm text-gray-500 hidden"
-          >{error instanceof Error ? error.message : String(error)}</span
+          >{isHttpError(error)
+            ? `${error.status}: ${error.body.message}`
+            : error instanceof Error
+              ? error.message
+              : String(error)}</span
         >
       </ErrorAlert>
     {/await}

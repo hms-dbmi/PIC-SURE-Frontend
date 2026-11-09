@@ -855,8 +855,9 @@ test.describe('Explorer for authenticated users', () => {
         // Then
         await expect(page.getByTestId('hierarchy-component')).toBeVisible();
         const hierarchyComponent = page.getByTestId('hierarchy-component');
+        await expect(hierarchyComponent.locator('details')).toHaveCount(hierarchyResponse.length);
         const treeItems = await hierarchyComponent.locator('details').all();
-        const conceptPathItems = hierarchyResponse.reverse();
+        const conceptPathItems = [...hierarchyResponse].reverse();
         for (let i = 0; i < conceptPathItems.length; i++) {
           const treeItem = treeItems[i];
           const treeItemText = await treeItem.locator('> summary label').textContent();
