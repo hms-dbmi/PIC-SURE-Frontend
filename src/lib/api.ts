@@ -16,6 +16,7 @@ import {
 
 const BEARER = 'Bearer ';
 const CONSENT_DENIED = 'consent_denied';
+const RESULT_NOT_READY = 'result_not_ready';
 export const CONSENT_DENIED_MESSAGE = 'You no longer have consent for this saved result';
 
 export type RequestOptions = { signal?: AbortSignal };
@@ -27,6 +28,24 @@ export function isAbortError(e: unknown): boolean {
 // HttpError carries its text at body.message; it has no message of its own.
 export function consentDeniedMessage(e: unknown): string | undefined {
   return isHttpError(e, 403) && e.body.errorType === CONSENT_DENIED ? e.body.message : undefined;
+}
+
+/**
+ * Recognises the answer the result and signed-url endpoints give while an export is lost,
+ * re-running or still running. The 409 is thrown with the raw response text as its message, so
+ * the error type is read by parsing that text.
+ *
+ * @param e The value a rejected request rejected with.
+ * @returns True for an HTTP 409 whose JSON body has `errorType` equal to `result_not_ready`.
+ */
+export function isResultNotReady(e: unknown): boolean {
+  if (!isHttpError(e, 409)) return false;
+  try {
+    const body = JSON.parse(e.body.message) as { errorType?: unknown } | null;
+    return body?.errorType === RESULT_NOT_READY;
+  } catch {
+    return false;
+  }
 }
 
 // TODO: fix any types

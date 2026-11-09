@@ -2,6 +2,7 @@
   import { config } from '$lib/configuration.svelte';
   import { Picsure } from '$lib/paths';
   import * as api from '$lib/api';
+  import { fetchWhenReady } from '$lib/services/exportStatus';
   import DownloadButton from './DownloadButton.svelte';
   import Loading from '$lib/components/Loading.svelte';
   import { toaster } from '$lib/toaster';
@@ -38,7 +39,7 @@
   async function getSignedUrl(): Promise<string | null> {
     const path = `${Picsure.Query}/${getDatasetId()}/signed-url`;
     try {
-      const res = await api.get(path);
+      const res = await fetchWhenReady(getDatasetId(), () => api.get(path));
       return res.signedUrl || null;
     } catch (error) {
       console.error('Error getting signed URL:', error);

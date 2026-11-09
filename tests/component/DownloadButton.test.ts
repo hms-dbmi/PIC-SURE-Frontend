@@ -1,0 +1,86 @@
+// @vitest-environment happy-dom
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
+
+const { get, notReady } = vi.hoisted(() => ({
+  get: vi.fn(),
+  notReady: { status: 409, body: { message: '{"errorType":"result_not_ready"}' } },
+}));
+
+vi.mock('$app/environment', () => ({ browser: true }));
+vi.mock('$lib/api', () => ({
+  get,
+  consentDeniedMessage: () => undefined,
+  isResultNotReady: (e: unknown) => e === notReady,
+}));
+vi.mock('$lib/logger', () => ({ log: vi.fn(), createLog: vi.fn() }));
+vi.mock('$lib/configuration.svelte', () => ({
+  config: {
+    features: { confirmDownload: false, explorer: { allowDownload: true, enablePfbExport: true } },
+    branding: { explorePage: {} },
+  },
+  resetConfig: () => {},
+}));
+
+import DownloadButton from '$lib/components/explorer/export/DownloadButton.svelte';
+import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
+
+const RESULT_PATH = 'picsure/hpds/auth/query/dataset-1/result';
+const STATUS_PATH = 'picsure/hpds/auth/query/dataset-1/status';
+const query = { query: { expectedResultType: 'DATAFRAME' } } as unknown as QueryRequestInterfaceV3;
+
+describe('DownloadButton', () => {
+  let saved: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:pic-sure');
+    saved = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('re-polls status and retries the download after result_not_ready', async () => {
+    get
+      .mockRejectedValueOnce(notReady)
+      .mockResolvedValueOnce({ status: 'AVAILABLE' })
+      .mockResolvedValueOnce('a,b\n1,2\n');
+    render(DownloadButton, { query, datasetId: 'dataset-1' });
+
+    await fireEvent.click(screen.getByRole('button', { name: /Download as CSV/ }));
+
+    await waitFor(() => expect(saved).toHaveBeenCalledTimes(1));
+    expect(get.mock.calls.map(([path]) => path)).toEqual([RESULT_PATH, STATUS_PATH, RESULT_PATH]);
+  });
+
+  it('stops after a second result_not_ready', async () => {
+    get
+      .mockRejectedValueOnce(notReady)
+      .mockResolvedValueOnce({ status: 'AVAILABLE' })
+      .mockRejectedValueOnce(notReady);
+    render(DownloadButton, { query, datasetId: 'dataset-1' });
+
+    await fireEvent.click(screen.getByRole('button', { name: /Download as CSV/ }));
+
+    await waitFor(() => expect(get).toHaveBeenCalledTimes(3));
+    await waitFor(() => expect(console.error).toHaveBeenCalled());
+    expect(get).toHaveBeenCalledTimes(3);
+    expect(saved).not.toHaveBeenCalled();
+  });
+
+  it('does not retry on 400', async () => {
+    get.mockRejectedValueOnce({ status: 400, body: { message: 'Status : ERROR' } });
+    render(DownloadButton, { query, datasetId: 'dataset-1' });
+
+    await fireEvent.click(screen.getByRole('button', { name: /Download as CSV/ }));
+
+    await waitFor(() => expect(console.error).toHaveBeenCalled());
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(get).toHaveBeenCalledWith(RESULT_PATH);
+    expect(saved).not.toHaveBeenCalled();
+  });
+});

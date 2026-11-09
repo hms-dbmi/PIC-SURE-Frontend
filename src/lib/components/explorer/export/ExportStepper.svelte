@@ -2,16 +2,14 @@
   import { resolve } from '$app/paths';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import * as api from '$lib/api';
   import { config } from '$lib/configuration.svelte';
-  import { Picsure } from '$lib/paths';
   import type { ExportRowInterface } from '$lib/models/ExportRow';
   import type { DataSet } from '$lib/models/Dataset';
   import { exports } from '$lib/stores/Export';
   import { filters } from '$lib/stores/Filter';
   import { resultCountsState } from '$lib/state/resultCounts.svelte';
   import { createDatasetName } from '$lib/services/datasets';
-  import { withBackoff } from '$lib/utilities/backoff';
+  import { isExportFailure, waitUntilAvailable } from '$lib/services/exportStatus';
   import Stepper from '$lib/components/steppers/horizontal/Stepper.svelte';
   import Step from '$lib/components/steppers/horizontal/Step.svelte';
   import UserToken from '$lib/components/UserToken.svelte';
@@ -92,39 +90,15 @@
   }
 
   async function checkExportStatus(lastPicsureResultId?: string): Promise<void> {
-    const statusId = lastPicsureResultId || getDatasetId();
-    const queryFragment = `/${statusId}/status`;
-
-    return withBackoff(
-      async () => {
-        const res = (await api.get(`${Picsure.Query}${queryFragment}`)) as {
-          picsureResultId: string;
-          status: string;
-          resultMetadata: { picsureQueryId: string };
-        };
-
-        if (res.status === 'ERROR') {
-          setLockDownload(true);
-          throw new Error(`Export failed with status: ${res.status}`);
-        }
-
-        if (res.status !== 'SUCCESS' && res.status !== 'AVAILABLE') {
-          throw new Error(`Export not ready. Status: ${res.status}`);
-        }
-
-        setLockDownload(false);
-        return;
-      },
-      15,
-      500,
-      60000,
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      (error, _attempt) => {
-        return !(
-          error instanceof Error && error.message.includes('Export failed with status: ERROR')
-        );
-      },
-    );
+    try {
+      await waitUntilAvailable(lastPicsureResultId || getDatasetId());
+    } catch (error) {
+      if (isExportFailure(error)) {
+        setLockDownload(true);
+      }
+      throw error;
+    }
+    setLockDownload(false);
   }
 
   function onComplete() {

@@ -807,6 +807,65 @@ describe('api', () => {
   });
 });
 
+describe('isResultNotReady', () => {
+  const NOT_READY = JSON.stringify({
+    errorType: 'result_not_ready',
+    message: 'The result is being generated',
+    requestId: 'req-1',
+  });
+
+  /**
+   * Loads the api module against the real SvelteKit error helpers, so a failed request rejects
+   * with a real HttpError instead of the plain Error the mock at the top of this file throws.
+   */
+  async function realApi(): Promise<typeof import('$lib/api')> {
+    vi.resetModules();
+    vi.doUnmock('@sveltejs/kit');
+    return await import('$lib/api');
+  }
+
+  async function rejectionFrom(
+    api: typeof import('$lib/api'),
+    body: string,
+    status: number,
+  ): Promise<unknown> {
+    vi.stubGlobal('window', { location: { origin: 'https://example.com' } });
+    vi.stubGlobal('localStorage', {
+      getItem: () => 'token',
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+    });
+    vi.stubGlobal('sessionStorage', { getItem: () => null, setItem: vi.fn(), removeItem: vi.fn() });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(body, { status })));
+    try {
+      await api.get('picsure/hpds/auth/query/abc/result');
+    } catch (e) {
+      return e;
+    }
+    throw new Error('expected the request to reject');
+  }
+
+  it('isResultNotReady is true only for 409 result_not_ready', async () => {
+    mockBrowser = true;
+    const api = await realApi();
+
+    expect(api.isResultNotReady(await rejectionFrom(api, NOT_READY, 409))).toBe(true);
+
+    expect(api.isResultNotReady(await rejectionFrom(api, NOT_READY, 400))).toBe(false);
+    expect(api.isResultNotReady(await rejectionFrom(api, NOT_READY, 500))).toBe(false);
+    expect(
+      api.isResultNotReady(
+        await rejectionFrom(api, JSON.stringify({ errorType: 'conflict', message: 'x' }), 409),
+      ),
+    ).toBe(false);
+    expect(api.isResultNotReady(await rejectionFrom(api, 'Conflict', 409))).toBe(false);
+    expect(api.isResultNotReady(await rejectionFrom(api, 'null', 409))).toBe(false);
+    expect(api.isResultNotReady(new Error(`409: ${NOT_READY}`))).toBe(false);
+    expect(api.isResultNotReady(undefined)).toBe(false);
+    expect(api.isResultNotReady(null)).toBe(false);
+  });
+});
+
 function makeSignal(): AbortSignal {
   return new AbortController().signal;
 }

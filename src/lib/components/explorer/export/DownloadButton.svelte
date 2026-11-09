@@ -4,6 +4,7 @@
   import { browser } from '$app/environment';
   import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
   import { Picsure } from '$lib/paths';
+  import { fetchWhenReady } from '$lib/services/exportStatus';
   import Modal from '$lib/components/Modal.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import { toaster } from '$lib/toaster';
@@ -50,7 +51,9 @@
         }),
       );
       const startTime = performance.now();
-      const res = await api.get(`${Picsure.Query}/${datasetId}/result`);
+      const res = await fetchWhenReady(datasetId, () =>
+        api.get(`${Picsure.Query}/${datasetId}/result`),
+      );
       const duration = Math.round(performance.now() - startTime);
       const blob = new Blob([res], { type: 'octet/stream' });
 
