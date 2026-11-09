@@ -56,6 +56,16 @@ export async function getDataset(uuid: string) {
   return mapDataset(res);
 }
 
+/**
+ * Swaps the cached copy of a dataset for a newer one, so the next read of the cache sees it.
+ * A dataset that is not cached is left out, and the next read fetches it from the server.
+ *
+ * @param dataset The newer copy, matched to the cached one by its uuid.
+ */
+export function replaceDataset(dataset: DataSet) {
+  datasets.update((store) => store.map((ds) => (ds.uuid === dataset.uuid ? dataset : ds)));
+}
+
 export default {
   subscribe: datasets.subscribe,
   active,

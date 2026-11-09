@@ -893,6 +893,25 @@ describe('isResultNotReady', () => {
     expect(api.isResultNotReady(undefined)).toBe(false);
     expect(api.isResultNotReady(null)).toBe(false);
   });
+
+  it('isSampleDisabled is true only for 400 sample_disabled', async () => {
+    mockBrowser = true;
+    const api = await realApi();
+    const disabled = JSON.stringify({ errorType: 'sample_disabled', message: 'Sampling is off' });
+
+    expect(api.isSampleDisabled(await rejectionFrom(api, disabled, 400))).toBe(true);
+
+    expect(api.isSampleDisabled(await rejectionFrom(api, disabled, 409))).toBe(false);
+    expect(api.isSampleDisabled(await rejectionFrom(api, disabled, 500))).toBe(false);
+    expect(
+      api.isSampleDisabled(
+        await rejectionFrom(api, JSON.stringify({ errorType: 'bad_request' }), 400),
+      ),
+    ).toBe(false);
+    expect(api.isSampleDisabled(await rejectionFrom(api, 'Bad Request', 400))).toBe(false);
+    expect(api.isSampleDisabled(new Error(`400: ${disabled}`))).toBe(false);
+    expect(api.isSampleDisabled(undefined)).toBe(false);
+  });
 });
 
 function makeSignal(): AbortSignal {

@@ -17,6 +17,7 @@ import {
 const BEARER = 'Bearer ';
 const CONSENT_DENIED = 'consent_denied';
 const RESULT_NOT_READY = 'result_not_ready';
+const SAMPLE_DISABLED = 'sample_disabled';
 export const CONSENT_DENIED_MESSAGE = 'You no longer have consent for this saved result';
 
 export type RequestOptions = { signal?: AbortSignal };
@@ -43,15 +44,37 @@ export function isResultNotReady(e: unknown): boolean {
 }
 
 /**
+ * Recognises the answer a query submit gives when it asks for a sample while sampling is
+ * switched off on the server.
+ *
+ * @param e The value a rejected request rejected with.
+ * @returns True for an HTTP 400 whose JSON body has `errorType` equal to `sample_disabled`.
+ */
+export function isSampleDisabled(e: unknown): boolean {
+  return isHttpError(e, 400) && hasErrorType(e.body.message, SAMPLE_DISABLED);
+}
+
+/**
  * Reads the error type out of a response body.
  *
  * @param responseBody The raw text of a response.
  * @returns True when the text is JSON whose `errorType` equals `result_not_ready`.
  */
 function isResultNotReadyBody(responseBody: string): boolean {
+  return hasErrorType(responseBody, RESULT_NOT_READY);
+}
+
+/**
+ * Compares the error type in a response body with an expected one.
+ *
+ * @param responseBody The raw text of a response.
+ * @param errorType The error type looked for.
+ * @returns True when the text is JSON whose `errorType` equals `errorType`.
+ */
+function hasErrorType(responseBody: string, errorType: string): boolean {
   try {
     const body = JSON.parse(responseBody) as { errorType?: unknown } | null;
-    return body?.errorType === RESULT_NOT_READY;
+    return body?.errorType === errorType;
   } catch {
     return false;
   }

@@ -9,6 +9,18 @@
   import { toaster } from '$lib/toaster';
   import { getDatasetId, getQueryRequest } from '$lib/ExportStepperManager.svelte';
   import { log, createLog } from '$lib/logger';
+  import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
+
+  interface Props {
+    /** The exported query. Defaults to the one the export stepper holds. */
+    query?: QueryRequestInterfaceV3;
+    /** The id of the query whose result is exported. Defaults to the export stepper's. */
+    datasetId?: string;
+  }
+
+  let { query, datasetId }: Props = $props();
+  const exportQuery = $derived(query ?? getQueryRequest());
+  const exportId = $derived(datasetId ?? getDatasetId());
   let exportingIndex: number | null = $state(null);
 
   const READY_AFTER_WAIT_MESSAGE =
@@ -25,11 +37,12 @@
 
     exportingIndex = index;
 
-    const path = `${Picsure.Query}/${getDatasetId()}/signed-url`;
+    const queryId = exportId;
+    const path = `${Picsure.Query}/${queryId}/signed-url`;
     const signedUrlRequest = trackNotReady(() => api.get(path));
 
     try {
-      const res = await fetchWhenReady(getDatasetId(), signedUrlRequest.fetch, unmounted.signal);
+      const res = await fetchWhenReady(queryId, signedUrlRequest.fetch, unmounted.signal);
       if (unmounted.signal.aborted) {
         return;
       }
@@ -78,7 +91,7 @@
           log(
             createLog('EXPORT', 'export.pfb_signed_url', {
               platform: exportLink.title,
-              datasetId: getDatasetId(),
+              datasetId: exportId,
             }),
           );
           exportSignedToUrl(index, exportLink.url);
@@ -93,5 +106,5 @@
       </button>
     {/each}
   {/if}
-  <DownloadButton query={getQueryRequest()} datasetId={getDatasetId()} />
+  <DownloadButton query={exportQuery} datasetId={exportId} />
 </section>

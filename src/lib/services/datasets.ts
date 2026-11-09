@@ -1,6 +1,31 @@
+import { isHttpError } from '@sveltejs/kit';
 import * as api from '$lib/api';
 import { Picsure } from '$lib/paths';
-import type { DataSet } from '$lib/models/Dataset';
+import {
+  QueryVersion,
+  type DataSet,
+  type DataSetResponse,
+  type LinkedQuery,
+} from '$lib/models/Dataset';
+import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
+import { QueryV3 } from '$lib/models/query/Query';
+import { replaceDataset } from '$lib/stores/Dataset.svelte';
+
+const EXPORT_RESULT_TYPES = ['DATAFRAME', 'DATAFRAME_PFB', 'DATAFRAME_TIMESERIES'] as const;
+
+/** A result type that produces an export file, the only kind a sample can be taken of. */
+export type ExportResultType = (typeof EXPORT_RESULT_TYPES)[number];
+
+/** The query that serves one variant of a dataset, and the dataset as it stands afterwards. */
+export interface VariantRequest {
+  /** The id of the query whose result is the requested variant. */
+  queryId: string;
+  /**
+   * The dataset passed in when the variant was already linked, or a copy that lists the new
+   * link when the variant had to be submitted.
+   */
+  dataset: DataSet;
+}
 
 interface DatasetRequest {
   queryId: string;
@@ -21,4 +46,157 @@ export async function createDatasetName(queryId: string, name: string): Promise<
     name,
   };
   return await api.post(Picsure.NamedDataSet, request);
+}
+
+/**
+ * Reads the stored query of a dataset when it is one a full or sample export can be run from.
+ *
+ * @param dataset The named dataset.
+ * @returns The stored V3 query when its result type is an export type, otherwise undefined.
+ */
+function storedExportQuery(
+  dataset: DataSet,
+): (QueryV3 & { expectedResultType: ExportResultType }) | undefined {
+  const query = dataset.query;
+  if (dataset.version !== QueryVersion.V3 || !(query instanceof QueryV3)) {
+    return undefined;
+  }
+  return isExportResultType(query.expectedResultType)
+    ? (query as QueryV3 & { expectedResultType: ExportResultType })
+    : undefined;
+}
+
+function isExportResultType(resultType: string): resultType is ExportResultType {
+  return (EXPORT_RESULT_TYPES as readonly string[]).includes(resultType);
+}
+
+/**
+ * Tells which export a dataset offers. V2 datasets, and V3 datasets stored with a count or
+ * other non-export type, offer none.
+ *
+ * @param dataset The named dataset.
+ * @returns The stored query's result type when it is an export type, otherwise undefined.
+ */
+export function exportResultType(dataset: DataSet): ExportResultType | undefined {
+  return storedExportQuery(dataset)?.expectedResultType;
+}
+
+/**
+ * Lists the queries linked to a dataset with the query behind its Dataset ID made usable. That
+ * query's body is the stored query, so it takes the stored result type when the server sent
+ * none, and it is added when the server did not list it.
+ *
+ * @param dataset The named dataset.
+ * @param stored The dataset's stored query.
+ * @returns The linked queries, the one behind the Dataset ID included.
+ */
+function linkedVariants(dataset: DataSet, stored: QueryV3): LinkedQuery[] {
+  const listed = dataset.queries.map((linked) =>
+    linked.queryId === dataset.queryId && linked.resultType === null
+      ? { ...linked, resultType: stored.expectedResultType }
+      : linked,
+  );
+  if (listed.some((linked) => linked.queryId === dataset.queryId)) {
+    return listed;
+  }
+  return [
+    ...listed,
+    { queryId: dataset.queryId, sample: stored.sample, resultType: stored.expectedResultType },
+  ];
+}
+
+/**
+ * Links a query to a named dataset. The dataset's own query id, shown as its Dataset ID, stays
+ * where it is. An answer of 409 means the dataset already holds a query for that variant, and
+ * is taken as linked.
+ *
+ * @param dataset The dataset to link to. Its name, archived flag and metadata are sent unchanged.
+ * @param queryId The id of the query to link.
+ * @param signal Cancels the request when it aborts.
+ * @returns A promise that resolves once the query is linked.
+ * @throws Whatever the request rejects with, other than an HTTP 409.
+ */
+export async function linkQuery(
+  dataset: DataSet,
+  queryId: string,
+  signal?: AbortSignal,
+): Promise<void> {
+  const request = {
+    queryId,
+    name: dataset.name,
+    archived: dataset.archived,
+    metadata: dataset.metadata,
+  };
+  try {
+    await api.put(
+      `${Picsure.NamedDataSet}/${dataset.uuid}`,
+      request,
+      undefined,
+      undefined,
+      signal ? { signal } : undefined,
+    );
+  } catch (e) {
+    if (!isHttpError(e, 409)) {
+      throw e;
+    }
+  }
+}
+
+/**
+ * Finds the query that serves the full or the sample variant of a dataset, creating and linking
+ * it on first use. A variant is the pair of `sample` and the dataset's stored result type.
+ *
+ * A linked query for the variant is reused without a request. Otherwise the stored query is
+ * submitted with `sample` set, the returned query is linked to the dataset, and the cached
+ * dataset is replaced by a copy that lists the link. The result is not waited for.
+ *
+ * @param dataset The named dataset. It is not modified.
+ * @param sample True for the sample variant, false for the full one.
+ * @param signal Cancels the submit and the link when it aborts.
+ * @returns The id of the variant's query, and the dataset with that query among its links.
+ * @throws An error when the dataset's stored query is not a V3 query of an export type, in
+ * which case nothing is sent, when the submit answers without a query id, or whatever the
+ * submit or the link rejects with.
+ */
+export async function requestVariant(
+  dataset: DataSet,
+  sample: boolean,
+  signal?: AbortSignal,
+): Promise<VariantRequest> {
+  const stored = storedExportQuery(dataset);
+  if (!stored) {
+    throw new Error('This dataset has no export to request.');
+  }
+  const resultType = stored.expectedResultType;
+  const linked = linkedVariants(dataset, stored).find(
+    (candidate) => candidate.sample === sample && candidate.resultType === resultType,
+  );
+  if (linked) {
+    return { queryId: linked.queryId, dataset };
+  }
+
+  const request: QueryRequestInterfaceV3 = { query: new QueryV3({ ...stored, sample }) };
+  const options = signal ? { signal } : undefined;
+  const response: DataSetResponse | undefined = await api.post(
+    Picsure.Query,
+    request,
+    undefined,
+    undefined,
+    options,
+  );
+  const queryId = response?.picsureResultId;
+  if (!queryId) {
+    throw new Error('The query submit returned no query id.');
+  }
+  await linkQuery(dataset, queryId, signal);
+
+  const updated: DataSet = {
+    ...dataset,
+    queries: [
+      ...dataset.queries.filter((existing) => existing.queryId !== queryId),
+      { queryId, sample, resultType },
+    ],
+  };
+  replaceDataset(updated);
+  return { queryId, dataset: updated };
 }

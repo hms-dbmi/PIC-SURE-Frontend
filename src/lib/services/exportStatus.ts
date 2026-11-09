@@ -12,6 +12,9 @@ export const EXPORT_PREPARE_FAILED_MESSAGE =
 export const EXPORT_NOT_READY_MESSAGE =
   'The export is not ready yet. Please try again in a few minutes.';
 
+/** Shown when a sample is asked for while sampling is switched off on the server. */
+export const SAMPLE_DISABLED_MESSAGE = 'Sample datasets are not available at this time';
+
 interface ExportStatusResponse {
   picsureResultId: string;
   status: string;

@@ -12,6 +12,7 @@
   import QuerySummary from '$lib/components/query/QuerySummary.svelte';
   import Loading from '$lib/components/Loading.svelte';
   import CopyButton from '$lib/components/buttons/CopyButton.svelte';
+  import DatasetDownload from '$lib/components/dataset/DatasetDownload.svelte';
 
   let dataset: DataSet | undefined = $state({
     version: QueryVersion.UNKNOWN,
@@ -66,6 +67,7 @@
           </tbody>
         </table>
       </section>
+      <DatasetDownload {dataset} onlinked={(linked) => (dataset = linked)} />
     {/if}
     {#if dataset?.query && dataset?.queryId}
       <QuerySummary query={dataset.query} version={dataset.version} name={dataset.name} />
