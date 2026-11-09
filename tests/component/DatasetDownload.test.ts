@@ -4,30 +4,32 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { error } from '@sveltejs/kit';
 
-const { get, post, put, notReady, sampleDisabled, consentDenied, features } = vi.hoisted(() => ({
+const { get, post, put, createLog, notReady, features } = vi.hoisted(() => ({
   get: vi.fn(),
   post: vi.fn(),
   put: vi.fn(),
+  createLog: vi.fn(),
   notReady: { status: 409, body: { message: '{"errorType":"result_not_ready"}' } },
-  sampleDisabled: { status: 400, body: { message: '{"errorType":"sample_disabled"}' } },
-  consentDenied: { status: 403, body: { message: 'You no longer have consent' } },
   features: {
     confirmDownload: false,
     explorer: { allowDownload: true, enablePfbExport: true, enableSampleDataset: true },
   },
 }));
 
+type Refusal = { status?: number; body?: { message?: string; errorType?: string } } | undefined;
+
 vi.mock('$app/environment', () => ({ browser: true }));
 vi.mock('$lib/api', () => ({
   get,
   post,
   put,
-  consentDeniedMessage: (e: unknown) =>
-    e === consentDenied ? consentDenied.body.message : undefined,
   isResultNotReady: (e: unknown) => e === notReady,
-  isSampleDisabled: (e: unknown) => e === sampleDisabled,
+  isSampleDisabled: (e: Refusal) =>
+    e?.status === 400 && String(e.body?.message).includes('sample_disabled'),
+  consentDeniedMessage: (e: Refusal) =>
+    e?.status === 403 && e.body?.errorType === 'consent_denied' ? e.body.message : undefined,
 }));
-vi.mock('$lib/logger', () => ({ log: vi.fn(), createLog: vi.fn() }));
+vi.mock('$lib/logger', () => ({ log: vi.fn(), createLog }));
 vi.mock('$lib/configuration.svelte', () => ({
   config: {
     features,
@@ -60,6 +62,22 @@ const NOT_READY_TOAST = {
   closable: true,
 };
 
+function httpError(status: number, body: string | App.Error): unknown {
+  try {
+    error(status, body as string);
+  } catch (e) {
+    return e;
+  }
+}
+
+const SAMPLE_DISABLED_BODY = '{"errorType":"sample_disabled","message":"Sampling is off"}';
+const CONSENT_DENIED_BODY = { message: 'You no longer have consent', errorType: 'consent_denied' };
+const SAMPLE_DISABLED_TOAST = {
+  title: 'Sample datasets are not available at this time',
+  closable: true,
+};
+const CONSENT_DENIED_TOAST = { title: 'You no longer have consent', closable: true };
+
 function statusPath(queryId: string): string {
   return `${QUERY_PATH}/${queryId}/status`;
 }
@@ -86,18 +104,11 @@ function makeDataset(
     }),
     queryId: 'full-id',
     queries,
+    supportsLinkedQueries: true,
     startTime: '2026-11-09',
     rawStartTime: 1,
     status: 'AVAILABLE',
   };
-}
-
-function conflict(): unknown {
-  try {
-    error(409, '{"errorType":"conflict"}');
-  } catch (e) {
-    return e;
-  }
 }
 
 function fullButton(): HTMLElement {
@@ -180,6 +191,15 @@ describe('DatasetDownload', () => {
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 
+  it('shows neither option for a federated dataset', () => {
+    render(DatasetDownload, {
+      dataset: { ...makeDataset(), federated: { commonId: 'common-area-uuid' } },
+    });
+
+    expect(screen.queryByTestId('dataset-download')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+  });
+
   it('reuses an already linked sample query', async () => {
     get.mockResolvedValueOnce({ status: 'AVAILABLE' }).mockResolvedValueOnce('a,b\n1,2\n');
     render(DatasetDownload, { dataset: makeDataset('DATAFRAME', [FULL_LINK, SAMPLE_LINK]) });
@@ -236,19 +256,85 @@ describe('DatasetDownload', () => {
     expect(toastError).not.toHaveBeenCalled();
   });
 
-  it('treats a 409 on link as already linked', async () => {
+  it('offers the download without recording a link when the link answers 409', async () => {
     post.mockResolvedValueOnce({ picsureResultId: 'sample-id' });
-    put.mockRejectedValueOnce(conflict());
-    get.mockResolvedValueOnce({ status: 'AVAILABLE' });
+    put.mockRejectedValueOnce(httpError(409, '{"errorType":"conflict"}'));
+    get.mockResolvedValueOnce({ status: 'AVAILABLE' }).mockResolvedValueOnce('a,b\n1,2\n');
     const onlinked = vi.fn();
     render(DatasetDownload, { dataset: makeDataset(), onlinked });
 
     await fireEvent.click(sampleButton());
-    await screen.findByRole('button', { name: /Download as CSV/ });
+    await fireEvent.click(await screen.findByRole('button', { name: /Download as CSV/ }));
 
-    expect(paths(get)).toEqual([statusPath('sample-id')]);
-    expect(onlinked.mock.calls[0][0].queries).toEqual([FULL_LINK, SAMPLE_LINK]);
+    await waitFor(() => expect(saved).toHaveBeenCalledTimes(1));
+    expect(paths(put)).toEqual([DATASET_PATH]);
+    expect(paths(get)).toEqual([statusPath('sample-id'), `${QUERY_PATH}/sample-id/result`]);
+    expect(onlinked).not.toHaveBeenCalled();
     expect(toastError).not.toHaveBeenCalled();
+  });
+
+  it('sends no link to a server that listed no queries and still offers the download', async () => {
+    post.mockResolvedValueOnce({ picsureResultId: 'sample-id' });
+    get.mockResolvedValueOnce({ status: 'AVAILABLE' }).mockResolvedValueOnce('a,b\n1,2\n');
+    const onlinked = vi.fn();
+    render(DatasetDownload, {
+      dataset: { ...makeDataset('DATAFRAME', []), supportsLinkedQueries: false },
+      onlinked,
+    });
+
+    await fireEvent.click(sampleButton());
+    await fireEvent.click(await screen.findByRole('button', { name: /Download as CSV/ }));
+
+    await waitFor(() => expect(saved).toHaveBeenCalledTimes(1));
+    expect(paths(post)).toEqual([QUERY_PATH]);
+    expect(put).not.toHaveBeenCalled();
+    expect(paths(get)).toEqual([statusPath('sample-id'), `${QUERY_PATH}/sample-id/result`]);
+    expect(onlinked).not.toHaveBeenCalled();
+    expect(toastError).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { label: 'sample', sample: true, queryId: 'sample-id' },
+    { label: 'full', sample: false, queryId: 'full-id' },
+  ])('logs the $label variant on the download', async ({ label, sample, queryId }) => {
+    get.mockResolvedValueOnce({ status: 'AVAILABLE' }).mockResolvedValueOnce('a,b\n1,2\n');
+    render(DatasetDownload, { dataset: makeDataset('DATAFRAME', [FULL_LINK, SAMPLE_LINK]) });
+
+    await fireEvent.click(label === 'sample' ? sampleButton() : fullButton());
+    await fireEvent.click(await screen.findByRole('button', { name: /Download as CSV/ }));
+
+    await waitFor(() => expect(saved).toHaveBeenCalledTimes(1));
+    const variant = { type: 'DATAFRAME', datasetId: queryId, sample };
+    expect(createLog).toHaveBeenCalledWith('DOWNLOAD', 'export.download_clicked', variant);
+    expect(createLog).toHaveBeenCalledWith(
+      'DOWNLOAD',
+      'export.download_success',
+      variant,
+      expect.anything(),
+    );
+    expect(post).not.toHaveBeenCalled();
+  });
+
+  it('logs the sample variant on the PFB signed URL export', async () => {
+    get
+      .mockResolvedValueOnce({ status: 'AVAILABLE' })
+      .mockResolvedValueOnce({ signedUrl: 'https://signed.example/file.avro' });
+    render(DatasetDownload, {
+      dataset: makeDataset('DATAFRAME_PFB', [
+        { ...FULL_LINK, resultType: 'DATAFRAME_PFB' },
+        { queryId: 'sample-pfb', sample: true, resultType: 'DATAFRAME_PFB' },
+      ]),
+    });
+
+    await fireEvent.click(sampleButton());
+    await fireEvent.click(await screen.findByRole('button', { name: 'Export to Terra' }));
+
+    await waitFor(() => expect(window.open).toHaveBeenCalledTimes(1));
+    expect(createLog).toHaveBeenCalledWith('EXPORT', 'export.pfb_signed_url', {
+      platform: 'Terra',
+      datasetId: 'sample-pfb',
+      sample: true,
+    });
   });
 
   it('reuses the newly linked query on a second click without another submit', async () => {
@@ -273,17 +359,12 @@ describe('DatasetDownload', () => {
   });
 
   it('shows the not available message on sample_disabled', async () => {
-    post.mockRejectedValueOnce(sampleDisabled);
+    post.mockRejectedValueOnce(httpError(400, SAMPLE_DISABLED_BODY));
     render(DatasetDownload, { dataset: makeDataset() });
 
     await fireEvent.click(sampleButton());
 
-    await waitFor(() =>
-      expect(toastError).toHaveBeenCalledWith({
-        title: 'Sample datasets are not available at this time',
-        closable: true,
-      }),
-    );
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith(SAMPLE_DISABLED_TOAST));
     expect(toastError).toHaveBeenCalledTimes(1);
     expect(put).not.toHaveBeenCalled();
     expect(get).not.toHaveBeenCalled();
@@ -292,18 +373,45 @@ describe('DatasetDownload', () => {
   });
 
   it('shows the consent message when the submit is denied', async () => {
-    post.mockRejectedValueOnce(consentDenied);
+    post.mockRejectedValueOnce(httpError(403, CONSENT_DENIED_BODY));
     render(DatasetDownload, { dataset: makeDataset() });
 
     await fireEvent.click(sampleButton());
 
-    await waitFor(() =>
-      expect(toastError).toHaveBeenCalledWith({
-        title: 'You no longer have consent',
-        closable: true,
-      }),
-    );
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith(CONSENT_DENIED_TOAST));
     expect(toastError).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    {
+      name: '400 sample_disabled',
+      refusal: () => httpError(400, SAMPLE_DISABLED_BODY),
+      toast: SAMPLE_DISABLED_TOAST,
+    },
+    {
+      name: 'consent-denied 403',
+      refusal: () => httpError(403, CONSENT_DENIED_BODY),
+      toast: CONSENT_DENIED_TOAST,
+    },
+    { name: '404', refusal: () => httpError(404, 'Not Found'), toast: PREPARE_FAILED_TOAST },
+    {
+      name: '403 that ended the session',
+      refusal: () => httpError(403, 'Forbidden'),
+      toast: PREPARE_FAILED_TOAST,
+    },
+  ])('stops the status wait on a $name and shows its message', async ({ refusal, toast }) => {
+    vi.useFakeTimers();
+    get.mockRejectedValue(refusal());
+    render(DatasetDownload, { dataset: makeDataset('DATAFRAME', [FULL_LINK, SAMPLE_LINK]) });
+
+    await fireEvent.click(sampleButton());
+    await vi.advanceTimersByTimeAsync(STATUS_WAIT_LIMIT_MS);
+
+    expect(toastError).toHaveBeenCalledTimes(1);
+    expect(toastError).toHaveBeenCalledWith(toast);
+    expect(paths(get)).toEqual([statusPath('sample-id')]);
+    expect(screen.queryByRole('button', { name: /Download as CSV/ })).not.toBeInTheDocument();
+    expect(sampleButton()).toBeEnabled();
   });
 
   it('shows the preparation failure once when the submit fails', async () => {

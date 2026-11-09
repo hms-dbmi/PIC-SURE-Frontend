@@ -9,7 +9,7 @@ import {
 } from '$lib/models/Dataset';
 import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
 import { QueryV3 } from '$lib/models/query/Query';
-import { replaceDataset } from '$lib/stores/Dataset.svelte';
+import { cachedDataset, replaceDataset } from '$lib/stores/Dataset.svelte';
 
 const EXPORT_RESULT_TYPES = ['DATAFRAME', 'DATAFRAME_PFB', 'DATAFRAME_TIMESERIES'] as const;
 
@@ -21,8 +21,9 @@ export interface VariantRequest {
   /** The id of the query whose result is the requested variant. */
   queryId: string;
   /**
-   * The dataset passed in when the variant was already linked, or a copy that lists the new
-   * link when the variant had to be submitted.
+   * A copy that lists the new link when a query was submitted and linked. Otherwise the dataset
+   * passed in: when the variant was already linked, when the server does not link queries, or
+   * when the server refused the link.
    */
   dataset: DataSet;
 }
@@ -107,20 +108,22 @@ function linkedVariants(dataset: DataSet, stored: QueryV3): LinkedQuery[] {
 
 /**
  * Links a query to a named dataset. The dataset's own query id, shown as its Dataset ID, stays
- * where it is. An answer of 409 means the dataset already holds a query for that variant, and
- * is taken as linked.
+ * where it is. An answer of 409 means the server refused the link, and nothing was linked.
+ *
+ * Call this only for a dataset whose `supportsLinkedQueries` is true. A server that does not
+ * link queries reads the same request as an order to replace the dataset's own query.
  *
  * @param dataset The dataset to link to. Its name, archived flag and metadata are sent unchanged.
  * @param queryId The id of the query to link.
  * @param signal Cancels the request when it aborts.
- * @returns A promise that resolves once the query is linked.
+ * @returns True once the query is linked, false when the server answered 409.
  * @throws Whatever the request rejects with, other than an HTTP 409.
  */
 export async function linkQuery(
   dataset: DataSet,
   queryId: string,
   signal?: AbortSignal,
-): Promise<void> {
+): Promise<boolean> {
   const request = {
     queryId,
     name: dataset.name,
@@ -135,10 +138,12 @@ export async function linkQuery(
       undefined,
       signal ? { signal } : undefined,
     );
+    return true;
   } catch (e) {
     if (!isHttpError(e, 409)) {
       throw e;
     }
+    return false;
   }
 }
 
@@ -147,13 +152,20 @@ export async function linkQuery(
  * it on first use. A variant is the pair of `sample` and the dataset's stored result type.
  *
  * A linked query for the variant is reused without a request. Otherwise the stored query is
- * submitted with `sample` set, the returned query is linked to the dataset, and the cached
- * dataset is replaced by a copy that lists the link. The result is not waited for.
+ * submitted with `sample` set and, like a query built in the explorer, with `picsureId` and
+ * `id` null and no authorization filters, so nothing the server filled in on the stored copy
+ * is sent back. The result is not waited for.
+ *
+ * The returned query is then linked to the dataset, and the cached dataset is replaced by a
+ * copy that lists the link. The link request and that copy take the name, archived flag and
+ * metadata of the cached dataset when there is one, so a change made elsewhere in the session
+ * is kept. No link is sent when the dataset's `supportsLinkedQueries` is false, and no link is
+ * recorded when the server answers the link with 409. The query id is returned either way.
  *
  * @param dataset The named dataset. It is not modified.
  * @param sample True for the sample variant, false for the full one.
  * @param signal Cancels the submit and the link when it aborts.
- * @returns The id of the variant's query, and the dataset with that query among its links.
+ * @returns The id of the variant's query, and the dataset as it stands afterwards.
  * @throws An error when the dataset's stored query is not a V3 query of an export type, in
  * which case nothing is sent, when the submit answers without a query id, or whatever the
  * submit or the link rejects with.
@@ -175,7 +187,9 @@ export async function requestVariant(
     return { queryId: linked.queryId, dataset };
   }
 
-  const request: QueryRequestInterfaceV3 = { query: new QueryV3({ ...stored, sample }) };
+  const request: QueryRequestInterfaceV3 = {
+    query: new QueryV3({ ...stored, sample, picsureId: null, id: null, authorizationFilters: [] }),
+  };
   const options = signal ? { signal } : undefined;
   const response: DataSetResponse | undefined = await api.post(
     Picsure.Query,
@@ -188,12 +202,19 @@ export async function requestVariant(
   if (!queryId) {
     throw new Error('The query submit returned no query id.');
   }
-  await linkQuery(dataset, queryId, signal);
+  if (!dataset.supportsLinkedQueries) {
+    return { queryId, dataset };
+  }
+  const current = cachedDataset(dataset.uuid) ?? dataset;
+  const linkedNow = await linkQuery(current, queryId, signal);
+  if (!linkedNow) {
+    return { queryId, dataset };
+  }
 
   const updated: DataSet = {
-    ...dataset,
+    ...current,
     queries: [
-      ...dataset.queries.filter((existing) => existing.queryId !== queryId),
+      ...current.queries.filter((existing) => existing.queryId !== queryId),
       { queryId, sample, resultType },
     ],
   };

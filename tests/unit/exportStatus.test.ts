@@ -1,13 +1,44 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { error } from '@sveltejs/kit';
 
 const { get, notReady } = vi.hoisted(() => ({
   get: vi.fn(),
   notReady: { status: 409, body: { message: '{"errorType":"result_not_ready"}' } },
 }));
 
-vi.mock('$lib/api', () => ({ get, isResultNotReady: (e: unknown) => e === notReady }));
+type Refusal = { status?: number; body?: { message?: string; errorType?: string } } | undefined;
 
-import { fetchWhenReady, isExportFailure, waitUntilAvailable } from '$lib/services/exportStatus';
+vi.mock('$lib/api', () => ({
+  get,
+  isResultNotReady: (e: unknown) => e === notReady,
+  isSampleDisabled: (e: Refusal) =>
+    e?.status === 400 && String(e.body?.message).includes('sample_disabled'),
+  consentDeniedMessage: (e: Refusal) =>
+    e?.status === 403 && e.body?.errorType === 'consent_denied' ? e.body.message : undefined,
+}));
+
+import {
+  EXPORT_NOT_READY_MESSAGE,
+  EXPORT_PREPARE_FAILED_MESSAGE,
+  SAMPLE_DISABLED_MESSAGE,
+  fetchWhenReady,
+  isExportFailure,
+  isStatusRefusal,
+  statusWaitFailureMessage,
+  trackNotReady,
+  waitUntilAvailable,
+} from '$lib/services/exportStatus';
+
+function httpError(status: number, body: string | App.Error): unknown {
+  try {
+    error(status, body as string);
+  } catch (e) {
+    return e;
+  }
+}
+
+const SAMPLE_DISABLED_BODY = '{"errorType":"sample_disabled","message":"Sampling is off"}';
+const CONSENT_DENIED_BODY = { message: 'You no longer have consent', errorType: 'consent_denied' };
 
 const STATUS_PATH = 'picsure/hpds/auth/query/query-1/status';
 const LAST_ATTEMPT_AT_MS = 500 + 1000 + 2000 + 4000 + 8000 + 16000 + 32000 + 7 * 60000;
@@ -63,6 +94,43 @@ describe('waitUntilAvailable', () => {
     await vi.advanceTimersByTimeAsync(1000);
 
     await expect(waiting).resolves.toBeUndefined();
+    expect(get).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    ['400 sample_disabled', () => httpError(400, SAMPLE_DISABLED_BODY)],
+    ['400 bad_request', () => httpError(400, '{"errorType":"bad_request"}')],
+    ['consent-denied 403', () => httpError(403, CONSENT_DENIED_BODY)],
+    ['403 that ended the session', () => httpError(403, 'Forbidden')],
+    ['404', () => httpError(404, 'Not Found')],
+  ])('stops at once on a %s from the status request', async (_name, makeRefusal) => {
+    const refusal = makeRefusal();
+    get.mockRejectedValue(refusal);
+
+    const failure = await waitUntilAvailable('query-1').catch((e: unknown) => e);
+
+    expect(failure).toBe(refusal);
+    expect(isStatusRefusal(failure)).toBe(true);
+    expect(get).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(11 * 60000);
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it.each([
+    ['409', () => httpError(409, '{"errorType":"result_not_ready"}')],
+    ['500', () => httpError(500, 'Server Error')],
+    ['502', () => httpError(502, 'Bad Gateway')],
+    ['network error', () => new TypeError('Failed to fetch')],
+  ])('keeps polling after a %s from the status request', async (_name, makeFailure) => {
+    const failure = makeFailure();
+    get.mockRejectedValueOnce(failure).mockResolvedValueOnce({ status: 'AVAILABLE' });
+
+    const waiting = waitUntilAvailable('query-1');
+    await vi.advanceTimersByTimeAsync(1000);
+
+    await expect(waiting).resolves.toBeUndefined();
+    expect(isStatusRefusal(failure)).toBe(false);
     expect(get).toHaveBeenCalledTimes(2);
   });
 
@@ -178,6 +246,79 @@ describe('fetchWhenReady', () => {
     );
 
     expect((failure as Error).name).toBe('AbortError');
+    expect(fetchResult).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('statusWaitFailureMessage', () => {
+  it('shows the sample message for a 400 sample_disabled', () => {
+    expect(statusWaitFailureMessage(httpError(400, SAMPLE_DISABLED_BODY))).toBe(
+      SAMPLE_DISABLED_MESSAGE,
+    );
+  });
+
+  it('shows the consent message for a consent-denied 403', () => {
+    expect(statusWaitFailureMessage(httpError(403, CONSENT_DENIED_BODY))).toBe(
+      'You no longer have consent',
+    );
+  });
+
+  it.each([
+    ['404', () => httpError(404, 'Not Found')],
+    ['400 without sample_disabled', () => httpError(400, '{"errorType":"bad_request"}')],
+    ['403 without a consent denial', () => httpError(403, 'Forbidden')],
+    ['status of ERROR', () => new Error('Export failed with status: ERROR')],
+  ])('shows the preparation failure for a %s', (_name, makeError) => {
+    expect(statusWaitFailureMessage(makeError())).toBe(EXPORT_PREPARE_FAILED_MESSAGE);
+  });
+
+  it.each([
+    ['status that never became ready', () => new Error('Export not ready. Status: PENDING')],
+    ['502', () => httpError(502, 'Bad Gateway')],
+    ['409', () => httpError(409, '{"errorType":"result_not_ready"}')],
+  ])('shows the not ready message for a %s', (_name, makeError) => {
+    expect(statusWaitFailureMessage(makeError())).toBe(EXPORT_NOT_READY_MESSAGE);
+  });
+});
+
+describe('trackNotReady', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  async function failureOf(result: ReturnType<typeof trackNotReady>): Promise<unknown> {
+    return fetchWhenReady('query-1', result.fetch).catch((e: unknown) => e);
+  }
+
+  it('shows the sample message when the result request answers 400 sample_disabled', async () => {
+    const result = trackNotReady(vi.fn().mockRejectedValue(httpError(400, SAMPLE_DISABLED_BODY)));
+
+    expect(result.failureMessage(await failureOf(result))).toBe(SAMPLE_DISABLED_MESSAGE);
+    expect(get).not.toHaveBeenCalled();
+  });
+
+  it('shows no message for another 400 from the result request', async () => {
+    const result = trackNotReady(vi.fn().mockRejectedValue(httpError(400, 'Status : ERROR')));
+
+    expect(result.failureMessage(await failureOf(result))).toBeUndefined();
+  });
+
+  it.each([
+    ['400 sample_disabled', () => httpError(400, SAMPLE_DISABLED_BODY), SAMPLE_DISABLED_MESSAGE],
+    ['consent-denied 403', () => httpError(403, CONSENT_DENIED_BODY), 'You no longer have consent'],
+    ['404', () => httpError(404, 'Not Found'), EXPORT_PREPARE_FAILED_MESSAGE],
+  ])('maps a %s from the status wait', async (_name, makeRefusal, message) => {
+    get.mockRejectedValue(makeRefusal());
+    const fetchResult = vi.fn().mockRejectedValue(notReady);
+    const result = trackNotReady(fetchResult);
+
+    expect(result.failureMessage(await failureOf(result))).toBe(message);
+    expect(get).toHaveBeenCalledTimes(1);
     expect(fetchResult).toHaveBeenCalledTimes(1);
   });
 });

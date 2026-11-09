@@ -5,13 +5,12 @@
   import { log, createLog } from '$lib/logger';
   import type { DataSet } from '$lib/models/Dataset';
   import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
-  import type { QueryV3 } from '$lib/models/query/Query';
+  import { QueryV3 } from '$lib/models/query/Query';
   import { exportResultType, requestVariant } from '$lib/services/datasets';
   import {
-    EXPORT_NOT_READY_MESSAGE,
     EXPORT_PREPARE_FAILED_MESSAGE,
     SAMPLE_DISABLED_MESSAGE,
-    isExportFailure,
+    statusWaitFailureMessage,
     waitUntilAvailable,
   } from '$lib/services/exportStatus';
   import { toaster } from '$lib/toaster';
@@ -43,6 +42,7 @@
   const isPfb = $derived(resultType === 'DATAFRAME_PFB');
   const offered = $derived(
     resultType !== undefined &&
+      !dataset.federated &&
       (isPfb ? config.features.explorer.enablePfbExport : config.features.explorer.allowDownload),
   );
   const variants: Variant[] = $derived([
@@ -51,7 +51,17 @@
       ? [{ sample: true, label: 'Sample dataset' }]
       : []),
   ]);
-  const exportQuery: QueryRequestInterfaceV3 = $derived({ query: dataset.query as QueryV3 });
+
+  /**
+   * Builds the query handed to the export controls, which read its result type and log its
+   * `sample` flag. The controls fetch by query id and never send this query.
+   *
+   * @param sample True when the prepared variant is the sample.
+   * @returns The stored query marked with the variant that was prepared.
+   */
+  function variantQuery(sample: boolean): QueryRequestInterfaceV3 {
+    return { query: new QueryV3({ ...(dataset.query as QueryV3), sample }) };
+  }
 
   /**
    * Picks the one message shown for a failed request.
@@ -62,16 +72,14 @@
    * @returns The consent, sample or export message that matches the failure.
    */
   function failureMessage(error: unknown, waiting: boolean): string {
+    if (waiting) {
+      return statusWaitFailureMessage(error);
+    }
     const consentMessage = api.consentDeniedMessage(error);
     if (consentMessage) {
       return consentMessage;
     }
-    if (api.isSampleDisabled(error)) {
-      return SAMPLE_DISABLED_MESSAGE;
-    }
-    return waiting && !isExportFailure(error)
-      ? EXPORT_NOT_READY_MESSAGE
-      : EXPORT_PREPARE_FAILED_MESSAGE;
+    return api.isSampleDisabled(error) ? SAMPLE_DISABLED_MESSAGE : EXPORT_PREPARE_FAILED_MESSAGE;
   }
 
   /**
@@ -144,10 +152,11 @@
       <div data-testid="dataset-download-ready" class="flex flex-col items-start mt-4">
         <p>Your {ready.sample ? 'sample' : 'full'} dataset is ready.</p>
         {#key ready.queryId}
+          {@const query = variantQuery(ready.sample)}
           {#if isPfb}
-            <PfbExport query={exportQuery} datasetId={ready.queryId} />
+            <PfbExport {query} datasetId={ready.queryId} />
           {:else}
-            <DownloadButton query={exportQuery} datasetId={ready.queryId} />
+            <DownloadButton {query} datasetId={ready.queryId} />
           {/if}
         {/key}
       </div>

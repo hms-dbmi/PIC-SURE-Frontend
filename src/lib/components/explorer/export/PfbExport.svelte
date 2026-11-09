@@ -92,6 +92,7 @@
             createLog('EXPORT', 'export.pfb_signed_url', {
               platform: exportLink.title,
               datasetId: exportId,
+              sample: exportQuery.query.sample === true,
             }),
           );
           exportSignedToUrl(index, exportLink.url);

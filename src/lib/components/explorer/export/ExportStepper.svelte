@@ -10,8 +10,10 @@
   import { resultCountsState } from '$lib/state/resultCounts.svelte';
   import { createDatasetName } from '$lib/services/datasets';
   import {
+    EXPORT_NOT_READY_MESSAGE,
     EXPORT_PREPARE_FAILED_MESSAGE,
     isExportFailure,
+    statusWaitFailureMessage,
     waitUntilAvailable,
   } from '$lib/services/exportStatus';
   import Stepper from '$lib/components/steppers/horizontal/Stepper.svelte';
@@ -108,6 +110,18 @@
     setLockDownload(false);
   }
 
+  /**
+   * Picks the alert title for a failed status wait. This step has always shown the preparation
+   * failure when the wait ran out of attempts, and keeps doing so.
+   *
+   * @param error The value the status wait rejected with.
+   * @returns The consent message, the sample message or the preparation failure.
+   */
+  function prepareFailureTitle(error: unknown): string {
+    const message = statusWaitFailureMessage(error);
+    return message === EXPORT_NOT_READY_MESSAGE ? EXPORT_PREPARE_FAILED_MESSAGE : message;
+  }
+
   function onComplete() {
     log(
       createLog('EXPORT', 'export.stepper.complete', {
@@ -193,7 +207,7 @@
           <AnalysisPlatformLinks />
         {:catch e}
           <div class="flex justify-center">
-            <ErrorAlert title={EXPORT_PREPARE_FAILED_MESSAGE} />
+            <ErrorAlert title={prepareFailureTitle(e)} />
             <div class="hidden">{e}</div>
           </div>
         {/await}

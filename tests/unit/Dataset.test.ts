@@ -331,6 +331,16 @@ describe('mapDataset', () => {
       expect(nulled.queries).toEqual([]);
     });
 
+    it('records whether the server sent a queries array, even an empty one', () => {
+      const listed = mapDataset(makeData(singleEncode(V3_INNER_QUERY), { queries: [] }));
+      const absent = mapDataset(makeData(singleEncode(V3_INNER_QUERY)));
+      const nulled = mapDataset(makeData(singleEncode(V3_INNER_QUERY), { queries: null }));
+
+      expect(listed.supportsLinkedQueries).toBe(true);
+      expect(absent.supportsLinkedQueries).toBe(false);
+      expect(nulled.supportsLinkedQueries).toBe(false);
+    });
+
     it('drops linked queries without a string id and coerces the other fields', () => {
       const queries = [
         'not-an-object',

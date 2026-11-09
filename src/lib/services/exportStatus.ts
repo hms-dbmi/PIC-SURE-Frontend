@@ -1,8 +1,10 @@
+import { isHttpError } from '@sveltejs/kit';
 import * as api from '$lib/api';
 import { Picsure } from '$lib/paths';
 import { withBackoff } from '$lib/utilities/backoff';
 
 const EXPORT_FAILED = 'Export failed with status: ERROR';
+const REFUSED_STATUSES = [400, 403, 404] as const;
 
 /** Shown when the server reports that preparing an export ended in ERROR. */
 export const EXPORT_PREPARE_FAILED_MESSAGE =
@@ -32,16 +34,51 @@ export function isExportFailure(e: unknown): boolean {
 }
 
 /**
+ * Tells a status request the server refused apart from one that may succeed if sent again.
+ * A 400, a 403 and a 404 are refusals: the request is wrong, the caller may not see the query
+ * (and a 403 without a consent denial has already ended the session), or the query is unknown.
+ *
+ * @param e The value a rejected {@link waitUntilAvailable} call rejected with.
+ * @returns True for an HTTP 400, 403 or 404, which polling never fixes.
+ */
+export function isStatusRefusal(e: unknown): boolean {
+  return REFUSED_STATUSES.some((status) => isHttpError(e, status));
+}
+
+/**
+ * Picks the message for an error {@link waitUntilAvailable} rejected with.
+ *
+ * @param error The value the status wait rejected with.
+ * @returns The server's consent message for a consent denial, {@link SAMPLE_DISABLED_MESSAGE}
+ * for a 400 `sample_disabled`, {@link EXPORT_PREPARE_FAILED_MESSAGE} when the export reported
+ * ERROR or the status request was refused in any other way, and
+ * {@link EXPORT_NOT_READY_MESSAGE} when the wait ran out of attempts.
+ */
+export function statusWaitFailureMessage(error: unknown): string {
+  const consentMessage = api.consentDeniedMessage(error);
+  if (consentMessage) {
+    return consentMessage;
+  }
+  if (api.isSampleDisabled(error)) {
+    return SAMPLE_DISABLED_MESSAGE;
+  }
+  return isExportFailure(error) || isStatusRefusal(error)
+    ? EXPORT_PREPARE_FAILED_MESSAGE
+    : EXPORT_NOT_READY_MESSAGE;
+}
+
+/**
  * Polls the status of an export until its result can be fetched.
  *
- * Makes up to 15 attempts, waiting 500 ms after the first and doubling up to 60 s. A failed
- * status request counts as an attempt and is retried.
+ * Makes up to 15 attempts, waiting 500 ms after the first and doubling up to 60 s. A status
+ * request that fails with a 409, a 5xx or a network error counts as an attempt and is retried.
  *
  * @param queryId The id of the query whose export is awaited.
  * @param signal Stops the polling when it aborts. The status requests carry it too.
  * @returns A promise that resolves once the status is SUCCESS or AVAILABLE.
- * @throws An error matching {@link isExportFailure} as soon as the status is ERROR, the last
- * error seen once the attempts run out, or the abort reason once `signal` aborts.
+ * @throws An error matching {@link isExportFailure} as soon as the status is ERROR, an error
+ * matching {@link isStatusRefusal} as soon as a status request answers 400, 403 or 404, the
+ * last error seen once the attempts run out, or the abort reason once `signal` aborts.
  */
 export function waitUntilAvailable(
   queryId: string | undefined,
@@ -65,7 +102,7 @@ export function waitUntilAvailable(
     15,
     500,
     60000,
-    (error) => !isExportFailure(error),
+    (error) => !isExportFailure(error) && !isStatusRefusal(error),
     signal,
   );
 }
@@ -84,9 +121,10 @@ export interface NotReadyTracker<T> {
    * Picks the message for an error {@link fetchWhenReady} rejected with.
    *
    * @param error The value the call rejected with.
-   * @returns {@link EXPORT_PREPARE_FAILED_MESSAGE} when the status wait ended because the
-   * export reported ERROR, {@link EXPORT_NOT_READY_MESSAGE} when the wait ran out of attempts
-   * or the retry was answered not ready again, and undefined for any other error.
+   * @returns {@link SAMPLE_DISABLED_MESSAGE} for a 400 `sample_disabled` from the result
+   * request or from the status wait, what {@link statusWaitFailureMessage} picks when the
+   * status wait failed, {@link EXPORT_NOT_READY_MESSAGE} when the retry was answered not ready
+   * again, and undefined for any other error.
    */
   failureMessage: (error: unknown) => string | undefined;
 }
@@ -114,11 +152,13 @@ export function trackNotReady<T>(fetchResult: () => Promise<T>): NotReadyTracker
     },
     waited: () => notReadyAnswers > 0,
     failureMessage: (error) => {
-      const statusWaitFailed = requests === 1 && notReadyAnswers === 1;
-      if (statusWaitFailed && isExportFailure(error)) {
-        return EXPORT_PREPARE_FAILED_MESSAGE;
+      if (api.isSampleDisabled(error)) {
+        return SAMPLE_DISABLED_MESSAGE;
       }
-      return statusWaitFailed || notReadyAnswers === 2 ? EXPORT_NOT_READY_MESSAGE : undefined;
+      if (requests === 1 && notReadyAnswers === 1) {
+        return statusWaitFailureMessage(error);
+      }
+      return notReadyAnswers === 2 ? EXPORT_NOT_READY_MESSAGE : undefined;
     },
   };
 }

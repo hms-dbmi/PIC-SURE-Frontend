@@ -2,17 +2,23 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
+import { error } from '@sveltejs/kit';
 
 const { get, notReady } = vi.hoisted(() => ({
   get: vi.fn(),
   notReady: { status: 409, body: { message: '{"errorType":"result_not_ready"}' } },
 }));
 
+type Refusal = { status?: number; body?: { message?: string; errorType?: string } } | undefined;
+
 vi.mock('$app/environment', () => ({ browser: true }));
 vi.mock('$lib/api', () => ({
   get,
-  consentDeniedMessage: () => null,
   isResultNotReady: (e: unknown) => e === notReady,
+  isSampleDisabled: (e: Refusal) =>
+    e?.status === 400 && String(e.body?.message).includes('sample_disabled'),
+  consentDeniedMessage: (e: Refusal) =>
+    e?.status === 403 && e.body?.errorType === 'consent_denied' ? e.body.message : undefined,
 }));
 vi.mock('$lib/ExportStepperManager.svelte', () => ({
   getDatasetId: () => 'dataset-1',
@@ -54,6 +60,22 @@ const PREPARE_FAILED_TOAST = {
   closable: true,
 };
 const STATUS_WAIT_LIMIT_MS = 11 * 60000;
+
+function httpError(status: number, body: string | App.Error): unknown {
+  try {
+    error(status, body as string);
+  } catch (e) {
+    return e;
+  }
+}
+
+const SAMPLE_DISABLED_BODY = '{"errorType":"sample_disabled","message":"Sampling is off"}';
+const CONSENT_DENIED_BODY = { message: 'You no longer have consent', errorType: 'consent_denied' };
+const SAMPLE_DISABLED_TOAST = {
+  title: 'Sample datasets are not available at this time',
+  closable: true,
+};
+const CONSENT_DENIED_TOAST = { title: 'You no longer have consent', closable: true };
 
 describe('PfbExport', () => {
   let toastError: ReturnType<typeof vi.spyOn>;
@@ -211,6 +233,44 @@ describe('PfbExport', () => {
 
     await waitFor(() => expect(toastError).toHaveBeenCalledWith(PREPARE_FAILED_TOAST));
     expect(toastError).toHaveBeenCalledTimes(1);
+    expect(get.mock.calls.map(([path]) => path)).toEqual([SIGNED_URL_PATH, STATUS_PATH]);
+    expect(window.open).not.toHaveBeenCalled();
+  });
+
+  it('shows the sample message when the signed URL answers 400 sample_disabled', async () => {
+    get.mockRejectedValueOnce(httpError(400, SAMPLE_DISABLED_BODY));
+    render(PfbExport);
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Export to Terra' }));
+
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith(SAMPLE_DISABLED_TOAST));
+    expect(toastError).toHaveBeenCalledTimes(1);
+    expect(get.mock.calls.map(([path]) => path)).toEqual([SIGNED_URL_PATH]);
+    expect(window.open).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    {
+      name: '400 sample_disabled',
+      refusal: () => httpError(400, SAMPLE_DISABLED_BODY),
+      toast: SAMPLE_DISABLED_TOAST,
+    },
+    {
+      name: 'consent-denied 403',
+      refusal: () => httpError(403, CONSENT_DENIED_BODY),
+      toast: CONSENT_DENIED_TOAST,
+    },
+    { name: '404', refusal: () => httpError(404, 'Not Found'), toast: PREPARE_FAILED_TOAST },
+  ])('stops the status wait on a $name and shows its message', async ({ refusal, toast }) => {
+    vi.useFakeTimers();
+    get.mockRejectedValueOnce(notReady).mockRejectedValue(refusal());
+    render(PfbExport);
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Export to Terra' }));
+    await vi.advanceTimersByTimeAsync(STATUS_WAIT_LIMIT_MS);
+
+    expect(toastError).toHaveBeenCalledTimes(1);
+    expect(toastError).toHaveBeenCalledWith(toast);
     expect(get.mock.calls.map(([path]) => path)).toEqual([SIGNED_URL_PATH, STATUS_PATH]);
     expect(window.open).not.toHaveBeenCalled();
   });

@@ -24,6 +24,7 @@
   const unmounted = new AbortController();
   onDestroy(() => unmounted.abort());
 
+  const sample = $derived(query.query.sample === true);
   const downloadText = $derived(
     query.query.expectedResultType === 'DATAFRAME' ||
       query.query.expectedResultType === 'DATAFRAME_TIMESERIES'
@@ -53,6 +54,7 @@
         createLog('DOWNLOAD', 'export.download_clicked', {
           type: query.query.expectedResultType,
           datasetId,
+          sample,
         }),
       );
       const startTime = performance.now();
@@ -86,7 +88,7 @@
         createLog(
           'DOWNLOAD',
           'export.download_success',
-          { type: query.query.expectedResultType, datasetId },
+          { type: query.query.expectedResultType, datasetId, sample },
           { status: 200, bytes: blob.size, duration },
         ),
       );
@@ -103,7 +105,7 @@
         createLog(
           'DOWNLOAD',
           'export.download_error',
-          { type: query.query.expectedResultType, datasetId },
+          { type: query.query.expectedResultType, datasetId, sample },
           {
             status: isHttpError(error) ? error.status : undefined,
             error: { message: (error as Error).message },

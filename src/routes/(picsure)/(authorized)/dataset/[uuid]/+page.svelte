@@ -24,6 +24,7 @@
     query: null,
     queryId: '',
     queries: [],
+    supportsLinkedQueries: false,
     startTime: '',
     rawStartTime: 0,
     status: 'UNDEFINED',
