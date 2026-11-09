@@ -447,6 +447,133 @@ on('PATCH', path(Psama.Users), ({ body, res }) => {
 on('GET', path(Psama.Application), ({ res }) => json(res, state.applications));
 
 /* ---------------------------------------------------------------------------------------
+ * Assisted search chat (needs ENABLE_ASSISTED_SEARCH=true, e.g. VITE_ENABLE_ASSISTED_SEARCH)
+ *
+ * Replies are canned and picked by whole-word keyword in the message, not by a model, first
+ * match wins in this order:
+ *   "search ..." / "find ..." -> sets the search term     "nhanes" / "facet" -> selects a facet
+ *   "select" / "variable" -> sets the query's select list      "link" -> a markdown link
+ *   "slow" -> answers after 5s (try stop/refresh)               "error" -> 500
+ * Each case has a few wordings picked at random; anything else gets a random plain-text
+ * reply. Replies are kept by requestId so a refresh can recover one through
+ * GET /picsure/ai/chat/:requestId; reusing a requestId is a 422.
+ * ------------------------------------------------------------------------------------- */
+
+interface ChatBody {
+  message?: string;
+  requestId?: string;
+}
+
+interface ChatReply {
+  response: string;
+  facets?: { category: string; name: string }[];
+  search?: string;
+  query?: { select: string[]; phenotypicClause: null; genomicFilters: never[] };
+}
+
+// Bounded so a long-running mock doesn't grow forever; the oldest entries drop first.
+const CHAT_HISTORY_MAX = 200;
+const chatReplies = new Map<string, ChatReply>();
+const chatPending = new Set<string>();
+const chatFailed = new Set<string>();
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const pick = <T>(options: T[]): T => options[Math.floor(Math.random() * options.length)];
+
+const fallbackReplies = [
+  'I can help you find variables and studies. Try asking about a topic, like *blood pressure* or *smoking history*.',
+  "I'm not sure what you're looking for yet. Could you name a **study**, a **variable**, or a **condition**?",
+  "I couldn't match that to anything in the dictionary. Try different wording, or ask me to *find* a term.",
+  'Happy to help narrow this down. Which **dataset** or **phenotype** are you most interested in?',
+  'I can search the data dictionary, select studies, or add variables to your export. What would you like to do?',
+];
+
+function cannedReply(message: string): ChatReply {
+  const lower = message.toLowerCase();
+  const term = /\b(?:search|find)\s+(?:for\s+)?(.+)/i.exec(message)?.[1]?.trim();
+  if (term) {
+    return {
+      response: pick([
+        `Searching for **${term}**.`,
+        `Here's what I found for **${term}**.`,
+        `Let me look up **${term}** in the dictionary.`,
+      ]),
+      search: term,
+    };
+  }
+  if (/\b(nhanes|facets?)\b/.test(lower)) {
+    return {
+      response: pick([
+        'Showing **NHANES** studies.',
+        "I've filtered the results to the **National Health and Nutrition Examination Survey**.",
+        'Done - the **NHANES** study is now selected in the facet sidebar.',
+      ]),
+      facets: [{ category: 'study_ids_dataset_ids', name: 'study2' }],
+    };
+  }
+  if (/\b(select|variables?)\b/.test(lower)) {
+    return {
+      response: pick([
+        'Added `GENDER` to your selected variables.',
+        "I've selected **GENDER** for your export.",
+        'Okay, `GENDER` is now part of your selection.',
+      ]),
+      query: { select: [datasetDetails.paths.GENDER], phenotypicClause: null, genomicFilters: [] },
+    };
+  }
+  if (/\blinks?\b/.test(lower)) {
+    return {
+      response: pick([
+        'See [the docs](https://example.org/docs) for more.',
+        'The [user guide](https://example.org/guide) covers this in detail.',
+      ]),
+    };
+  }
+  return { response: pick(fallbackReplies) };
+}
+
+on('POST', path(Picsure.Chat), async ({ body, res }) => {
+  const { message, requestId } = (body ?? {}) as ChatBody;
+  if (typeof message !== 'string' || !message.trim()) {
+    json(res, { error: 'message is required' }, 400);
+    return;
+  }
+  if (requestId && (chatReplies.has(requestId) || chatPending.has(requestId))) {
+    json(res, { error: 'requestId already used' }, 422);
+    return;
+  }
+  const lower = message.toLowerCase();
+  if (requestId) chatPending.add(requestId);
+  try {
+    if (/\berror\b/.test(lower)) {
+      if (requestId) {
+        chatFailed.add(requestId);
+        if (chatFailed.size > CHAT_HISTORY_MAX)
+          chatFailed.delete(chatFailed.values().next().value!);
+      }
+      json(res, { error: 'Mock chat failure' }, 500);
+      return;
+    }
+    await sleep(/\bslow\b/.test(lower) ? 5000 : 600);
+    const reply = cannedReply(message);
+    if (requestId) {
+      chatReplies.set(requestId, reply);
+      if (chatReplies.size > CHAT_HISTORY_MAX) chatReplies.delete(chatReplies.keys().next().value!);
+    }
+    json(res, reply);
+  } finally {
+    if (requestId) chatPending.delete(requestId);
+  }
+});
+
+on('GET', path(`${Picsure.Chat}/:requestId`), ({ params, res }) => {
+  const reply = chatReplies.get(params.requestId);
+  if (reply) json(res, reply);
+  else if (chatFailed.has(params.requestId)) json(res, { error: 'Mock chat failure' }, 500);
+  else noContent(res, 202);
+});
+
+/* ---------------------------------------------------------------------------------------
  * Logging - src/routes/api/v1/log forwards here when LOGGING_TARGET points at this server
  * (see .env.example); just swallow the event, nothing reads it back locally.
  * ------------------------------------------------------------------------------------- */
