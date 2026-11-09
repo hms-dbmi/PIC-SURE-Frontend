@@ -24,6 +24,7 @@ export type Features = Indexable & {
     enableExportTimeseries: boolean;
     enableHierarchy: boolean;
     enablePfbExport: boolean;
+    enableSampleDataset: boolean;
     enableSampleIdCheckbox: boolean;
     enableTour: boolean;
     exportsEnableExport: boolean;
@@ -458,6 +459,13 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
       description:
         'Shows or hides the download button for exported CSV/PFB data in the export flow.',
     },
+    SAMPLE_DATASET: {
+      group: 'Export',
+      type: 'boolean',
+      default: false,
+      description:
+        "Shows the 'Sample dataset' option on the dataset page, which downloads a small sample of the cohort instead of the full dataset.",
+    },
 
     // --- Dashboard ---
     DASHBOARD: {
@@ -721,6 +729,7 @@ export function mapFeatures(apiFeatures: ConfigObject[]): Features {
       enableExportTimeseries: parse('EXPORT_TIMESERIES'),
       enableHierarchy: parse('ENABLE_HIERARCHY'),
       enablePfbExport: parse('DOWNLOAD_AS_PFB'),
+      enableSampleDataset: parse('SAMPLE_DATASET'),
       enableSampleIdCheckbox: parse('ENABLE_SAMPLE_ID_CHECKBOX'),
       enableTour: parse('EXPLORE_TOUR'),
       exportsEnableExport: parse('ALLOW_EXPORT_ENABLED'),

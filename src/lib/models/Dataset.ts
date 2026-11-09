@@ -6,6 +6,17 @@ export const QueryVersion = { UNKNOWN: 'UNKNOWN', V2: 'V2', V3: 'V3' };
 
 type MappedQuery = QueryV2 | QueryV3 | null;
 
+/**
+ * One query linked to a named dataset. A dataset links at most one query per
+ * variant, where a variant is the pair of `sample` and `resultType`.
+ * `resultType` is null when the server could not determine it.
+ */
+export type LinkedQuery = {
+  queryId: string;
+  sample: boolean;
+  resultType: string | null;
+};
+
 // TODO: Replace metadata type
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type DataSet = Indexable & {
@@ -17,6 +28,7 @@ export type DataSet = Indexable & {
   metadata: any;
   query: MappedQuery;
   queryId: string;
+  queries: LinkedQuery[];
   federated?: any;
   startTime: string;
   rawStartTime: number;
@@ -73,6 +85,15 @@ function isDoubleEncoded(value: unknown): value is string {
   return parsed !== null && typeof parsed === 'object';
 }
 
+function mapLinkedQueries(queries: unknown): LinkedQuery[] {
+  if (!Array.isArray(queries)) return [];
+  return queries.filter(isRecord).map((linked) => ({
+    queryId: String(linked.queryId),
+    sample: linked.sample === true,
+    resultType: typeof linked.resultType === 'string' ? linked.resultType : null,
+  }));
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function mapDataset(data: any) {
   let federated;
@@ -117,6 +138,7 @@ export function mapDataset(data: any) {
     query,
     federated,
     queryId: data.query.uuid,
+    queries: mapLinkedQueries(data.queries),
     startTime: secondsToDate(data.query.startTime),
     rawStartTime: data.query.startTime,
     status: data.query.status || 'UNDEFINED',

@@ -23,6 +23,7 @@ const TOUCHED_ENV_KEYS = [
   'VITE_EXPLORE_TOUR_SEARCH_TERM',
   'VITE_MAX_DATA_POINTS_FOR_EXPORT',
   'VITE_LOGO_ALT',
+  'VITE_SAMPLE_DATASET',
 ];
 
 const savedEnv: Record<string, string | undefined> = {};
@@ -191,6 +192,19 @@ describe('mapFeatures / mapSettings / mapBranding - regression baseline', () => 
     expect(mapFeatures([]).wafCaptchaRecovery).toBe(false);
     expect(mapSettings([]).maxDataPointsForExport).toBe(1000000);
     expect(mapBranding('', []).login.logoHeight).toBe(7.5);
+  });
+});
+
+describe('mapFeatures - sample dataset flag', () => {
+  it('SAMPLE_DATASET defaults to false and maps to explorer.enableSampleDataset', () => {
+    const field = CONFIG_FIELD_SCHEMA.features.find((f) => f.name === 'SAMPLE_DATASET');
+
+    expect(field).toMatchObject({ group: 'Export', type: 'boolean', default: false });
+    expect(mapFeatures([]).explorer.enableSampleDataset).toBe(false);
+    expect(mapFeatures([apiRow('SAMPLE_DATASET', 'true')]).explorer.enableSampleDataset).toBe(true);
+    expect(mapFeatures([apiRow('SAMPLE_DATASET', 'false')]).explorer.enableSampleDataset).toBe(
+      false,
+    );
   });
 });
 

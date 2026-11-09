@@ -283,6 +283,55 @@ describe('mapDataset', () => {
     });
   });
 
+  describe('sample variant', () => {
+    it('keeps sample on a V3 round trip', () => {
+      const data = makeData(singleEncode({ ...V3_INNER_QUERY, sample: true }));
+
+      const query = mapDataset(data).query as QueryV3;
+
+      expect(query.sample).toBe(true);
+      const resubmitted = QueryV3.fromSerialized(JSON.parse(JSON.stringify(query)));
+      expect(resubmitted.sample).toBe(true);
+      expect(new QueryV3(query).sample).toBe(true);
+    });
+
+    it('reads sample false when the stored query omits it', () => {
+      const data = makeData(singleEncode(V3_INNER_QUERY));
+
+      const query = mapDataset(data).query as QueryV3;
+
+      expect(query.sample).toBe(false);
+      expect(JSON.parse(JSON.stringify(query)).sample).toBe(false);
+      expect(new QueryV3().sample).toBe(false);
+    });
+
+    it('reads sample false when the stored value is not the boolean true', () => {
+      const stored = { ...V3_INNER_QUERY, sample: 'true' };
+
+      const query = mapDataset(makeData(singleEncode(stored))).query as QueryV3;
+
+      expect(query.sample).toBe(false);
+    });
+  });
+
+  describe('linked queries', () => {
+    it('maps linked queries and defaults to an empty list', () => {
+      const queries = [
+        { queryId: 'full-query-uuid', sample: false, resultType: 'DATAFRAME' },
+        { queryId: 'sample-query-uuid', sample: true, resultType: 'DATAFRAME' },
+        { queryId: 'old-query-uuid', sample: false, resultType: null },
+      ];
+
+      const linked = mapDataset(makeData(singleEncode(V3_INNER_QUERY), { queries }));
+      const unlinked = mapDataset(makeData(singleEncode(V3_INNER_QUERY)));
+      const nulled = mapDataset(makeData(singleEncode(V3_INNER_QUERY), { queries: null }));
+
+      expect(linked.queries).toEqual(queries);
+      expect(unlinked.queries).toEqual([]);
+      expect(nulled.queries).toEqual([]);
+    });
+  });
+
   describe('other fields', () => {
     it('maps top-level dataset fields and derives startTime', () => {
       // Given

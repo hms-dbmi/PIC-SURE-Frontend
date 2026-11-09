@@ -29,6 +29,7 @@ export interface QueryInterfaceV3 {
   expectedResultType: ExpectedResultType;
   picsureId: UUID;
   id: UUID;
+  sample?: boolean;
 }
 
 export interface PhenotypicClauseInterface {
@@ -77,6 +78,7 @@ export class QueryV3 implements QueryInterfaceV3 {
   expectedResultType: ExpectedResultType;
   picsureId: UUID;
   id: UUID;
+  sample: boolean;
 
   constructor(newQuery?: QueryInterfaceV3) {
     this.select = newQuery?.select || [];
@@ -86,6 +88,7 @@ export class QueryV3 implements QueryInterfaceV3 {
     this.expectedResultType = newQuery?.expectedResultType || 'COUNT';
     this.picsureId = newQuery?.picsureId || null;
     this.id = newQuery?.id || null;
+    this.sample = newQuery?.sample === true;
   }
 
   get leaves(): PhenotypicFilterInterface[] {
@@ -176,6 +179,7 @@ export class QueryV3 implements QueryInterfaceV3 {
     expectedResultType?: ExpectedResultType;
     picsureId?: UUID;
     id?: UUID;
+    sample?: unknown;
   }): QueryV3 {
     return new QueryV3({
       select: data.select || [],
@@ -187,6 +191,7 @@ export class QueryV3 implements QueryInterfaceV3 {
       expectedResultType: data.expectedResultType || 'COUNT',
       picsureId: data.picsureId ?? null,
       id: data.id ?? null,
+      sample: data.sample === true,
     });
   }
 }

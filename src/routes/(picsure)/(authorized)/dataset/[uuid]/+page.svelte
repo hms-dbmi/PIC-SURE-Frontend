@@ -22,6 +22,7 @@
     metadata: {},
     query: null,
     queryId: '',
+    queries: [],
     startTime: '',
     rawStartTime: 0,
     status: 'UNDEFINED',
