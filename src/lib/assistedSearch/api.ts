@@ -1,8 +1,9 @@
 import { request } from '#lib/api/client.ts';
 import { ApiError } from '#lib/api/errors.ts';
+import { Picsure } from '#lib/api/paths.ts';
 import type { ChatRequest, ChatResponse } from './model/types.ts';
 
-const CHAT = 'picsure/ai/chat';
+const CHAT = Picsure.Chat;
 
 // The client rejects a 422 (a reused requestId) with its body on the error, so unwrap it here:
 // the service answers that turn with the reply the first request earned.

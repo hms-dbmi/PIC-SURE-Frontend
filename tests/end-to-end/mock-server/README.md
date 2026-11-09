@@ -26,7 +26,9 @@ dev server, requests never reach the proxy (or the mock) at all, and you'll see
 Search, facets, dictionary concepts/tree/hierarchy, dashboard, saved datasets, query
 execution (cross counts, patient counts, variant export, dataframe export/status/signed-url),
 runtime + admin configuration, audit logging, and the full PSAMA admin surface (roles,
-privileges, connections, users, applications, TOS). See `index.ts` for the full route table.
+privileges, connections, users, applications, TOS). Also the assisted-search chat
+(`POST /picsure/ai/chat`, canned keyword replies; set `VITE_ENABLE_ASSISTED_SEARCH=true`).
+See `index.ts` for the full route table.
 
 Audit-log forwarding (`src/routes/api/v1/log`) targets a gateway sidecar at
 `http://localhost/picsure/logging/audit` by default, which nothing provides locally -
