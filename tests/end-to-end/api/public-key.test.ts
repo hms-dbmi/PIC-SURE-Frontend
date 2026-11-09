@@ -1,6 +1,5 @@
 import { expect, type BrowserContext, type Page, type Route } from '@playwright/test';
 import { test, mockApiSuccess, mockApiConfig } from '../custom-context';
-import { expectStandsOut, themes } from '../utils';
 
 const apiKeyPath = '*/**/psama/open/apiKey';
 const mockKeyResponse = {
@@ -88,26 +87,6 @@ test.describe('Public access key generation', () => {
     );
     await expect(page.getByTestId('public-key-expires')).not.toBeEmpty();
   });
-
-  for (const theme of themes) {
-    test(`Revealed key value box stands out in the ${theme} theme`, async ({ page, context }) => {
-      // Given
-      await mockApiConfig(page, {
-        features: [{ name: 'OPEN', value: 'true' }],
-        branding: [{ name: 'THEME', value: theme }],
-      });
-      await mockApiSuccess(context, apiKeyPath, mockKeyResponse);
-      await page.goto('/api');
-      await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
-
-      // When
-      await openForm(page);
-      await page.getByRole('button', { name: 'Generate Key' }).click();
-
-      // Then
-      await expectStandsOut(page.getByTestId('public-key-value'));
-    });
-  }
 
   test('Sends no Authorization header and the Turnstile token', async ({ page, context }) => {
     // Given

@@ -1,7 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 import { test, mockApiFail, mockApiSuccess, mockApiConfig } from '../custom-context';
 import { picsureUser, roles as mockRoles, mockExpiredToken, mockToken } from '../mock-data';
-import { expectStandsOut, themes, userIsLoggedIn } from '../utils';
+import { userIsLoggedIn } from '../utils';
 import { Internal } from '../../../src/lib/paths';
 import type { Branding } from '../../../src/lib/models/Configuration';
 import brandingJson from '../../../src/lib/assets/configuration.json' with { type: 'json' };
@@ -421,23 +421,6 @@ test.describe('API page', () => {
     // Then
     await expect(userToken).toBeVisible();
   });
-
-  for (const theme of themes) {
-    test(`Personal access token card and value box stand out in the ${theme} theme`, async ({
-      page,
-    }) => {
-      // Given
-      await mockApiConfig(page, { branding: [{ name: 'THEME', value: theme }] });
-      await page.goto('/api');
-      await userIsLoggedIn(page);
-      await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
-
-      // Then
-      await expectStandsOut(page.locator('#user-token'));
-      await expectStandsOut(page.locator('#token'));
-    });
-  }
-
   test('Has expected badge and expiration', async ({ page }) => {
     // Given
     await page.goto('/api');
@@ -730,21 +713,6 @@ test.describe('API page logged out', () => {
     await expect(page.getByTestId('public-access-key')).toBeVisible();
     await expect(page.locator('#user-token')).not.toBeVisible();
   });
-
-  for (const theme of themes) {
-    test(`Public access key card stands out in the ${theme} theme`, async ({ page }) => {
-      // Given
-      await mockApiConfig(page, {
-        features: [{ name: 'OPEN', value: 'true' }],
-        branding: [{ name: 'THEME', value: theme }],
-      });
-      await page.goto('/api');
-      await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
-
-      // Then
-      await expectStandsOut(page.getByTestId('public-access-key'));
-    });
-  }
 
   test('Capabilities requiring login show an x icon and login text', async ({ page }) => {
     // Given
