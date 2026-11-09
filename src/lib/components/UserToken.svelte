@@ -85,10 +85,7 @@
   {#await getUser(true, true)}
     <Loading ring size="medium" />
   {:then}
-    <div
-      id="user-token"
-      class="rounded-container border border-surface-700 bg-white dark:bg-surface-950"
-    >
+    <div id="user-token" class="rounded-container border border-surface-700 bg-surface-50-950">
       <header class="card-header flex w-full items-center gap-4">
         <i class="fa-solid fa-user-shield text-3xl text-success-500"></i>
         <div>
