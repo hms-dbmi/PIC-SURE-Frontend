@@ -8,8 +8,8 @@ Playwright tests don't use this; they mock each route themselves (see `custom-co
 ## Running it
 
 ```sh
-npm run mock-api    # starts the mock server on :9000
-npm run dev          # separate terminal - vite's dev proxy forwards /picsure and /psama to it
+pnpm run mock-api    # starts the mock server on :9000
+pnpm run dev          # separate terminal - vite's dev proxy forwards /picsure and /psama to it
 ```
 
 The proxy is wired up in `vite.config.ts` and only active outside Playwright's `test` mode,
@@ -26,7 +26,9 @@ dev server, requests never reach the proxy (or the mock) at all, and you'll see
 Search, facets, dictionary concepts/tree/hierarchy, dashboard, saved datasets, query
 execution (cross counts, patient counts, variant export, dataframe export/status/signed-url),
 runtime + admin configuration, audit logging, and the full PSAMA admin surface (roles,
-privileges, connections, users, applications, TOS). See `index.ts` for the full route table.
+privileges, connections, users, applications, TOS). Also the assisted-search chat
+(`POST /picsure/ai/chat`, canned keyword replies; set `VITE_ENABLE_ASSISTED_SEARCH=true`).
+See `index.ts` for the full route table.
 
 Audit-log forwarding (`src/routes/api/v1/log`) targets a gateway sidecar at
 `http://localhost/picsure/logging/audit` by default, which nothing provides locally -
@@ -76,5 +78,5 @@ This path never calls `authenticate`, so pick a persona with `MOCK_USER_PERSONA`
 starting the mock server instead of `_PERSONA` in `.env`:
 
 ```sh
-MOCK_USER_PERSONA=admin npm run mock-api   # admin | super | general | noScope | noTOS
+MOCK_USER_PERSONA=admin pnpm run mock-api   # admin | super | general | noScope | noTOS
 ```

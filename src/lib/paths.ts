@@ -15,6 +15,7 @@ export const LocalServer = {
 };
 
 export const Picsure = {
+  Chat: `${PREFIX}/ai/chat`,
   Concepts: `${DICT}/concepts`,
   Concept: {
     Detail: `${DICT}/concepts/detail`,

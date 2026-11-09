@@ -1,7 +1,8 @@
 import * as api from '$lib/api';
+import { Picsure } from '$lib/paths';
 import type { ChatRequest, ChatResponse } from './model/types';
 
-const CHAT = 'picsure/ai/chat';
+const CHAT = Picsure.Chat;
 
 // api.ts hands a 422 (a reused requestId) back as a body instead of throwing, so check the shape.
 function asResponse(body: unknown): ChatResponse {
