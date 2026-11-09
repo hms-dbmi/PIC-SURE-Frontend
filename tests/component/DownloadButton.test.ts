@@ -25,18 +25,25 @@ vi.mock('$lib/configuration.svelte', () => ({
 
 import DownloadButton from '$lib/components/explorer/export/DownloadButton.svelte';
 import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
+import { toaster } from '$lib/toaster';
 
 const RESULT_PATH = 'picsure/hpds/auth/query/dataset-1/result';
 const STATUS_PATH = 'picsure/hpds/auth/query/dataset-1/status';
+const NOT_READY_TOAST = {
+  title: 'The export is not ready yet. Please try again in a few minutes.',
+  closable: true,
+};
 const query = { query: { expectedResultType: 'DATAFRAME' } } as unknown as QueryRequestInterfaceV3;
 
 describe('DownloadButton', () => {
   let saved: ReturnType<typeof vi.spyOn>;
+  let toastError: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:pic-sure');
+    toastError = vi.spyOn(toaster, 'error').mockImplementation(() => '');
     saved = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
   });
 
@@ -55,6 +62,7 @@ describe('DownloadButton', () => {
 
     await waitFor(() => expect(saved).toHaveBeenCalledTimes(1));
     expect(get.mock.calls.map(([path]) => path)).toEqual([RESULT_PATH, STATUS_PATH, RESULT_PATH]);
+    expect(toastError).not.toHaveBeenCalled();
   });
 
   it('stops after a second result_not_ready', async () => {
@@ -67,8 +75,20 @@ describe('DownloadButton', () => {
     await fireEvent.click(screen.getByRole('button', { name: /Download as CSV/ }));
 
     await waitFor(() => expect(get).toHaveBeenCalledTimes(3));
-    await waitFor(() => expect(console.error).toHaveBeenCalled());
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith(NOT_READY_TOAST));
+    expect(toastError).toHaveBeenCalledTimes(1);
     expect(get).toHaveBeenCalledTimes(3);
+    expect(saved).not.toHaveBeenCalled();
+  });
+
+  it('shows the not ready toast when the status wait fails', async () => {
+    get.mockRejectedValueOnce(notReady).mockResolvedValueOnce({ status: 'ERROR' });
+    render(DownloadButton, { query, datasetId: 'dataset-1' });
+
+    await fireEvent.click(screen.getByRole('button', { name: /Download as CSV/ }));
+
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith(NOT_READY_TOAST));
+    expect(get.mock.calls.map(([path]) => path)).toEqual([RESULT_PATH, STATUS_PATH]);
     expect(saved).not.toHaveBeenCalled();
   });
 
@@ -81,6 +101,7 @@ describe('DownloadButton', () => {
     await waitFor(() => expect(console.error).toHaveBeenCalled());
     expect(get).toHaveBeenCalledTimes(1);
     expect(get).toHaveBeenCalledWith(RESULT_PATH);
+    expect(toastError).not.toHaveBeenCalled();
     expect(saved).not.toHaveBeenCalled();
   });
 });

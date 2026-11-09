@@ -21,6 +21,7 @@
   } from '$lib/ExportStepperManager.svelte';
   import { log, createLog } from '$lib/logger';
   import { config } from '$lib/configuration.svelte';
+  import { toWireQuery } from '$lib/models/query/Query';
 
   const CREATING_MESSAGES: TimedMessage[] = [
     { afterMs: 0, text: 'Creating dataset ID…' },
@@ -52,11 +53,14 @@
       requestUpdate(() => {
         // Make a copy so we don't add exports to selected for the loaded query
         const request = structuredClone($state.snapshot(getQueryRequest()));
-        request.query.select = [
-          ...config.settings.exportSystemFields,
-          ...request.query.select,
-          ...$exports.map(({ conceptPath }) => conceptPath),
-        ];
+        request.query = toWireQuery({
+          ...request.query,
+          select: [
+            ...config.settings.exportSystemFields,
+            ...request.query.select,
+            ...$exports.map(({ conceptPath }) => conceptPath),
+          ],
+        });
         return api.post(Picsure.Query, request).then((res: DataSetResponse) => {
           setDatasetId(res.picsureResultId || 'Error');
           if (res.picsureResultId) {

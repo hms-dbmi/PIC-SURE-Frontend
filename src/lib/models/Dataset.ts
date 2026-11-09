@@ -87,11 +87,17 @@ function isDoubleEncoded(value: unknown): value is string {
 
 function mapLinkedQueries(queries: unknown): LinkedQuery[] {
   if (!Array.isArray(queries)) return [];
-  return queries.filter(isRecord).map((linked) => ({
-    queryId: String(linked.queryId),
-    sample: linked.sample === true,
-    resultType: typeof linked.resultType === 'string' ? linked.resultType : null,
-  }));
+  return queries.filter(isRecord).flatMap((linked) =>
+    typeof linked.queryId === 'string'
+      ? [
+          {
+            queryId: linked.queryId,
+            sample: linked.sample === true,
+            resultType: typeof linked.resultType === 'string' ? linked.resultType : null,
+          },
+        ]
+      : [],
+  );
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

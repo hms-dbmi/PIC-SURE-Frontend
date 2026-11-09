@@ -301,7 +301,7 @@ describe('mapDataset', () => {
       const query = mapDataset(data).query as QueryV3;
 
       expect(query.sample).toBe(false);
-      expect(JSON.parse(JSON.stringify(query)).sample).toBe(false);
+      expect(JSON.parse(JSON.stringify(query))).not.toHaveProperty('sample');
       expect(new QueryV3().sample).toBe(false);
     });
 
@@ -329,6 +329,27 @@ describe('mapDataset', () => {
       expect(linked.queries).toEqual(queries);
       expect(unlinked.queries).toEqual([]);
       expect(nulled.queries).toEqual([]);
+    });
+
+    it('drops linked queries without a string id and coerces the other fields', () => {
+      const queries = [
+        'not-an-object',
+        null,
+        ['query-in-an-array'],
+        { sample: true, resultType: 'DATAFRAME' },
+        { queryId: 42, sample: false, resultType: 'DATAFRAME' },
+        { queryId: 'string-sample-uuid', sample: 'true', resultType: 'DATAFRAME' },
+        { queryId: 'numeric-type-uuid', sample: true, resultType: 7 },
+        { queryId: 'bare-uuid' },
+      ];
+
+      const dataset = mapDataset(makeData(singleEncode(V3_INNER_QUERY), { queries }));
+
+      expect(dataset.queries).toEqual([
+        { queryId: 'string-sample-uuid', sample: false, resultType: 'DATAFRAME' },
+        { queryId: 'numeric-type-uuid', sample: true, resultType: null },
+        { queryId: 'bare-uuid', sample: false, resultType: null },
+      ]);
     });
   });
 

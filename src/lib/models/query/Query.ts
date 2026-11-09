@@ -70,6 +70,21 @@ function undefinedIfNull<T>(value: unknown): T | undefined {
   return value === null ? undefined : (value as T);
 }
 
+/**
+ * Shapes a query for a request body. Servers bind queries strictly and reject members they do
+ * not know, so `sample` is sent only when it is the boolean `true`.
+ *
+ * @param query A query instance, or a plain copy of one such as a state snapshot.
+ * @returns A shallow copy of `query` that carries `sample` only when it is `true`.
+ */
+export function toWireQuery<T extends { sample?: unknown }>(query: T): T {
+  const wire = { ...query };
+  if (wire.sample !== true) {
+    delete wire.sample;
+  }
+  return wire;
+}
+
 export class QueryV3 implements QueryInterfaceV3 {
   select: string[];
   authorizationFilters: AuthorizationFilterInterface[];
@@ -89,6 +104,16 @@ export class QueryV3 implements QueryInterfaceV3 {
     this.picsureId = newQuery?.picsureId || null;
     this.id = newQuery?.id || null;
     this.sample = newQuery?.sample === true;
+  }
+
+  /**
+   * Called by `JSON.stringify` and by `$state.snapshot`, so every serialized or snapshotted
+   * instance takes the request body shape.
+   *
+   * @returns The fields of this query as a plain object, with `sample` present only when true.
+   */
+  toJSON(): QueryInterfaceV3 {
+    return toWireQuery({ ...this });
   }
 
   get leaves(): PhenotypicFilterInterface[] {

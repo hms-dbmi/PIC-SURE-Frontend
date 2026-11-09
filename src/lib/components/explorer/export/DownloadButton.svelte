@@ -20,6 +20,8 @@
   let modalOpen: boolean = $state(false);
   let isDownloading: boolean = $state(false);
 
+  const NOT_READY_MESSAGE = 'The export is not ready yet. Please try again in a few minutes.';
+
   const downloadText = $derived(
     query.query.expectedResultType === 'DATAFRAME' ||
       query.query.expectedResultType === 'DATAFRAME_TIMESERIES'
@@ -42,6 +44,19 @@
       });
       return;
     }
+    let resultRequests = 0;
+    let notReadyAnswers = 0;
+    const requestResult = async () => {
+      resultRequests += 1;
+      try {
+        return await api.get(`${Picsure.Query}/${datasetId}/result`);
+      } catch (error) {
+        if (api.isResultNotReady(error)) {
+          notReadyAnswers += 1;
+        }
+        throw error;
+      }
+    };
     try {
       isDownloading = true;
       log(
@@ -51,9 +66,7 @@
         }),
       );
       const startTime = performance.now();
-      const res = await fetchWhenReady(datasetId, () =>
-        api.get(`${Picsure.Query}/${datasetId}/result`),
-      );
+      const res = await fetchWhenReady(datasetId, requestResult);
       const duration = Math.round(performance.now() - startTime);
       const blob = new Blob([res], { type: 'octet/stream' });
 
@@ -87,8 +100,11 @@
     } catch (error) {
       console.error('Error in onCompleteHandler', error);
       const consentMessage = api.consentDeniedMessage(error);
+      const statusWaitFailed = notReadyAnswers === 1 && resultRequests === 1;
       if (consentMessage) {
         toaster.error({ title: consentMessage, closable: true });
+      } else if (notReadyAnswers === 2 || statusWaitFailed) {
+        toaster.error({ title: NOT_READY_MESSAGE, closable: true });
       }
       log(
         createLog(

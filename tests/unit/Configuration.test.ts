@@ -206,6 +206,13 @@ describe('mapFeatures - sample dataset flag', () => {
       false,
     );
   });
+
+  it('VITE_SAMPLE_DATASET=true enables explorer.enableSampleDataset when the API has no row', () => {
+    import.meta.env.VITE_SAMPLE_DATASET = 'true';
+
+    expect(resolveConfigMap([]).SAMPLE_DATASET.value).toBe('true');
+    expect(mapFeatures([]).explorer.enableSampleDataset).toBe(true);
+  });
 });
 
 describe('resolveConfigMap - layering', () => {
