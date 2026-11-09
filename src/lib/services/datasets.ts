@@ -8,7 +8,7 @@ import {
   type LinkedQuery,
 } from '$lib/models/Dataset';
 import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
-import { QueryV3 } from '$lib/models/query/Query';
+import { QueryV3, serializeQueryV3 } from '$lib/models/query/Query';
 import { cachedDataset, replaceDataset } from '$lib/stores/Dataset.svelte';
 
 const EXPORT_RESULT_TYPES = ['DATAFRAME', 'DATAFRAME_PFB', 'DATAFRAME_TIMESERIES'] as const;
@@ -154,7 +154,8 @@ export async function linkQuery(
  * A linked query for the variant is reused without a request. Otherwise the stored query is
  * submitted with `sample` set and, like a query built in the explorer, with `picsureId` and
  * `id` null and no authorization filters, so nothing the server filled in on the stored copy
- * is sent back. The result is not waited for.
+ * is sent back. The body goes through the explorer's own serializer, so it carries no `type`
+ * key on any clause. The result is not waited for.
  *
  * The returned query is then linked to the dataset, and the cached dataset is replaced by a
  * copy that lists the link. The link request and that copy take the name, archived flag and
@@ -188,7 +189,9 @@ export async function requestVariant(
   }
 
   const request: QueryRequestInterfaceV3 = {
-    query: new QueryV3({ ...stored, sample, picsureId: null, id: null, authorizationFilters: [] }),
+    query: serializeQueryV3(
+      new QueryV3({ ...stored, sample, picsureId: null, id: null, authorizationFilters: [] }),
+    ),
   };
   const options = signal ? { signal } : undefined;
   const response: DataSetResponse | undefined = await api.post(

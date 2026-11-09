@@ -8,12 +8,17 @@ const { post, put, replaceDataset, cachedDataset } = vi.hoisted(() => ({
   cachedDataset: vi.fn(),
 }));
 
+vi.mock('$app/environment', () => ({ browser: false }));
+vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost') } }));
+vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
+vi.mock('$app/paths', () => ({ resolve: (path: string) => path }));
 vi.mock('$lib/api', () => ({ post, put }));
 vi.mock('$lib/stores/Dataset.svelte', () => ({ replaceDataset, cachedDataset }));
 
 import { mapDataset, QueryVersion, type DataSet, type LinkedQuery } from '$lib/models/Dataset';
-import { QueryV3, type ExpectedResultType } from '$lib/models/query/Query';
+import { QueryV3, type ExpectedResultType, type PhenotypicClause } from '$lib/models/query/Query';
 import { exportResultType, linkQuery, requestVariant } from '$lib/services/datasets';
+import { buildQueryRequestV3FromDescriptor } from '$lib/utilities/QueryBuilder';
 
 const QUERY_PATH = 'picsure/hpds/auth/query';
 const DATASET_PATH = 'picsure/operations/dataset/named/dataset-uuid';
@@ -96,6 +101,159 @@ function serverDataset(queries?: unknown): Record<string, unknown> {
     },
     ...(queries === undefined ? {} : { queries }),
   };
+}
+
+const NESTED_SELECT = ['\\_consents\\', '\\study\\age\\', '\\study\\sex\\'];
+
+/**
+ * Builds a dataset the way the server returns one whose stored query nests subqueries. Unset
+ * bounds and value lists arrive as explicit nulls, and no clause carries a `type`.
+ *
+ * @param sample True when the stored query, and the one link listed, is the sample.
+ * @returns The server JSON for the dataset.
+ */
+function nestedServerDataset(sample: boolean): Record<string, unknown> {
+  const filter = (conceptPath: string, bounds: Record<string, unknown>) => ({
+    phenotypicFilterType: 'FILTER',
+    conceptPath,
+    values: null,
+    min: null,
+    max: null,
+    not: false,
+    ...bounds,
+  });
+  const stored = {
+    query: {
+      select: NESTED_SELECT,
+      authorizationFilters: [{ conceptPath: '\\_consents\\', values: ['phs000001.c1'] }],
+      phenotypicClause: {
+        not: false,
+        operator: 'AND',
+        phenotypicClauses: [
+          filter('\\study\\sex\\', { values: ['Male'] }),
+          {
+            not: false,
+            operator: 'OR',
+            phenotypicClauses: [
+              filter('\\study\\age\\', { min: 40, max: 65 }),
+              {
+                not: false,
+                operator: 'AND',
+                phenotypicClauses: [
+                  { ...filter('\\study\\bmi\\', {}), phenotypicFilterType: 'REQUIRED' },
+                  { ...filter('\\study\\visits\\', {}), phenotypicFilterType: 'ANY_RECORD_OF' },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      genomicFilters: [
+        { key: 'Gene_with_variant', values: ['BRCA1'], min: null, max: null },
+        { key: 'genomic_range', values: null, min: 1, max: null },
+      ],
+      expectedResultType: 'DATAFRAME',
+      picsureId: '11111111-2222-3333-4444-555555555555',
+      id: '66666666-7777-8888-9999-000000000000',
+      ...(sample ? { sample: true } : {}),
+    },
+    resourceUUID: 'resource-uuid',
+  };
+  return {
+    ...serverDataset([{ queryId: 'full-csv', sample, resultType: 'DATAFRAME' }]),
+    query: {
+      uuid: 'full-csv',
+      query: JSON.stringify(stored),
+      startTime: 1794000000000,
+      status: 'AVAILABLE',
+    },
+  };
+}
+
+/**
+ * Builds the body the explorer posts for the query {@link nestedServerDataset} stores, from the
+ * typed clauses the explorer holds in memory.
+ *
+ * @returns The request body as it is sent.
+ */
+function explorerBody(): Record<string, unknown> {
+  const phenotypicClause: PhenotypicClause = {
+    type: 'PhenotypicSubquery',
+    operator: 'AND',
+    not: false,
+    phenotypicClauses: [
+      {
+        type: 'PhenotypicFilter',
+        phenotypicFilterType: 'FILTER',
+        conceptPath: '\\study\\sex\\',
+        not: false,
+        values: ['Male'],
+      },
+      {
+        type: 'PhenotypicSubquery',
+        operator: 'OR',
+        not: false,
+        phenotypicClauses: [
+          {
+            type: 'PhenotypicFilter',
+            phenotypicFilterType: 'FILTER',
+            conceptPath: '\\study\\age\\',
+            not: false,
+            min: 40,
+            max: 65,
+          },
+          {
+            type: 'PhenotypicSubquery',
+            operator: 'AND',
+            not: false,
+            phenotypicClauses: [
+              {
+                type: 'PhenotypicFilter',
+                phenotypicFilterType: 'REQUIRED',
+                conceptPath: '\\study\\bmi\\',
+                not: false,
+              },
+              {
+                type: 'PhenotypicFilter',
+                phenotypicFilterType: 'ANY_RECORD_OF',
+                conceptPath: '\\study\\visits\\',
+                not: false,
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+  const descriptor = {
+    isOpenAccess: false,
+    phenotypicClause,
+    genomicFilters: [
+      { key: 'Gene_with_variant', values: ['BRCA1'] },
+      { key: 'genomic_range', min: 1 },
+    ],
+  };
+  const request = buildQueryRequestV3FromDescriptor(descriptor, 'DATAFRAME', (query) => {
+    query.select = [...NESTED_SELECT];
+    return query;
+  });
+  return JSON.parse(JSON.stringify(request));
+}
+
+/**
+ * Collects every object key in a JSON value, at any depth.
+ *
+ * @param value The parsed JSON value.
+ * @returns The keys found, repeats included.
+ */
+function keysAtAnyDepth(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.flatMap(keysAtAnyDepth);
+  }
+  if (value !== null && typeof value === 'object') {
+    return Object.entries(value).flatMap(([key, child]) => [key, ...keysAtAnyDepth(child)]);
+  }
+  return [];
 }
 
 describe('exportResultType', () => {
@@ -308,6 +466,35 @@ describe('requestVariant', () => {
       metadata: { note: 'kept' },
     });
     expect(result.dataset.queryId).toBe('full-csv');
+  });
+
+  it('posts the sample of a nested stored query in the body the explorer builds, without a type key', async () => {
+    post.mockResolvedValueOnce({ picsureResultId: 'sample-csv' });
+    put.mockResolvedValueOnce({});
+    const dataset = mapDataset(nestedServerDataset(false));
+    expect(keysAtAnyDepth(JSON.parse(JSON.stringify(dataset.query)))).toContain('type');
+
+    await requestVariant(dataset, true);
+
+    const sent = sentBody(post.mock.calls[0]);
+    const explorer = explorerBody();
+    expect(keysAtAnyDepth(explorer)).not.toContain('type');
+    expect(keysAtAnyDepth(sent)).not.toContain('type');
+    expect(sent).toEqual({ query: { ...(explorer.query as object), sample: true } });
+    expect(JSON.stringify(post.mock.calls[0][1])).not.toContain('"type"');
+  });
+
+  it('posts the full variant of a nested stored query exactly as the explorer builds it', async () => {
+    post.mockResolvedValueOnce({ picsureResultId: 'full-csv-new' });
+    put.mockResolvedValueOnce({});
+    const dataset = mapDataset(nestedServerDataset(true));
+
+    await requestVariant(dataset, false);
+
+    const sent = sentBody(post.mock.calls[0]);
+    expect(keysAtAnyDepth(sent)).not.toContain('type');
+    expect(sent).toEqual(explorerBody());
+    expect(sent.query).not.toHaveProperty('sample');
   });
 
   it('sends no link when the server response carried no queries array', async () => {

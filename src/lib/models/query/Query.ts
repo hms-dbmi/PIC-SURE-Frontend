@@ -220,3 +220,21 @@ export class QueryV3 implements QueryInterfaceV3 {
     });
   }
 }
+
+/**
+ * Puts a query into the form every query request body takes. The server tells a filter from a
+ * subquery by the members each carries and rejects a member it does not define, so the `type`
+ * key the client keeps on each clause is left out at every depth. `sample` is present only
+ * when it is true, as {@link QueryV3.toJSON} shapes it.
+ *
+ * @param query The query to send.
+ * @returns A plain copy of `query` without any `type` key and without undefined members.
+ */
+export function serializeQueryV3(query: QueryV3) {
+  return JSON.parse(
+    JSON.stringify(query, (key, value) => {
+      if (key === 'type') return undefined;
+      return value;
+    }),
+  );
+}

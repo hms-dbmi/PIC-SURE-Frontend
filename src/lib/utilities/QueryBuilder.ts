@@ -1,5 +1,6 @@
 import {
   QueryV3,
+  serializeQueryV3,
   type ExpectedResultType,
   type PhenotypicFilterInterface,
   type PhenotypicSubqueryInterface,
@@ -34,15 +35,6 @@ const parseNumber = (input: string | number | null | undefined): number | undefi
 };
 
 // -------------------------------- V3 Query -------------------------------- //
-
-function serializeQueryV3(query: QueryV3) {
-  return JSON.parse(
-    JSON.stringify(query, (key, value) => {
-      if (key === 'type') return undefined;
-      return value;
-    }),
-  );
-}
 
 export function buildPhenotypicClauseFromTree(
   tree: LogicTree<FilterInterface>,

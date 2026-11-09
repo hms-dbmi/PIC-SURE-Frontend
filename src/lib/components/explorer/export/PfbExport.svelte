@@ -3,7 +3,7 @@
   import { config } from '$lib/configuration.svelte';
   import { Picsure } from '$lib/paths';
   import * as api from '$lib/api';
-  import { fetchWhenReady, trackNotReady } from '$lib/services/exportStatus';
+  import { fetchWhenReady, isSessionEnded, trackNotReady } from '$lib/services/exportStatus';
   import DownloadButton from './DownloadButton.svelte';
   import Loading from '$lib/components/Loading.svelte';
   import { toaster } from '$lib/toaster';
@@ -56,7 +56,7 @@
         toaster.info({ title: READY_AFTER_WAIT_MESSAGE, closable: true });
       }
     } catch (error) {
-      if (unmounted.signal.aborted) {
+      if (unmounted.signal.aborted || isSessionEnded(error)) {
         return;
       }
       console.error('Error during export:', error);

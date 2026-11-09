@@ -225,6 +225,20 @@ describe('PfbExport', () => {
     expect(window.open).not.toHaveBeenCalled();
   });
 
+  it('stops the status wait and shows no toast when a 401 has logged the user out', async () => {
+    vi.useFakeTimers();
+    get.mockRejectedValueOnce(notReady).mockResolvedValue(undefined);
+    render(PfbExport);
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Export to Terra' }));
+    await vi.advanceTimersByTimeAsync(STATUS_WAIT_LIMIT_MS);
+
+    expect(toastError).not.toHaveBeenCalled();
+    expect(get.mock.calls.map(([path]) => path)).toEqual([SIGNED_URL_PATH, STATUS_PATH]);
+    expect(window.open).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Export to Terra' })).toBeEnabled();
+  });
+
   it('shows the preparation failure when the export reports ERROR', async () => {
     get.mockRejectedValueOnce(notReady).mockResolvedValueOnce({ status: 'ERROR' });
     render(PfbExport);

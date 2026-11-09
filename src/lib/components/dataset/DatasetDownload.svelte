@@ -10,6 +10,7 @@
   import {
     EXPORT_PREPARE_FAILED_MESSAGE,
     SAMPLE_DISABLED_MESSAGE,
+    isSessionEnded,
     statusWaitFailureMessage,
     waitUntilAvailable,
   } from '$lib/services/exportStatus';
@@ -116,7 +117,7 @@
       }
       ready = { queryId: request.queryId, sample: variant.sample };
     } catch (error) {
-      if (unmounted.signal.aborted) {
+      if (unmounted.signal.aborted || isSessionEnded(error)) {
         return;
       }
       console.error('Error preparing dataset export', error);

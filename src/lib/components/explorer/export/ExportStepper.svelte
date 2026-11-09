@@ -13,6 +13,7 @@
     EXPORT_NOT_READY_MESSAGE,
     EXPORT_PREPARE_FAILED_MESSAGE,
     isExportFailure,
+    isSessionEnded,
     statusWaitFailureMessage,
     waitUntilAvailable,
   } from '$lib/services/exportStatus';
@@ -206,10 +207,12 @@
           {/if}
           <AnalysisPlatformLinks />
         {:catch e}
-          <div class="flex justify-center">
-            <ErrorAlert title={prepareFailureTitle(e)} />
-            <div class="hidden">{e}</div>
-          </div>
+          {#if !isSessionEnded(e)}
+            <div class="flex justify-center">
+              <ErrorAlert title={prepareFailureTitle(e)} />
+              <div class="hidden">{e}</div>
+            </div>
+          {/if}
         {/await}
       {:catch e}
         <div class="flex justify-center">

@@ -414,6 +414,20 @@ describe('DatasetDownload', () => {
     expect(sampleButton()).toBeEnabled();
   });
 
+  it('stops the status wait and shows no toast when a 401 has logged the user out', async () => {
+    vi.useFakeTimers();
+    get.mockResolvedValue(undefined);
+    render(DatasetDownload, { dataset: makeDataset('DATAFRAME', [FULL_LINK, SAMPLE_LINK]) });
+
+    await fireEvent.click(sampleButton());
+    await vi.advanceTimersByTimeAsync(STATUS_WAIT_LIMIT_MS);
+
+    expect(toastError).not.toHaveBeenCalled();
+    expect(paths(get)).toEqual([statusPath('sample-id')]);
+    expect(screen.queryByRole('button', { name: /Download as CSV/ })).not.toBeInTheDocument();
+    expect(sampleButton()).toBeEnabled();
+  });
+
   it('shows the preparation failure once when the submit fails', async () => {
     post.mockRejectedValueOnce({ status: 500, body: { message: 'Server Error' } });
     render(DatasetDownload, { dataset: makeDataset() });

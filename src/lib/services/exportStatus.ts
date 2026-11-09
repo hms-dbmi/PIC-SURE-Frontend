@@ -17,6 +17,29 @@ export const EXPORT_NOT_READY_MESSAGE =
 /** Shown when a sample is asked for while sampling is switched off on the server. */
 export const SAMPLE_DISABLED_MESSAGE = 'Sample datasets are not available at this time';
 
+/**
+ * Rejects a status wait whose request found the session over. A 401 makes the request log the
+ * user out, start the redirect to the login page and resolve with nothing, so there is no
+ * status to read and no later attempt can succeed.
+ */
+export class SessionEndedError extends Error {
+  constructor() {
+    super('The session ended while waiting for the export.');
+    this.name = 'SessionEndedError';
+  }
+}
+
+/**
+ * Tells a wait that stopped because the session ended apart from every other failure. The login
+ * page the user is sent to explains the logout, so a caller shows no message of its own.
+ *
+ * @param e The value a rejected {@link waitUntilAvailable} call rejected with.
+ * @returns True when a status request was answered 401 and the user was logged out.
+ */
+export function isSessionEnded(e: unknown): boolean {
+  return e instanceof SessionEndedError;
+}
+
 interface ExportStatusResponse {
   picsureResultId: string;
   status: string;
@@ -52,7 +75,8 @@ export function isStatusRefusal(e: unknown): boolean {
  * @returns The server's consent message for a consent denial, {@link SAMPLE_DISABLED_MESSAGE}
  * for a 400 `sample_disabled`, {@link EXPORT_PREPARE_FAILED_MESSAGE} when the export reported
  * ERROR or the status request was refused in any other way, and
- * {@link EXPORT_NOT_READY_MESSAGE} when the wait ran out of attempts.
+ * {@link EXPORT_NOT_READY_MESSAGE} when the wait ran out of attempts. An error matching
+ * {@link isSessionEnded} gets that last message too, so check for it first and show nothing.
  */
 export function statusWaitFailureMessage(error: unknown): string {
   const consentMessage = api.consentDeniedMessage(error);
@@ -77,8 +101,9 @@ export function statusWaitFailureMessage(error: unknown): string {
  * @param signal Stops the polling when it aborts. The status requests carry it too.
  * @returns A promise that resolves once the status is SUCCESS or AVAILABLE.
  * @throws An error matching {@link isExportFailure} as soon as the status is ERROR, an error
- * matching {@link isStatusRefusal} as soon as a status request answers 400, 403 or 404, the
- * last error seen once the attempts run out, or the abort reason once `signal` aborts.
+ * matching {@link isStatusRefusal} as soon as a status request answers 400, 403 or 404, an
+ * error matching {@link isSessionEnded} as soon as a status request answers 401, the last error
+ * seen once the attempts run out, or the abort reason once `signal` aborts.
  */
 export function waitUntilAvailable(
   queryId: string | undefined,
@@ -89,7 +114,11 @@ export function waitUntilAvailable(
     async () => {
       const res = (await (signal
         ? api.get(path, undefined, undefined, { signal })
-        : api.get(path))) as ExportStatusResponse;
+        : api.get(path))) as ExportStatusResponse | undefined;
+
+      if (res === undefined) {
+        throw new SessionEndedError();
+      }
 
       if (res.status === 'ERROR') {
         throw new Error(`Export failed with status: ${res.status}`);
@@ -102,7 +131,7 @@ export function waitUntilAvailable(
     15,
     500,
     60000,
-    (error) => !isExportFailure(error) && !isStatusRefusal(error),
+    (error) => !isExportFailure(error) && !isStatusRefusal(error) && !isSessionEnded(error),
     signal,
   );
 }
@@ -124,7 +153,7 @@ export interface NotReadyTracker<T> {
    * @returns {@link SAMPLE_DISABLED_MESSAGE} for a 400 `sample_disabled` from the result
    * request or from the status wait, what {@link statusWaitFailureMessage} picks when the
    * status wait failed, {@link EXPORT_NOT_READY_MESSAGE} when the retry was answered not ready
-   * again, and undefined for any other error.
+   * again, and undefined for any other error, one matching {@link isSessionEnded} included.
    */
   failureMessage: (error: unknown) => string | undefined;
 }
@@ -152,6 +181,9 @@ export function trackNotReady<T>(fetchResult: () => Promise<T>): NotReadyTracker
     },
     waited: () => notReadyAnswers > 0,
     failureMessage: (error) => {
+      if (isSessionEnded(error)) {
+        return undefined;
+      }
       if (api.isSampleDisabled(error)) {
         return SAMPLE_DISABLED_MESSAGE;
       }

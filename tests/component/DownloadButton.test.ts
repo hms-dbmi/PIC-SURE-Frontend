@@ -128,6 +128,19 @@ describe('DownloadButton', () => {
     expect(saved).not.toHaveBeenCalled();
   });
 
+  it('stops the status wait and shows no toast when a 401 has logged the user out', async () => {
+    vi.useFakeTimers();
+    get.mockRejectedValueOnce(notReady).mockResolvedValue(undefined);
+    render(DownloadButton, { query, datasetId: 'dataset-1' });
+
+    await fireEvent.click(screen.getByRole('button', { name: /Download as CSV/ }));
+    await vi.advanceTimersByTimeAsync(STATUS_WAIT_LIMIT_MS);
+
+    expect(toastError).not.toHaveBeenCalled();
+    expect(get.mock.calls.map(([path]) => path)).toEqual([RESULT_PATH, STATUS_PATH]);
+    expect(saved).not.toHaveBeenCalled();
+  });
+
   it('shows the preparation failure when the export reports ERROR', async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     get.mockRejectedValueOnce(notReady).mockResolvedValueOnce({ status: 'ERROR' });

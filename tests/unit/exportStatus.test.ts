@@ -23,6 +23,7 @@ import {
   SAMPLE_DISABLED_MESSAGE,
   fetchWhenReady,
   isExportFailure,
+  isSessionEnded,
   isStatusRefusal,
   statusWaitFailureMessage,
   trackNotReady,
@@ -115,6 +116,46 @@ describe('waitUntilAvailable', () => {
     await vi.advanceTimersByTimeAsync(11 * 60000);
     expect(get).toHaveBeenCalledTimes(1);
     expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('stops at once when a 401 logs the user out and the status request resolves with nothing', async () => {
+    get.mockResolvedValue(undefined);
+
+    const failure = await waitUntilAvailable('query-1').catch((e: unknown) => e);
+
+    expect(isSessionEnded(failure)).toBe(true);
+    expect(isExportFailure(failure)).toBe(false);
+    expect(isStatusRefusal(failure)).toBe(false);
+    expect(get).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(11 * 60000);
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('stops when the session ends on a later attempt', async () => {
+    get.mockResolvedValueOnce({ status: 'PENDING' }).mockResolvedValue(undefined);
+
+    const waiting = waitUntilAvailable('query-1').catch((e: unknown) => e);
+    await vi.advanceTimersByTimeAsync(11 * 60000);
+
+    expect(isSessionEnded(await waiting)).toBe(true);
+    expect(get).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    ['null body', null],
+    ['text body', 'not json'],
+    ['object without a status', {}],
+  ])('keeps polling after a %s and rejects with an ordinary error', async (_name, body) => {
+    get.mockResolvedValue(body);
+
+    const waiting = waitUntilAvailable('query-1').catch((e: unknown) => e);
+    await vi.advanceTimersByTimeAsync(LAST_ATTEMPT_AT_MS * 2);
+    const failure = await waiting;
+
+    expect(failure).toBeInstanceOf(Error);
+    expect(isSessionEnded(failure)).toBe(false);
+    expect(get).toHaveBeenCalledTimes(15);
   });
 
   it.each([
@@ -320,6 +361,28 @@ describe('trackNotReady', () => {
     expect(result.failureMessage(await failureOf(result))).toBe(message);
     expect(get).toHaveBeenCalledTimes(1);
     expect(fetchResult).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows no message and sends no retry when the session ends during the status wait', async () => {
+    get.mockResolvedValue(undefined);
+    const fetchResult = vi.fn().mockRejectedValue(notReady);
+    const result = trackNotReady(fetchResult);
+
+    const failure = await failureOf(result);
+
+    expect(isSessionEnded(failure)).toBe(true);
+    expect(result.failureMessage(failure)).toBeUndefined();
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(fetchResult).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('isSessionEnded', () => {
+  it('is false for every other failure of the wait', () => {
+    expect(isSessionEnded(new Error('Export not ready. Status: PENDING'))).toBe(false);
+    expect(isSessionEnded(new TypeError('Cannot read properties of undefined'))).toBe(false);
+    expect(isSessionEnded(httpError(403, 'Forbidden'))).toBe(false);
+    expect(isSessionEnded(undefined)).toBe(false);
   });
 });
 
