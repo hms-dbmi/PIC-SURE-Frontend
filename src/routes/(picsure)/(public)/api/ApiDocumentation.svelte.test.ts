@@ -1,15 +1,41 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/svelte';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
+import { flushSync } from 'svelte';
 
-const { SwaggerUI } = vi.hoisted(() => ({ SwaggerUI: vi.fn() }));
+const { SwaggerUI, mockPage } = vi.hoisted(() => ({
+  SwaggerUI: vi.fn(),
+  mockPage: { url: new URL('https://picsure.test/api'), state: {} },
+}));
 
-vi.mock('#lib/telemetry/logger.ts', () => ({ log: vi.fn(), createLog: vi.fn() }));
+vi.mock('#lib/telemetry/logger.ts', () => ({
+  log: vi.fn(),
+  createLog: vi.fn((type: string, action: string, metadata: unknown) => ({
+    type,
+    action,
+    metadata,
+  })),
+}));
+vi.mock('#lib/auth/session.svelte.ts', () => {
+  class MockSession {
+    isLoggedIn = $state(false);
+  }
+  return { session: new MockSession() };
+});
+vi.mock('$app/state', () => ({ page: mockPage }));
+vi.mock('$app/navigation', () => ({ replaceState: vi.fn() }));
 vi.mock('swagger-ui-dist/swagger-ui-bundle.js', () => ({ default: SwaggerUI }));
 vi.mock('swagger-ui-dist/swagger-ui.css', () => ({}));
 
+import { replaceState } from '$app/navigation';
+import { session } from '#lib/auth/session.svelte.ts';
+import { log } from '#lib/telemetry/logger.ts';
 import ApiDocumentation from './ApiDocumentation.svelte';
+
+// The mock above gives the session a settable isLoggedIn.
+const mockSession = session as { isLoggedIn: boolean };
+const allServices = ['hpds-open-access', 'hpds-query-service', 'dictionary'];
 
 const document31 = { openapi: '3.1.0', info: { title: 'Docs', version: '1' }, paths: {} };
 
@@ -75,12 +101,38 @@ function drawSwagger() {
   });
 }
 
+function fetchedDocuments(fetchMock: ReturnType<typeof serve>) {
+  return fetchMock.mock.calls
+    .map(([path]) => path)
+    .filter((path) => path.startsWith('/picsure/openapi/'))
+    .map((path) => path.slice('/picsure/openapi/'.length));
+}
+
+function serviceSelections() {
+  return vi
+    .mocked(log)
+    .mock.calls.map(([entry]) => entry as unknown as { action: string; metadata: unknown })
+    .filter(({ action }) => action === 'api.docs_service_select')
+    .map(({ metadata }) => metadata);
+}
+
+function writtenUrls() {
+  return vi.mocked(replaceState).mock.calls.map(([url]) => String(url));
+}
+
+function announcement() {
+  return screen.getByTestId('api-docs-announcement').textContent?.trim();
+}
+
 function level(selector: string) {
   return document.querySelector(selector)?.getAttribute('aria-level');
 }
 
 describe('ApiDocumentation', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
+    mockSession.isLoggedIn = true;
+    mockPage.url = new URL('https://picsure.test/api');
     SwaggerUI.mockReset();
     drawSwagger();
     observers.clear();
@@ -88,18 +140,143 @@ describe('ApiDocumentation', () => {
   });
   afterEach(() => vi.unstubAllGlobals());
 
-  it('shows the dictionary first when every service is documented', async () => {
-    const fetchMock = serve(['hpds-open-access', 'hpds-query-service', 'dictionary']);
+  it('offers every documented service as a tab, with the dictionary selected first', async () => {
+    const fetchMock = serve(allServices);
     render(ApiDocumentation);
 
-    const select = await screen.findByLabelText('Select service:');
-    expect(Array.from((select as HTMLSelectElement).options, (option) => option.text)).toEqual([
+    const tablist = await screen.findByRole('tablist', { name: 'API documentation by service' });
+    const tabs = within(tablist).getAllByRole('tab');
+    expect(tabs.map((tab) => tab.textContent?.trim())).toEqual([
       'Dictionary',
       'Authorized Queries',
       'Open Queries',
     ]);
+    expect(tabs[0]).toHaveAttribute('aria-selected', 'true');
+    await waitFor(() => expect(fetchedDocuments(fetchMock)).toEqual(['dictionary']));
+    expect(screen.getByRole('tabpanel', { name: 'Dictionary' })).toContainElement(
+      document.querySelector('.swagger-host') as HTMLElement,
+    );
+    // The first document isn't a change, so nothing is announced and the address is left alone.
+    expect(announcement()).toBe('');
+    expect(writtenUrls()).toEqual([]);
+  });
+
+  it('hides the authorized queries from visitors who are not signed in', async () => {
+    mockSession.isLoggedIn = false;
+    const fetchMock = serve(allServices);
+    render(ApiDocumentation);
+
+    const tablist = await screen.findByRole('tablist');
+    expect(
+      within(tablist)
+        .getAllByRole('tab')
+        .map((tab) => tab.textContent?.trim()),
+    ).toEqual(['Dictionary', 'Open Queries']);
+    await waitFor(() => expect(fetchedDocuments(fetchMock)).toEqual(['dictionary']));
+  });
+
+  it('shows the chosen tab, records it in the address and announces it once drawn', async () => {
+    const fetchMock = serve(allServices);
+    render(ApiDocumentation);
+    await waitFor(() => expect(SwaggerUI).toHaveBeenCalled());
+
+    await fireEvent.click(screen.getByRole('tab', { name: 'Open Queries' }));
+
+    await waitFor(() => expect(announcement()).toBe('Showing the Open Queries API documentation.'));
+    expect(fetchedDocuments(fetchMock)).toEqual(['dictionary', 'hpds-open-access']);
+    expect(screen.getByRole('tab', { name: 'Open Queries' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    expect(screen.getByRole('tabpanel', { name: 'Open Queries' })).toBeTruthy();
+    expect(writtenUrls()).toEqual(['https://picsure.test/api?service=hpds-open-access#api-access']);
+    expect(serviceSelections()).toEqual([
+      { from: 'dictionary', to: 'hpds-open-access', source: 'tab' },
+    ]);
+  });
+
+  it('opens on the service a link names', async () => {
+    mockPage.url = new URL('https://picsure.test/api?service=hpds-open-access#api-access');
+    const fetchMock = serve(allServices);
+    render(ApiDocumentation);
+
+    await waitFor(() => expect(fetchedDocuments(fetchMock)).toEqual(['hpds-open-access']));
+    expect(screen.getByRole('tab', { name: 'Open Queries' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    expect(serviceSelections()).toEqual([{ to: 'hpds-open-access', source: 'url' }]);
+    expect(writtenUrls()).toEqual([]);
+  });
+
+  for (const [why, service] of [
+    ['a service hidden from visitors who are not signed in', 'hpds-query-service'],
+    ['a service the registry does not list', 'visualization'],
+  ]) {
+    it(`opens on the dictionary and drops a link to ${why}`, async () => {
+      mockSession.isLoggedIn = false;
+      mockPage.url = new URL(`https://picsure.test/api?q=1&service=${service}#api-access`);
+      const fetchMock = serve(allServices.filter((name) => name !== 'hpds-open-access'));
+      render(ApiDocumentation);
+
+      await waitFor(() => expect(fetchedDocuments(fetchMock)).toEqual(['dictionary']));
+      expect(writtenUrls()).toEqual(['https://picsure.test/api?q=1#api-access']);
+      expect(serviceSelections()).toEqual([]);
+    });
+  }
+
+  it('shows a single service without tabs', async () => {
+    mockSession.isLoggedIn = false;
+    const fetchMock = serve(['dictionary', 'hpds-query-service']);
+    render(ApiDocumentation);
+
+    await waitFor(() => expect(fetchedDocuments(fetchMock)).toEqual(['dictionary']));
+    expect(screen.queryByRole('tablist')).toBeNull();
+    expect(screen.queryByRole('tabpanel')).toBeNull();
+  });
+
+  it('moves to the dictionary when the visitor signs out on the authorized queries', async () => {
+    const fetchMock = serve(allServices);
+    render(ApiDocumentation);
+    await waitFor(() => expect(SwaggerUI).toHaveBeenCalled());
+    await fireEvent.click(screen.getByRole('tab', { name: 'Authorized Queries' }));
     await waitFor(() =>
-      expect(fetchMock).toHaveBeenCalledWith('/picsure/openapi/dictionary', expect.anything()),
+      expect(announcement()).toBe('Showing the Authorized Queries API documentation.'),
+    );
+    const host = document.querySelector('.swagger-host');
+
+    mockSession.isLoggedIn = false;
+    flushSync();
+
+    await waitFor(() => expect(announcement()).toBe('Showing the Dictionary API documentation.'));
+    expect(screen.queryByRole('tab', { name: 'Authorized Queries' })).toBeNull();
+    expect(screen.getByRole('tab', { name: 'Dictionary' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    expect(fetchedDocuments(fetchMock)).toEqual(['dictionary', 'hpds-query-service', 'dictionary']);
+    expect(serviceSelections().at(-1)).toEqual({
+      from: 'hpds-query-service',
+      to: 'dictionary',
+      source: 'session',
+    });
+    // Swagger's host stays put, so the viewer keeps drawing into it.
+    expect(document.querySelector('.swagger-host')).toBe(host);
+  });
+
+  it('announces a document that fails to load', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (path: string) =>
+        path === '/picsure/openapi'
+          ? new Response(JSON.stringify([{ name: 'dictionary' }]), { status: 200 })
+          : new Response('', { status: 502 }),
+      ),
+    );
+    render(ApiDocumentation);
+
+    await waitFor(() =>
+      expect(announcement()).toBe('Unable to load API documentation. Please try again.'),
     );
   });
 

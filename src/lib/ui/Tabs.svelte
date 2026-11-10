@@ -26,6 +26,13 @@
     tab?: Snippet<[Tab<T>]>;
     /** Rendered once per tab; hidden panels stay mounted. */
     panel: Snippet<[T]>;
+    /**
+     * Renders `panel` once, for the selected tab, in one panel that every tab controls, for content
+     * that swaps in place instead of keeping a copy per tab. With fewer than two tabs there's no
+     * choice to offer: the list is left out and the panel is plain content. The panel's element
+     * stays the same through both changes, so what it holds isn't remounted.
+     */
+    shared?: boolean;
   }
 
   let {
@@ -38,10 +45,21 @@
     'data-testid': testid = 'ui-tabs',
     tab: tabContent,
     panel,
+    shared = false,
   }: Props = $props();
 
   const id = $props.id();
   const buttons: HTMLButtonElement[] = $state([]);
+  const selectedIndex = $derived(tabs.findIndex((tab) => tab.value === value));
+  const showList = $derived(!shared || tabs.length > 1);
+  // Without the list the panel is plain content, so the attributes come and go without
+  // remounting it.
+  const sharedPanelRole = $derived(
+    showList
+      ? { role: 'tabpanel', 'aria-labelledby': `${id}-tab-${selectedIndex}`, tabindex: 0 }
+      : {},
+  );
+  const panelId = (index: number) => (shared ? `${id}-panel` : `${id}-panel-${index}`);
 
   const styles = {
     page: {
@@ -54,7 +72,7 @@
       list: 'border-b border-surface-300',
       tab: 'mr-6 border-b-3 px-1 py-3 font-bold',
       active: 'border-primary-500 text-primary-700',
-      inactive: 'border-transparent text-surface-600',
+      inactive: 'border-transparent text-surface-800',
     },
   } as const;
   const style = $derived(styles[variant]);
@@ -90,42 +108,50 @@
 {/snippet}
 
 <div class="w-full {className}" data-testid={testid}>
-  <div class={style.list} role="tablist" aria-label={label} data-testid="{testid}-list">
-    {#each tabs as tab, index (tab.value)}
-      {@const selected = tab.value === value}
-      <button
-        bind:this={buttons[index]}
-        type="button"
-        role="tab"
-        id="{id}-tab-{index}"
-        aria-selected={selected}
-        aria-controls="{id}-panel-{index}"
-        tabindex={selected ? 0 : -1}
-        class="{style.tab} {selected ? style.active : style.inactive}"
-        data-testid="{testid}-control"
-        onclick={() => void select(tab.value, false)}
-        onkeydown={(event) => onkeydown(event, index)}
-      >
-        {#if variant === 'page'}
-          <span class="btn hover:preset-tonal-primary" data-testid="{testid}-control-label">
-            <span>{@render content(tab)}</span>
-          </span>
-        {:else}
-          {@render content(tab)}
-        {/if}
-      </button>
-    {/each}
-  </div>
-  {#each tabs as tab, index (tab.value)}
-    <div
-      role="tabpanel"
-      id="{id}-panel-{index}"
-      aria-labelledby="{id}-tab-{index}"
-      hidden={tab.value !== value}
-      tabindex="0"
-      data-testid="{testid}-panel"
-    >
-      {@render panel(tab.value)}
+  {#if showList}
+    <div class={style.list} role="tablist" aria-label={label} data-testid="{testid}-list">
+      {#each tabs as tab, index (tab.value)}
+        {@const selected = tab.value === value}
+        <button
+          bind:this={buttons[index]}
+          type="button"
+          role="tab"
+          id="{id}-tab-{index}"
+          aria-selected={selected}
+          aria-controls={panelId(index)}
+          tabindex={selected ? 0 : -1}
+          class="{style.tab} {selected ? style.active : style.inactive}"
+          data-testid="{testid}-control"
+          onclick={() => void select(tab.value, false)}
+          onkeydown={(event) => onkeydown(event, index)}
+        >
+          {#if variant === 'page'}
+            <span class="btn hover:preset-tonal-primary" data-testid="{testid}-control-label">
+              <span>{@render content(tab)}</span>
+            </span>
+          {:else}
+            {@render content(tab)}
+          {/if}
+        </button>
+      {/each}
     </div>
-  {/each}
+  {/if}
+  {#if shared}
+    <div id={panelId(selectedIndex)} data-testid="{testid}-panel" {...sharedPanelRole}>
+      {@render panel(value)}
+    </div>
+  {:else}
+    {#each tabs as tab, index (tab.value)}
+      <div
+        role="tabpanel"
+        id={panelId(index)}
+        aria-labelledby="{id}-tab-{index}"
+        hidden={tab.value !== value}
+        tabindex="0"
+        data-testid="{testid}-panel"
+      >
+        {@render panel(tab.value)}
+      </div>
+    {/each}
+  {/if}
 </div>

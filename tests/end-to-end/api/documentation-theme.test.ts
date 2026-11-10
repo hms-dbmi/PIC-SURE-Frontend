@@ -134,8 +134,8 @@ async function contrastFailures(page: Page): Promise<Failure[]> {
       }
     };
 
-    const root = host.querySelector('.swagger-ui')!;
-    for (const element of root.querySelectorAll('*')) {
+    // The service tabs above the viewer, and everything Swagger draws.
+    for (const element of host.querySelectorAll('*')) {
       if (!element.checkVisibility({ visibilityProperty: true })) continue;
       const style = getComputedStyle(element);
       const ownText = [...element.childNodes].some(
@@ -155,6 +155,10 @@ async function contrastFailures(page: Page): Promise<Failure[]> {
         const border = parseFloat(style.borderTopWidth) > 0 ? style.borderTopColor : undefined;
         check('boundary', element, border ?? style.backgroundColor, 3);
       }
+      // The selected service tab's underline, which marks it apart from its color.
+      if (element.matches('[role="tab"][aria-selected="true"]')) {
+        check('boundary', element, style.borderBottomColor, 3);
+      }
     }
     return failures;
   });
@@ -169,8 +173,9 @@ for (const theme of ['picsure', 'bdc', 'aim-ahead']) {
         features: [{ name: 'OPEN', value: 'true' }],
         branding: [{ name: 'THEME', value: theme }],
       });
+      // Two services, so the tabs are drawn too.
       await page.route('**/picsure/openapi', (route) =>
-        route.fulfill({ json: [{ name: 'dictionary' }] }),
+        route.fulfill({ json: [{ name: 'dictionary' }, { name: 'hpds-open-access' }] }),
       );
       await page.route('**/picsure/openapi/dictionary', (route) =>
         route.fulfill({ json: { ...themedDocument, openapi } }),
