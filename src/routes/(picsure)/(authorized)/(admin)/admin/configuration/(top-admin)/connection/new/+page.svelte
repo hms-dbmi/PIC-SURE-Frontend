@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { config } from '#lib/configuration.svelte.ts';
-  import Content from '#lib/components/Content.svelte';
-  import ConnectionForm from '#lib/components/admin/configuration/ConnectionForm.svelte';
+  import { config } from '#lib/config/config.svelte.ts';
+  import Content from '#lib/shell/Content.svelte';
+  import ConnectionForm from '#lib/admin/access/ConnectionForm.svelte';
 </script>
 
 <svelte:head>

@@ -8,7 +8,7 @@ import {
   facetsResponse,
   searchResultPath,
   searchResults,
-} from '../mock-data';
+} from '../../support/mock-data';
 
 const filterId = deniedFilterTree.children[0].id;
 

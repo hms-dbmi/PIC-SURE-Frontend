@@ -1,17 +1,17 @@
 <script lang="ts">
   import { page } from '$app/state';
 
-  import * as api from '#lib/api.ts';
-  import { config } from '#lib/configuration.svelte.ts';
+  import * as api from '#lib/api/client.ts';
+  import { config } from '#lib/config/config.svelte.ts';
 
-  import { QueryVersion, type DataSet } from '#lib/models/Dataset.ts';
-  import { getDataset } from '#lib/stores/Dataset.svelte.ts';
+  import { QueryVersion, type DataSet } from '#lib/datasets/dataset.ts';
+  import { getDataset } from '#lib/datasets/datasets.svelte.ts';
 
-  import Content from '#lib/components/Content.svelte';
-  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
-  import QuerySummary from '#lib/components/query/QuerySummary.svelte';
-  import Loading from '#lib/components/Loading.svelte';
-  import CopyButton from '#lib/components/buttons/CopyButton.svelte';
+  import Content from '#lib/shell/Content.svelte';
+  import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
+  import QuerySummary from '#lib/datasets/components/QuerySummary.svelte';
+  import Loading from '#lib/ui/Loading.svelte';
+  import CopyButton from '#lib/ui/CopyButton.svelte';
 
   let dataset: DataSet | undefined = $state({
     version: QueryVersion.UNKNOWN,
@@ -45,7 +45,7 @@
     {#if dataset?.queryId}
       <section data-testid="dataset-summary-container" class="my-4">
         <h2 class="text-left h4 mb-2 mt-6">Dataset ID Summary</h2>
-        <table class="table bg-transparent">
+        <table class="table">
           <tbody>
             <tr>
               <td>Dataset ID Name:</td>

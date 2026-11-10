@@ -1,0 +1,392 @@
+# The PR 8 move: every file in src/lib's layer folders to its home in SPEC §6.3/§6.4, tests next to
+# their code, e2e regrouped by feature. Run with scripts/refactor/move.ts (see its header).
+#
+# Naming: components keep their names. A module that a later PR splits or merges lands whole in its
+# primary home under its old basename (stores/User.ts -> auth/User.ts, models/Configuration.ts ->
+# config/Configuration.ts). Any other module takes the name the spec gives it (api/client.ts,
+# query/build.ts, banners per §6.3.1), else a lowerCamel name in its folder, or types.ts when it only
+# holds types. Tests take their module's new name: `foo.test.ts` (Vitest node project) or
+# `Foo.svelte.test.ts` (client project, every component test).
+
+## api/ — transport and backend resources
+src/lib/api.ts -> src/lib/api/client.ts
+src/lib/paths.ts -> src/lib/api/paths.ts
+src/lib/openSession.ts -> src/lib/api/openSession.ts
+src/lib/wafCaptcha.ts -> src/lib/api/wafCaptcha.ts
+src/lib/models/api/Dictionary.ts -> src/lib/api/picsure/dictionary.types.ts
+src/lib/models/api/Pageable.ts -> src/lib/api/picsure/pageable.types.ts
+src/lib/models/api/Sort.ts -> src/lib/api/picsure/sort.types.ts
+src/lib/models/api/Request.ts -> src/lib/api/picsure/query.types.ts
+src/lib/services/BannerManagement.ts -> src/lib/api/picsure/banners.ts
+src/lib/services/datasets.ts -> src/lib/api/picsure/datasets.ts
+tests/unit/api.test.ts -> src/lib/api/client.test.ts
+tests/unit/consentError.test.ts -> src/lib/api/consentError.test.ts
+tests/unit/openSession.test.ts -> src/lib/api/openSession.test.ts
+tests/unit/paths.test.ts -> src/lib/api/paths.test.ts
+tests/unit/wafCaptcha.test.ts -> src/lib/api/wafCaptcha.test.ts
+tests/unit/BannerManagement.test.ts -> src/lib/api/picsure/banners.test.ts
+tests/unit/DatasetName.test.ts -> src/lib/api/picsure/datasets.test.ts
+
+## auth/ — who the user is and what they may do
+# providerRegistry imports `./providers/${type}.ts`, so providers/ holds only provider modules: Vite
+# globs that whole folder into the build, tests included.
+src/lib/auth -> src/lib/auth/providers
+src/lib/models/AuthProvider.ts -> src/lib/auth/providers/AuthProvider.ts
+src/lib/AuthProviderRegistry.ts -> src/lib/auth/providerRegistry.ts
+src/lib/stores/User.ts -> src/lib/auth/User.ts
+src/lib/models/User.ts -> src/lib/auth/model/user.ts
+src/lib/models/Privilege.ts -> src/lib/auth/model/privilege.ts
+src/lib/models/Route.ts -> src/lib/auth/model/route.ts
+src/lib/models/Role.ts -> src/lib/auth/model/role.ts
+src/lib/models/Connection.ts -> src/lib/auth/model/connection.ts
+src/lib/routes.ts -> src/lib/auth/nav.ts
+src/lib/utilities/Jwt.ts -> src/lib/auth/token.ts
+src/lib/utilities/LoginRedirect.ts -> src/lib/auth/loginRedirect.ts
+src/lib/components/UserToken.svelte -> src/lib/auth/components/UserToken.svelte
+tests/unit/AuthProvider.test.ts -> src/lib/auth/AuthProvider.test.ts
+tests/unit/LoginProvider.test.ts -> src/lib/auth/LoginProvider.test.ts
+tests/unit/AuthorizedAccess.test.ts -> src/lib/auth/AuthorizedAccess.test.ts
+tests/unit/Consents.test.ts -> src/lib/auth/Consents.test.ts
+tests/unit/Logout.test.ts -> src/lib/auth/Logout.test.ts
+tests/unit/UserTokenValidity.test.ts -> src/lib/auth/UserTokenValidity.test.ts
+tests/unit/Jwt.test.ts -> src/lib/auth/token.test.ts
+tests/unit/LoginRedirect.test.ts -> src/lib/auth/loginRedirect.test.ts
+
+## config/ — runtime configuration
+src/lib/configuration.svelte.ts -> src/lib/config/config.svelte.ts
+src/lib/models/Configuration.ts -> src/lib/config/Configuration.ts
+src/lib/models/ConfigResolution.ts -> src/lib/config/resolve.ts
+src/lib/testConfig.ts -> src/lib/config/testOverride.ts
+src/lib/types.ts -> src/lib/config/types.ts
+src/lib/server/configCache.ts -> src/lib/config/server/cache.ts
+src/lib/server/configuration.ts -> src/lib/config/server/scope.ts
+tests/unit/Configuration.test.ts -> src/lib/config/Configuration.test.ts
+tests/unit/ConfigResolution.test.ts -> src/lib/config/resolve.test.ts
+tests/unit/configCache.test.ts -> src/lib/config/server/cache.test.ts
+
+## query/ — the cohort domain
+src/lib/models/Filter.svelte.ts -> src/lib/query/filter.svelte.ts
+src/lib/models/LogicTree.svelte.ts -> src/lib/query/logicTree.svelte.ts
+src/lib/models/GenomeFilter.ts -> src/lib/query/genomic.ts
+src/lib/models/query/Query.ts -> src/lib/query/query.ts
+src/lib/compat/QueryV2.ts -> src/lib/query/v2.ts
+src/lib/utilities/QueryBuilder.ts -> src/lib/query/build.ts
+src/lib/components/query/QueryConverters.ts -> src/lib/query/restore.ts
+src/lib/components/explorer/advanced/LogicTreeSummary.ts -> src/lib/query/logicTreeSummary.ts
+src/lib/stores/Filter.ts -> src/lib/query/filters.ts
+src/lib/stores/GeneFilter.ts -> src/lib/query/GeneFilter.ts
+src/lib/stores/SNPFilter.ts -> src/lib/query/SNPFilter.ts
+src/lib/services/counts/queryDescriptor.svelte.ts -> src/lib/query/descriptor.svelte.ts
+src/lib/services/counts/countFormat.ts -> src/lib/query/counts/format.ts
+src/lib/services/counts/providers.ts -> src/lib/query/counts/providers.ts
+src/lib/services/counts/queryCountService.ts -> src/lib/query/counts/service.ts
+src/lib/services/counts/snapshot.ts -> src/lib/query/counts/snapshot.ts
+src/lib/state/resultCounts.svelte.ts -> src/lib/query/counts/resultCounts.svelte.ts
+src/lib/utilities/StatBuilder.ts -> src/lib/query/counts/StatBuilder.ts
+src/lib/models/Stat.ts -> src/lib/query/counts/Stat.ts
+tests/unit/Filter.test.ts -> src/lib/query/filters.test.ts
+tests/unit/Tree.test.ts -> src/lib/query/logicTree.test.ts
+tests/unit/QueryV2.test.ts -> src/lib/query/v2.test.ts
+tests/unit/QueryBuilder.test.ts -> src/lib/query/build.test.ts
+tests/unit/QueryConverters.test.ts -> src/lib/query/restore.test.ts
+tests/unit/logicTreeSummary.test.ts -> src/lib/query/logicTreeSummary.test.ts
+tests/unit/queryDescriptor.svelte.test.ts -> src/lib/query/descriptor.svelte.test.ts
+tests/unit/countFormat.test.ts -> src/lib/query/counts/format.test.ts
+tests/unit/providers.test.ts -> src/lib/query/counts/providers.test.ts
+tests/unit/queryCountService.test.ts -> src/lib/query/counts/service.test.ts
+tests/unit/snapshot.test.ts -> src/lib/query/counts/snapshot.test.ts
+tests/unit/resultCounts.test.ts -> src/lib/query/counts/resultCounts.test.ts
+tests/unit/StatBuilder.test.ts -> src/lib/query/counts/StatBuilder.test.ts
+
+## explorer/ — search and explore
+src/lib/AccessState.ts -> src/lib/explorer/mode.ts
+src/lib/stores/Resources.ts -> src/lib/explorer/Resources.ts
+src/lib/stores/Search.ts -> src/lib/explorer/Search.ts
+src/lib/stores/NestedFacets.ts -> src/lib/explorer/NestedFacets.ts
+src/lib/stores/Dictionary.ts -> src/lib/explorer/Dictionary.ts
+src/lib/models/Search.ts -> src/lib/explorer/types.ts
+src/lib/stores/SidePanel.ts -> src/lib/explorer/panel.ts
+src/lib/stores/ExpandableRow.ts -> src/lib/explorer/ExpandableRow.ts
+src/lib/components/explorer/AddFilter.svelte -> src/lib/explorer/components/AddFilter.svelte
+src/lib/components/explorer/Explorer.svelte -> src/lib/explorer/components/Explorer.svelte
+src/lib/components/explorer/FilterWarning.svelte -> src/lib/explorer/components/FilterWarning.svelte
+src/lib/components/explorer/HierarchyComponent.svelte -> src/lib/explorer/components/HierarchyComponent.svelte
+src/lib/components/explorer/Panel.svelte -> src/lib/explorer/components/Panel.svelte
+src/lib/components/explorer/ResultInfoComponent.svelte -> src/lib/explorer/components/ResultInfoComponent.svelte
+src/lib/components/explorer/ViewAnyRecordOfFilter.svelte -> src/lib/explorer/components/ViewAnyRecordOfFilter.svelte
+src/lib/components/explorer/FacetCategory.svelte -> src/lib/explorer/components/facets/FacetCategory.svelte
+src/lib/components/explorer/FacetItem.svelte -> src/lib/explorer/components/facets/FacetItem.svelte
+src/lib/components/explorer/FacetPlaceholder.svelte -> src/lib/explorer/components/facets/FacetPlaceholder.svelte
+src/lib/components/explorer/FacetSideBar.svelte -> src/lib/explorer/components/facets/FacetSideBar.svelte
+src/lib/components/explorer/FacetSidebarPlaceholder.svelte -> src/lib/explorer/components/facets/FacetSidebarPlaceholder.svelte
+src/lib/components/explorer/cell -> src/lib/explorer/components/cell
+src/lib/components/explorer/results -> src/lib/explorer/components/results
+src/lib/components/tour/ExplorerTour.svelte -> src/lib/explorer/components/tour/ExplorerTour.svelte
+src/lib/models/Tour.ts -> src/lib/explorer/components/tour/types.ts
+src/lib/utilities/Tour.ts -> src/lib/explorer/components/tour/tour.ts
+src/lib/components/explorer/advanced -> src/lib/explorer/advanced
+src/lib/components/explorer/export -> src/lib/explorer/export
+src/lib/ExportStepperManager.svelte.ts -> src/lib/explorer/export/ExportStepperManager.svelte.ts
+src/lib/stores/Export.ts -> src/lib/explorer/export/Export.ts
+src/lib/models/Export.ts -> src/lib/explorer/export/types.ts
+src/lib/models/ExportRow.ts -> src/lib/explorer/export/ExportRow.ts
+src/lib/components/explorer/genome-filter -> src/lib/explorer/genomic
+src/lib/components/explorer/variant -> src/lib/explorer/variant
+src/lib/utilities/Variants.ts -> src/lib/explorer/variant/Variants.ts
+src/lib/models/Variant.ts -> src/lib/explorer/variant/Variant.ts
+src/lib/components/explorer/Visualizations.svelte -> src/lib/explorer/visualizations/Visualizations.svelte
+src/lib/utilities/Plotly.ts -> src/lib/explorer/visualizations/plotly.ts
+src/lib/utilities/VisualizationData.ts -> src/lib/explorer/visualizations/data.ts
+tests/unit/Dictionary.test.ts -> src/lib/explorer/Dictionary.test.ts
+tests/unit/Resources.test.ts -> src/lib/explorer/Resources.test.ts
+tests/unit/Search.test.ts -> src/lib/explorer/Search.test.ts
+tests/unit/Tour.test.ts -> src/lib/explorer/components/tour/tour.test.ts
+tests/unit/Plotly.test.ts -> src/lib/explorer/visualizations/plotly.test.ts
+tests/unit/VisualizationData.test.ts -> src/lib/explorer/visualizations/data.test.ts
+tests/component/AddFilter.test.ts -> src/lib/explorer/components/AddFilter.svelte.test.ts
+tests/component/ResultInfoComponent.test.ts -> src/lib/explorer/components/ResultInfoComponent.svelte.test.ts
+tests/component/FacetItem.test.ts -> src/lib/explorer/components/facets/FacetItem.svelte.test.ts
+tests/component/SearchResultActions.test.ts -> src/lib/explorer/components/cell/Actions.svelte.test.ts
+tests/component/AddedFilter.test.ts -> src/lib/explorer/components/results/AddedFilter.svelte.test.ts
+tests/component/Counts.test.ts -> src/lib/explorer/components/results/Counts.svelte.test.ts
+tests/component/TourConfigSelectors.test.ts -> src/lib/explorer/components/tour/TourConfigSelectors.svelte.test.ts
+tests/component/AdvancedItem.test.ts -> src/lib/explorer/advanced/AdvancedItem.svelte.test.ts
+tests/component/LogicTreeSummary.test.ts -> src/lib/explorer/advanced/LogicTreeSummary.svelte.test.ts
+tests/component/ExportSummary.test.ts -> src/lib/explorer/export/Summary.svelte.test.ts
+tests/component/TreeStep.test.ts -> src/lib/explorer/export/TreeStep.svelte.test.ts
+tests/component/Genes.test.ts -> src/lib/explorer/genomic/gene/Genes.svelte.test.ts
+
+## datasets/ — named datasets
+src/lib/models/Dataset.ts -> src/lib/datasets/dataset.ts
+src/lib/stores/Dataset.svelte.ts -> src/lib/datasets/datasets.svelte.ts
+src/lib/components/query/FilterCardPlaceholder.svelte -> src/lib/datasets/components/FilterCardPlaceholder.svelte
+src/lib/components/query/FiltersSummary.svelte -> src/lib/datasets/components/FiltersSummary.svelte
+src/lib/components/query/QuerySummary.svelte -> src/lib/datasets/components/QuerySummary.svelte
+src/lib/components/query/SelectedVariablesSummary.svelte -> src/lib/datasets/components/SelectedVariablesSummary.svelte
+src/lib/components/dataset/cell -> src/lib/datasets/components/cells
+tests/unit/Dataset.test.ts -> src/lib/datasets/dataset.test.ts
+tests/component/QuerySummary.test.ts -> src/lib/datasets/components/QuerySummary.svelte.test.ts
+tests/component/DatasetActions.test.ts -> src/lib/datasets/components/cells/Actions.svelte.test.ts
+
+## admin/ — administration
+src/lib/components/admin/configuration/ConnectionForm.svelte -> src/lib/admin/access/ConnectionForm.svelte
+src/lib/components/admin/configuration/PrivilegeForm.svelte -> src/lib/admin/access/PrivilegeForm.svelte
+src/lib/components/admin/configuration/RoleForm.svelte -> src/lib/admin/access/RoleForm.svelte
+src/lib/components/admin/configuration/RequiredFieldRow.svelte -> src/lib/admin/access/RequiredFieldRow.svelte
+src/lib/components/admin/configuration/RequiredFieldsList.svelte -> src/lib/admin/access/RequiredFieldsList.svelte
+src/lib/components/admin/configuration/cell -> src/lib/admin/access/cell
+src/lib/stores/Connections.ts -> src/lib/admin/access/Connections.ts
+src/lib/stores/Privileges.ts -> src/lib/admin/access/Privileges.ts
+src/lib/stores/Roles.ts -> src/lib/admin/access/Roles.ts
+src/lib/stores/Application.ts -> src/lib/admin/access/Application.ts
+src/lib/models/Applications.ts -> src/lib/admin/access/model/applications.ts
+src/lib/components/admin/user -> src/lib/admin/users
+src/lib/stores/Users.ts -> src/lib/admin/users/Users.ts
+src/lib/components/admin/api-key -> src/lib/admin/apiKeys
+src/lib/stores/ApiKeys.ts -> src/lib/admin/apiKeys/ApiKeys.ts
+src/lib/models/ApiKey.ts -> src/lib/admin/apiKeys/model.ts
+src/lib/components/admin/configuration/ConfigFieldRow.svelte -> src/lib/admin/settings/ConfigFieldRow.svelte
+src/lib/components/admin/configuration/ConfigKindTab.svelte -> src/lib/admin/settings/ConfigKindTab.svelte
+src/lib/stores/AdminConfiguration.ts -> src/lib/admin/settings/AdminConfiguration.ts
+src/lib/components/admin/configuration/TermsEditor.svelte -> src/lib/admin/terms/TermsEditor.svelte
+tests/unit/AdminStores.test.ts -> src/lib/admin/access/AdminStores.test.ts
+tests/unit/ApiKey.test.ts -> src/lib/admin/apiKeys/model.test.ts
+tests/unit/ApiKeys.test.ts -> src/lib/admin/apiKeys/ApiKeys.test.ts
+tests/component/AdminConfigForms.test.ts -> src/lib/admin/access/AdminConfigForms.svelte.test.ts
+tests/component/UserForm.test.ts -> src/lib/admin/users/UserForm.svelte.test.ts
+tests/component/ApiKeyTable.test.ts -> src/lib/admin/apiKeys/ApiKeyTable.svelte.test.ts
+tests/component/MintPlatformKeyModal.test.ts -> src/lib/admin/apiKeys/MintPlatformKeyModal.svelte.test.ts
+tests/component/ConfigFieldRow.test.ts -> src/lib/admin/settings/ConfigFieldRow.svelte.test.ts
+tests/component/ConfigKindTab.test.ts -> src/lib/admin/settings/ConfigKindTab.svelte.test.ts
+
+## banners/ — site banners (§6.3.1)
+src/lib/models/Banner.ts -> src/lib/banners/model/banner.ts
+src/lib/utilities/BannerHTML.ts -> src/lib/banners/model/html.ts
+src/lib/utilities/BannerPageTargets.ts -> src/lib/banners/model/pageTargets.ts
+src/lib/utilities/BannerSchedule.ts -> src/lib/banners/model/schedule.ts
+src/lib/utilities/BannerDismissal.ts -> src/lib/banners/model/dismissal.ts
+src/lib/services/BannerManagementList.ts -> src/lib/banners/model/list.ts
+src/lib/components/banner -> src/lib/banners/components
+src/lib/components/admin/configuration/BannerManagementView.svelte -> src/lib/banners/components/admin/BannerManagementView.svelte
+src/lib/components/admin/configuration/BannerEditor.svelte -> src/lib/banners/components/admin/BannerEditor.svelte
+src/lib/components/admin/configuration/BannerManagementRow.svelte -> src/lib/banners/components/admin/BannerRow.svelte
+src/lib/components/admin/configuration/BannerPageTargetFields.svelte -> src/lib/banners/components/admin/fields/PageTargetFields.svelte
+src/lib/components/admin/configuration/BannerScheduleFields.svelte -> src/lib/banners/components/admin/fields/ScheduleFields.svelte
+tests/unit/BannerHTML.test.ts -> src/lib/banners/model/html.test.ts
+tests/unit/BannerPageTargets.test.ts -> src/lib/banners/model/pageTargets.test.ts
+tests/unit/BannerSchedule.test.ts -> src/lib/banners/model/schedule.test.ts
+tests/unit/BannerManagementList.test.ts -> src/lib/banners/model/list.test.ts
+tests/component/SiteBanner.test.ts -> src/lib/banners/components/SiteBanner.svelte.test.ts
+tests/component/SiteBannerRegion.test.ts -> src/lib/banners/components/SiteBannerRegion.svelte.test.ts
+tests/component/BannerManagementView.test.ts -> src/lib/banners/components/admin/BannerManagementView.svelte.test.ts
+tests/component/BannerEditor.test.ts -> src/lib/banners/components/admin/BannerEditor.svelte.test.ts
+tests/component/BannerScheduleFields.test.ts -> src/lib/banners/components/admin/fields/ScheduleFields.svelte.test.ts
+
+## shell/ — the app frame used by layouts
+src/lib/components/Shell.svelte -> src/lib/shell/Shell.svelte
+src/lib/components/Navigation.svelte -> src/lib/shell/Navigation.svelte
+src/lib/components/Footer.svelte -> src/lib/shell/Footer.svelte
+src/lib/components/Logo.svelte -> src/lib/shell/Logo.svelte
+src/lib/components/Content.svelte -> src/lib/shell/Content.svelte
+src/lib/components/Terms.svelte -> src/lib/shell/Terms.svelte
+src/lib/components/TermsPreview.svelte -> src/lib/shell/TermsPreview.svelte
+src/lib/components/ExternalLinkWarning.svelte -> src/lib/shell/ExternalLinkWarning.svelte
+src/lib/components/tracking/GoogleTracking.svelte -> src/lib/shell/GoogleTracking.svelte
+tests/component/Navigation.test.ts -> src/lib/shell/Navigation.svelte.test.ts
+tests/component/ExternalLinkWarning.test.ts -> src/lib/shell/ExternalLinkWarning.svelte.test.ts
+tests/component/GoogleTracking.test.ts -> src/lib/shell/GoogleTracking.svelte.test.ts
+
+## ui/ — design-system primitives (no app imports; see eslint.config.js for the files still waiting on that)
+src/lib/components/buttons/AngleButton.svelte -> src/lib/ui/AngleButton.svelte
+src/lib/components/buttons/CardButton.svelte -> src/lib/ui/CardButton.svelte
+src/lib/components/buttons/CopyButton.svelte -> src/lib/ui/CopyButton.svelte
+src/lib/components/buttons/ShowMoreButton.svelte -> src/lib/ui/ShowMoreButton.svelte
+src/lib/components/CodeBlock.svelte -> src/lib/ui/CodeBlock.svelte
+src/lib/models/CodeBlock.ts -> src/lib/ui/CodeBlock.types.ts
+src/lib/components/ErrorAlert.svelte -> src/lib/ui/ErrorAlert.svelte
+src/lib/components/Loading.svelte -> src/lib/ui/Loading.svelte
+src/lib/components/OptionsSelectionList.svelte -> src/lib/ui/OptionsSelectionList.svelte
+src/lib/components/Searchbox.svelte -> src/lib/ui/Searchbox.svelte
+src/lib/components/TabItem.svelte -> src/lib/ui/TabItem.svelte
+src/lib/components/editor/Editor.svelte -> src/lib/ui/Editor.svelte
+src/lib/components/admin/configuration/FilterSearch.svelte -> src/lib/ui/FilterSearch.svelte
+src/lib/components/plots/PlotlyPlot.svelte -> src/lib/ui/PlotlyPlot.svelte
+src/lib/components/Modal.svelte -> src/lib/ui/dialog/Modal.svelte
+src/lib/components/Drawer.svelte -> src/lib/ui/dialog/Drawer.svelte
+src/lib/stores/Drawer.ts -> src/lib/ui/dialog/drawer.ts
+src/lib/components/UnsavedChangesModal.svelte -> src/lib/ui/dialog/UnsavedChangesModal.svelte
+src/lib/components/Popover.svelte -> src/lib/ui/popover/Popover.svelte
+src/lib/components/HelpInfoPopup.svelte -> src/lib/ui/popover/HelpInfoPopup.svelte
+src/lib/components/datatable -> src/lib/ui/datatable
+src/lib/components/tree -> src/lib/ui/tree
+src/lib/components/steppers/horizontal -> src/lib/ui/stepper
+src/lib/models/Stepper.ts -> src/lib/ui/stepper/types.ts
+src/lib/stores/Stepper.ts -> src/lib/ui/stepper/stepperState.ts
+src/lib/components/toc -> src/lib/ui/toc
+src/lib/toaster.ts -> src/lib/ui/toaster.ts
+src/lib/utilities/style.ts -> src/lib/ui/style.ts
+src/lib/utilities/UnsavedGuard.svelte.ts -> src/lib/ui/unsavedGuard.svelte.ts
+tests/component/AngleButton.test.ts -> src/lib/ui/AngleButton.svelte.test.ts
+tests/component/ShowMoreButton.test.ts -> src/lib/ui/ShowMoreButton.svelte.test.ts
+tests/component/CodeBlock.test.ts -> src/lib/ui/CodeBlock.svelte.test.ts
+tests/component/Editor.test.ts -> src/lib/ui/Editor.svelte.test.ts
+tests/component/Modal.test.ts -> src/lib/ui/dialog/Modal.svelte.test.ts
+tests/component/DatatableRow.test.ts -> src/lib/ui/datatable/Row.svelte.test.ts
+tests/component/DatatableKeyboardNav.test.ts -> src/lib/ui/datatable/RemoteTable.svelte.test.ts
+tests/component/RadioTreeNode.test.ts -> src/lib/ui/tree/RadioTreeNode.svelte.test.ts
+tests/component/OnThisPage.test.ts -> src/lib/ui/toc/OnThisPage.svelte.test.ts
+tests/unit/activeEntry.test.ts -> src/lib/ui/toc/activeEntry.test.ts
+
+## telemetry/, utils/, server/, assets/
+src/lib/logger.ts -> src/lib/telemetry/logger.ts
+src/lib/models/Log.ts -> src/lib/telemetry/types.ts
+src/lib/utilities/Strings.ts -> src/lib/utils/strings.ts
+src/lib/utilities/Objects.ts -> src/lib/utils/objects.ts
+src/lib/utilities/LRU.ts -> src/lib/utils/lru.ts
+src/lib/utilities/backoff.ts -> src/lib/utils/backoff.ts
+src/lib/utilities/UUID.ts -> src/lib/utils/uuid.ts
+src/lib/utilities/HTML.ts -> src/lib/utils/html.ts
+src/lib/utilities/Hierarchy.ts -> src/lib/utils/hierarchy.ts
+src/lib/utilities/Hierarchy.test.ts -> src/lib/utils/hierarchy.test.ts
+src/lib/utilities/Forms.ts -> src/lib/utils/debounce.ts
+src/lib/utilities/Subscribers.ts -> src/lib/utils/subscribers.ts
+tests/unit/logger.test.ts -> src/lib/telemetry/logger.test.ts
+tests/unit/Strings.test.ts -> src/lib/utils/strings.test.ts
+tests/unit/Objects.test.ts -> src/lib/utils/objects.test.ts
+tests/unit/LRU.test.ts -> src/lib/utils/lru.test.ts
+tests/unit/backoff.test.ts -> src/lib/utils/backoff.test.ts
+tests/unit/HTML.test.ts -> src/lib/utils/html.test.ts
+tests/unit/Csp.test.ts -> src/lib/server/csp.test.ts
+tests/unit/CspConfig.test.ts -> src/lib/server/cspConfig.test.ts
+tests/unit/TourConfiguration.test.ts -> src/lib/assets/TourConfiguration.test.ts
+
+## Route-only code, next to its route
+src/lib/components/ApiDocumentation.svelte -> src/routes/(picsure)/(public)/api/ApiDocumentation.svelte
+src/lib/components/PublicAccessKey.svelte -> src/routes/(picsure)/(public)/api/PublicAccessKey.svelte
+src/lib/components/Turnstile.svelte -> src/routes/(picsure)/(public)/api/Turnstile.svelte
+src/lib/swagger-ui.d.ts -> src/routes/(picsure)/(public)/api/swagger-ui.d.ts
+tests/component/PublicAccessKey.test.ts -> src/routes/(picsure)/(public)/api/PublicAccessKey.svelte.test.ts
+tests/component/Turnstile.test.ts -> src/routes/(picsure)/(public)/api/Turnstile.svelte.test.ts
+src/lib/components/landing/Stat.svelte -> src/routes/(picsure)/Stat.svelte
+src/lib/components/landing/Stats.svelte -> src/routes/(picsure)/Stats.svelte
+src/lib/stores/Stats.ts -> src/routes/(picsure)/landingStats.ts
+tests/unit/StatSsr.test.ts -> src/routes/(picsure)/Stat.test.ts
+src/lib/components/dashboard/DashboardDrawer.svelte -> src/routes/(picsure)/(public)/dashboard/DashboardDrawer.svelte
+src/lib/components/dashboard/DashboardLink.svelte -> src/routes/(picsure)/(public)/dashboard/DashboardLink.svelte
+src/lib/stores/Dashboard.ts -> src/routes/(picsure)/(public)/dashboard/dashboard.ts
+tests/unit/Dashboard.test.ts -> src/routes/(picsure)/(public)/dashboard/dashboard.test.ts
+src/lib/components/Dots.svelte -> src/routes/(authentication)/login/Dots.svelte
+src/lib/components/buttons/LoginButton.svelte -> src/routes/(authentication)/login/LoginButton.svelte
+
+## Route and hook tests: `+layout.test.ts`/`+server.test.ts` beside the file they test
+src/routes/(picsure)/(authorized)/layout.test.ts -> src/routes/(picsure)/(authorized)/+layout.test.ts
+src/routes/(picsure)/(authorized)/dataset/layout.test.ts -> src/routes/(picsure)/(authorized)/dataset/+layout.test.ts
+src/routes/(picsure)/(authorized)/(admin)/admin/layout.test.ts -> src/routes/(picsure)/(authorized)/(admin)/admin/+layout.test.ts
+src/routes/(picsure)/(authorized)/(admin)/admin/configuration/(top-admin)/layout.test.ts -> src/routes/(picsure)/(authorized)/(admin)/admin/configuration/(top-admin)/+layout.test.ts
+src/routes/api/v1/log/server.test.ts -> src/routes/api/v1/log/+server.test.ts
+tests/unit/config-refresh.test.ts -> src/routes/api/v1/config/refresh/+server.test.ts
+tests/unit/hooksServer.test.ts -> src/hooks.server.test.ts
+
+## Script tests, next to the scripts
+tests/unit/moveScript.test.ts -> scripts/refactor/move.test.ts
+tests/unit/renameIdsScript.test.ts -> scripts/refactor/rename-ids.test.ts
+tests/unit/renameTestidsScript.test.ts -> scripts/refactor/rename-testids.test.ts
+tests/unit/checkMockSpecifiers.test.ts -> tests/support/check-mock-specifiers.test.ts
+
+## tests/support/ — shared mocks, component-test helpers and fixture components
+tests/end-to-end/mock-data.ts -> tests/support/mock-data.ts
+tests/component/helpers.ts -> tests/support/helpers.ts
+tests/component/fixtures -> tests/support/fixtures
+tests/minimal-reporter.ts -> tests/support/minimal-reporter.ts
+
+## tests/end-to-end/ — regrouped by feature (setup.ts, utils.ts, custom-context.ts, mock-server/ stay)
+tests/end-to-end/admin/api-keys/test.ts -> tests/end-to-end/admin/api-keys.test.ts
+tests/end-to-end/admin/banner/test.ts -> tests/end-to-end/admin/banners.test.ts
+tests/end-to-end/admin/configuration/config-fields/test.ts -> tests/end-to-end/admin/config-fields.test.ts
+tests/end-to-end/admin/configuration/connections/test.ts -> tests/end-to-end/admin/connections.test.ts
+tests/end-to-end/admin/configuration/privileges/test.ts -> tests/end-to-end/admin/privileges.test.ts
+tests/end-to-end/admin/configuration/roles/test.ts -> tests/end-to-end/admin/roles.test.ts
+tests/end-to-end/admin/load-errors/test.ts -> tests/end-to-end/admin/load-errors.test.ts
+tests/end-to-end/admin/users/test.ts -> tests/end-to-end/admin/users.test.ts
+tests/end-to-end/api/test.ts -> tests/end-to-end/api/api.test.ts
+tests/end-to-end/waf/test.ts -> tests/end-to-end/api/waf.test.ts
+tests/end-to-end/login/test.ts -> tests/end-to-end/auth/login.test.ts
+tests/end-to-end/access-unavailable/test.ts -> tests/end-to-end/auth/access-unavailable.test.ts
+tests/end-to-end/branding/test.ts -> tests/end-to-end/config/branding.test.ts
+tests/end-to-end/branding/sitemap-test.ts -> tests/end-to-end/config/sitemap.test.ts
+tests/end-to-end/explorer/test.ts -> tests/end-to-end/explorer/explorer.test.ts
+tests/end-to-end/explorer/export/test.ts -> tests/end-to-end/explorer/export.test.ts
+tests/end-to-end/explorer/facets/test.ts -> tests/end-to-end/explorer/facets.test.ts
+tests/end-to-end/explorer/pheno-filter/test.ts -> tests/end-to-end/explorer/pheno-filter.test.ts
+tests/end-to-end/explorer/race/test.ts -> tests/end-to-end/explorer/race.test.ts
+tests/end-to-end/explorer/tour/test.ts -> tests/end-to-end/explorer/tour.test.ts
+tests/end-to-end/explorer/variant/test.ts -> tests/end-to-end/explorer/variant.test.ts
+tests/end-to-end/explorer/visualizations/test.ts -> tests/end-to-end/explorer/visualizations.test.ts
+tests/end-to-end/explorer/genomic-filter/test.ts -> tests/end-to-end/explorer/genomic/genomic-filter.test.ts
+tests/end-to-end/explorer/genomic-filter/gene-test.ts -> tests/end-to-end/explorer/genomic/gene.test.ts
+tests/end-to-end/explorer/genomic-filter/snp-test.ts -> tests/end-to-end/explorer/genomic/snp.test.ts
+tests/end-to-end/results-panel/test.ts -> tests/end-to-end/explorer/results-panel.test.ts
+tests/end-to-end/advanced-filtering/test.ts -> tests/end-to-end/explorer/advanced/advanced-filtering.test.ts
+tests/end-to-end/advanced-filtering/tool-suite-test.ts -> tests/end-to-end/explorer/advanced/tool-suite.test.ts
+tests/end-to-end/advanced-filtering/advanced-filtering-page.ts -> tests/end-to-end/explorer/advanced/advanced-filtering-page.ts
+tests/end-to-end/discover/test.ts -> tests/end-to-end/explorer/discover/discover.test.ts
+tests/end-to-end/discover/distributions/test.ts -> tests/end-to-end/explorer/discover/distributions.test.ts
+tests/end-to-end/discover/open-session/test.ts -> tests/end-to-end/explorer/discover/open-session.test.ts
+tests/end-to-end/dataset/test.ts -> tests/end-to-end/datasets/datasets.test.ts
+tests/end-to-end/navigation/test.ts -> tests/end-to-end/shell/navigation.test.ts
+tests/end-to-end/navigation/routing.test.ts -> tests/end-to-end/shell/routing.test.ts
+tests/end-to-end/navigation/external-link-warning.test.ts -> tests/end-to-end/shell/external-link-warning.test.ts
+tests/end-to-end/navigation/filter-warning.test.ts -> tests/end-to-end/explorer/filter-warning.test.ts
+tests/end-to-end/terms/test.ts -> tests/end-to-end/shell/terms.test.ts
+tests/end-to-end/optional-selection-list/test.ts -> tests/end-to-end/ui/optional-selection-list.test.ts
+tests/end-to-end/landing/test.ts -> tests/end-to-end/routes/landing.test.ts
+tests/end-to-end/dashboard/test.ts -> tests/end-to-end/routes/dashboard.test.ts
+tests/end-to-end/help/test.ts -> tests/end-to-end/routes/help.test.ts
+
+## Files open PRs add under the old folders, so replaying this map places them too (no-ops here)
+# #806 (ALS-13096-connect-assistant): the /api page's MCP panel, colocated with the page (§6.3).
+src/lib/components/McpConnect.svelte -> src/routes/(picsure)/(public)/api/McpConnect.svelte
+src/lib/utilities/Mcp.ts -> src/routes/(picsure)/(public)/api/mcp.ts
+tests/component/McpConnect.test.ts -> src/routes/(picsure)/(public)/api/McpConnect.svelte.test.ts
+tests/unit/Mcp.test.ts -> src/routes/(picsure)/(public)/api/mcp.test.ts
+tests/unit/LongTermToken.test.ts -> src/lib/auth/LongTermToken.test.ts

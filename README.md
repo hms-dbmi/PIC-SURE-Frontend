@@ -61,7 +61,7 @@ For full configuration documentation, see the [PIC-SURE Frontend Configuration G
 
 Some PIC-SURE text is configurable. We provide a configuration file that is used for custom text elements [here](https://github.com/hms-dbmi/PIC-SURE-Frontend/blob/dev/src/lib/assets/configuration.json).
 
-Feature flags, settings, and branding are also fetched from the PICSURE API (`GET:/picsure/configuration`) and cached server-side on startup (`src/hooks.server.ts`'s `init`, `src/lib/server/configCache.ts`). Each request's SSR render and the client's hydration both resolve config from that same server-side cache: `src/routes/+layout.server.ts` reads it and passes it to `src/routes/+layout.ts`, which applies it to `configuration.svelte.ts`'s reactive `config` object via `applyConfig()` before anything renders. This mirrors the "bootstrap" pattern feature-flag services like LaunchDarkly and GrowthBook use to avoid a flash of default values on first load: the server evaluates once, and the client hydrates from that exact same payload instead of re-fetching. The cache is also available directly at `GET:/api/config`, and can be forced to refresh via `GET:/api/config/refresh`.
+Feature flags, settings, and branding are also fetched from the PICSURE API (`GET:/picsure/configuration`) and cached server-side on startup (`src/hooks.server.ts`'s `init`, `src/lib/config/server/cache.ts`). Each request's SSR render and the client's hydration both resolve config from that same server-side cache: `src/routes/+layout.server.ts` reads it and passes it to `src/routes/+layout.ts`, which applies it to `configuration.svelte.ts`'s reactive `config` object via `applyConfig()` before anything renders. This mirrors the "bootstrap" pattern feature-flag services like LaunchDarkly and GrowthBook use to avoid a flash of default values on first load: the server evaluates once, and the client hydrates from that exact same payload instead of re-fetching. The cache is also available directly at `GET:/api/config`, and can be forced to refresh via `GET:/api/config/refresh`.
 
 ### Config sources & precedence
 
@@ -80,7 +80,7 @@ This system is under active development and subject to change.
 ### Testing configuration
 
 - **e2e (Playwright):** use `mockApiConfig(page, { features, settings, branding })` from `tests/end-to-end/custom-context.ts` to set per-test feature/setting/branding rows. It works by seeding a cookie that `src/routes/+layout.server.ts` reads and applies to that `BrowserContext`'s requests only — real config, real backend calls, and other concurrent tests are unaffected. The override is only honored when the app is built/served with `--mode test` (how Playwright's `webServer` always runs it); it's inert in dev and production builds.
-- **Component tests (Vitest):** call `applyConfig(rows)` (from `#lib/configuration.svelte.ts`) with raw `ConfigObject[]` rows to exercise the real API-row mapping/precedence pipeline, or mutate `config.features`/`config.settings`/`config.branding` fields directly for values not resolvable from API rows (e.g. `config.branding.explorePage.resultInfo`, sourced from `configuration.json`). `tests/support/setup.ts` calls `resetConfig()` after every test automatically, so tests don't need to clean up after themselves.
+- **Component tests (Vitest):** call `applyConfig(rows)` (from `#lib/config/config.svelte.ts`) with raw `ConfigObject[]` rows to exercise the real API-row mapping/precedence pipeline, or mutate `config.features`/`config.settings`/`config.branding` fields directly for values not resolvable from API rows (e.g. `config.branding.explorePage.resultInfo`, sourced from `configuration.json`). `tests/support/setup.ts` calls `resetConfig()` after every test automatically, so tests don't need to clean up after themselves.
 
 ## Project Structure
 
@@ -115,13 +115,26 @@ Auth is enforced by layout files (`+layout.ts`) at each group level, using Svelt
 
 ```
 src/lib/
-├── components/    # Feature-scoped UI (explorer, admin, query, plots, etc.)
-├── services/      # API communication
-├── stores/        # Svelte stores (user state, query state, etc.)
-├── models/        # TypeScript types
-├── auth/          # Authentication utilities
-└── utilities/     # Helper functions
+├── api/           # Backend transport, paths and resource modules
+├── auth/          # Session, tokens, login providers, nav
+├── config/        # Runtime configuration (features, settings, branding)
+├── query/         # Cohort domain: filters, logic tree, query building, counts
+├── explorer/      # Search and explore, advanced filtering, export, genomic, variant, visualizations
+├── datasets/      # Named datasets
+├── admin/         # Administration pages' state and components
+├── banners/       # Site banners and their admin
+├── shell/         # App frame used by the layouts
+├── ui/            # Design-system primitives (import only ui/, utils/ and packages)
+├── utils/         # Generic helpers (import only utils/ and packages)
+├── telemetry/     # Logging
+├── server/        # Cross-cutting server-only code
+└── assets/
 ```
+
+Each feature folder holds its model, state, components and tests. Tests sit next to the code they
+cover (`foo.test.ts` for the Vitest `node` project, `Foo.svelte.test.ts` for `client`). Code used by a
+single route sits in that route's folder. `tests/` holds the Playwright suite (`end-to-end/`) and shared
+test support (`support/`: setup, mock data, fixtures).
 
 ## Development
 
@@ -140,7 +153,7 @@ src/lib/
 | `pnpm run test`                  | Run all tests (`test:vitest` + `test:integration`)                                |
 | `pnpm run test:vitest`           | Run unit + component tests (Vitest)                                               |
 | `pnpm run test:unit`             | Run the Vitest `node` project (`*.test.ts`)                                       |
-| `pnpm run test:component`        | Run the Vitest `client` project (`*.svelte.test.ts`, `tests/component`)           |
+| `pnpm run test:component`        | Run the Vitest `client` project (`*.svelte.test.ts`)                              |
 | `pnpm run test:integration`      | Run integration/e2e tests (Playwright, all browsers)                              |
 | `pnpm run test:integration:slim` | Playwright, Chromium only, minimal reporter, `--retries=1` — faster local/CI runs |
 | `pnpm run playwright`            | Open Playwright's UI mode against the built app                                   |

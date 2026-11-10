@@ -6,17 +6,18 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
 
-  import { config, PROJECT_HOSTNAME } from '#lib/configuration.svelte.ts';
-  import { getApiConnectionResource } from '#lib/stores/Resources.ts';
-  import { tokenStatus } from '#lib/stores/User.ts';
-  import { log, createLog } from '#lib/logger.ts';
+  import { config } from '#lib/config/config.svelte.ts';
+  import { PROJECT_HOSTNAME } from '#lib/config/deployment.ts';
+  import { getApiConnectionResource } from '#lib/explorer/Resources.ts';
+  import { tokenStatus } from '#lib/auth/User.ts';
+  import { log, createLog } from '#lib/telemetry/logger.ts';
 
-  import ApiDocumentation from '#lib/components/ApiDocumentation.svelte';
-  import UserToken from '#lib/components/UserToken.svelte';
-  import PublicAccessKey from '#lib/components/PublicAccessKey.svelte';
-  import CodeBlock from '#lib/components/CodeBlock.svelte';
-  import TocLayout from '#lib/components/toc/TocLayout.svelte';
-  import TocSection from '#lib/components/toc/TocSection.svelte';
+  import ApiDocumentation from './ApiDocumentation.svelte';
+  import UserToken from '#lib/auth/components/UserToken.svelte';
+  import PublicAccessKey from './PublicAccessKey.svelte';
+  import CodeBlock from '#lib/ui/CodeBlock.svelte';
+  import TocLayout from '#lib/ui/toc/TocLayout.svelte';
+  import TocSection from '#lib/ui/toc/TocSection.svelte';
 
   let mounted = $state(false);
   let loggedIn = $derived(mounted && $tokenStatus);
@@ -230,7 +231,7 @@
           </div>
         {/if}
         <div id="capabilities" class="flex-1 min-w-64">
-          <h3 class="text-lg font-bold mb-3">What you can do</h3>
+          <h3 class="font-bold mb-3">What you can do</h3>
           <ul class="space-y-3">
             {#each capabilities as capability}
               {@const locked = !loggedIn && capability.requiresLogin}

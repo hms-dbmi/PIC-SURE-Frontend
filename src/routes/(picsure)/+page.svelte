@@ -1,12 +1,12 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
-  import { appPath } from '#lib/paths.ts';
-  import { config } from '#lib/configuration.svelte.ts';
+  import { appPath } from '#lib/api/paths.ts';
+  import { config } from '#lib/config/config.svelte.ts';
   import { goto } from '$app/navigation';
-  import Searchbox from '#lib/components/Searchbox.svelte';
-  import Stats from '#lib/components/landing/Stats.svelte';
-  import { isUserLoggedIn } from '#lib/stores/User.ts';
-  import { log, createLog } from '#lib/logger.ts';
+  import Searchbox from '#lib/ui/Searchbox.svelte';
+  import Stats from './Stats.svelte';
+  import { isUserLoggedIn } from '#lib/auth/User.ts';
+  import { log, createLog } from '#lib/telemetry/logger.ts';
 
   let searchTerm = $state('');
 
@@ -18,6 +18,8 @@
       goto(resolve(`explorer?search=${encodeURIComponent(searchTerm)}`));
     }
   }
+
+  const actionWidths: Record<number, string> = { 2: 'w-1/2', 3: 'w-1/3', 4: 'w-1/4' };
 
   const actionsToDisplay = $derived(
     config.branding.landing.actions.filter((action) => {
@@ -43,7 +45,7 @@
   </section>
   <section id="landing-actions" class="flex flex-row justify-evenly items-center mb-auto w-2/3">
     {#each actionsToDisplay as { title, description, icon, url, btnText }, i}
-      <div class="flex flex-col items-center w-1/{actionsToDisplay?.length || 3}">
+      <div class="flex flex-col items-center {actionWidths[actionsToDisplay.length] ?? ''}">
         <div class="text-3xl my-1">{title}</div>
         <i class="text-[5rem] my-3 text-secondary-600-400 {icon}"></i>
         <div class="subtitle my-3">{description}</div>

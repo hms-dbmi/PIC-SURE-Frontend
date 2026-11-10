@@ -1,7 +1,7 @@
 import type { LayoutLoad } from './$types';
 import { browser } from '$app/env';
 import { redirect } from '@sveltejs/kit';
-import { isTopAdmin } from '#lib/stores/User.ts';
+import { isTopAdmin } from '#lib/auth/User.ts';
 import { get } from 'svelte/store';
 
 // Role, privilege, and connection management is top admin only: PSAMA rejects their writes

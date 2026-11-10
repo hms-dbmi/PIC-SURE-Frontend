@@ -1,0 +1,114 @@
+// @vitest-environment happy-dom
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/svelte';
+
+vi.mock('#lib/telemetry/logger.ts', () => ({
+  log: vi.fn(),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  createLog: vi.fn((eventType: any, action: any, metadata: any) => ({
+    event_type: eventType,
+    action,
+    metadata,
+  })),
+}));
+
+vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
+
+vi.mock('#lib/query/GeneFilter.ts', () => ({ populateFromGeneFilter: vi.fn() }));
+
+vi.mock('#lib/query/SNPFilter.ts', () => ({ populateFromSNPFilter: vi.fn() }));
+
+vi.mock('#lib/query/filters.ts', async () => {
+  const { writable } = await import('svelte/store');
+  return {
+    removeFilter: vi.fn(),
+    activeFilter: writable(undefined),
+    activeSearch: writable(undefined),
+  };
+});
+
+vi.mock('#lib/explorer/Dictionary.ts', () => ({ getConceptDetails: vi.fn() }));
+
+vi.mock('#lib/explorer/ExpandableRow.ts', async () => {
+  const { writable } = await import('svelte/store');
+  return { activeRow: writable('') };
+});
+
+vi.mock('#lib/explorer/panel.ts', async () => {
+  const { writable } = await import('svelte/store');
+  return { panelOpen: writable(true) };
+});
+
+import AddedFilter from '#lib/explorer/components/results/AddedFilter.svelte';
+import { log } from '#lib/telemetry/logger.ts';
+import type { Filter } from '#lib/query/filter.svelte.ts';
+import type { SearchResult } from '#lib/explorer/types.ts';
+
+const searchResult = {
+  conceptPath: '\\test\\concept\\',
+  dataset: 'dataset-1',
+  name: 'variable-accession',
+  display: 'Variable Display',
+  description: 'Variable description',
+  type: 'Categorical',
+  allowFiltering: true,
+} as SearchResult;
+
+const categoricalFilter = {
+  parent: undefined,
+  uuid: 'filter-uuid',
+  id: searchResult.conceptPath,
+  filterType: 'Categorical',
+  displayType: 'restrict',
+  searchResult,
+  categoryValues: ['value-1'],
+  variableName: 'Variable Display',
+  description: searchResult.description,
+  allowFiltering: true,
+  dataset: 'dataset-1',
+} as Filter;
+
+const genomicFilter = {
+  parent: undefined,
+  uuid: 'genomic-uuid',
+  id: 'genomic-id',
+  filterType: 'genomic',
+  variableName: 'Gene With Variant',
+  categoryValues: [],
+} as unknown as Filter;
+
+describe('AddedFilter', () => {
+  beforeEach(() => vi.mocked(log).mockClear());
+
+  // Regression guard for ALS-12904: the edit control for phenotypic filters is
+  // Modal's trigger button, which is a different code path from the genomic
+  // button below and previously logged nothing.
+  it('logs filter.edit_click when a phenotypic filter is edited', async () => {
+    render(AddedFilter, { filter: categoricalFilter });
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Edit Filter' }));
+
+    expect(log).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event_type: 'ACTION',
+        action: 'filter.edit_click',
+        metadata: { variable: 'Variable Display' },
+      }),
+    );
+  });
+
+  it('logs filter.edit_click when a genomic filter is edited', async () => {
+    render(AddedFilter, { filter: genomicFilter });
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Edit Filter' }));
+
+    expect(log).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event_type: 'ACTION',
+        action: 'filter.edit_click',
+        metadata: { variable: 'Gene With Variant' },
+      }),
+    );
+  });
+});

@@ -1,5 +1,5 @@
 import type { HandleClientError } from '@sveltejs/kit/hooks';
-import { log, createLog } from '#lib/logger.ts';
+import { log, createLog } from '#lib/telemetry/logger.ts';
 
 // SvelteKit requires handleError never to throw.
 export const handleError: HandleClientError = ({ kind, error, event }) => {

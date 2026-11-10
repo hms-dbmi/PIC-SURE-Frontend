@@ -1,6 +1,6 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
-  import { config } from '#lib/configuration.svelte.ts';
+  import { config } from '#lib/config/config.svelte.ts';
   import { quintOut } from 'svelte/easing';
   import { fly } from 'svelte/transition';
 </script>

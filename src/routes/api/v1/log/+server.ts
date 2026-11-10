@@ -1,6 +1,6 @@
 import { LOGGING_API_KEY, LOGGING_TARGET } from '$app/env/private';
 import type { RequestHandler } from './$types';
-import type { LogEvent } from '#lib/models/Log.ts';
+import type { LogEvent } from '#lib/telemetry/types.ts';
 import { clientAddress } from '#lib/server/clientAddress.ts';
 
 const ACCEPTED = 202;

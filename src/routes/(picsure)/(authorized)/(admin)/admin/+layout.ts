@@ -1,8 +1,8 @@
 import type { LayoutLoad } from './$types';
 import { browser } from '$app/env';
 import { redirect } from '@sveltejs/kit';
-import { user, isTopAdmin } from '#lib/stores/User.ts';
-import { PicsurePrivileges } from '#lib/models/Privilege.ts';
+import { user, isTopAdmin } from '#lib/auth/User.ts';
+import { PicsurePrivileges } from '#lib/auth/model/privilege.ts';
 import { get } from 'svelte/store';
 
 export const prerender = false;

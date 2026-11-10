@@ -1,12 +1,12 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
   import { page } from '$app/state';
-  import { config } from '#lib/configuration.svelte.ts';
-  import { isUserLoggedIn } from '#lib/stores/User.ts';
-  import Shell from '#lib/components/Shell.svelte';
-  import Navigation from '#lib/components/Navigation.svelte';
-  import SiteBannerRegion from '#lib/components/banner/SiteBannerRegion.svelte';
-  import Footer from '#lib/components/Footer.svelte';
+  import { config } from '#lib/config/config.svelte.ts';
+  import { isUserLoggedIn } from '#lib/auth/User.ts';
+  import Shell from '#lib/shell/Shell.svelte';
+  import Navigation from '#lib/shell/Navigation.svelte';
+  import SiteBannerRegion from '#lib/banners/components/SiteBannerRegion.svelte';
+  import Footer from '#lib/shell/Footer.svelte';
 
   // Only the root layout wraps this page, so it brings the app shell itself. Shell renders
   // nothing for a logged-out visitor on a closed deployment, who still needs the error.

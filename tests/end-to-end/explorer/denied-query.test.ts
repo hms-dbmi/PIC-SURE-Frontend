@@ -8,7 +8,7 @@ import {
   facetsResponse,
   searchResultPath,
   searchResults,
-} from '../mock-data';
+} from '../../support/mock-data';
 
 // null when nothing is stored, which is all a forbidden logout leaves until the stores are reset
 function storedFilterIds(page: Page) {

@@ -1,4 +1,4 @@
-import { getAllProviderData } from '#lib/AuthProviderRegistry.ts';
+import { getAllProviderData } from '#lib/auth/providerRegistry.ts';
 
 export const load = async () => {
   const providers = getAllProviderData();

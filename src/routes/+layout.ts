@@ -1,9 +1,9 @@
 import type { LayoutLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
 import { browser } from '$app/env';
-import { config, applyConfig } from '#lib/configuration.svelte.ts';
-import { user } from '#lib/stores/User.ts';
-import { loginRedirectPath } from '#lib/utilities/LoginRedirect.ts';
+import { config, applyConfig } from '#lib/config/config.svelte.ts';
+import { user } from '#lib/auth/User.ts';
+import { loginRedirectPath } from '#lib/auth/loginRedirect.ts';
 
 export const load: LayoutLoad = ({ url, data }) => {
   // Runs on both SSR and the client's hydration-time re-run of this load, off the

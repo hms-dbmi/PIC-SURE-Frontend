@@ -1,0 +1,70 @@
+<script lang="ts">
+  import { exports } from '#lib/explorer/export/Export.ts';
+  import ResultsPanel from '#lib/explorer/components/results/ResultsPanel.svelte';
+  import { onDestroy, onMount } from 'svelte';
+  import { type Unsubscriber } from 'svelte/store';
+  import { filters } from '#lib/query/filters.ts';
+  import { panelOpen } from '#lib/explorer/panel.ts';
+  import { log, createLog } from '#lib/telemetry/logger.ts';
+
+  let unsubFilterStore: Unsubscriber;
+  let unsubExportStore: Unsubscriber;
+
+  function openPanel() {
+    panelOpen.set(true);
+  }
+
+  onMount(() => {
+    unsubFilterStore = filters.subscribe((filterList) => {
+      if (filterList?.length !== 0) {
+        openPanel();
+      }
+    });
+    unsubExportStore = exports.subscribe((exportList) => {
+      if (exportList?.length !== 0) {
+        openPanel();
+      }
+    });
+  });
+
+  onDestroy(() => {
+    unsubFilterStore && unsubFilterStore();
+    unsubExportStore && unsubExportStore();
+  });
+</script>
+
+<div id="results-side-panel" class="flex {$panelOpen ? 'open' : 'closed'}-panel">
+  <div id="results-side-panel-bar">
+    <button
+      type="button"
+      id="results-panel-toggle"
+      title="{$panelOpen ? 'Hide' : 'Show'} Results"
+      class="btn-icon btn-icon-sm preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
+      aria-label="Toggle Results Panel"
+      onclick={() => {
+        panelOpen.update((value) => {
+          log(createLog('ACTION', 'results_panel.toggle', { open: !value }));
+          return !value;
+        });
+      }}
+    >
+      <i class="fa-solid {$panelOpen ? 'fa-arrow-right' : 'fa-arrow-left'}"></i>
+    </button>
+  </div>
+  {#if $panelOpen}
+    <ResultsPanel />
+  {/if}
+</div>
+
+<style>
+  #results-side-panel-bar {
+    display: flex;
+    flex-direction: column;
+    justify-content: top;
+    width: 42px;
+    padding: 0 0.25rem;
+  }
+  #results-side-panel-bar #results-panel-toggle {
+    margin-top: 2.3rem;
+  }
+</style>

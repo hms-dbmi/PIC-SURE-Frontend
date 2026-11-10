@@ -74,7 +74,7 @@ const mockMethods = new Set(['mock', 'doMock', 'unmock', 'doUnmock', 'importActu
 const impliedSuffixes = ['.ts', '.js', '/index.ts', '/index.js'];
 const suffixesLongestFirst = [...impliedSuffixes].sort((a, b) => b.length - a.length);
 // The script's own test builds a fixture tree out of repo-shaped paths.
-const mentionSkip = new Set(['pnpm-lock.yaml', 'tests/unit/moveScript.test.ts']);
+const mentionSkip = new Set(['pnpm-lock.yaml', 'scripts/refactor/move.test.ts']);
 
 type Edit = { start: number; end: number; text: string; line: number; from: string };
 type Plan = {

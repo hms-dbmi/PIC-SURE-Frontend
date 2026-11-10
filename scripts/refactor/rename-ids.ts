@@ -20,7 +20,7 @@ export const ids: Kind = {
   noun: 'id',
   script: 'scripts/refactor/rename-ids.ts',
   scanFile: /\.(?:[cm]?[jt]s|svelte|json|css)$/,
-  skip: new Set([...testids.skip, 'tests/unit/renameIdsScript.test.ts']),
+  skip: new Set([...testids.skip, 'scripts/refactor/rename-ids.test.ts']),
   attribute:
     /(?<=\s)(?:id|for|aria-(?:labelledby|describedby|controls|owns|activedescendant|errormessage)|popovertarget)=/g,
   // Object keys named `id` are mostly data (a uuid, a workflow key), so only markup sets ids.

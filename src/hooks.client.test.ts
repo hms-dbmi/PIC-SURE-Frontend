@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { NavigationEvent } from '@sveltejs/kit';
 
 const logger = vi.hoisted(() => ({ log: vi.fn(), createLog: vi.fn() }));
-vi.mock('#lib/logger.ts', () => logger);
+vi.mock('#lib/telemetry/logger.ts', () => logger);
 
 import { handleError } from './hooks.client';
 

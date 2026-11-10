@@ -1,8 +1,8 @@
-import { getConfig } from '#lib/server/configCache.ts';
-import { Psama, joinUrl } from '#lib/paths.ts';
-import { CLIENT_TYPE_HEADERS } from '#lib/clientType.ts';
-import { PicsurePrivileges } from '#lib/models/Privilege.ts';
-import type { User } from '#lib/models/User.ts';
+import { getConfig } from '#lib/config/server/cache.ts';
+import { Psama, joinUrl } from '#lib/api/paths.ts';
+import { CLIENT_TYPE_HEADERS } from '#lib/api/clientType.ts';
+import { PicsurePrivileges } from '#lib/auth/model/privilege.ts';
+import type { User } from '#lib/auth/model/user.ts';
 import type { RequestHandler } from './$types';
 
 const ORIGIN = import.meta.env?.VITE_ORIGIN;
@@ -41,7 +41,7 @@ export const GET: RequestHandler = async ({ request }) => {
   try {
     // force = true so this actually fetches instead of serving whatever's cached.
     // getConfigKind only overwrites a kind's cache entry on a successful fetch (see
-    // its comment in configCache.ts) - so a kind that fails here just keeps serving
+    // its comment in config/server/cache.ts) - so a kind that fails here just keeps serving
     // its last known-good value instead of losing it.
     const config = await getConfig(true);
     return Response.json(config);

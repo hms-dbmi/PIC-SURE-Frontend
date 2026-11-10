@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { config } from '#lib/configuration.svelte.ts';
-  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
-  import Content from '#lib/components/Content.svelte';
-  import RoleForm from '#lib/components/admin/configuration/RoleForm.svelte';
+  import { config } from '#lib/config/config.svelte.ts';
+  import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
+  import Content from '#lib/shell/Content.svelte';
+  import RoleForm from '#lib/admin/access/RoleForm.svelte';
 
-  import PrivilegesStore from '#lib/stores/Privileges.ts';
-  import Loading from '#lib/components/Loading.svelte';
+  import PrivilegesStore from '#lib/admin/access/Privileges.ts';
+  import Loading from '#lib/ui/Loading.svelte';
 
   const { privilegeList, loadPrivileges } = PrivilegesStore;
 </script>
