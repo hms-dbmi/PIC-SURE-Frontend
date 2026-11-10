@@ -1,19 +1,19 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { flushSync } from 'svelte';
 
-const deniedListeners = vi.hoisted(() => [] as Array<() => (() => void) | void>);
+const discardListeners = vi.hoisted(() => [] as Array<() => (() => void) | void>);
 const mockSession = vi.hoisted(() => ({
   user: {} as { consents?: Record<string, string[]> },
   ensureConsentsLoaded: vi.fn(),
-  onAccessDenied: (listener: () => (() => void) | void) => {
-    deniedListeners.push(listener);
+  onQueryDiscard: (listener: () => (() => void) | void) => {
+    discardListeners.push(listener);
     return () => {};
   },
 }));
 
-/** A forbidden logout as the session runs it. Returns what runs once the logout has navigated. */
-function denyAccess() {
-  const lifts = deniedListeners.map((listener) => listener());
+/** Discards the query as a logout does. Returns what runs once the logout has navigated. */
+function discardQuery() {
+  const lifts = discardListeners.map((listener) => listener());
   return () => lifts.forEach((lift) => lift?.());
 }
 
@@ -464,7 +464,7 @@ describe('the filters of a forbidden logout', () => {
   afterEach(() => lift());
 
   it('are removed from storage at once and kept until the logout navigates', () => {
-    lift = denyAccess();
+    lift = discardQuery();
 
     expect(sessionStorage.getItem('filterTree')).toBeNull();
     expect(sessionStorage.getItem('genomicFilters')).toBeNull();
@@ -473,7 +473,7 @@ describe('the filters of a forbidden logout', () => {
   });
 
   it('are not stored again when they change before the logout navigates', () => {
-    lift = denyAccess();
+    lift = discardQuery();
 
     filterState.add(createCategoricalFilter(mockSearchResult('\\study\\other\\'), ['No']));
 
@@ -481,7 +481,7 @@ describe('the filters of a forbidden logout', () => {
   });
 
   it('are reset once the logout navigates, without logging a user clear', () => {
-    denyAccess()();
+    discardQuery()();
 
     expect(filterState.tree.root.children).toHaveLength(0);
     expect(filterState.genomic).toHaveLength(0);

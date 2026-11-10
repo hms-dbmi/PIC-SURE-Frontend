@@ -1,6 +1,7 @@
 import { createDatasetName } from '#lib/api/picsure/datasets.ts';
 import { getQueryStatus } from '#lib/api/picsure/query.ts';
 import type { QueryRequest } from '#lib/api/picsure/query.types.ts';
+import { session } from '#lib/auth/session.svelte.ts';
 import { config } from '#lib/config/config.svelte.ts';
 import { explorerPanel } from '#lib/explorer/panel.svelte.ts';
 import {
@@ -222,3 +223,4 @@ class ExportState {
 }
 
 export const exportState = new ExportState();
+session.onQueryDiscard(() => () => exportState.clear());

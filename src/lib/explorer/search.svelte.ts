@@ -6,6 +6,7 @@ import type {
   SearchResult,
 } from '#lib/api/picsure/dictionary.types.ts';
 import { isAbortError } from '#lib/api/errors.ts';
+import { session } from '#lib/auth/session.svelte.ts';
 import { searchDictionary, searchFacets } from '#lib/explorer/Dictionary.ts';
 import { log, createLog, getPageContext } from '#lib/telemetry/logger.ts';
 import { getDefaultRows } from '#lib/ui/datatable/rowsPerPage.ts';
@@ -178,8 +179,13 @@ export class ExplorerSearch {
   };
 
   reset = () => {
-    assertNoSsrWrite('explorerSearch');
     log(createLog('SEARCH', 'search.reset', { pageContext: getPageContext() }));
+    this.discard();
+  };
+
+  /** Resets the search for a logout that discards the query, which logs no user reset. */
+  discard = () => {
+    assertNoSsrWrite('explorerSearch');
     this.#resetting = true;
     this.setTerm('');
     this.setFacets([]);
@@ -405,3 +411,4 @@ export class ExplorerSearch {
 }
 
 export const explorerSearch = new ExplorerSearch();
+session.onQueryDiscard(() => () => explorerSearch.discard());

@@ -1,9 +1,8 @@
 <script lang="ts">
   import Button from '#lib/ui/Button.svelte';
-  import { resolve } from '$app/paths';
   import { onMount } from 'svelte';
 
-  import { goto, invalidateAll } from '$app/navigation';
+  import { invalidateAll } from '$app/navigation';
   import { browser } from '$app/env';
   import { config } from '#lib/config/config.svelte.ts';
   import * as tos from '#lib/api/psama/tos.ts';
@@ -51,11 +50,11 @@
   function reject() {
     if (browser) {
       log(createLog('AUTH', 'tos.reject'));
-      session.logout().then(() => {
+      // The logout goes to the login page itself. A second navigation would cut that one short and
+      // reset the discarded query while this page is still mounted.
+      session.logout(undefined, false, { discardQuery: true }).then(() => {
         if (config.branding.termsOfService.rejectionUrl) {
           window.location.href = config.branding.termsOfService.rejectionUrl;
-        } else {
-          goto(resolve('login'));
         }
       });
     } else {

@@ -256,9 +256,9 @@ export class FilterState {
   }
 
   /**
-   * The filters asked for data the user was refused, and a logout is under way: removes them from
-   * storage now, so neither a reload nor the next login brings them back, and stores no change
-   * until `reset()`. The filters stay until then, or the page being left would rerun its count.
+   * A logout that discards the query is under way: removes the filters from storage now, so neither
+   * a reload nor the next login brings them back, and stores no change until `reset()`. The filters
+   * stay until then, or the page being left would rerun its count.
    */
   discardStored() {
     assertNoSsrWrite('filters');
@@ -312,7 +312,7 @@ export class FilterState {
 }
 
 export const filterState = new FilterState();
-session.onAccessDenied(() => {
+session.onQueryDiscard(() => {
   filterState.discardStored();
   return () => filterState.reset();
 });

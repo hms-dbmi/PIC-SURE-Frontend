@@ -17,6 +17,7 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
   createLog: vi.fn(),
   getPageContext: vi.fn(),
 }));
+vi.mock('#lib/auth/session.svelte.ts', () => ({ session: { onQueryDiscard: vi.fn() } }));
 
 const facetCategory: DictionaryFacetResult = {
   name: 'test-category',

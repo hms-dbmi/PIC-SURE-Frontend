@@ -2,15 +2,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 
-const deniedListeners = vi.hoisted(() => [] as Array<() => (() => void) | void>);
+const discardListeners = vi.hoisted(() => [] as Array<() => (() => void) | void>);
 vi.mock('$app/env', () => ({ browser: true }));
 vi.mock('#lib/auth/session.svelte.ts', () => ({
   session: {
     user: {},
     ensureConsentsLoaded: vi.fn(),
-    onAccessDenied: (listener: () => (() => void) | void) => {
-      deniedListeners.push(listener);
-      return () => deniedListeners.splice(deniedListeners.indexOf(listener), 1);
+    onQueryDiscard: (listener: () => (() => void) | void) => {
+      discardListeners.push(listener);
+      return () => discardListeners.splice(discardListeners.indexOf(listener), 1);
     },
   },
 }));
@@ -27,9 +27,9 @@ import { filterState } from '#lib/query/filters.svelte.ts';
 import { createCategoricalFilter } from '#lib/query/filter.svelte.ts';
 import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
 
-/** A forbidden logout as the session runs it. Returns what runs once the logout has navigated. */
-function denyAccess() {
-  const lifts = deniedListeners.map((listener) => listener());
+/** Discards the query as a logout does. Returns what runs once the logout has navigated. */
+function discardQuery() {
+  const lifts = discardListeners.map((listener) => listener());
   return () => lifts.forEach((lift) => lift?.());
 }
 
@@ -66,7 +66,7 @@ describe('advanced filtering after a forbidden logout', () => {
     await fireEvent.click(screen.getAllByTitle('Remove Filter')[0]);
     expect(component.hasUnsavedChanges()).toBe(true);
 
-    const lift = denyAccess();
+    const lift = discardQuery();
 
     expect(component.hasUnsavedChanges()).toBe(false);
     lift();
@@ -74,7 +74,7 @@ describe('advanced filtering after a forbidden logout', () => {
 
   it('does not save the denied filters again once the logout has finished', () => {
     const { component } = render(AdvancedFiltering);
-    denyAccess()();
+    discardQuery()();
 
     component.applyChanges();
 

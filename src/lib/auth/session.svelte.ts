@@ -108,9 +108,9 @@ export class Session {
   // navigate to /login a second time, so later calls share the logout already running.
   #pendingLogout: Promise<void> | undefined;
   #endListeners: (() => void)[] = [];
-  #deniedListeners: (() => (() => void) | void)[] = [];
-  // From a forbidden request until its logout has navigated: what the listeners returned.
-  #denial: (() => void)[] | undefined;
+  #discardListeners: (() => (() => void) | void)[] = [];
+  // From a logout that discards the query until it has navigated: what the listeners returned.
+  #discard: (() => void)[] | undefined;
   #navigations = 0;
 
   constructor() {
@@ -150,32 +150,33 @@ export class Session {
   }
 
   /**
-   * Runs `listener` when a request for anything but open-access data is forbidden and logs the user
-   * out, before that logout navigates. What they asked for mustn't outlive the session: restored
-   * at the next login, the same request would be refused and log them out again. A listener added
-   * before that logout has navigated runs at once. The function the listener returns runs once the
-   * logout has navigated, or failed to. Returns the unsubscribe.
+   * Runs `listener` when a logout discards the user's query (filters, search, export selections),
+   * before that logout navigates. A logout the user chose discards it, and so does one after a
+   * forbidden request for anything but open-access data: restored at the next login, the query
+   * would be refused again. A session timeout keeps it. A listener added before that logout has
+   * navigated runs at once. The function the listener returns runs once the logout has navigated,
+   * or failed to, so the page being left can't rerun its requests without a token. Returns the
+   * unsubscribe.
    */
-  onAccessDenied(listener: () => (() => void) | void): () => void {
-    this.#deniedListeners.push(listener);
+  onQueryDiscard(listener: () => (() => void) | void): () => void {
+    this.#discardListeners.push(listener);
     // Untracked: an effect that subscribes must not re-run when the listener reads state.
-    if (this.#denial) untrack(() => this.#notifyDenied(listener));
+    if (this.#discard) untrack(() => this.#notifyDiscard(listener));
     return () => {
-      this.#deniedListeners = this.#deniedListeners.filter((l) => l !== listener);
+      this.#discardListeners = this.#discardListeners.filter((l) => l !== listener);
     };
   }
 
-  /** A request was forbidden. See `onAccessDenied`. */
-  denyAccess() {
+  #discardQuery() {
     assertNoSsrWrite('session');
-    if (this.#denial) return;
-    this.#denial = [];
-    for (const listener of this.#deniedListeners) this.#notifyDenied(listener);
+    if (this.#discard) return;
+    this.#discard = [];
+    for (const listener of this.#discardListeners) this.#notifyDiscard(listener);
   }
 
-  #notifyDenied(listener: () => (() => void) | void) {
+  #notifyDiscard(listener: () => (() => void) | void) {
     const lift = listener();
-    if (lift) this.#denial?.push(lift);
+    if (lift) this.#discard?.push(lift);
   }
 
   connect(shell: SessionShell) {
@@ -421,7 +422,15 @@ export class Session {
     return this.login(token);
   }
 
-  logout(authProvider?: AuthProvider, redirect = false): Promise<void> {
+  /**
+   * `discardQuery`: the user chose this logout, or a request was forbidden. See `onQueryDiscard`.
+   */
+  logout(
+    authProvider?: AuthProvider,
+    redirect = false,
+    { discardQuery = false } = {},
+  ): Promise<void> {
+    if (discardQuery) this.#discardQuery();
     this.#pendingLogout ??= untrack(() => this.#endSession(authProvider, redirect)).finally(() => {
       this.#pendingLogout = undefined;
     });
@@ -469,15 +478,15 @@ export class Session {
     try {
       await this.#shell.navigate(path);
     } finally {
-      // A later logout superseded this navigation, so the denied page is still mounted: leave
-      // lifting the denial to that one.
-      if (navigation === this.#navigations) this.#liftDenial();
+      // A later logout superseded this navigation, so the page being left is still mounted:
+      // leave lifting the discard to that one.
+      if (navigation === this.#navigations) this.#liftDiscard();
     }
   }
 
-  #liftDenial() {
-    const lifts = this.#denial;
-    this.#denial = undefined;
+  #liftDiscard() {
+    const lifts = this.#discard;
+    this.#discard = undefined;
     lifts?.forEach((lift) => lift());
   }
 }
@@ -498,8 +507,7 @@ registerSessionHooks({
   onTermsRefusal: (token) => session.holdForTerms(token),
   onForbidden: (openAccess) => {
     if (browser) sessionStorage.removeItem(LOGOUT_REASON_KEY);
-    if (!openAccess) session.denyAccess();
-    session.logout(undefined, false);
+    session.logout(undefined, false, { discardQuery: !openAccess });
   },
   onTokenRefreshed: (token) => {
     // The API client doesn't wait for this, so a failure here would be an unhandled rejection.

@@ -32,9 +32,9 @@
     ),
   );
 
-  // A forbidden logout discards the filters. Dropping the draft too keeps the unsaved-changes guard
-  // from cancelling that logout and keeps Apply Changes from saving the denied filters again.
-  $effect(() => session.onAccessDenied(() => editor.discard()));
+  // A logout that discards the filters drops the draft too, so the unsaved-changes guard can't
+  // cancel that logout and Apply Changes can't save the discarded filters again.
+  $effect(() => session.onQueryDiscard(() => editor.discard()));
 
   export function applyChanges() {
     filterState.setTree(editor.apply());

@@ -30,7 +30,7 @@ vi.mock('#lib/auth/session.svelte.ts', () => ({
   session: {
     user: {},
     onEnd: (listener: () => void) => mockState.endListeners.push(listener),
-    onAccessDenied: vi.fn(),
+    onQueryDiscard: vi.fn(),
   },
 }));
 vi.mock('#lib/explorer/Dictionary.ts', () => ({ getConceptDetails: vi.fn() }));

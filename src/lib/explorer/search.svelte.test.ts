@@ -6,7 +6,23 @@ const mockState = vi.hoisted(() => ({
   searchDictionarySpy: vi.fn(),
   searchFacetsSpy: vi.fn(),
   logSpy: vi.fn(),
+  discardListeners: [] as Array<() => (() => void) | void>,
 }));
+
+vi.mock('#lib/auth/session.svelte.ts', () => ({
+  session: {
+    onQueryDiscard: (listener: () => (() => void) | void) => {
+      mockState.discardListeners.push(listener);
+      return () => {};
+    },
+  },
+}));
+
+/** Discards the query as a logout does. Returns what runs once the logout has navigated. */
+function discardQuery() {
+  const lifts = mockState.discardListeners.map((listener) => listener());
+  return () => lifts.forEach((lift) => lift?.());
+}
 
 vi.mock('#lib/explorer/Dictionary.ts', () => ({
   searchDictionary: mockState.searchDictionarySpy,
@@ -33,7 +49,7 @@ import type {
   SearchResult,
   DictionaryFacetResult,
 } from '#lib/api/picsure/dictionary.types.ts';
-import { ExplorerSearch } from '#lib/explorer/search.svelte.ts';
+import { ExplorerSearch, explorerSearch } from '#lib/explorer/search.svelte.ts';
 
 type LoadCallback = (state: State) => Promise<SearchResult[] | undefined>;
 
@@ -760,5 +776,33 @@ describe('nextSettled', () => {
     release();
 
     await expect(settled).resolves.toBe('cancelled');
+  });
+});
+
+describe('the search after a logout that discards the query', () => {
+  beforeEach(() => {
+    explorerSearch.setTerm('blood pressure');
+    explorerSearch.setFacets([facet('study', 'dataset_id')]);
+    explorerSearch.toggleNestedFacet('dataset_id:study');
+    mockState.logSpy.mockClear();
+  });
+
+  afterEach(() => explorerSearch.reset());
+
+  it('is kept until the logout navigates', () => {
+    discardQuery();
+
+    expect(explorerSearch.term).toBe('blood pressure');
+    expect(explorerSearch.selectedFacets).toHaveLength(1);
+    expect(explorerSearch.expandedNestedFacets).toEqual(['dataset_id:study']);
+  });
+
+  it('is cleared once the logout navigates, without logging a user reset', () => {
+    discardQuery()();
+
+    expect(explorerSearch.term).toBe('');
+    expect(explorerSearch.selectedFacets).toEqual([]);
+    expect(explorerSearch.expandedNestedFacets).toEqual([]);
+    expect(mockState.logSpy).not.toHaveBeenCalled();
   });
 });

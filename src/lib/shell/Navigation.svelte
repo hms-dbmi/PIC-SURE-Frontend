@@ -52,7 +52,7 @@
     const instance =
       provider &&
       (provider.name === loadedProvider?.name ? loadedProvider : await createInstance(provider));
-    session.logout(instance, false);
+    session.logout(instance, false, { discardQuery: true });
   }
 </script>
 

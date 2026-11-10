@@ -7,9 +7,18 @@ const mocks = vi.hoisted(() => ({
   countStatus: 'loaded',
   filters: [] as unknown[],
   settings: { maxDataPointsForExport: 0 },
+  discardListeners: [] as Array<() => (() => void) | void>,
 }));
 
 vi.mock('$app/env', () => ({ browser: true }));
+vi.mock('#lib/auth/session.svelte.ts', () => ({
+  session: {
+    onQueryDiscard: (listener: () => (() => void) | void) => {
+      mocks.discardListeners.push(listener);
+      return () => {};
+    },
+  },
+}));
 vi.mock('#lib/api/picsure/query.ts', () => ({ getQueryStatus: mocks.getQueryStatus }));
 vi.mock('#lib/api/picsure/datasets.ts', () => ({ createDatasetName: mocks.createDatasetName }));
 // No waiting between attempts; the attempt count and the retry rule are the real ones.
@@ -117,6 +126,30 @@ describe('the variables to export', () => {
     exportState.add(variable('\\a\\'));
 
     expect(explorerPanel.open).toBe(true);
+  });
+});
+
+describe('the variables to export after a logout that discards the query', () => {
+  /** Discards the query as a logout does. Returns what runs once the logout has navigated. */
+  function discardQuery() {
+    const lifts = mocks.discardListeners.map((listener) => listener());
+    return () => lifts.forEach((lift) => lift?.());
+  }
+
+  it('are kept until the logout navigates', () => {
+    exportState.add(variable('\\a\\'));
+
+    discardQuery();
+
+    expect(exportState.variables).toHaveLength(1);
+  });
+
+  it('are cleared once the logout navigates', () => {
+    exportState.add(variable('\\a\\'));
+
+    discardQuery()();
+
+    expect(exportState.variables).toEqual([]);
   });
 });
 
