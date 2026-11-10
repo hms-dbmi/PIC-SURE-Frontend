@@ -10,7 +10,11 @@ const { goto, invalidateAll, session } = vi.hoisted(() => ({
 }));
 vi.mock('$app/navigation', () => ({ goto, invalidateAll }));
 vi.mock('$app/paths', () => ({ resolve: (path: string) => `/base/${path}` }));
-vi.mock('$app/state', () => ({ page: { url: new URL('https://picsure.test/explorer?q=1') } }));
+const navigating = vi.hoisted(() => ({ complete: null as Promise<void> | null }));
+vi.mock('$app/state', () => ({
+  navigating,
+  page: { url: new URL('https://picsure.test/explorer?q=1') },
+}));
 vi.mock('#lib/auth/session.svelte.ts', () => ({ session }));
 
 import { handleError, init } from './hooks.client';
@@ -76,12 +80,21 @@ describe('client init', () => {
     expect(shell.currentUrl()).toMatchObject({ pathname: '/explorer', search: '?q=1' });
   });
 
-  it('lets the session run the guards of the page on screen again', async () => {
+  it('lets the session run the guards again, settling once a navigation that replaced them has', async () => {
     await init();
     const shell: SessionShell = session.connect.mock.calls[0][0];
+    let completeNavigation = () => {};
+    navigating.complete = new Promise<void>((resolve) => (completeNavigation = resolve));
+    let settled = false;
 
-    await shell.rerunGuards();
-
+    const rerun = shell.rerunGuards().then(() => (settled = true));
+    await Promise.resolve();
+    await Promise.resolve();
     expect(invalidateAll).toHaveBeenCalledOnce();
+    expect(settled).toBe(false);
+
+    completeNavigation();
+    await rerun;
+    expect(settled).toBe(true);
   });
 });

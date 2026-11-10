@@ -34,7 +34,7 @@ export interface SessionShell {
   navigate(path: string): Promise<void>;
   /**
    * Runs the loads of the page on screen again, so its guards see who is signed in now. Settles
-   * once they have, and once any redirect they throw has navigated.
+   * once the page has: after any redirect they throw, or a navigation that replaced them.
    */
   rerunGuards(): Promise<void>;
   /** The page on screen, so a user whose session timed out can come back to it. */
@@ -147,11 +147,14 @@ export class Session {
       }
       this.#token = stored;
       if (stored) this.bootstrap();
-      // After the bootstrap has started, so the guards that check privileges wait for it.
       if (userChanged) {
-        this.#liftDiscardAfter(() => this.#shell.rerunGuards()).catch((error: unknown) => {
+        this.#track(() => this.#shell.rerunGuards()).catch((error: unknown) => {
           console.error('Error running the guards again: ' + error);
         });
+      } else if (!this.#pendingLogout && !this.#navigating) {
+        // Still the same user: a sign-out this tab never saw (it slept while the other tab logged
+        // out and back in) leaves nothing to follow before lifting that logout's discard.
+        this.#liftDiscard();
       }
     });
     onQueryDiscardAnnounced(() => this.#followQueryDiscard());
@@ -461,8 +464,8 @@ export class Session {
   ): Promise<void> {
     if (discardQuery) {
       this.#discardQuery();
-      // Before #endSession removes the token, which the other tabs follow.
-      announceQueryDiscard();
+      // The other tabs hear of it just before #endSession removes the token, or now if it's gone.
+      if (!untrack(() => this.#token)) announceQueryDiscard();
     }
     this.#pendingLogout ??= untrack(() => this.#endSession(authProvider, redirect)).finally(() => {
       this.#pendingLogout = undefined;
@@ -478,6 +481,10 @@ export class Session {
       // Log only: the logout always finishes below, so handling this failure too would
       // navigate to /login twice.
       await psamaUser.logout().catch(logError);
+      // Right before the token removal the other tabs follow: a logout cut short while PSAMA
+      // answers (the tab closed) leaves them as they were, and they drop an Advanced Filtering
+      // draft before their guards redirect them, which its unsaved-changes guard would block.
+      if (this.#discard) announceQueryDiscard();
       this.removeToken();
     }
 
@@ -504,10 +511,11 @@ export class Session {
     this.user = {};
     log(createLog('AUTH', 'logout.success'));
     const path = redirect ? loginRedirectPath(this.#shell.currentUrl()) : '/login';
-    void this.#liftDiscardAfter(() => this.#shell.navigate(path));
+    void this.#track(() => this.#shell.navigate(path));
   }
 
-  async #liftDiscardAfter(navigate: () => Promise<void>) {
+  /** Starts a logout navigation or guard run, and lifts the discard once the latest has settled. */
+  async #track(navigate: () => Promise<void>) {
     const navigation = ++this.#navigations;
     this.#navigating = true;
     try {

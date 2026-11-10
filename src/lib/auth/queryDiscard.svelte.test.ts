@@ -47,8 +47,8 @@ function respondFirstWith(status: number, body = '') {
   );
 }
 
-/** Holds the first request open and returns what answers it with a 403. Later requests get `{}`. */
-function forbidOnceInFlight(): () => void {
+/** Holds the first request open and returns what answers it. Later requests get `{}`. */
+function holdFirstRequest(): (response: Response) => void {
   let respond: (response: Response) => void = () => {};
   vi.stubGlobal(
     'fetch',
@@ -57,7 +57,7 @@ function forbidOnceInFlight(): () => void {
       .mockImplementationOnce(() => new Promise<Response>((resolve) => (respond = resolve)))
       .mockResolvedValue(new Response('{}')),
   );
-  return () => respond(new Response('', { status: 403 }));
+  return (response) => respond(response);
 }
 
 beforeEach(() => {
@@ -211,12 +211,12 @@ describe('a request the backend forbids', () => {
   });
 
   it('discards the query when the 403 answers a token the session has since dropped', async () => {
-    const answer = forbidOnceInFlight();
+    const answer = holdFirstRequest();
 
     const refused = request('picsure/query/sync');
     await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
     session.removeToken();
-    answer();
+    answer(new Response('', { status: 403 }));
     await expect(refused).rejects.toMatchObject({ code: 'forbidden' });
 
     expect(events).toEqual(['discarded']);
@@ -377,6 +377,16 @@ describe('a logout in another tab', () => {
     expect(events).toEqual(['discarded', 'lifted']);
   });
 
+  it('lifts the discard at once when the token it then hears of is still the same user’s', () => {
+    // the other tab logged out and back in while this one slept, so it sees no sign-out
+    localStorage.setItem('token', 'token-after-login-again');
+    announceDiscard();
+    window.dispatchEvent(new StorageEvent('storage', { key: 'token' }));
+
+    expect(reruns).toHaveLength(0);
+    expect(events).toEqual(['discarded', 'lifted']);
+  });
+
   it('keeps the query when the other tab’s session timed out', async () => {
     removeToken();
     reruns[0].resolve();
@@ -412,14 +422,32 @@ describe('a logout in this tab', () => {
     );
   });
 
-  it('tells the other tabs to discard the query before it removes the token', async () => {
+  it('tells the other tabs to discard the query right before it removes the token', async () => {
+    const answer = holdFirstRequest();
     const writes = recordStorageWrites();
 
-    await session.logout(undefined, false, { discardQuery: true });
+    const loggedOut = session.logout(undefined, false, { discardQuery: true });
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+    // a tab closed while PSAMA answers its logout has told the others nothing
+    expect(writes).toEqual([]);
 
-    expect(writes).toContain('set discard-query');
-    expect(writes.indexOf('set discard-query')).toBeLessThan(writes.indexOf('remove token'));
-    expect(localStorage.getItem('discard-query')).toBeNull();
+    answer(new Response('{}'));
+    await loggedOut;
+
+    expect(writes.slice(0, 3)).toEqual([
+      'set discard-query',
+      'remove discard-query',
+      'remove token',
+    ]);
+  });
+
+  it('tells the other tabs at once when there is no token left to remove', () => {
+    session.removeToken();
+    const writes = recordStorageWrites();
+
+    void session.logout(undefined, false, { discardQuery: true });
+
+    expect(writes).toEqual(['set discard-query', 'remove discard-query']);
   });
 
   it('tells the other tabs nothing when the session times out', async () => {
