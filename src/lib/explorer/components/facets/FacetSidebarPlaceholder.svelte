@@ -2,32 +2,29 @@
   import FacetPlaceholder from './FacetPlaceholder.svelte';
   import type { PreviousCategoriesForPlaceholder } from '#lib/explorer/types.ts';
 
-  let {
-    fadeEffect = false,
-    numCategories = 2,
-    previousCategories = [] as PreviousCategoriesForPlaceholder[],
-  } = $props();
+  interface Props {
+    fadeEffect?: boolean;
+    numCategories?: number;
+    previousCategories?: PreviousCategoriesForPlaceholder[];
+  }
 
-  const smartMode = $derived(previousCategories?.length > 0);
-  const numberOfCategories = $derived(smartMode ? previousCategories?.length || 1 : numCategories);
+  let { fadeEffect = false, numCategories = 2, previousCategories = [] }: Props = $props();
+
+  const smartMode = $derived(previousCategories.length > 0);
   const fadeLastCategory = $derived(smartMode ? false : fadeEffect);
-  const numFacets = $derived(1 + numberOfCategories);
+  const numFacets = $derived(1 + numCategories);
 </script>
 
 <div class="flex flex-col gap-4">
   {#if smartMode}
-    {#each previousCategories as category, i}
-      <FacetPlaceholder
-        numFacets={category?.numFacets || 5}
-        fadeEffect={fadeLastCategory && i === previousCategories.length - 1}
-      />
+    {#each previousCategories as category}
+      <FacetPlaceholder numFacets={category?.numFacets || 5} />
     {/each}
   {:else}
-    <!-- eslint-disable-next-line @typescript-eslint/no-unused-vars -->
-    {#each Array(numberOfCategories) as _unused, i}
+    {#each { length: numCategories }, i}
       <FacetPlaceholder
         numFacets={numFacets - i > 1 ? numFacets - i : 2}
-        fadeEffect={fadeLastCategory && i === numberOfCategories - 1}
+        fadeEffect={fadeLastCategory && i === numCategories - 1}
       />
     {/each}
   {/if}

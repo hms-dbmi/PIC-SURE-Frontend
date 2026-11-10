@@ -1,4 +1,6 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
+  import type { ButtonSize, ButtonVariant } from '#lib/ui/button.ts';
   import { onMount } from 'svelte';
 
   import { createInstance } from '#lib/auth/providerRegistry.ts';
@@ -12,6 +14,8 @@
     helpText: string;
     buttonText?: string;
     redirectTo?: string;
+    variant?: ButtonVariant;
+    size?: ButtonSize;
     class?: string;
   }
 
@@ -20,6 +24,8 @@
     helpText,
     buttonText = 'Log In',
     redirectTo = '/',
+    variant = 'filled',
+    size = 'md',
     class: className = '',
   }: Props = $props();
 
@@ -48,10 +54,11 @@
 </script>
 
 {#if provider}
-  <button
-    type="button"
+  <Button
     data-testid={testId}
-    class={className ?? 'btn preset-filled-primary-500 m-1'}
+    {variant}
+    {size}
+    class={className}
     onclick={(e: Event) => {
       e.stopImmediatePropagation();
       login(redirectTo, provider!.type);
@@ -61,22 +68,21 @@
       <img src={imageSrc} alt={provider!.imageAlt} class="mr-2 h-8" />
     {/if}
     <span>{buttonText}</span>
-  </button>
+  </Button>
 
   {#if helpText && !provider?.alt}
     <!-- eslint-disable-next-line svelte/no-at-html-tags -->
     <div class="help-text">{@html help}</div>
   {/if}
 {:else}
-  <button
-    type="button"
+  <Button
+    class="m-1 w-full"
     disabled
-    class="btn preset-filled-primary-500 m-1 w-full"
     title="No provider selected"
     aria-label="No provider selected. Please select a provider from the dropdown menu above."
   >
     <span>Login</span>
-  </button>
+  </Button>
 {/if}
 
 <style>

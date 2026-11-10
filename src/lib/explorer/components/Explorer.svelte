@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { resolve } from '$app/paths';
   import { appPath } from '#lib/api/paths.ts';
   import { onMount, onDestroy, tick } from 'svelte';
@@ -107,23 +108,22 @@
       </div>
       <div class="flex-none">
         {#if allowGenomicFiltering}
-          <a
+          <Button
+            variant="tonal"
             data-testid="explorer-genomic-filter-open"
-            class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
             href={resolve('explorer/genome-filter')}
             onclick={() => log(createLog('NAVIGATION', 'explorer.genomic_filter_click'))}
-            >Genomic Filtering</a
+            >Genomic Filtering</Button
           >
         {/if}
-        <button
-          type="button"
-          class="btn preset-tonal-error border border-error-500 hover:preset-filled-error-500"
+        <Button
+          variant="tonal-error"
           aria-label="You are on the reset button"
           disabled={!searchInput && $selectedFacets.length === 0}
           onclick={reset}
         >
           Reset
-        </button>
+        </Button>
       </div>
     </div>
     {#if $error}

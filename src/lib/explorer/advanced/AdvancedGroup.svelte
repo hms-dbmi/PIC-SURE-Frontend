@@ -1,4 +1,6 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
+  import OperatorBadge from '#lib/ui/OperatorBadge.svelte';
   import { css } from '#lib/ui/style.ts';
   import { useSortable } from '@dnd-kit-svelte/svelte/sortable';
   import {
@@ -11,9 +13,10 @@
   import EmptyDropZone from './EmptyDropZone.svelte';
   import GroupDropZone from './GroupDropZone.svelte';
   import { Operator, type OperatorType } from '#lib/query/query.ts';
-  import { Segment } from '@skeletonlabs/skeleton-svelte';
+  import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
   import { CollisionPriority } from '@dnd-kit/abstract';
-  import { Switch } from '@skeletonlabs/skeleton-svelte';
+  import Switch from '#lib/ui/Switch.svelte';
+  import { cardClass } from '#lib/ui/surface.ts';
 
   interface Props {
     group: FilterGroupInterface;
@@ -94,32 +97,22 @@
   // cleared in clearDragState().
   const showDropPreview = $derived(!isOverlay && activeId === id && isDraggable);
 
-  function handleOperatorChange(details: { value: string | null }) {
-    if (details.value == null) return;
-    onOperatorChange(group, details.value as OperatorType);
-  }
-
-  function handleNotChange(e: { checked: boolean }) {
-    not = e.checked;
-  }
+  const operatorOptions = [
+    { value: Operator.AND, label: Operator.AND },
+    { value: Operator.OR, label: Operator.OR },
+  ];
 </script>
 
 <div class="relative" {@attach ref}>
   {#if showLeadingOperator && leadingOperator}
     <div class="flex justify-center py-2 {activeId === id && !isOverlay ? 'invisible' : ''}">
-      <span
-        class="badge font-bold text-xs uppercase {leadingOperator === 'OR'
-          ? 'preset-filled-secondary-200-800'
-          : 'preset-filled-primary-200-800'}"
-      >
-        {leadingOperator}
-      </span>
+      <OperatorBadge operator={leadingOperator} />
     </div>
   {/if}
 
   <div
     data-testid={id === 'root' ? 'filter-root' : 'filter-group'}
-    class="card py-1 px-2 {id === 'root'
+    class="{cardClass} py-1 px-2 {id === 'root'
       ? 'bg-surface-50 shadow-none border-none'
       : activeId === id && !isOverlay
         ? 'invisible'
@@ -138,39 +131,31 @@
       </div>
       <div class="flex items-center justify-start gap-2 w-full">
         <div>Between {hasSubqueryChildren ? 'subqueries' : 'filters'}:</div>
-        <!-- {#key} forces re-mount because Skeleton's Segment doesn't update its indicator position on prop change -->
-        {#key operatorValue}
-          <div title="Choose logic for the query">
-            <Segment
-              background="bg-white border-surface-400 border"
-              indicatorBg={operatorValue === Operator.OR ? 'bg-secondary-500' : 'bg-primary-500'}
-              indicatorClasses="scale-[1.04]"
-              name="operator"
-              padding="0"
-              gap="0"
-              value={operatorValue}
-              onValueChange={handleOperatorChange}
-            >
-              <Segment.Item value={Operator.AND}>{Operator.AND}</Segment.Item>
-              <Segment.Item value={Operator.OR}>{Operator.OR}</Segment.Item>
-            </Segment>
-          </div>
-        {/key}
+        <div title="Choose logic for the query">
+          <SegmentedControl
+            name="operator"
+            value={operatorValue}
+            options={operatorOptions}
+            tone={operatorValue === Operator.OR ? 'secondary' : 'primary'}
+            onchange={(value) => onOperatorChange(group, value as OperatorType)}
+          />
+        </div>
         {#if id === 'root'}
-          <button
-            class="btn border preset-tonal-primary hover:preset-filled-primary-500 leading-(--text-lg--line-height) disabled:opacity-75 ml-auto mb-1"
+          <Button
+            variant="soft"
+            class="leading-(--text-lg--line-height) disabled:opacity-75 ml-auto mb-1"
             title="Add subquery to create a group of filters"
             onclick={onAddGroup}
           >
             Add Subquery
-          </button>
+          </Button>
         {/if}
       </div>
       <!-- TODO: NOT operator support — hidden until backend supports negation -->
       <div class="hidden flex items-center gap-2 ml-auto">
         <span>Not:</span>
-        <Switch name="not" checked={not} onCheckedChange={handleNotChange}>
-          {#snippet activeChild()}!{/snippet}
+        <Switch name="not" checked={not} onchange={(checked) => (not = checked)}>
+          {#snippet checkedIcon()}!{/snippet}
         </Switch>
       </div>
       {#if isDraggable}

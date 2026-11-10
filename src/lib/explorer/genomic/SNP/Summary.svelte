@@ -1,4 +1,5 @@
 <script lang="ts">
+  import IconButton from '#lib/ui/IconButton.svelte';
   import { GenotypeMap, type SNP } from '#lib/query/genomic.ts';
   import { selectedSNPs } from '#lib/query/SNPFilter.ts';
 
@@ -25,26 +26,18 @@
         <div class="text-surface-600-400">{GenotypeMap[snp.constraint]}</div>
       </div>
       <div class="flex-none text-right">
-        <button
-          type="button"
+        <IconButton
+          icon="fa-solid fa-pen-to-square"
+          label="Edit"
           data-testid={`genomic-snp-edit-${snp.search}`}
-          title="Edit"
-          aria-label="Edit"
-          class="btn-icon-color"
           onclick={() => onedit(snp)}
-        >
-          <i class="fa-solid fa-pen-to-square"></i>
-        </button>
-        <button
-          type="button"
+        />
+        <IconButton
+          icon="fa-solid fa-trash"
+          label="Delete"
           data-testid={`genomic-snp-delete-${snp.search}`}
-          title="Delete"
-          aria-label="Delete"
-          class="btn-icon-color"
           onclick={() => ondelete(snp)}
-        >
-          <i class="fa-solid fa-trash"></i>
-        </button>
+        />
       </div>
     </div>
   {/each}

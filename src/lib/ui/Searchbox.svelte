@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { buttonClass } from '#lib/ui/button.ts';
+
   interface Props {
     placeholder?: string;
     search?: () => void;
@@ -26,8 +28,9 @@
     onkeydown={(e) => e.key === 'Enter' && search()}
   />
   <button
+    type="button"
     id="explorer-search-submit"
-    class="btn preset-filled-primary-500 search-button"
+    class="search-button {buttonClass()}"
     aria-label="Search"
     title="Search"
     onclick={search}

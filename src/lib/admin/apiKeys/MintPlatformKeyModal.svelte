@@ -1,5 +1,7 @@
 <script lang="ts">
-  import Modal from '#lib/ui/dialog/Modal.svelte';
+  import Button from '#lib/ui/Button.svelte';
+  import { buttonClass } from '#lib/ui/button.ts';
+  import Dialog from '#lib/ui/dialog/Dialog.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import CopyButton from '#lib/ui/CopyButton.svelte';
 
@@ -13,6 +15,7 @@
     type MintedPlatformKey,
     type PlatformKeyExpiry,
   } from '#lib/admin/apiKeys/model.ts';
+  import { cardClass, warningMessageClass } from '#lib/ui/surface.ts';
 
   let open = $state(false);
   let name = $state('');
@@ -21,8 +24,8 @@
   let expiryDate = $state('');
   let mintError = $state('');
   let isSubmitting = $state(false);
-  // once set, the same modal swaps from the form to the see-once reveal; keeping it a single
-  // Modal instance avoids a second dialog whose layer collides with the closing form dialog
+  // once set, the same dialog swaps from the form to the see-once reveal; keeping it a single
+  // Dialog instance avoids a second dialog whose layer collides with the closing form dialog
   let minted: MintedPlatformKey | null = $state(null);
   let mintedPrefix = $derived.by(() =>
     minted ? formatKeyPrefix(minted.keyType, minted.displayPrefix) : '',
@@ -39,12 +42,6 @@
     mintError = '';
     minted = null;
   }
-
-  // Done/Cancel close explicitly and clear here; this backstop covers escape and click-outside
-  // (which don't route through those buttons) so the plaintext key never lingers after any close
-  $effect(() => {
-    if (!open) clearState();
-  });
 
   function close() {
     open = false;
@@ -69,14 +66,15 @@
   }
 </script>
 
-<Modal
+<Dialog
   bind:open
   data-testid="admin-api-key-mint"
   title={minted ? 'Platform API Key Created' : 'Mint Platform API Key'}
-  width="w-full max-w-xl"
+  size="form"
   disabled={!$isTopAdmin}
   closeable={!minted && !isSubmitting}
-  triggerBase="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
+  onclose={clearState}
+  triggerClass={buttonClass('tonal')}
 >
   {#snippet trigger()}+ Mint Platform Key{/snippet}
   {#if minted}
@@ -84,7 +82,7 @@
       <div
         role="alert"
         data-testid="admin-api-key-minted-warning"
-        class="card warning-message p-3 my-4 font-bold"
+        class="{cardClass} {warningMessageClass} p-3 my-4 font-bold"
       >
         This key is shown only once and cannot be recovered. Copy it now and store it securely.
       </div>
@@ -95,7 +93,7 @@
         <CopyButton
           itemToCopy={minted.apiKey}
           data-testid="admin-api-key-minted-copy"
-          class="preset-filled-primary-500"
+          variant="filled"
         />
       </div>
       <p class="my-2">
@@ -103,14 +101,7 @@
         &middot; Expires: {formatInstant(minted.expiresAt, 'Never')}
       </p>
       <footer class="flex justify-end mt-6">
-        <button
-          type="button"
-          data-testid="admin-api-key-minted-done"
-          class="btn preset-filled-primary-500"
-          onclick={close}
-        >
-          Done
-        </button>
+        <Button data-testid="admin-api-key-minted-done" onclick={close}>Done</Button>
       </footer>
     </div>
   {:else}
@@ -167,18 +158,11 @@
         </div>
       </fieldset>
       <footer class="flex justify-end space-x-2 mt-6">
-        <button
-          type="button"
-          class="btn border preset-tonal-primary hover:preset-filled-primary-500"
-          onclick={close}
-          disabled={isSubmitting}
-        >
-          Cancel
-        </button>
-        <button type="submit" class="btn preset-filled-primary-500" disabled={isSubmitting}>
+        <Button variant="soft" onclick={close} disabled={isSubmitting}>Cancel</Button>
+        <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Minting…' : 'Mint Key'}
-        </button>
+        </Button>
       </footer>
     </form>
   {/if}
-</Modal>
+</Dialog>

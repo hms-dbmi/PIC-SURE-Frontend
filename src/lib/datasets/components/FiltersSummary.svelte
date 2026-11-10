@@ -1,4 +1,5 @@
 <script lang="ts">
+  import OperatorBadge from '#lib/ui/OperatorBadge.svelte';
   import type {
     Filter,
     FilterInterface,
@@ -6,6 +7,7 @@
     AnyRecordOfFilterInterface,
   } from '#lib/query/filter.svelte.ts';
   import { LogicTree } from '#lib/query/logicTree.svelte.ts';
+  import { cardClass } from '#lib/ui/surface.ts';
 
   let {
     filterTree,
@@ -53,7 +55,7 @@
 
 {#snippet filterCard(filter: Filter)}
   <div
-    class="card bg-surface-100 flex flex-col ml-2 p-3 gap-0.5 text-sm"
+    class="{cardClass} bg-surface-100 flex flex-col ml-2 p-3 gap-0.5 text-sm"
     data-testid="dataset-filter-card"
   >
     <p class="font-semibold leading-snug m-0" title={filter.variableName}>
@@ -71,11 +73,7 @@
 {#snippet operatorDivider(operator: string)}
   <div class="flex items-center gap-2 px-0 my-0.5" data-testid="dataset-operator-divider">
     <div class="h-px flex-1 {operator === 'OR' ? 'bg-secondary-300' : 'bg-primary-300'}"></div>
-    <span
-      class="badge font-bold text-xs uppercase {operator === 'OR'
-        ? 'preset-filled-secondary-200-800'
-        : 'preset-filled-primary-200-800'}">{operator}</span
-    >
+    <OperatorBadge {operator} />
     <div class="h-px flex-1 {operator === 'OR' ? 'bg-secondary-300' : 'bg-primary-300'}"></div>
   </div>
 {/snippet}

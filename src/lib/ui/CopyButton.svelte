@@ -1,6 +1,6 @@
 <script lang="ts">
   import Popover from '#lib/ui/popover/Popover.svelte';
-  import { log, createLog } from '#lib/telemetry/logger.ts';
+  import { buttonClass, type ButtonVariant } from '#lib/ui/button.ts';
 
   interface Props {
     itemToCopy: string;
@@ -12,10 +12,11 @@
     'data-testid'?: string;
     'data-key'?: string;
     triggerTitle?: string;
+    /** Button style for the text form; the icon form ignores it. */
+    variant?: ButtonVariant;
     class?: string;
-    logAction?: string;
-    logEventType?: string;
-    logMetadata?: Record<string, unknown>;
+    /** Runs after a successful copy. */
+    oncopy?: () => void;
   }
 
   const {
@@ -28,10 +29,9 @@
     'data-testid': testid = '',
     'data-key': dataKey,
     triggerTitle,
+    variant = 'none',
     class: className = '',
-    logAction,
-    logEventType = 'ACTION',
-    logMetadata,
+    oncopy,
   }: Props = $props();
 
   let copied = $state(false);
@@ -49,7 +49,7 @@
     clearTimeout(resetTimer);
     resetTimer = setTimeout(() => (copied = false), 4500);
     copied = true;
-    if (logAction) log(createLog(logEventType, logAction, logMetadata));
+    oncopy?.();
   }
 </script>
 
@@ -57,7 +57,7 @@
   data-testid={testid || 'ui-copy'}
   data-key={dataKey}
   {triggerTitle}
-  triggerStyle="ml-4 {useIcon ? 'hover:text-primary-600' : 'btn'} {className}"
+  triggerStyle="ml-4 {useIcon ? 'hover:text-primary-600' : buttonClass(variant)} {className}"
   onengage={updateButton}
   onTriggerClick={(e) => e.stopPropagation()}
   color="secondary"

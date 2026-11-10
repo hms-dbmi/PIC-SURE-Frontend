@@ -1,6 +1,8 @@
 <script lang="ts">
+  import { buttonClass } from '#lib/ui/button.ts';
+  import Button from '#lib/ui/Button.svelte';
   import { slide } from 'svelte/transition';
-  import Modal from '#lib/ui/dialog/Modal.svelte';
+  import ConfirmDialog from '#lib/ui/dialog/ConfirmDialog.svelte';
   import {
     BANNER_APPEARANCE_DETAILS,
     BANNER_AUDIENCE_LABELS,
@@ -8,6 +10,7 @@
   } from '#lib/banners/model/banner.ts';
   import { truncate } from '#lib/utils/strings.ts';
   import { useSortable } from '@dnd-kit-svelte/svelte/sortable';
+  import { tones } from '#lib/ui/surface.ts';
 
   interface Props {
     banner: ManagementRecord;
@@ -70,9 +73,9 @@
     EXPIRED: 'Expired',
   } as const;
   const lifecycleBadgeClasses = {
-    ACTIVE: 'preset-tonal-success',
+    ACTIVE: tones['tonal-success'],
     SCHEDULED: 'bg-surface-200',
-    SAVED: 'preset-tonal-primary',
+    SAVED: tones['tonal-primary'],
     DISABLED: 'bg-surface-200',
     EXPIRED: 'bg-surface-200',
   } as const;
@@ -162,15 +165,9 @@
         </div>
         <p class="m-0 mt-2 text-sm text-surface-600">{scheduleSummary()}</p>
       </div>
-      <button
-        type="button"
-        class="btn preset-tonal-primary"
-        aria-expanded={open}
-        aria-controls={panelId}
-        onclick={ontoggle}
-      >
+      <Button variant="tint" aria-expanded={open} aria-controls={panelId} onclick={ontoggle}>
         Details {@render bannerContext()}<span aria-hidden="true">{open ? '▴' : '▾'}</span>
-      </button>
+      </Button>
     </div>
     {#if open}
       <section
@@ -194,53 +191,41 @@
         {#if editable || disableable || archiveable || restorable}
           <div class="flex flex-wrap gap-2 sm:col-span-2">
             {#if editable}
-              <button
-                type="button"
-                class="btn preset-outlined-primary-500 text-primary-500 hover:preset-filled-primary-500 hover:text-white"
-                disabled={busy}
-                onclick={onedit}
-              >
+              <Button variant="outlined" disabled={busy} onclick={onedit}>
                 Edit banner {@render bannerContext()}
-              </button>
+              </Button>
             {/if}
             {#if disableable}
-              <Modal
+              <ConfirmDialog
                 data-testid="banner-disable-{banner.uuid}"
                 title="Disable banner?"
-                confirmText="Yes"
-                cancelText="No"
+                confirmLabel="Yes"
+                cancelLabel="No"
                 onconfirm={ondisable}
-                triggerBase="btn preset-outlined-error-500 text-error-700 hover:preset-filled-error-500 hover:text-white"
+                triggerClass={buttonClass('outlined-error')}
                 disabled={busy || disableDisabled}
-                withDefault
               >
                 {#snippet trigger()}
                   Disable banner {@render bannerContext()}
                 {/snippet}
                 Are you sure you want to disable this banner? It stops appearing to visitors immediately
                 and moves to Saved &amp; disabled. Its content and history are kept.
-              </Modal>
+              </ConfirmDialog>
             {/if}
             {#if restorable}
-              <button
-                type="button"
-                class="btn preset-outlined-primary-500 text-primary-500 hover:preset-filled-primary-500 hover:text-white"
-                disabled={busy || restoreDisabled}
-                onclick={onrestore}
-              >
+              <Button variant="outlined" disabled={busy || restoreDisabled} onclick={onrestore}>
                 Restore banner {@render bannerContext()}
-              </button>
+              </Button>
             {/if}
             {#if archiveable}
-              <Modal
+              <ConfirmDialog
                 data-testid="banner-archive-{banner.uuid}"
                 title="Archive banner?"
-                confirmText="Yes"
-                cancelText="No"
+                confirmLabel="Yes"
+                cancelLabel="No"
                 onconfirm={onarchive}
-                triggerBase="btn preset-outlined-error-500 text-error-700 hover:preset-filled-error-500 hover:text-white"
+                triggerClass={buttonClass('outlined-error')}
                 disabled={busy || archiveDisabled}
-                withDefault
               >
                 {#snippet trigger()}
                   Archive banner {@render bannerContext()}
@@ -248,7 +233,7 @@
                 Are you sure you want to archive this banner? It leaves normal management and can no longer
                 be edited, published, or reordered here. Its content and version history are retained
                 in the database for records purposes.
-              </Modal>
+              </ConfirmDialog>
             {/if}
           </div>
         {/if}

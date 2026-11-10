@@ -8,9 +8,6 @@ import globals from 'globals';
 // Files that already imported app code when the ui/utils boundary rules were added. The PR that
 // cleans one removes it from this list; nothing new gets added.
 const boundaryExceptions = [
-  'src/lib/ui/AngleButton.svelte',
-  'src/lib/ui/CardButton.svelte',
-  'src/lib/ui/CopyButton.svelte',
   'src/lib/ui/OptionsSelectionList.svelte',
   'src/lib/ui/PlotlyPlot.svelte',
   'src/lib/ui/datatable/RemoteTable.svelte',
@@ -23,6 +20,20 @@ const boundaryExceptions = [
   'src/lib/ui/unsavedGuard.svelte.ts',
   'src/lib/utils/hierarchy.ts',
 ];
+
+const skeletonOnlyInUi = {
+  group: ['@skeletonlabs/*'],
+  message: 'Only src/lib/ui/ may import Skeleton; use or add a ui/ primitive.',
+};
+
+// Skeleton class names, with any variant prefixes (hover:, md:dark:, [&:hover]:) and `!`. A lone
+// "card" string is allowed outside class attributes, since it's also a variant name.
+const variantPrefix = String.raw`(\S*:)?!?`;
+const skeletonClassName = String.raw`preset-\S+|btn(-(sm|xs|lg|base|group|icon(-(sm|lg|base))?))?`;
+const cardClassName = 'card(-hover)?';
+const skeletonClass = String.raw`(^|\s)${variantPrefix}(${skeletonClassName})!?(\s|$)`;
+const cardClass = `${variantPrefix}${cardClassName}!?`;
+const cardInClassList = String.raw`(^|\s)${cardClass}\s|\s${cardClass}$`;
 
 // `folder` (under src/lib/) may import only from `allowed` folders and packages: no `#lib/` or
 // `$lib/` specifier outside them, and no relative path that climbs out of `folder` (one config per
@@ -39,6 +50,8 @@ function importBoundary(folder, allowed) {
           patterns: [
             { regex: `^[#$]lib/(?!(${allowed.join('|')})(/|$))`, message },
             { regex: `^(\\.\\./){${depth - 1}}\\.\\.(/|$)(?!.*\\.css$)`, message },
+            // A later config's rule replaces an earlier one's, so repeat the Skeleton rule here.
+            ...(folder === 'ui' ? [] : [skeletonOnlyInUi]),
           ],
         },
       ],
@@ -134,6 +147,36 @@ export default [
             "ExpressionStatement > AwaitExpression > CallExpression[callee.object.name='expect'][callee.property.name=/^(soft|poll)$/]",
           ].join(', '),
           message: 'expect(...) without a matcher asserts nothing.',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/**/*.{ts,svelte}', 'tests/**/*.ts'],
+    ignores: ['src/lib/ui/**'],
+    rules: {
+      'no-restricted-imports': ['error', { patterns: [skeletonOnlyInUi] }],
+    },
+  },
+  {
+    // Skeleton's class vocabulary stays in ui/ too: call sites use ui/ variant props or the
+    // tables in ui/button.ts and ui/surface.ts. Test files are left out because a second
+    // no-restricted-syntax config would replace theirs.
+    files: ['src/**/*.{ts,svelte}'],
+    ignores: ['src/lib/ui/**', '**/*.test.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: [
+            ...['Literal[value', 'TemplateElement[value.raw', 'SvelteLiteral[value'].flatMap(
+              (node) => [`${node}=/${skeletonClass}/]`, `${node}=/${cardInClassList}/]`],
+            ),
+            `SvelteAttribute[key.name='class'] SvelteLiteral[value=/(^|\\s)${cardClass}(\\s|$)/]`,
+            `SvelteDirective[kind='Class'][key.name.name=/^(${skeletonClassName}|${cardClassName})$/]`,
+          ].join(', '),
+          message:
+            "Skeleton's preset-*, btn and card classes belong in src/lib/ui/; use a ui/ variant prop or ui/button.ts / ui/surface.ts.",
         },
       ],
     },

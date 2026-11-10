@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Accordion } from '@skeletonlabs/skeleton-svelte';
+  import CollapsibleGroup from '#lib/ui/CollapsibleGroup.svelte';
 
   import type { Facet } from '#lib/explorer/types.ts';
   import type { DictionaryFacetResult } from '#lib/api/picsure/dictionary.types.ts';
@@ -45,6 +45,17 @@
     });
     return facetsToShow;
   }
+
+  function toggleCategories(next: string[]) {
+    const prev = $openFacets;
+    const opened = next.filter((v) => !prev.includes(v));
+    const closed = prev.filter((v) => !next.includes(v));
+    if (opened.length)
+      log(createLog('SEARCH', 'facet.category_toggle', { category: opened[0], open: true }));
+    if (closed.length)
+      log(createLog('SEARCH', 'facet.category_toggle', { category: closed[0], open: false }));
+    $openFacets = next;
+  }
 </script>
 
 {#await $facetsPromise}
@@ -54,51 +65,11 @@
     previousCategories={previousCategories.length > 0 ? previousCategories : []}
   />
 {:then newFacets}
-  {#if newFacets?.length > 0}
-    <Accordion
-      multiple
-      value={$openFacets}
-      onValueChange={(e) => {
-        const prev = $openFacets;
-        const next = e.value;
-        const opened = next.filter((v: string) => !prev.includes(v));
-        const closed = prev.filter((v: string) => !next.includes(v));
-        if (opened.length)
-          log(createLog('SEARCH', 'facet.category_toggle', { category: opened[0], open: true }));
-        if (closed.length)
-          log(createLog('SEARCH', 'facet.category_toggle', { category: closed[0], open: false }));
-        $openFacets = next;
-      }}
-    >
-      {#snippet iconOpen()}<i class="fa-solid fa-angle-up"></i>{/snippet}
-      {#snippet iconClosed()}<i class="fa-solid fa-angle-down"></i>{/snippet}
-      {#each newFacets as facetCategory}
-        <FacetCategory {facetCategory} />
-      {/each}
-    </Accordion>
-  {:else}
-    <Accordion
-      multiple
-      value={$openFacets}
-      onValueChange={(e) => {
-        const prev = $openFacets;
-        const next = e.value;
-        const opened = next.filter((v: string) => !prev.includes(v));
-        const closed = prev.filter((v: string) => !next.includes(v));
-        if (opened.length)
-          log(createLog('SEARCH', 'facet.category_toggle', { category: opened[0], open: true }));
-        if (closed.length)
-          log(createLog('SEARCH', 'facet.category_toggle', { category: closed[0], open: false }));
-        $openFacets = next;
-      }}
-    >
-      {#snippet iconOpen()}<i class="fa-solid fa-angle-up"></i>{/snippet}
-      {#snippet iconClosed()}<i class="fa-solid fa-angle-down"></i>{/snippet}
-      {#each recreateFacetCategories() as facetCategory}
-        <FacetCategory {facetCategory} />
-      {/each}
-    </Accordion>
-  {/if}
+  <CollapsibleGroup multiple value={$openFacets} onchange={toggleCategories}>
+    {#each newFacets?.length > 0 ? newFacets : recreateFacetCategories() as facetCategory}
+      <FacetCategory {facetCategory} />
+    {/each}
+  </CollapsibleGroup>
 {:catch}
   <ErrorAlert title="Something went wrong loading your search options." color="secondary">
     Please wait a moment, refresh the page, and try again.

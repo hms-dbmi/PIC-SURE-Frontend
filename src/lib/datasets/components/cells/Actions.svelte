@@ -1,4 +1,5 @@
 <script lang="ts">
+  import IconButton from '#lib/ui/IconButton.svelte';
   import { toaster } from '#lib/ui/toaster.ts';
 
   import { toggleArchived } from '#lib/datasets/datasets.svelte.ts';
@@ -32,29 +33,21 @@
 </script>
 
 {#if data.row.archived}
-  <button
+  <IconButton
+    icon="fa-solid fa-trash-arrow-up fa-xl"
+    label="Restore (r)"
     disabled={pending}
     data-testid={`dataset-action-restore-${data.cell}`}
-    type="button"
-    title="Restore (r)"
-    aria-label="Restore (r)"
-    data-key="r"
-    class="btn-icon-color"
+    shortcut="r"
     onclick={toggleArchive}
-  >
-    <i class="fa-solid fa-trash-arrow-up fa-xl"></i>
-  </button>
+  />
 {:else}
-  <button
+  <IconButton
+    icon="fa-solid fa-trash fa-xl"
+    label="Delete (d)"
     disabled={pending}
     data-testid={`dataset-action-archive-${data.cell}`}
-    type="button"
-    title="Delete (d)"
-    aria-label="Delete (d)"
-    data-key="d"
-    class="btn-icon-color"
+    shortcut="d"
     onclick={toggleArchive}
-  >
-    <i class="fa-solid fa-trash fa-xl"></i>
-  </button>
+  />
 {/if}

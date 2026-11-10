@@ -8,6 +8,7 @@
   import FilterComponent from '#lib/explorer/components/results/AddedFilter.svelte';
   import ResultsFilterGroup from '#lib/explorer/components/results/ResultsFilterGroup.svelte';
   import Popover from '#lib/ui/popover/Popover.svelte';
+  import Button from '#lib/ui/Button.svelte';
 
   interface Props {
     isDiscoverPage?: boolean;
@@ -17,8 +18,6 @@
 
   let isAdvancedFilteringPage = $derived(page.url.pathname.includes('/advanced-filtering'));
   let advancedFilteringDisabled = $derived($filters.length <= 1);
-
-  const aqbBtnClass = 'btn btn-sm ml-auto preset-tonal-primary border border-primary-500';
 </script>
 
 {#if $filters.length + $genomicFilters.length + $exports.length === 0}
@@ -38,25 +37,29 @@
             message="Advanced Query Builder is not available with only one non-genomic filter."
           >
             {#snippet trigger()}
-              <button
+              <Button
                 id="results-advanced-filtering-open"
                 data-testid="results-advanced-filtering-open"
-                class={aqbBtnClass}
+                variant="tonal-static"
+                size="sm"
+                class="ml-auto"
                 disabled
               >
                 Build Advanced Query
-              </button>
+              </Button>
             {/snippet}
           </Popover>
         {:else}
-          <a
+          <Button
             id="results-advanced-filtering-open"
             href={resolve(`${isDiscoverPage ? 'discover' : 'explorer'}/advanced-filtering`)}
             data-testid="results-advanced-filtering-open"
-            class="{aqbBtnClass} mr-0 hover:preset-filled-primary-500"
+            variant="tonal"
+            size="sm"
+            class="ml-auto mr-0"
           >
             Build Advanced Query
-          </a>
+          </Button>
         {/if}
       </div>
     {/if}

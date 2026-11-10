@@ -1,7 +1,9 @@
 <script lang="ts">
+  import IconButton from '#lib/ui/IconButton.svelte';
   import type { ExportInterface } from '#lib/explorer/export/types.ts';
   import { fade } from 'svelte/transition';
   import { removeExportByUuid } from '#lib/explorer/export/Export.ts';
+  import { cardClass } from '#lib/ui/surface.ts';
 
   interface Props {
     variable: ExportInterface;
@@ -15,21 +17,13 @@
 
 <div
   data-testid="results-export-item-{variable.conceptPath}"
-  class="flex flex-col card bg-surface-100 p-1 m-1"
+  class="flex flex-col {cardClass} bg-surface-100 p-1 m-1"
   transition:fade={{ duration: 300 }}
 >
   <header class="card-header p-1 flex">
     <div class="flex-auto">
       {variable.display || variable.searchResult?.display || variable.searchResult?.name}
     </div>
-    <button
-      type="button"
-      title="Remove Export"
-      class="btn-icon-color"
-      aria-label="Remove Export"
-      onclick={remove}
-    >
-      <i class="fa-solid fa-times-circle"></i>
-    </button>
+    <IconButton icon="fa-solid fa-times-circle" label="Remove Export" onclick={remove} />
   </header>
 </div>

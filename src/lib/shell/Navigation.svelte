@@ -1,8 +1,8 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { resolve } from '$app/paths';
   import { appPath } from '#lib/api/paths.ts';
   import { onMount } from 'svelte';
-  import { AppBar, Avatar } from '@skeletonlabs/skeleton-svelte';
 
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
@@ -17,6 +17,8 @@
 
   import Logo from '#lib/shell/Logo.svelte';
   import Popover from '#lib/ui/popover/Popover.svelte';
+  import AppBar from '#lib/ui/AppBar.svelte';
+  import Avatar from '#lib/ui/Avatar.svelte';
 
   let providerInstance: AuthProvider | undefined = $state(undefined);
 
@@ -55,7 +57,7 @@
   });
 </script>
 
-<AppBar padding="py-0 pl-2 pr-5" background="bg-surface-50-950" toolbarClasses="flex-none z-10">
+<AppBar>
   {#snippet lead()}
     <a
       href={resolve('')}
@@ -88,40 +90,28 @@
         <!-- Logout -->
         <Popover data-testid="app-nav-user-menu">
           {#snippet trigger()}
-            <Avatar
-              name={($user.email || 'unknown').toUpperCase()}
-              background="preset-tonal-primary hover:preset-tonal-secondary"
-              border="border hover:border-primary-400"
-              font="text-2xl"
-              size="size-12"
-              classes="m-3"
-            >
+            <Avatar class="m-3">
               {($user.email || '?').toUpperCase().charAt(0)}
             </Avatar>
           {/snippet}
           <div class="flex flex-col items-center">
             <p class="pb-6">{$user.email}</p>
-            <button
+            <Button
+              class="w-fit"
               id="app-nav-logout"
-              class="btn preset-filled-primary-500 w-fit"
               title="Logout"
               onclick={() => {
                 log(createLog('AUTH', 'logout.click'));
                 logout(providerInstance, false, { discardQuery: true });
-              }}>Logout</button
+              }}>Logout</Button
             >
           </div>
         </Popover>
       {:else}
         <!-- Login -->
-        <button
-          id="app-nav-login"
-          title="Login"
-          class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-          onclick={handleLogin}
-        >
+        <Button variant="tonal" id="app-nav-login" title="Login" onclick={handleLogin}>
           Login
-        </button>
+        </Button>
       {/if}
     </div>
   {/snippet}

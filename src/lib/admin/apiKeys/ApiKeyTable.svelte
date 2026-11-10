@@ -15,7 +15,7 @@
     extractApiError,
     type ApiKeyType,
   } from '#lib/admin/apiKeys/model.ts';
-  import { getDefaultRows } from '#lib/ui/datatable/stores.ts';
+  import { getDefaultRows } from '#lib/ui/datatable/rowsPerPage.ts';
   import { subscribeOnChange } from '#lib/utils/subscribers.ts';
 
   interface ApiKeyRow {

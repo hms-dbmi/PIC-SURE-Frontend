@@ -23,6 +23,8 @@ import {
   mockDataWithChildren,
 } from '../../support/mock-data';
 import { getOption, userIsLoggedIn, chooseGenomicFilterType } from '../utils';
+import { tones } from '#lib/ui/surface.ts';
+import { buttonVariants } from '#lib/ui/button.ts';
 import configJson from '../../../src/lib/assets/configuration.json' with { type: 'json' };
 
 const { codeBlocks } = configJson.explorePage;
@@ -115,7 +117,7 @@ async function checkStepRenderedCorrectly(
   // Check that the step header is rendered with correct text and number
   const stepHeader = page.locator('div.stepper-header-step').nth(stepNumber - 1);
   const step = stepHeader.locator('span');
-  await expect(step).toHaveClass(/preset-filled-primary-500/);
+  await expect(step).toContainClass(tones['filled-primary']);
   await expect(page.locator('header.step-header')).toHaveText(headerText);
 
   // Check that the summary section is rendered if expected
@@ -297,14 +299,14 @@ test.describe('Export Page', () => {
     const pfbExportOption = page.getByTestId('export-type-pfb');
     await expect(csvExportOption).toBeVisible();
     await expect(pfbExportOption).toBeVisible();
-    await expect(csvExportOption).not.toHaveClass(/preset-filled-primary-500/);
-    await expect(pfbExportOption).not.toHaveClass(/preset-filled-primary-500/);
+    await expect(csvExportOption).not.toContainClass(buttonVariants.filled);
+    await expect(pfbExportOption).not.toContainClass(buttonVariants.filled);
     await pfbExportOption.click();
-    await expect(csvExportOption).not.toHaveClass(/preset-filled-primary-500/);
-    await expect(pfbExportOption).toHaveClass(/preset-filled-primary-500/);
+    await expect(csvExportOption).not.toContainClass(buttonVariants.filled);
+    await expect(pfbExportOption).toContainClass(buttonVariants.filled);
     await csvExportOption.click();
-    await expect(csvExportOption).toHaveClass(/preset-filled-primary-500/);
-    await expect(pfbExportOption).not.toHaveClass(/preset-filled-primary-500/);
+    await expect(csvExportOption).toContainClass(buttonVariants.filled);
+    await expect(pfbExportOption).not.toContainClass(buttonVariants.filled);
     await expect(nextButton).not.toBeDisabled();
     await mockApiSuccess(page, queryPath, newDatasetResponse);
     await nextButton.click();
@@ -330,8 +332,8 @@ test.describe('Export Page', () => {
 
     // Start Analysis
     await checkStepRenderedCorrectly(page, 5, 'Start Analysis:', false, 'Done', false);
-    const tabGroup = page.getByTestId('tabs-list');
-    const codeBlock = page.getByTestId('tabs-panel').locator('.code-block').first();
+    const tabGroup = page.getByTestId('ui-tabs-list');
+    const codeBlock = page.getByTestId('ui-tabs-panel').locator('.code-block').first();
     await expect(tabGroup).toBeVisible();
     await expect(codeBlock).toBeVisible();
     await expect(codeBlock).toContainText('python');
@@ -345,7 +347,7 @@ test.describe('Export Page', () => {
     await expect(rTab).toHaveText('R');
     await rTab.click();
     const rCodeBlock = page
-      .getByTestId('tabs-panel')
+      .getByTestId('ui-tabs-panel')
       .locator('.code-block')
       .filter({ visible: true });
     await expect(rCodeBlock).toContainText(
@@ -702,7 +704,7 @@ test.describe('Export Page', () => {
     await mockApiSuccess(page, '*/**/psama/user/me?hasToken', picsureUser);
     await nextButton.click(); // -> Start Analysis
 
-    const tabGroup = page.getByTestId('tabs-list');
+    const tabGroup = page.getByTestId('ui-tabs-list');
     await tabGroup.getByTestId('ui-tabs-control').nth(2).click(); // Download tab
   }
 

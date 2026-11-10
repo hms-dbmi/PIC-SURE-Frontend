@@ -12,7 +12,8 @@
 
   import type { Column } from '#lib/ui/datatable/types.ts';
   import { type DashboardRow, activeRow } from './dashboard.ts';
-  import { open } from '#lib/ui/dialog/drawer.ts';
+  import Drawer from '#lib/ui/dialog/Drawer.svelte';
+  import DashboardDrawer from './DashboardDrawer.svelte';
   import Loading from '#lib/ui/Loading.svelte';
 
   import { subscribeOnChange } from '#lib/utils/subscribers.ts';
@@ -33,6 +34,8 @@
 
   const dataLoadPromise = loadDashboardData();
 
+  let drawerOpen = $state(false);
+
   onMount(() => {
     unsubColumns = subscribeOnChange(columns, (newCols) => (currentColumns = newCols));
     unsubRows = subscribeOnChange(rows, (newRows) => (currentRows = newRows));
@@ -46,7 +49,7 @@
   function rowClickHandler(row: DashboardRow) {
     log(createLog('ACTION', 'dashboard.row_click', { dataset: row.dataset_id, name: row.name }));
     $activeRow = row;
-    $open = true;
+    drawerOpen = true;
   }
 </script>
 
@@ -79,3 +82,6 @@
     {/await}
   </section>
 </Content>
+<Drawer bind:open={drawerOpen} size="half" aria-label="Dataset details">
+  <DashboardDrawer />
+</Drawer>

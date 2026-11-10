@@ -1,5 +1,6 @@
 <script lang="ts">
   import CopyButton from '#lib/ui/CopyButton.svelte';
+  import { log, createLog } from '#lib/telemetry/logger.ts';
 
   let { data = { cell: '', row: {} } } = $props();
 </script>
@@ -12,7 +13,6 @@
     triggerTitle="Copy dataset ID (c)"
     data-key="c"
     itemToCopy={data.cell}
-    logAction="dataset.copy_id"
-    logMetadata={{ value: data.cell }}
+    oncopy={() => log(createLog('ACTION', 'dataset.copy_id', { value: data.cell }))}
   />
 </div>

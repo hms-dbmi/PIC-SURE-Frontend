@@ -1,10 +1,11 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { ApiError, consentDeniedMessage } from '#lib/api/errors.ts';
   import { config } from '#lib/config/config.svelte.ts';
   import { browser } from '$app/env';
   import type { QueryRequestInterfaceV3 } from '#lib/api/picsure/query.types.ts';
   import { getQueryResult } from '#lib/api/picsure/query.ts';
-  import Modal from '#lib/ui/dialog/Modal.svelte';
+  import ConfirmDialog from '#lib/ui/dialog/ConfirmDialog.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import { toaster } from '#lib/ui/toaster.ts';
   import Loading from '#lib/ui/Loading.svelte';
@@ -105,27 +106,23 @@
 
 <div class="flex items-center m-1">
   {#if config.features.explorer.allowDownload}
-    <Modal
+    <ConfirmDialog
       bind:open={modalOpen}
       title={config.branding.explorePage.confirmDownloadTitle ||
         'Are you sure you want to download data?'}
-      width="w-1/2"
-      withDefault
-      confirmText="Download"
-      cancelText="Cancel"
+      size="half"
+      confirmLabel="Download"
       onconfirm={() => download()}
     >
       {config.branding.explorePage.confirmDownloadMessage ||
         'This action will download the data to your local machine. Are you sure you want to proceed?'}
-    </Modal>
-    <button
-      class="btn preset-filled-primary-500"
-      onclick={() => (config.features.confirmDownload ? (modalOpen = true) : download())}
+    </ConfirmDialog>
+    <Button onclick={() => (config.features.confirmDownload ? (modalOpen = true) : download())}
       ><i class="fa-solid fa-download mr-1"></i>{downloadText}
       {#if isDownloading}
         <Loading ring size="micro" color="white" />
       {/if}
-    </button>
+    </Button>
   {:else}
     <ErrorAlert title="Download is disabled!" color="warning" solid={true}>
       <p>Downloading data is disabled. Please contact the administrator to enable this feature.</p>

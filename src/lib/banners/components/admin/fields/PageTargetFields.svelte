@@ -1,6 +1,8 @@
 <script lang="ts">
   import { tick } from 'svelte';
   import type { BannerPageTarget } from '#lib/banners/model/banner.ts';
+  import Button from '#lib/ui/Button.svelte';
+  import { buttonClass } from '#lib/ui/button.ts';
 
   type TargetedPage = Exclude<BannerPageTarget, { kind: 'ALL' }>;
 
@@ -95,14 +97,14 @@
               aria-atomic="true">{errors[index] ?? ''}</span
             >
           </div>
-          <button
-            type="button"
-            class="btn preset-tonal-error self-start sm:mt-7"
+          <Button
+            variant="tint-error"
+            class="self-start sm:mt-7"
             aria-label={`Remove target ${index + 1}`}
             onclick={() => removePageTarget(index)}
           >
             Remove
-          </button>
+          </Button>
         </div>
       {/each}
       <div aria-live="polite" aria-atomic="true">
@@ -112,7 +114,7 @@
       </div>
       <button
         type="button"
-        class="btn preset-tonal-primary justify-self-start"
+        class="{buttonClass('tint')} justify-self-start"
         bind:this={addButton}
         onclick={addPageTarget}
       >

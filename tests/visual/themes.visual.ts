@@ -245,12 +245,14 @@ for (const theme of themes) {
           await shot.ready?.(page);
           await page.waitForLoadState('networkidle');
           // Let transitions finish; infinite animations never do, and the screenshot stops them.
+          // A transition cancelled mid-way (a hover leaving a button) rejects `finished` with an
+          // AbortError; it's over either way.
           await page.evaluate(() =>
             Promise.all(
               document
                 .getAnimations()
                 .filter((animation) => animation.effect?.getTiming().iterations !== Infinity)
-                .map((animation) => animation.finished),
+                .map((animation) => animation.finished.catch(() => undefined)),
             ),
           );
           // Clicks can leave scroll containers part-way along, by a different amount each run.

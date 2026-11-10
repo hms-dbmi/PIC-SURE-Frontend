@@ -10,6 +10,7 @@
     getQueryRequest,
   } from '#lib/explorer/export/ExportStepperManager.svelte.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
+  import Button from '#lib/ui/Button.svelte';
   let exportingIndex: number | null = $state(null);
 
   async function exportSignedToUrl(index: number, url?: string) {
@@ -55,13 +56,12 @@
   {#if config.branding.explorePage?.pfbExportUrls && config.branding.explorePage.pfbExportUrls.length > 0}
     {#each config.branding.explorePage.pfbExportUrls as exportLink, index}
       {@const exporting = exportingIndex === index}
-      <button
+      <Button
         disabled={exportingIndex !== null}
         aria-busy={exporting || undefined}
         aria-label={exporting ? `Exporting to ${exportLink.title}` : undefined}
-        class="flex-initial w-64 btn preset-filled-primary-500 border border-primary-500 {exporting
-          ? 'disabled:opacity-100'
-          : 'disabled:preset-tonal-primary'}"
+        variant={exporting ? 'filled-bordered-busy' : 'filled-bordered'}
+        class="flex-initial w-64"
         onclick={() => {
           log(
             createLog('EXPORT', 'export.pfb_signed_url', {
@@ -78,7 +78,7 @@
           <i class="fa-solid fa-arrow-up-right-from-square"></i>
           <span>Export to {exportLink.title}</span>
         {/if}
-      </button>
+      </Button>
     {/each}
   {/if}
   <DownloadButton query={getQueryRequest()} datasetId={getDatasetId()} />

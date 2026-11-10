@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { resolve } from '$app/paths';
   import { page } from '$app/state';
   import { config } from '#lib/config/config.svelte.ts';
@@ -30,9 +31,7 @@
         ? 'The page you are looking for does not exist or has moved.'
         : (page.error?.message ?? 'An unknown error occurred.')}
     </p>
-    <a data-testid="app-error-home" class="btn preset-filled-primary-500" href={resolve('')}
-      >Go to the home page</a
-    >
+    <Button data-testid="app-error-home" href={resolve('')}>Go to the home page</Button>
   </section>
 {/snippet}
 

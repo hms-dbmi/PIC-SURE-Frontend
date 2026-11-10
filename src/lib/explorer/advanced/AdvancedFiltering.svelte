@@ -1,4 +1,5 @@
 <script lang="ts">
+  import OperatorBadge from '#lib/ui/OperatorBadge.svelte';
   /* eslint-disable @typescript-eslint/no-explicit-any -- dnd-kit events lack exported types */
   import {
     type FilterInterface,
@@ -23,6 +24,7 @@
   import { toaster } from '#lib/ui/toaster.ts';
   import LogicTreeSummary from './LogicTreeSummary.svelte';
   import { onDestroy } from 'svelte';
+  import { cardClass } from '#lib/ui/surface.ts';
 
   type DragOperation =
     | { type: 'canceled' }
@@ -686,12 +688,12 @@
     <div data-testid="filter-genomic-section">
       {#if (localTree.root as FilterGroupInterface).children.length > 0}
         <div class="flex justify-center pb-3" data-testid="filter-genomic-separator">
-          <span class="badge preset-filled-surface-200-800 font-bold text-xs uppercase">AND</span>
+          <OperatorBadge operator="AND" tone="neutral" />
         </div>
       {/if}
       {#each $genomicFilters as gFilter (gFilter.uuid)}
         <div
-          class="card flex flex-row gap-2 items-center p-4 bg-white opacity-75"
+          class="{cardClass} flex flex-row gap-2 items-center p-4 bg-white opacity-75"
           data-testid="filter-genomic-item"
         >
           <div class="flex items-center">

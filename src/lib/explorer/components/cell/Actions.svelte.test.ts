@@ -43,9 +43,9 @@ describe('search result row actions', () => {
   });
 
   it.each([
-    ['View Information (i)', 'info'],
-    ['View Filter (f)', 'filter'],
-    ['View Data Hierarchy (h)', 'hierarchy'],
+    ['Information (i)', 'info'],
+    ['Filter (f)', 'filter'],
+    ['Data Hierarchy (h)', 'hierarchy'],
   ])('%s opens its panel for the row', async (name, component) => {
     render(Actions, { data: { tableName: 'ExplorerTable', row } });
 

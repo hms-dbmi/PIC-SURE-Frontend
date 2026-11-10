@@ -1,9 +1,11 @@
 <script lang="ts">
+  import { buttonClass } from '#lib/ui/button.ts';
+  import Button from '#lib/ui/Button.svelte';
   import { toaster } from '#lib/ui/toaster.ts';
   import { debounce } from '#lib/utils/debounce.ts';
   import CopyButton from '#lib/ui/CopyButton.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
-  import Modal from '#lib/ui/dialog/Modal.svelte';
+  import ConfirmDialog from '#lib/ui/dialog/ConfirmDialog.svelte';
   import {
     user,
     getUser,
@@ -117,17 +119,15 @@
       <footer class="card-footer mt-2">
         <CopyButton
           itemToCopy={$user.token || ''}
-          logAction="token.copy"
-          class="preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
+          oncopy={() => log(createLog('ACTION', 'token.copy'))}
+          variant="tonal"
         />
-        <Modal
+        <ConfirmDialog
           data-testid="user-token-refresh"
           title="Please Confirm"
           onconfirm={refreshToken}
           disabled={refreshButtonDisabled}
-          triggerBase="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-          footerButtons
-          withDefault
+          triggerClass={buttonClass('tonal')}
         >
           {#snippet trigger()}
             {#await refreshPromise}
@@ -137,11 +137,9 @@
             {/await}
           {/snippet}
           Are you sure you wish to invalidate your old token and create a new one?
-        </Modal>
-        <button
-          data-testid="user-token-reveal"
-          class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-          onclick={revealToken}>{revealed ? 'Hide' : 'Reveal'}</button
+        </ConfirmDialog>
+        <Button variant="tonal" data-testid="user-token-reveal" onclick={revealToken}
+          >{revealed ? 'Hide' : 'Reveal'}</Button
         >
       </footer>
     </div>

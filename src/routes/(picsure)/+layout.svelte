@@ -3,8 +3,7 @@
   import { page } from '$app/state';
   import { beforeNavigate } from '$app/navigation';
 
-  import { Toaster } from '@skeletonlabs/skeleton-svelte';
-  import { toaster } from '#lib/ui/toaster.ts';
+  import Toaster from '#lib/ui/Toaster.svelte';
 
   import {
     hasInvalidFilter,
@@ -18,8 +17,6 @@
   import SiteBannerRegion from '#lib/banners/components/SiteBannerRegion.svelte';
   import SidePanel from '#lib/explorer/components/results/SidePanel.svelte';
   import Footer from '#lib/shell/Footer.svelte';
-  import Drawer from '#lib/ui/dialog/Drawer.svelte';
-  import DashboardDrawer from './(public)/dashboard/DashboardDrawer.svelte';
   import FilterWarning from '#lib/explorer/components/FilterWarning.svelte';
 
   let { children }: { children?: Snippet } = $props();
@@ -53,11 +50,8 @@
   });
 </script>
 
-<Toaster {toaster} />
+<Toaster />
 <FilterWarning bind:open={filterWarningModal} />
-<Drawer position="right" width="w-1/2">
-  <DashboardDrawer />
-</Drawer>
 <Shell>
   {#snippet header()}
     <SiteBannerRegion />

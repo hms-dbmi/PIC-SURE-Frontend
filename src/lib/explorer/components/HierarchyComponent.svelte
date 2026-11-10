@@ -17,11 +17,12 @@
   import { panelOpen } from '#lib/explorer/panel.ts';
   import Loading from '#lib/ui/Loading.svelte';
   import { toaster } from '#lib/ui/toaster.ts';
-  import Modal from '#lib/ui/dialog/Modal.svelte';
+  import AlertDialog from '#lib/ui/dialog/AlertDialog.svelte';
   import { page } from '$app/state';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import { sortHierarchyDeepestFirst } from '#lib/utils/hierarchy.ts';
   import { log, createLog, getPageContext } from '#lib/telemetry/logger.ts';
+  import Button from '#lib/ui/Button.svelte';
   interface Props {
     data?: SearchResult;
     onclose?: () => void;
@@ -134,24 +135,20 @@
   }
 </script>
 
-<Modal
+<AlertDialog
   bind:open={modalOpen}
   data-testid="explorer-hierarchy-error-modal"
   title="Data tree selection too large"
-  closeable={true}
-  width="w-1/2"
+  acknowledgeLabel="Okay"
+  size="half"
 >
   <div data-testid="explorer-hierarchy-error-content">
     <p class="m-0">
       The level of the data tree you selected exceeds 9,500 variables. This was not added as a
       filter to your query. Please make a selection lower in the data tree and try again.
     </p>
-    <div class="flex justify-center mt-4">
-      <button class="btn preset-filled-primary-500" onclick={() => (modalOpen = false)}>Okay</button
-      >
-    </div>
   </div>
-</Modal>
+</AlertDialog>
 <div
   data-testid="explorer-hierarchy"
   class="flex flex-row justify-between bg-surface-100 p-4 rounded-container"
@@ -188,8 +185,9 @@
       </ErrorAlert>
     {/await}
   </div>
-  <button
-    class="btn btn-icon preset-filled-primary-500 m-1"
+  <Button
+    size="icon"
+    class="m-1"
     data-testid="filter-add"
     aria-label={isLoading ? 'Adding Filter...' : 'Add Filter'}
     onclick={addSelection}
@@ -203,5 +201,5 @@
     {:else}
       <i class="fas fa-plus"></i>
     {/if}
-  </button>
+  </Button>
 </div>

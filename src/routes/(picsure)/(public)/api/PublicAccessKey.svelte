@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { ApiError } from '#lib/api/errors.ts';
   import * as apiKeys from '#lib/api/psama/apiKeys.ts';
   import { turnstileSiteKey } from '#lib/config/deployment.ts';
@@ -7,6 +8,7 @@
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import Loading from '#lib/ui/Loading.svelte';
   import Turnstile from './Turnstile.svelte';
+  import { cardClass, warningMessageClass } from '#lib/ui/surface.ts';
 
   type View = 'idle' | 'form' | 'revealed' | 'error';
 
@@ -67,6 +69,11 @@
     view = 'form';
   }
 
+  // The uuid identifies the key; the key itself is never logged.
+  function logKeyCopy() {
+    log(createLog('ACTION', 'api.public_key.copy', { uuid: publicKey?.uuid }));
+  }
+
   function cancelForm() {
     log(createLog('ACTION', 'api.public_key.cancel'));
     view = 'idle';
@@ -122,12 +129,7 @@
       assessments.
     </p>
     {#if enabled}
-      <button
-        class="btn preset-filled-primary-500 my-auto mx-auto"
-        onclick={() => openForm('idle')}
-      >
-        Request Public Key
-      </button>
+      <Button class="my-auto mx-auto" onclick={() => openForm('idle')}>Request Public Key</Button>
     {:else}
       <p data-testid="api-public-key-unavailable" class="mx-0 my-auto text-center">
         Public access keys are not available on this deployment. Please log in for authorized
@@ -193,9 +195,8 @@
         {/if}
       {/if}
       <div class="flex gap-4 justify-center mt-auto">
-        <button
+        <Button
           type="submit"
-          class="btn preset-filled-primary-500"
           disabled={submitting || (!!siteKey && !captchaToken)}
           aria-describedby={siteKey && !captchaToken && !captchaFailed
             ? 'api-public-key-captcha-hint'
@@ -206,15 +207,8 @@
           {:else}
             Generate Key
           {/if}
-        </button>
-        <button
-          type="button"
-          class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-          onclick={cancelForm}
-          disabled={submitting}
-        >
-          Cancel
-        </button>
+        </Button>
+        <Button variant="tonal" onclick={cancelForm} disabled={submitting}>Cancel</Button>
       </div>
     </form>
   {:else if view === 'revealed' && publicKey}
@@ -223,7 +217,7 @@
       role="alert"
       tabindex="-1"
       bind:this={warning}
-      class="card warning-message flex items-center gap-4 py-2 px-3 mb-4"
+      class="{cardClass} {warningMessageClass} flex items-center gap-4 py-2 px-3 mb-4"
     >
       <i class="fa-solid fa-triangle-exclamation text-3xl" aria-hidden="true"></i>
       <p class="m-0 font-bold">
@@ -235,12 +229,7 @@
       <div data-testid="api-public-key-value" class="token-value grow">
         <code class="font-mono text-sm break-all">{publicKey.apiKey}</code>
       </div>
-      <CopyButton
-        itemToCopy={publicKey.apiKey}
-        logAction="api.public_key.copy"
-        logMetadata={{ uuid: publicKey.uuid }}
-        class="preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-      />
+      <CopyButton itemToCopy={publicKey.apiKey} variant="tonal" oncopy={logKeyCopy} />
     </div>
     <div class="mt-4">
       <span class="font-bold">Expires:</span>
@@ -251,8 +240,6 @@
     <div role="alert">
       <ErrorAlert color="warning">{errorMessage}</ErrorAlert>
     </div>
-    <button class="btn preset-filled-primary-500 my-auto mx-auto" onclick={() => openForm('retry')}>
-      Try Again
-    </button>
+    <Button class="my-auto mx-auto" onclick={() => openForm('retry')}>Try Again</Button>
   {/if}
 </div>

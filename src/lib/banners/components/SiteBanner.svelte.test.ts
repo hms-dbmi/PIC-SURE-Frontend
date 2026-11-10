@@ -24,6 +24,7 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
 import ExternalLinkWarning from '#lib/shell/ExternalLinkWarning.svelte';
 import SiteBanner from '#lib/banners/components/SiteBanner.svelte';
 import type { BannerAppearance, BannerPresentation } from '#lib/banners/model/banner.ts';
+import { tones, warningMessageClass } from '#lib/ui/surface.ts';
 
 const banner: BannerPresentation = {
   htmlContent:
@@ -49,8 +50,8 @@ afterEach(() => {
 
 describe('SiteBanner', () => {
   it.each([
-    ['WARNING', 'warning-message'],
-    ['ERROR', 'preset-tonal-error'],
+    ['WARNING', warningMessageClass],
+    ['ERROR', tones['tonal-error']],
   ] satisfies [BannerAppearance, string][])(
     'renders the %s tonal appearance',
     (appearance, cssClass) => {

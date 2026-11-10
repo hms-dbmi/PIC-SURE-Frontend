@@ -1,6 +1,7 @@
 <script lang="ts">
   import { useSortable } from '@dnd-kit-svelte/svelte/sortable';
   import { CollisionPriority } from '@dnd-kit/abstract';
+  import { cardClass } from '#lib/ui/surface.ts';
 
   interface Props {
     groupId: string;
@@ -25,7 +26,7 @@
 </script>
 
 <div
-  class="card bg-surface-50 text-center text-surface-400 italic py-4 transition-colors"
+  class="{cardClass} bg-surface-50 text-center text-surface-400 italic py-4 transition-colors"
   class:bg-primary-100={isDropTarget.current}
   class:text-primary-600={isDropTarget.current}
   {@attach ref}

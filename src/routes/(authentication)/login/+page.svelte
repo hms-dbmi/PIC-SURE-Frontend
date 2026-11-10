@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { onMount } from 'svelte';
   import { fly } from 'svelte/transition';
 
@@ -89,7 +90,7 @@
               provider={selectedProvider}
               {redirectTo}
               helpText={selectedProvider?.helptext}
-              class="btn preset-filled-primary-500 w-full"
+              class="w-full"
             />
           {:else}
             {#each providers as provider}
@@ -98,22 +99,23 @@
                 {provider}
                 {redirectTo}
                 helpText={provider.helptext}
-                class="btn preset-filled-primary-500 w-full"
+                class="w-full"
               />
             {/each}
           {/if}
         </div>
         {#if config.features.login.open}
-          <a
+          <Button
+            variant="outlined"
+            class="mb-4 w-full"
             href={config.branding.login.openPicsureLink || '/'}
             rel="external"
-            class="btn preset-outlined-primary-500 text-primary-500 hover:preset-filled-primary-500 hover:text-white mb-4 w-full"
             onclick={() =>
               log(
                 createLog('NAVIGATION', 'login.explore_open', {
                   url: config.branding.login.openPicsureLink || '/',
                 }),
-              )}>{openPicsureLinkText}</a
+              )}>{openPicsureLinkText}</Button
           >
         {/if}
         {#await page.data?.altProviders}
@@ -126,7 +128,8 @@
                 {provider}
                 {redirectTo}
                 helpText={provider.helptext}
-                class="btn-sm preset-outlined-primary-500 text-primary-500 hover:preset-filled-primary-500 hover:text-white"
+                variant="outlined"
+                size="compact"
               />
             {/each}
           </div>

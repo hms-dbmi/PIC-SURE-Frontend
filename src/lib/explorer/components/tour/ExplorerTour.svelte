@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { driver, type DriverHook, type DriveStep } from 'driver.js';
   import 'driver.js/dist/driver.css';
   import '../../../../styles/tour.css';
@@ -15,7 +16,7 @@
   import type { TourDataType } from '#lib/explorer/components/tour/types.ts';
   import { log, createLog, getPageContext } from '#lib/telemetry/logger.ts';
 
-  import Modal from '#lib/ui/dialog/Modal.svelte';
+  import Dialog from '#lib/ui/dialog/Dialog.svelte';
   import Loading from '#lib/ui/Loading.svelte';
 
   let { tourConfig }: { tourConfig: TourDataType } = $props();
@@ -264,13 +265,16 @@
   }
 </script>
 
-<Modal
+{#snippet tourActions()}
+  <Button variant="soft" onclick={() => (openModal = false)}>Cancel</Button>
+  <Button onclick={startTour}>Start Tour</Button>
+{/snippet}
+
+<Dialog
   bind:open={openModal}
   title={tourConfig.title}
-  confirmText="Start Tour"
-  onconfirm={startTour}
-  withDefault={false}
-  width="w-1/3"
+  size="third"
+  footer={started ? undefined : tourActions}
 >
   {#if started}
     <Loading ring size="large" />
@@ -279,27 +283,16 @@
       <!-- eslint-disable-next-line svelte/no-at-html-tags -->
       {@html sanitizeHTML(tourConfig.description)}
     </p>
-    <footer class="modal-footer flex justify-end space-x-2 mt-6">
-      <button
-        type="button"
-        class="btn border preset-tonal-primary hover:preset-filled-primary-500"
-        onclick={() => (openModal = false)}>Cancel</button
-      >
-      <button type="button" class="btn preset-filled-primary-500" onclick={startTour}
-        >Start Tour</button
-      >
-    </footer>
   {/if}
-</Modal>
-<button
-  type="button"
+</Dialog>
+<Button
   data-testid="explorer-tour-start"
   id="explorer-tour-start"
-  class="btn preset-filled-secondary-500"
+  variant="filled-secondary"
   onclick={() => {
     started = false;
     openModal = true;
     log(createLog('ACTION', 'tour.open', { pageContext: getPageContext() }));
   }}
   >Take a Tour
-</button>
+</Button>

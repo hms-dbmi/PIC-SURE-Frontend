@@ -7,6 +7,7 @@
   import RemoteTree from '#lib/ui/tree/RemoteTree.svelte';
   import Summary from '#lib/explorer/export/Summary.svelte';
   import { getQueryRequest } from '#lib/explorer/export/ExportStepperManager.svelte.ts';
+  import { cardClass } from '#lib/ui/surface.ts';
 
   let disabledConcepts: string[] = $derived(getQueryRequest().query.select);
   let selectedConcepts: string[] = $derived([
@@ -64,7 +65,7 @@
 
 <section class="flex flex-col w-full h-full items-center">
   <Summary />
-  <div class="w-full h-full m-2 card p-4">
+  <div class="w-full h-full m-2 {cardClass} p-4">
     <header class="card-header">
       Select <strong>additional variables</strong> you would like to be included in your final data export.
     </header>

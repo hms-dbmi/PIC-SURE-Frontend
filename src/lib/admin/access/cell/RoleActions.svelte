@@ -1,11 +1,12 @@
 <script lang="ts">
+  import IconButton from '#lib/ui/IconButton.svelte';
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
 
   import { isTopAdmin } from '#lib/auth/User.ts';
   import { toaster } from '#lib/ui/toaster.ts';
   import { deleteRole } from '#lib/admin/access/Roles.ts';
-  import Modal from '#lib/ui/dialog/Modal.svelte';
+  import ConfirmButton from '#lib/ui/ConfirmButton.svelte';
 
   const { data = { cell: '', row: { name: '' } } } = $props();
 
@@ -37,34 +38,25 @@
 </script>
 
 <div class="w-20 min-w-20">
-  <button
+  <IconButton
+    icon="fa-solid fa-pen-to-square fa-xl"
+    label="Edit (e)"
     data-testid={`admin-role-edit-${data.cell}`}
-    type="button"
-    title="Edit (e)"
-    data-key="e"
-    class="btn-icon-color"
+    shortcut="e"
     disabled={!$isTopAdmin}
     onclick={editRole}
-  >
-    <i class="fa-solid fa-pen-to-square fa-xl"></i>
-    <span class="sr-only">Edit (e)</span>
-  </button>
-  <Modal
+  />
+  <ConfirmButton
+    icon="fa-solid fa-trash fa-xl"
+    label="Delete (d)"
+    shortcut="d"
     data-testid="admin-role-delete-{data.cell}"
     title="Delete Role?"
-    triggerTitle="Delete (d)"
-    data-key="d"
-    confirmText="Yes"
-    cancelText="No"
+    confirmLabel="Yes"
+    cancelLabel="No"
     disabled={!$isTopAdmin}
     onconfirm={deleteRow}
-    triggerBase="btn-icon-color"
-    withDefault
   >
-    {#snippet trigger()}
-      <i class="fa-solid fa-trash fa-xl"></i>
-      <span class="sr-only">Delete (d)</span>
-    {/snippet}
     Are you sure you want to delete role '{data.row.name}'?
-  </Modal>
+  </ConfirmButton>
 </div>

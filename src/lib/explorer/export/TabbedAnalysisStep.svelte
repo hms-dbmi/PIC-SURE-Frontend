@@ -1,7 +1,6 @@
 <script lang="ts">
   import { config } from '#lib/config/config.svelte.ts';
-  import { Tabs } from '@skeletonlabs/skeleton-svelte';
-  import TabItem from '#lib/ui/TabItem.svelte';
+  import Tabs, { type Tab } from '#lib/ui/Tabs.svelte';
   import CodeBlock from '#lib/ui/CodeBlock.svelte';
   import DownloadButton from './DownloadButton.svelte';
   import {
@@ -10,62 +9,60 @@
   } from '#lib/explorer/export/ExportStepperManager.svelte.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
 
-  let tabSet: string = $derived(
-    config.features.analyzeApi
-      ? 'Python'
-      : config.features.explorer.allowDownload
-        ? 'Download'
-        : '',
-  );
+  type AnalysisTab = 'Python' | 'R' | 'Download';
+
+  const tabs: Tab<AnalysisTab>[] = $derived([
+    ...(config.features.analyzeApi
+      ? [
+          { value: 'Python' as const, label: 'Python' },
+          { value: 'R' as const, label: 'R' },
+        ]
+      : []),
+    ...(config.features.explorer.allowDownload
+      ? [{ value: 'Download' as const, label: 'Download' }]
+      : []),
+  ]);
+  let tabSet: AnalysisTab | undefined = $derived(tabs[0]?.value);
 </script>
 
 {#if config.branding.explorePage.analysisExportText && config.branding.explorePage.analysisExportText.length > 0}
   <p class="mt-4">{config.branding.explorePage.analysisExportText}</p>
 {/if}
-<Tabs
-  value={tabSet}
-  onValueChange={(e: { value: string }) => {
-    tabSet = e.value;
-    log(createLog('EXPORT', 'export.tab_change', { tab: e.value }));
-  }}
->
-  {#snippet list()}
-    {#if config.features.analyzeApi}
-      <TabItem bind:group={tabSet} value="Python">Python</TabItem>
-      <TabItem bind:group={tabSet} value="R">R</TabItem>
-    {/if}
-    {#if config.features.explorer.allowDownload}
-      <TabItem bind:group={tabSet} value="Download">Download</TabItem>
-    {/if}
-  {/snippet}
-  {#snippet content()}
-    <Tabs.Panel value="Python">
-      <CodeBlock
-        lang="python"
-        code={config.branding.explorePage.codeBlocks.PythonExport.replace(
-          '{{queryId}}',
-          getDatasetId() ?? 'DATASET_ID_MISSING',
-        ) || 'Code not set for Python in configuration'}
-      />
-    </Tabs.Panel>
-    <Tabs.Panel value="R">
-      <CodeBlock
-        lang="r"
-        code={config.branding.explorePage.codeBlocks.RExport.replace(
-          '{{queryId}}',
-          getDatasetId() ?? 'DATASET_ID_MISSING',
-        ) || 'Code not set for R in configuration'}
-      />
-    </Tabs.Panel>
-    {#if config.features.explorer.allowDownload}
-      <Tabs.Panel value="Download">
+{#if tabSet}
+  <Tabs
+    label="Analysis options"
+    {tabs}
+    value={tabSet}
+    onchange={(tab) => {
+      tabSet = tab;
+      log(createLog('EXPORT', 'export.tab_change', { tab }));
+    }}
+  >
+    {#snippet panel(tab)}
+      {#if tab === 'Python'}
+        <CodeBlock
+          lang="python"
+          code={config.branding.explorePage.codeBlocks.PythonExport.replace(
+            '{{queryId}}',
+            getDatasetId() ?? 'DATASET_ID_MISSING',
+          ) || 'Code not set for Python in configuration'}
+        />
+      {:else if tab === 'R'}
+        <CodeBlock
+          lang="r"
+          code={config.branding.explorePage.codeBlocks.RExport.replace(
+            '{{queryId}}',
+            getDatasetId() ?? 'DATASET_ID_MISSING',
+          ) || 'Code not set for R in configuration'}
+        />
+      {:else}
         <div class="flex justify-center w-full">
           <DownloadButton query={getQueryRequest()} datasetId={getDatasetId()} />
         </div>
-      </Tabs.Panel>
-    {/if}
-  {/snippet}
-</Tabs>
+      {/if}
+    {/snippet}
+  </Tabs>
+{/if}
 {#if config.branding.explorePage.goTo.instructions && config.branding.explorePage.goTo.instructions.length > 0}
   <p>{config.branding.explorePage.goTo.instructions}</p>
 {/if}

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { onMount } from 'svelte';
   import { afterNavigate } from '$app/navigation';
   import { page } from '$app/state';
@@ -165,15 +166,16 @@
           </p>
         </div>
         <div class="flex flex-col justify-center">
-          <button
+          <Button
+            class="mt-1 mb-1"
             data-testid="app-consent-accept"
-            class="btn preset-filled-primary-500 mt-1 mb-1"
-            onclick={() => updateConsent(true)}>Accept</button
+            onclick={() => updateConsent(true)}>Accept</Button
           >
-          <button
+          <Button
             data-testid="app-consent-reject"
-            class="btn preset-tonal-primary border border-primary-500 mt-1 mb-1 self-center"
-            onclick={() => updateConsent(false)}>Reject</button
+            variant="tonal-static"
+            class="mt-1 mb-1 self-center"
+            onclick={() => updateConsent(false)}>Reject</Button
           >
         </div>
       </div>

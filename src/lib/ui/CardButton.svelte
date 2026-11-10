@@ -1,10 +1,12 @@
 <script lang="ts">
-  import { resolve } from '$app/paths';
-  import { appPath } from '#lib/api/paths.ts';
+  import Button from '#lib/ui/Button.svelte';
+  import { isExternalHref } from '#lib/ui/button.ts';
+
   interface Props {
     title: string;
     id?: string;
     icon?: string;
+    /** Resolve internal paths first; external links open in a new tab. */
     href?: string;
     subtitle?: string;
     size?: 'sm' | 'md' | 'lg' | 'other';
@@ -17,66 +19,27 @@
 
   const {
     title,
-    id,
     icon = '',
-    href = '',
+    href,
     subtitle = '',
     size = 'lg',
-    disabled = false,
     active = false,
-    'data-testid': testid = '',
     class: className = '',
-    onclick = () => {},
+    ...rest
   }: Props = $props();
 
   const sizes = { sm: 'card-btn-sm', md: 'card-btn-md', lg: 'card-btn-lg', other: '' };
-  const cardClasses = $derived(`card card-btn ${sizes[size]} ${className}`);
 </script>
 
-{#snippet cardContent()}
+<Button
+  {...rest}
+  {href}
+  target={href && isExternalHref(href) ? '_blank' : undefined}
+  variant={active ? 'filled' : 'none'}
+  size="none"
+  class="card card-btn {sizes[size]} {className}"
+>
   {#if icon}<i class="icon {icon}"></i>{/if}
   <div class="title">{title}</div>
   {#if subtitle && !['sm', 'md'].includes(size)}<div class="subtitle">{subtitle}</div>{/if}
-{/snippet}
-
-{#if href && !disabled}
-  {#if href.startsWith('/')}
-    <a
-      href={resolve(appPath(href))}
-      {id}
-      data-testid={testid}
-      class={cardClasses}
-      class:preset-filled-primary-500={active}
-      tabindex="0"
-      {onclick}
-    >
-      {@render cardContent()}
-    </a>
-  {:else}
-    <a
-      {href}
-      {id}
-      data-testid={testid}
-      target="_blank"
-      rel="external"
-      class={cardClasses}
-      class:preset-filled-primary-500={active}
-      tabindex="0"
-      {onclick}
-    >
-      {@render cardContent()}
-    </a>
-  {/if}
-{:else}
-  <button
-    {id}
-    data-testid={testid}
-    type="button"
-    class={cardClasses}
-    class:preset-filled-primary-500={active}
-    {onclick}
-    {disabled}
-  >
-    {@render cardContent()}
-  </button>
-{/if}
+</Button>

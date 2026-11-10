@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { buttonClass } from '#lib/ui/button.ts';
   import { resolve } from '$app/paths';
   import { onDestroy, onMount } from 'svelte';
   import { elasticInOut } from 'svelte/easing';
@@ -17,9 +18,10 @@
   import Filters from '#lib/explorer/components/results/Filters.svelte';
   import ExportedVariable from '#lib/explorer/components/results/ExportedVariable.svelte';
   import CardButton from '#lib/ui/CardButton.svelte';
-  import Modal from '#lib/ui/dialog/Modal.svelte';
+  import ConfirmDialog from '#lib/ui/dialog/ConfirmDialog.svelte';
   import Counts from '#lib/explorer/components/results/Counts.svelte';
   import { log, createLog } from '#lib/telemetry/logger.ts';
+  import Button from '#lib/ui/Button.svelte';
 
   let currentPage: string = $state(page.url.pathname);
   let isDiscoverPage = $derived(currentPage.includes('/discover'));
@@ -91,19 +93,18 @@
   });
 </script>
 
-<Modal
+<ConfirmDialog
   bind:open={modalOpen}
   title="Clear All Filters"
-  withDefault
-  confirmText="Yes"
-  cancelText="No"
+  confirmLabel="Yes"
+  cancelLabel="No"
   onconfirm={() => {
     clearFilters();
     clearExports();
   }}
 >
   Are you sure you want to clear all filters?
-</Modal>
+</ConfirmDialog>
 <section
   id="results-panel"
   class="flex flex-col items-center pt-8 pr-10 w-64"
@@ -115,7 +116,7 @@
       <button
         id="results-export-open"
         type="button"
-        class="btn preset-filled-primary-500"
+        class={buttonClass()}
         disabled={resultCountsState.loading}
         onclick={() => {
           log(createLog('ACTION', 'explorer.prepare_for_analysis'));
@@ -132,10 +133,12 @@
     <div class="flex content-center items-center mt-6">
       <h5 class="flex-auto ml-9 mr-2 mb-2 pt-1">Filtered Data Summary</h5>
       {#if hasFilterOrExport}
-        <button
+        <Button
           data-testid="results-reset"
-          class="btn btn-xs preset-tonal-error border border-error-500 hover:preset-filled-error-500 flex-none"
-          onclick={() => (modalOpen = true)}>Reset</button
+          variant="tonal-error"
+          size="xs"
+          class="flex-none"
+          onclick={() => (modalOpen = true)}>Reset</Button
         >
       {/if}
     </div>

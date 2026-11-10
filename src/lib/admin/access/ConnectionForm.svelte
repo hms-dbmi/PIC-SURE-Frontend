@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
 
@@ -99,20 +100,14 @@
     <RequiredFieldsList fields={requiredFields} onupdate={updateRequiredFields} />
 
     <div class="mt-2">
-      <button
-        type="submit"
-        data-testid="admin-connection-save"
-        class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-      >
-        Save
-      </button>
-      <a
+      <Button variant="tonal" type="submit" data-testid="admin-connection-save">Save</Button>
+      <Button
+        variant="tonal-secondary"
         href={resolve('admin/configuration')}
         data-testid="admin-connection-cancel"
-        class="btn preset-tonal-secondary border border-secondary-500 hover:preset-filled-secondary-500"
       >
         Cancel
-      </a>
+      </Button>
     </div>
   </fieldset>
 </form>

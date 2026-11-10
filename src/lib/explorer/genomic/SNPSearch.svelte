@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { selectedSNPs, clearSnpFilters, saveSNP, deleteSNP } from '#lib/query/SNPFilter.ts';
   import type { SNP } from '#lib/query/genomic.ts';
 
@@ -42,10 +43,11 @@
   </Panel>
   <Panel data-testid="genomic-summary-panel" title="Summary of Selected Filters">
     {#snippet action()}
-      <button
-        class="btn btn-xs preset-outlined-surface-500 hover:preset-tonal-primary border border-primary-500"
+      <Button
+        variant="outlined-surface"
+        size="xs"
         disabled={$selectedSNPs.length === 0}
-        onclick={clearSnpFilters}>Clear</button
+        onclick={clearSnpFilters}>Clear</Button
       >
     {/snippet}
     <Summary {onedit} {ondelete} />

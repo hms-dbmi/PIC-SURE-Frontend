@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { config } from '#lib/config/config.svelte.ts';
 
   import HelpInfoPopup from '#lib/ui/popover/HelpInfoPopup.svelte';
@@ -29,10 +30,11 @@
     required
   >
     {#snippet action()}
-      <button
+      <Button
+        variant="outlined-surface"
+        size="xs"
         data-testid="genomic-gene-clear-selected"
-        class="btn btn-xs preset-outlined-surface-500 hover:preset-tonal-primary border border-primary-500"
-        onclick={clearSelectedGenes}>Clear</button
+        onclick={clearSelectedGenes}>Clear</Button
       >
     {/snippet}
     <Genes />
@@ -73,10 +75,11 @@
   </Panel>
   <Panel data-testid="genomic-summary-panel" title="Summary of Selected Filters" class="col-span-3">
     {#snippet action()}
-      <button
+      <Button
+        variant="outlined-surface"
+        size="xs"
         data-testid="genomic-gene-clear-filters"
-        class="btn btn-xs preset-outlined-surface-500 hover:preset-tonal-primary border border-primary-500"
-        onclick={clearGeneFilters}>Clear</button
+        onclick={clearGeneFilters}>Clear</Button
       >
     {/snippet}
     <Summary />

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Accordion } from '@skeletonlabs/skeleton-svelte';
+  import CollapsiblePanel from '#lib/ui/CollapsiblePanel.svelte';
   import { scale } from 'svelte/transition';
   import { elasticInOut } from 'svelte/easing';
   import type { DictionaryFacetResult } from '#lib/api/picsure/dictionary.types.ts';
@@ -10,6 +10,7 @@
 
   import ShowMoreButton from '#lib/ui/ShowMoreButton.svelte';
   import FacetItem from './FacetItem.svelte';
+  import { tones } from '#lib/ui/surface.ts';
 
   interface Props {
     facetCategory: DictionaryFacetResult;
@@ -136,55 +137,46 @@
   }
 </script>
 
-<Accordion.Item
-  value={facetCategory.name}
-  headingLevel={6}
-  controlRounded="rounded-t-xl aria-expanded:rounded-b-none rounded-b-xl"
-  controlClasses="h6 bg-primary-100-900 hover:bg-secondary-200-800"
-  panelClasses="bg-surface-100"
-  panelRounded="rounded-b-xl"
->
-  {#snippet control()}
+<CollapsiblePanel value={facetCategory.name}>
+  {#snippet heading()}
     {facetCategory.display}
   {/snippet}
-  {#snippet panel()}
-    <div class="flex flex-col">
-      {#if overShowLimit}
-        <input
-          type="search"
-          placeholder={'Filter ' + facetCategory.display}
-          name="facet-fitler"
-          bind:value={textFilterValue}
-          onblur={() => {
-            if (textFilterValue)
-              log(
-                createLog('SEARCH', 'facet.search', {
-                  category: facetCategory.name,
-                  term: textFilterValue,
-                  pageContext: getPageContext(),
-                }),
-              );
-          }}
-        />
-      {/if}
-      {#each facetsToDisplay as facet (facet.name)}
-        <FacetItem {facet} {facetCategory} {textFilterValue} />
-      {/each}
-      {#if overShowLimit && !textFilterValue}
-        <ShowMoreButton
-          data-testid="explorer-facets-show-more"
-          expanded={showMore}
-          onclick={() => (showMore = !showMore)}
-        />
-      {/if}
-    </div>
-  {/snippet}
-</Accordion.Item>
+  <div class="flex flex-col">
+    {#if overShowLimit}
+      <input
+        type="search"
+        placeholder={'Filter ' + facetCategory.display}
+        name="facet-fitler"
+        bind:value={textFilterValue}
+        onblur={() => {
+          if (textFilterValue)
+            log(
+              createLog('SEARCH', 'facet.search', {
+                category: facetCategory.name,
+                term: textFilterValue,
+                pageContext: getPageContext(),
+              }),
+            );
+        }}
+      />
+    {/if}
+    {#each facetsToDisplay as facet (facet.name)}
+      <FacetItem {facet} {facetCategory} {textFilterValue} />
+    {/each}
+    {#if overShowLimit && !textFilterValue}
+      <ShowMoreButton
+        data-testid="explorer-facets-show-more"
+        expanded={showMore}
+        onclick={() => (showMore = !showMore)}
+      />
+    {/if}
+  </div>
+</CollapsiblePanel>
 {#if !$openFacets.includes(facetCategory.name)}
   <div class="mb-2 flex flex-wrap gap-2" transition:scale={{ easing: elasticInOut }}>
     {#each selectedFacetsChips as facet}
       <span
-        class="badge z-10 preset-outlined-surface-500 py-2 overflow-hidden"
+        class="badge z-10 {tones['outlined-surface']} py-2 overflow-hidden"
         data-testid="explorer-facet-badge-{facet.name}"
       >
         <span class="overflow-hidden text-ellipsis whitespace-nowrap min-w-0">

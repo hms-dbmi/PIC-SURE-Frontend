@@ -21,9 +21,11 @@
   import FiltersSummary from '#lib/datasets/components/FiltersSummary.svelte';
   import SelectedVariablesSummary from '#lib/datasets/components/SelectedVariablesSummary.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
-  import Modal from '#lib/ui/dialog/Modal.svelte';
+  import ConfirmButton from '#lib/ui/ConfirmButton.svelte';
   import Popover from '#lib/ui/popover/Popover.svelte';
   import FilterCardPlaceholder from './FilterCardPlaceholder.svelte';
+  import SkeletonBar from '#lib/ui/skeleton/SkeletonBar.svelte';
+  import { buttonClass, buttonSizes } from '#lib/ui/button.ts';
 
   let {
     query,
@@ -66,7 +68,7 @@
 </script>
 
 {#await queryData.errors}
-  <div class="float-right placeholder animate-pulse btn-sm">Restore Filters</div>
+  <div class="float-right placeholder animate-pulse {buttonSizes.compact}">Restore Filters</div>
 {:then errors}
   {@const hasErrors = errors.length > 0}
   {#if hasErrors}
@@ -86,21 +88,22 @@
   {/if}
   {#if restoreQueryButton && !hasErrors}
     <div class="float-right">
-      <Modal
+      <ConfirmButton
+        label="Restore Filters"
+        variant="filled-surface"
+        size="sm"
+        class="float-right"
         bind:open={modal}
         title="Restore Filters"
         data-testid="dataset-restore-filters"
-        triggerBase="btn preset-filled-surface-500 float-right btn-sm"
-        withDefault
-        confirmText="Restore Filters"
+        confirmLabel="Restore Filters"
         onconfirm={() => setFilters()}
       >
-        {#snippet trigger()}Restore Filters{/snippet}
         {#if hasExistingFilters}
           <ErrorAlert icon color="warning">You already have active filters.</ErrorAlert>
         {/if}
         <p>Do you want to set these as your active filters and redirect to Explore?</p>
-      </Modal>
+      </ConfirmButton>
     </div>
   {:else}
     <div class="float-right">
@@ -108,7 +111,7 @@
         triggerDisabled={true}
         data-testid="dataset-restore-popover"
         triggerTypes={['hover']}
-        triggerStyle="btn preset-filled-surface-500 btn-sm"
+        triggerStyle={buttonClass('filled-surface', 'sm')}
       >
         {#snippet trigger()}Restore Filters{/snippet}
         {#if hasErrors}
@@ -135,9 +138,8 @@
   <h2 class="text-left h4 mb-2 mt-6">Variables Included in Dataset</h2>
   {#await queryData.exports}
     <div class="grid grid-cols-10 gap-4">
-      <!-- eslint-disable-next-line @typescript-eslint/no-unused-vars -->
-      {#each Array(estimate.exports) as _unused, i}
-        <div class="placeholder animate-pulse"></div>
+      {#each { length: estimate.exports }}
+        <SkeletonBar />
       {/each}
     </div>
   {:then exports}

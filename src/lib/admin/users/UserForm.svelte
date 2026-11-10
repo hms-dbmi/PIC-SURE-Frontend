@@ -1,7 +1,8 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
-  import { Switch } from '@skeletonlabs/skeleton-svelte';
+  import Switch from '#lib/ui/Switch.svelte';
 
   import type { ExtendedUser, UserRequest } from '#lib/auth/model/user.ts';
   import type { Connection } from '#lib/auth/model/connection.ts';
@@ -97,10 +98,9 @@
   <fieldset data-testid="admin-user-form" class="grid gap-4 my-3">
     <Switch
       name="Active"
-      controlActive="bg-success-500"
-      label="Status"
+      tone="success"
       checked={active}
-      onCheckedChange={() => (active = !active)}
+      onchange={(checked) => (active = checked)}
     >
       {active ? 'Active' : 'Inactive'}
     </Switch>
@@ -158,18 +158,8 @@
     {/if}
 
     <div class="mt-2">
-      <button
-        type="submit"
-        class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-      >
-        Save
-      </button>
-      <a
-        href={resolve('admin/users')}
-        class="btn preset-tonal-secondary border border-secondary-500 hover:preset-filled-secondary-500"
-      >
-        Cancel
-      </a>
+      <Button variant="tonal" type="submit">Save</Button>
+      <Button variant="tonal-secondary" href={resolve('admin/users')}>Cancel</Button>
     </div>
   </fieldset>
 </form>

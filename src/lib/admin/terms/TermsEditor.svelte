@@ -5,7 +5,7 @@
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import Loading from '#lib/ui/Loading.svelte';
   import Editor from '#lib/ui/Editor.svelte';
-  import Modal from '#lib/ui/dialog/Modal.svelte';
+  import ConfirmButton from '#lib/ui/ConfirmButton.svelte';
 
   let terms: string = $state('');
   let original: string = $state('');
@@ -39,23 +39,22 @@
        layout already limits this page to those users. -->
   <Editor fontOptions bind:content={terms} />
   <div class="flex justify-end">
-    <Modal
+    <ConfirmButton
+      label="Publish"
+      variant="tonal"
+      class="mt-3"
       title="Publish"
-      width="w-1/3"
+      dialogSize="third"
       data-testid="admin-terms-publish"
-      triggerBase="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500 mt-3"
       disabled={!dirty}
-      withDefault={true}
       onconfirm={onCommit}
-      cancelClass="border preset-tonal-error hover:preset-filled-error-500"
     >
-      {#snippet trigger()}Publish{/snippet}
       <div>
         Once published, these terms will be live and every user will be prompted to accept them on
         their next login.
       </div>
       <div class="mt-3">Do you wish to continue?</div>
-    </Modal>
+    </ConfirmButton>
   </div>
 {:catch}
   <ErrorAlert title="API Error">

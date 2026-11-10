@@ -6,7 +6,7 @@
   import TimedLoading, { type TimedMessage } from '#lib/ui/TimedLoading.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import { submitQuery as startQuery } from '#lib/api/picsure/query.ts';
-  import { stepperState } from '#lib/ui/stepper/stepperState.ts';
+  import { getStepper } from '#lib/ui/stepper/stepper.svelte.ts';
   import { exports } from '#lib/explorer/export/Export.ts';
   import {
     getActiveType,
@@ -19,6 +19,7 @@
   } from '#lib/explorer/export/ExportStepperManager.svelte.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
   import { config } from '#lib/config/config.svelte.ts';
+  import { cardClass } from '#lib/ui/surface.ts';
 
   const CREATING_MESSAGES: TimedMessage[] = [
     { afterMs: 0, text: 'Creating dataset ID…' },
@@ -27,6 +28,7 @@
   const RETRYING_MESSAGES: TimedMessage[] = [
     { afterMs: 0, text: "Something's taking longer than usual. We are still working on it…" },
   ];
+  const stepper = getStepper();
   let retrying = $state(false);
   let datasetIdPromise: Promise<void> = $state(Promise.resolve());
   let preparePromise: Promise<void> = $state(Promise.resolve());
@@ -68,7 +70,7 @@
         });
       });
     } catch (error) {
-      $stepperState.current--;
+      stepper.state.current--;
       console.error('Error in submitQuery', error);
       throw error;
     }
@@ -92,7 +94,7 @@
   {#await preparePromise}
     <Loading ring />
   {:then}
-    <div class="w-full h-full m-2 card p-4">
+    <div class="w-full h-full m-2 {cardClass} p-4">
       <header class="card-header">
         Save the information in your final data export by clicking the Save Dataset ID button.
         Navigate to the <a class="anchor" href={resolve('dataset')}>Manage Datasets page</a> to view or

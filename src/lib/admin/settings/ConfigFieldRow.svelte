@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { describeConfigField, type ConfigFieldSchema } from '#lib/config/admin.ts';
   import type { ConfigMap, ConfigObject } from '#lib/config/resolve.ts';
   import {
@@ -9,6 +10,7 @@
   } from '#lib/admin/settings/AdminConfiguration.ts';
   import { humanizeKey, truncate, visibleLength } from '#lib/utils/strings.ts';
   import { toaster } from '#lib/ui/toaster.ts';
+  import { cardClass, tones } from '#lib/ui/surface.ts';
 
   interface Props {
     schema: ConfigFieldSchema;
@@ -103,9 +105,9 @@
 
   const originLabel = { env: 'Env', api: 'API', default: 'Default' };
   const originClass = {
-    env: 'preset-tonal-primary border border-primary-500',
-    api: 'preset-tonal-success border border-success-500',
-    default: 'preset-tonal-surface border border-surface-500',
+    env: `${tones['tonal-primary']} border border-primary-500`,
+    api: `${tones['tonal-success']} border border-success-500`,
+    default: `${tones['tonal-surface']} border border-surface-500`,
   };
   const originDotClass = {
     env: 'bg-primary-500',
@@ -126,7 +128,7 @@
 </script>
 
 <div
-  class="card border bg-white border-surface-200-800 rounded-xl p-5 shadow-sm {editDisabled
+  class="{cardClass} border bg-white border-surface-200-800 rounded-xl p-5 shadow-sm {editDisabled
     ? 'opacity-55'
     : ''}"
   data-testid={`admin-config-field-row-${schema.name}`}
@@ -267,15 +269,14 @@
 
       <div class="flex items-center gap-3.5 mt-3 min-h-[28px]">
         {#if dirty}
-          <button
-            type="button"
-            class="btn btn-sm preset-filled-primary-500"
+          <Button
+            size="sm"
             data-testid={`admin-config-field-save-${schema.name}`}
             disabled={editDisabled || !valid || saving}
             onclick={saveField}
           >
             Save
-          </button>
+          </Button>
         {/if}
         {#if apiRow?.uuid}
           <button

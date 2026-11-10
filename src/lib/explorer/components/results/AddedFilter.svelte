@@ -17,9 +17,10 @@
   import { populateFromSNPFilter } from '#lib/query/SNPFilter.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
 
-  import Modal from '#lib/ui/dialog/Modal.svelte';
+  import Dialog from '#lib/ui/dialog/Dialog.svelte';
   import AddFilter from '#lib/explorer/components/AddFilter.svelte';
   import ViewAnyRecordOfFilter from '#lib/explorer/components/ViewAnyRecordOfFilter.svelte';
+  import { cardClass } from '#lib/ui/surface.ts';
 
   let { filter }: { filter: Filter } = $props();
   let open = $state(false);
@@ -61,7 +62,7 @@
 </script>
 
 <div
-  class="flex flex-col card bg-surface-100 p-1 m-1"
+  class="flex flex-col {cardClass} bg-surface-100 p-1 m-1"
   in:scale={{ easing: elasticInOut }}
   out:fade={{ duration: 300 }}
   data-testid="results-filter-item-{filter.id}"
@@ -78,11 +79,10 @@
         {filter.variableName}
       </div>
     {:else}
-      <Modal
+      <Dialog
         bind:open={anyRecordOfModal}
         title="View Variables in Filter"
         data-testid={`results-filter-any-record-of-${filter.id}`}
-        withDefault={false}
       >
         {#snippet trigger()}
           <div class="text-left">
@@ -94,7 +94,7 @@
           </div>
         {/snippet}
         <ViewAnyRecordOfFilter {filter} />
-      </Modal>
+      </Dialog>
     {/if}
     <div class="actions">
       {#if genomicFilter}
@@ -108,11 +108,10 @@
           <span class="sr-only">Edit Filter</span>
         </button>
       {:else if !anyRecordOfFilter}
-        <Modal
+        <Dialog
           bind:open={filterModal}
           title="Edit Filter"
-          triggerBase="hover:text-primary-600"
-          withDefault={false}
+          triggerClass="hover:text-primary-600"
           ontrigger={logEditClick}
         >
           {#snippet trigger()}
@@ -124,7 +123,7 @@
             existingFilter={filter}
             onclose={() => (filterModal = false)}
           />
-        </Modal>
+        </Dialog>
       {/if}
       <button
         type="button"

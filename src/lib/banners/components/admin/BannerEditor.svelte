@@ -1,10 +1,11 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { onDestroy, untrack } from 'svelte';
   import BannerPageTargetFields from '#lib/banners/components/admin/fields/PageTargetFields.svelte';
   import BannerScheduleFields from '#lib/banners/components/admin/fields/ScheduleFields.svelte';
   import SiteBanner from '#lib/banners/components/SiteBanner.svelte';
   import Editor from '#lib/ui/Editor.svelte';
-  import UnsavedChangesModal from '#lib/ui/dialog/UnsavedChangesModal.svelte';
+  import ConfirmDialog from '#lib/ui/dialog/ConfirmDialog.svelte';
   import type {
     BannerAppearance,
     BannerAudience,
@@ -38,6 +39,7 @@
   } from '#lib/banners/model/schedule.ts';
   import { validateBannerPageTarget } from '#lib/banners/model/pageTargets.ts';
   import { createUnsavedGuard } from '#lib/ui/unsavedGuard.svelte.ts';
+  import { cardClass } from '#lib/ui/surface.ts';
 
   type TargetedPage = Exclude<BannerPageTarget, { kind: 'ALL' }>;
   type EditorTransition = { kind: 'cancel' } | { kind: 'tab'; destination: string };
@@ -451,19 +453,22 @@
   }
 </script>
 
-<UnsavedChangesModal
-  open={guard.open}
-  keepLabel="Keep editing"
-  discardLabel="Discard changes"
-  onkeep={keepEditing}
-  ondiscard={discardChanges}
+<ConfirmDialog
+  bind:open={guard.open}
+  title="Unsaved Changes"
+  closeable={false}
+  cancelLabel="Keep editing"
+  confirmLabel="Discard changes"
+  tone="danger"
+  oncancel={keepEditing}
+  onconfirm={discardChanges}
 >
   {#if pendingTabDestination}
     You have unsaved banner changes. Discard them to open {pendingTabDestination}, or keep editing.
   {:else}
     You have unsaved banner changes. Discard them or keep editing.
   {/if}
-</UnsavedChangesModal>
+</ConfirmDialog>
 
 <section class="mx-auto max-w-5xl" aria-labelledby="banner-editor-title">
   <header class="mb-6">
@@ -473,7 +478,7 @@
 
   <form
     data-testid="banner-editor-form"
-    class="card p-6"
+    class="{cardClass} p-6"
     onsubmit={(event) => {
       event.preventDefault();
       publish();
@@ -613,13 +618,10 @@
     </div>
 
     <div class="mt-6 flex items-center justify-end gap-3">
-      <button type="button" class="btn preset-tonal-primary mr-auto" onclick={requestCancel}>
-        Cancel
-      </button>
+      <Button variant="tint" class="mr-auto" onclick={requestCancel}>Cancel</Button>
       {#if editorMode !== 'restore' && banner?.status !== 'PUBLISHED'}
-        <button
-          type="button"
-          class="btn border preset-tonal-primary"
+        <Button
+          variant="soft-static"
           disabled={working !== null ||
             !dirty ||
             !hasContent ||
@@ -630,11 +632,10 @@
           onclick={saveForLater}
         >
           {working === 'save' ? 'Saving...' : banner ? 'Save changes' : 'Save for later'}
-        </button>
+        </Button>
       {/if}
-      <button
+      <Button
         type="submit"
-        class="btn preset-filled-primary-500"
         disabled={working !== null ||
           (editorMode === 'edit' && banner?.status === 'PUBLISHED' && !dirty) ||
           !hasContent ||
@@ -644,7 +645,7 @@
           pageTargetsInvalid}
       >
         {working === 'publish' ? publishCopy.busyLabel : publishCopy.submitLabel}
-      </button>
+      </Button>
     </div>
   </form>
 </section>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { Genotype, type SNP } from '#lib/query/genomic.ts';
 
   let { snp, onsave = () => {} }: { snp: SNP; onsave: (snp: SNP) => void } = $props();
@@ -15,13 +16,13 @@
   <option value={Genotype.HeterozygousOrHomozygous}>Heterozygous or homozygous</option>
   <!-- <option value={Genotype.Neither}>Exclude variant</option> -->
 </select>
-<button
-  type="button"
+<Button
+  size="sm"
+  class="disabled:opacity-75"
   aria-label="Save SNP"
   data-testid="genomic-snp-save"
-  class="btn btn-sm preset-filled-primary-500 disabled:opacity-75"
   onclick={() => onsave({ search: snp.search, constraint })}
   disabled={constraint === ''}
 >
   Save SNP
-</button>
+</Button>

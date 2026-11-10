@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { onMount } from 'svelte';
 
   import { browser } from '$app/env';
@@ -74,25 +75,10 @@
   <TermsPreview terms={termsHTML} />
   <footer class="modal-footer flex justify-end space-x-2 mt-6">
     {#if enforceTerms}
-      <button
-        type="button"
-        data-testid="terms-reject"
-        class="btn border preset-tonal-primary hover:preset-filled-primary-500"
-        onclick={reject}>Reject</button
-      >
-      <button
-        type="button"
-        data-testid="terms-accept"
-        class="btn preset-filled-primary-500"
-        onclick={accept}>Accept</button
-      >
+      <Button variant="soft" data-testid="terms-reject" onclick={reject}>Reject</Button>
+      <Button data-testid="terms-accept" onclick={accept}>Accept</Button>
     {:else}
-      <button
-        type="button"
-        data-testid="terms-close"
-        class="btn border preset-tonal-primary hover:preset-filled-primary-500"
-        onclick={close}>Close</button
-      >
+      <Button variant="soft" data-testid="terms-close" onclick={close}>Close</Button>
     {/if}
   </footer>
 {:catch}
@@ -100,11 +86,6 @@
     >Could not load terms of service. Please contact an administrator.</ErrorAlert
   >
   {#if modalOpen !== undefined}
-    <button
-      type="button"
-      data-testid="terms-close"
-      class="btn border preset-tonal-primary hover:preset-filled-primary-500"
-      onclick={close}>Close</button
-    >
+    <Button variant="soft" data-testid="terms-close" onclick={close}>Close</Button>
   {/if}
 {/await}
