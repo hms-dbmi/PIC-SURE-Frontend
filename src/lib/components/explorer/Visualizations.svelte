@@ -132,7 +132,11 @@
 />
 {#if excludedVariables.length}
   <div class="w-3/4 mx-auto my-4">
-    <ErrorAlert color="warning" iconSize="4xl" data-testid="excluded-visualizations-warning">
+    <ErrorAlert
+      color="warning"
+      iconSize="4xl"
+      data-testid="explorer-visualizations-excluded-warning"
+    >
       <p class="mb-1">
         Some variables were excluded from visualization because there was insufficient participant
         data for the selected query.
@@ -146,7 +150,7 @@
     </ErrorAlert>
   </div>
 {/if}
-<div id="visualizations" class="flex flex-row flex-wrap gap-6 items-center justify-center">
+<div id="explorer-visualizations" class="flex flex-row flex-wrap gap-6 items-center justify-center">
   {#if loading}
     <TimedLoading size="medium" messages={LOADING_MESSAGES} />
   {:else if plotValues.length}

@@ -150,7 +150,7 @@
     ></iframe>
   </noscript>
   <!-- End Google Tag Manager (noscript) -->
-  <div data-testid="consentModal" class="fixed left-[5%] bottom-[60px] z-[1000] w-[90%]">
+  <div data-testid="app-consent-modal" class="fixed left-[5%] bottom-[60px] z-[1000] w-[90%]">
     <div class="bg-surface-50-950 p-4 rounded-container shadow-2xl">
       <div class="flex flex-row justify-between items-center">
         <div class="flex items center">
@@ -166,12 +166,12 @@
         </div>
         <div class="flex flex-col justify-center">
           <button
-            data-testid="acceptGoogleConsent"
+            data-testid="app-consent-accept"
             class="btn preset-filled-primary-500 mt-1 mb-1"
             onclick={() => updateConsent(true)}>Accept</button
           >
           <button
-            data-testid="rejectGoogleConsent"
+            data-testid="app-consent-reject"
             class="btn preset-tonal-primary border border-primary-500 mt-1 mb-1 self-center"
             onclick={() => updateConsent(false)}>Reject</button
           >

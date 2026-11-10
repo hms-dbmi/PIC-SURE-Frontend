@@ -26,6 +26,10 @@ describe('countResult', () => {
     expect(countResult(['10', '20±3'])).toBe('30±3');
   });
 
+  it('adds thousands separators to an obfuscated count without a space before ±', () => {
+    expect(countResult(['1477888±3'])).toBe('1,477,888±3');
+  });
+
   it('flattens a PatientCountMap before summing', () => {
     expect(countResult([{ a: 10, b: 20 }, 5])).toBe('35');
   });

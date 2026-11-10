@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test';
+import { expect, type Locator } from '@playwright/test';
 import { test, mockApiSuccess, mockApiFail, mockApiConfig } from '../../../custom-context';
 
 import {
@@ -9,11 +9,11 @@ import {
   picsureUser,
   userTypes,
 } from '../../../mock-data';
-import { userIsLoggedIn } from '../../../utils';
+import { expectUniqueIds, userIsLoggedIn } from '../../../utils';
 
-const validationText = {
-  empty: /([Pp]lease )?[Ff]ill out this field.?/,
-};
+// Uses the browser's constraint validation state rather than its localized message text
+const isMissing = (field: Locator) =>
+  field.evaluate((element: HTMLInputElement | HTMLSelectElement) => element.validity.valueMissing);
 
 test.use({ storageState: 'tests/end-to-end/.auth/superUser.json' });
 
@@ -25,29 +25,25 @@ test.beforeEach(async ({ page }) => {
   await mockApiSuccess(page, '*/**/psama/connection', mockConnections);
 });
 
-test('Has Roles management table', async ({ page }) => {
+test('Configuration page ids stay unique with all three tables', async ({ page }) => {
   // Given
   await page.goto('/admin/configuration');
   await userIsLoggedIn(page);
 
   // Then
-  await expect(page.locator('#role-table .table')).toBeVisible();
+  for (const table of ['admin-role-table', 'admin-privilege-table', 'admin-connection-table']) {
+    await expect(page.getByTestId(table)).toBeVisible();
+  }
+  await expectUniqueIds(page);
 });
-test('Has add role button', async ({ page }) => {
-  // Given
-  await page.goto('/admin/configuration');
-  await userIsLoggedIn(page);
 
-  // Then
-  await expect(page.getByTestId('add-role')).toBeVisible();
-});
 test('Add role button takes user to new role page', async ({ page }) => {
   // Given
   await page.goto('/admin/configuration');
   await userIsLoggedIn(page);
 
   // When
-  await page.getByTestId('add-role').click();
+  await page.getByTestId('admin-role-add').click();
 
   // Then
   await page.waitForURL('**/admin/configuration/role/new');
@@ -58,7 +54,7 @@ test('Role form has pre-populated priviledges', async ({ page }) => {
   await page.goto('/admin/configuration/role/new');
   await userIsLoggedIn(page);
   const checkboxes = page
-    .getByTestId('privilege-checkboxes')
+    .getByTestId('admin-role-privilege-checkboxes')
     .getByText(mockPrivileges[0].name, { exact: true });
 
   // Then
@@ -117,37 +113,17 @@ test('Role form returns error message on api fail', async ({ page }) => {
   await expect(toast).toBeVisible();
   await expect(toast).toHaveAttribute('data-type', 'error');
 });
-test('Role form enforces required name length', async ({ page }) => {
+test('Role form requires a name and description', async ({ page }) => {
   // Given
   await page.goto('/admin/configuration/role/new');
   await userIsLoggedIn(page);
 
   // When
-  await page.getByLabel('Name').fill('');
-  await page.getByLabel('Description').fill('walnut');
   await page.getByRole('button', { name: 'Save' }).click();
 
   // Then
-  const empty = await page
-    .getByLabel('Name')
-    .evaluate((element: HTMLInputElement) => element.validationMessage);
-  expect(empty).toMatch(validationText.empty);
-});
-test('Role form enforces required description length', async ({ page }) => {
-  // Given
-  await page.goto('/admin/configuration/role/new');
-  await userIsLoggedIn(page);
-
-  // When
-  await page.getByLabel('Name').fill('coconut');
-  await page.getByLabel('Description').fill('');
-  await page.getByRole('button', { name: 'Save' }).click();
-
-  // Then
-  const empty = await page
-    .getByLabel('Description')
-    .evaluate((element: HTMLInputElement) => element.validationMessage);
-  expect(empty).toMatch(validationText.empty);
+  expect(await isMissing(page.getByLabel('Name'))).toBe(true);
+  expect(await isMissing(page.getByLabel('Description'))).toBe(true);
 });
 test('Role form enforces required at least one selected privilege', async ({ page }) => {
   // Given
@@ -160,7 +136,7 @@ test('Role form enforces required at least one selected privilege', async ({ pag
   await page.getByRole('button', { name: 'Save' }).click();
 
   // Then
-  await expect(page.getByTestId('validation-error')).toBeVisible();
+  await expect(page.getByTestId('admin-form-validation-error')).toBeVisible();
 });
 test('Clicking row takes user to edit role form', async ({ page }) => {
   // Given
@@ -168,7 +144,7 @@ test('Clicking row takes user to edit role form', async ({ page }) => {
   await userIsLoggedIn(page);
 
   // When
-  await page.locator('#role-table table tbody tr').first().click();
+  await page.locator('#admin-role-section table tbody tr').first().click();
 
   // Then
   await page.waitForURL(`**/admin/configuration/role/${mockRoles[0].uuid}/edit`);
@@ -180,7 +156,7 @@ test('Edit row icon takes user to edit role form', async ({ page }) => {
   await userIsLoggedIn(page);
 
   // When
-  await page.getByTestId(`role-${mockRoles[0].uuid}-edit-btn`).click();
+  await page.getByTestId(`admin-role-edit-${mockRoles[0].uuid}`).click();
 
   // Then
   await page.waitForURL(`**/admin/configuration/role/${mockRoles[0].uuid}/edit`);
@@ -198,20 +174,20 @@ test('Edit role form has pre-populated values', async ({ page }) => {
   await expect(page.getByLabel(mockRoles[0].privileges[0].name)).toBeChecked();
 });
 test('Delete row icon asks users to confirm or cancel', async ({ page }) => {
-  const modalId = `role-${mockRoles[0].uuid}-delete`;
+  const modalId = `admin-role-delete-${mockRoles[0].uuid}`;
 
   // Given
   await page.goto('/admin/configuration');
   await userIsLoggedIn(page);
 
   // When
-  await page.getByTestId(modalId + '-btn').click();
+  await page.getByTestId(modalId + '-trigger').click();
 
   // Then
   await expect(page.getByTestId(modalId)).toBeVisible();
 });
 test('Delete gives success message', async ({ page }) => {
-  const modalId = `role-${mockRoles[0].uuid}-delete`;
+  const modalId = `admin-role-delete-${mockRoles[0].uuid}`;
 
   // Given
   await page.goto('/admin/configuration');
@@ -219,7 +195,7 @@ test('Delete gives success message', async ({ page }) => {
   await mockApiSuccess(page, `*/**/psama/role/${mockRoles[0].uuid}`, {});
 
   // When
-  await page.getByTestId(modalId + '-btn').click();
+  await page.getByTestId(modalId + '-trigger').click();
   await page.getByTestId(modalId).getByRole('button', { name: 'Yes' }).click();
 
   // Then
@@ -228,7 +204,7 @@ test('Delete gives success message', async ({ page }) => {
   await expect(toast).toHaveAttribute('data-type', 'success');
 });
 test('Delete gives error message on api failure', async ({ page }) => {
-  const modalId = `role-${mockRoles[0].uuid}-delete`;
+  const modalId = `admin-role-delete-${mockRoles[0].uuid}`;
 
   // Given
   await page.goto('/admin/configuration');
@@ -236,7 +212,7 @@ test('Delete gives error message on api failure', async ({ page }) => {
   await mockApiFail(page, `*/**/psama/role/${mockRoles[0].uuid}`, 'failed');
 
   // When
-  await page.getByTestId(modalId + '-btn').click();
+  await page.getByTestId(modalId + '-trigger').click();
   await page.getByTestId(modalId).getByRole('button', { name: 'Yes' }).click();
 
   // Then
@@ -256,7 +232,7 @@ test('A top admin opening a role page in a fresh tab stays on it', async ({ page
   await page.goto(`/admin/configuration/role/${mockRoles[0].uuid}/edit`);
 
   // Then
-  await expect(page.getByTestId('role-form')).toBeVisible();
+  await expect(page.getByTestId('admin-role-form')).toBeVisible();
   await expect(page).toHaveURL(RegExp(`/admin/configuration/role/${mockRoles[0].uuid}/edit$`));
 });
 
@@ -269,9 +245,9 @@ test.describe('Admin on Configuration page', () => {
 
     // Then
     await expect(
-      page.getByTestId('tabs-control').filter({ hasText: 'Access Control' }),
+      page.getByTestId('ui-tabs-control').filter({ hasText: 'Access Control' }),
     ).toHaveCount(0);
-    await expect(page.locator('#role-table')).toHaveCount(0);
+    await expect(page.locator('#admin-role-section')).toHaveCount(0);
     await expect(page.getByRole('button', { name: '+ Create banner' })).toBeVisible();
   });
   for (const path of ['new', `${mockRoles[0].uuid}/edit`]) {
@@ -283,7 +259,7 @@ test.describe('Admin on Configuration page', () => {
 
       // Then
       await expect(page).toHaveURL(/\/admin\/configuration$/);
-      await expect(page.getByTestId('role-form')).toHaveCount(0);
+      await expect(page.getByTestId('admin-role-form')).toHaveCount(0);
     });
   }
 });

@@ -35,17 +35,17 @@ describe('UserToken', () => {
   it('masks the token until the researcher reveals it', async () => {
     const { container } = render(UserToken);
 
-    await screen.findByTestId('reveal-btn');
+    await screen.findByTestId('user-token-reveal');
     // the label's `for` points at a div, which isn't labelable
-    const tokenBox = container.querySelector('#token') as HTMLElement;
+    const tokenBox = container.querySelector('#user-token-value') as HTMLElement;
     expect(screen.getByText('researcher@example.org')).toBeInTheDocument();
     expect(tokenBox).not.toHaveTextContent(token);
     expect(tokenBox.textContent).toMatch(/^•+$/);
 
-    await fireEvent.click(screen.getByTestId('reveal-btn'));
+    await fireEvent.click(screen.getByTestId('user-token-reveal'));
     expect(tokenBox).toHaveTextContent(token);
 
-    await fireEvent.click(screen.getByTestId('reveal-btn'));
+    await fireEvent.click(screen.getByTestId('user-token-reveal'));
     expect(tokenBox).not.toHaveTextContent(token);
   });
 });

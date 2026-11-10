@@ -21,7 +21,8 @@
 >
   {#each group.children as child, index}
     {#if index > 0}
-      <span class="font-semibold text-xs py-0.5" data-testid="operator-label">{group.operator}</span
+      <span class="font-semibold text-xs py-0.5" data-testid="results-filter-operator"
+        >{group.operator}</span
       >
     {/if}
     {#if isFilterGroup(child)}

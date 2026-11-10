@@ -9,11 +9,12 @@
     isRoot = false,
     disabled = false,
   }: { node: RadioNodeInterface; index: number; isRoot?: boolean; disabled?: boolean } = $props();
+  const uid = $props.id();
 </script>
 
 <details
   class="tree-item"
-  data-testid="tree-item:{node.name}-{node.value}"
+  data-testid="ui-tree-item-{node.name}-{node.value}"
   aria-disabled={node.disabled || disabled}
   open
 >
@@ -30,8 +31,8 @@
       ></i>
     {/if}
     <input
-      id="radio:{node.name}"
-      data-testid="radio:{node.name}"
+      id="{uid}-radio"
+      data-testid="ui-tree-radio-{node.name}"
       class="radio tree-item-radio self-center {isRoot ? 'ml-[28px]' : ''}"
       type="radio"
       name="tree-radio"
@@ -40,11 +41,9 @@
       checked={node.selected}
       onclick={() => node.select()}
     />
-    <label for="{node.isLeaf ? 'radio:' : 'tree-item-btn:'}{node.name}" class="w-full"
-      >{node.name}</label
-    >
+    <label for="{uid}-{node.isLeaf ? 'radio' : 'toggle'}" class="w-full">{node.name}</label>
   </summary>
-  <div class="tree-item-children ml-4" data-testid="tree-item-children:{node.name}" role="group">
+  <div class="tree-item-children ml-4" data-testid="ui-tree-children-{node.name}" role="group">
     {#if !node.isLeaf}
       {#each node.children as child}
         <RadioTreeNode node={child} index={index + 1} {disabled} />

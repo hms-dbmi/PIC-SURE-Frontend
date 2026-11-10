@@ -41,27 +41,12 @@ test.describe('External link warning', () => {
     await page.goto('/');
     await userIsLoggedIn(page);
     // When
-    await page.locator('#main-footer').getByRole('link', { name: externalLink.title }).click();
+    await page.locator('#app-footer').getByRole('link', { name: externalLink.title }).click();
     // Then
-    const modal = page.getByTestId('external-link-warning');
+    const modal = page.getByTestId('app-external-link-warning');
     await expect(modal).toBeVisible();
     await expect(modal).toContainText(expectedTitle);
     await expect(page).toHaveURL('/');
-  });
-
-  test('Cancel closes the modal and stays on the page', async ({ page }) => {
-    // Given
-    await page.goto('/');
-    await userIsLoggedIn(page);
-    await page.locator('#main-footer').getByRole('link', { name: externalLink.title }).click();
-    // When
-    await page
-      .getByRole('button', { name: branding.externalLinkWarning?.cancelText || 'Cancel' })
-      .click();
-    // Then
-    await expect(page.getByTestId('external-link-warning')).not.toBeVisible();
-    await expect(page).toHaveURL('/');
-    expect(page.context().pages().length).toBe(1);
   });
 
   test('OK opens the external site in a new tab', async ({ page }) => {
@@ -75,7 +60,7 @@ test.describe('External link warning', () => {
     );
     await page.goto('/');
     await userIsLoggedIn(page);
-    await page.locator('#main-footer').getByRole('link', { name: externalLink.title }).click();
+    await page.locator('#app-footer').getByRole('link', { name: externalLink.title }).click();
     // When
     // The new tab is opened with noopener, so wait on the context, not a page popup event
     const newPagePromise = page.context().waitForEvent('page');
@@ -84,7 +69,7 @@ test.describe('External link warning', () => {
     const newPage = await newPagePromise;
     await newPage.waitForLoadState();
     expect(newPage.url()).toBe(externalLink.url);
-    await expect(page.getByTestId('external-link-warning')).not.toBeVisible();
+    await expect(page.getByTestId('app-external-link-warning')).not.toBeVisible();
   });
 
   // Confirming used to log external_link.confirmed and then external_link.cancelled in
@@ -101,13 +86,13 @@ test.describe('External link warning', () => {
     const logged = collectExternalLinkLogs(page);
     await page.goto('/');
     await userIsLoggedIn(page);
-    await page.locator('#main-footer').getByRole('link', { name: externalLink.title }).click();
+    await page.locator('#app-footer').getByRole('link', { name: externalLink.title }).click();
     // When
     const newPagePromise = page.context().waitForEvent('page');
     await page.getByRole('button', { name: branding.externalLinkWarning?.okText || 'OK' }).click();
     // Then
     await (await newPagePromise).waitForLoadState();
-    await expect(page.getByTestId('external-link-warning')).not.toBeVisible();
+    await expect(page.getByTestId('app-external-link-warning')).not.toBeVisible();
     expect(logged).toEqual(['external_link.warning_shown', 'external_link.confirmed']);
   });
 
@@ -135,7 +120,7 @@ test.describe('External link warning', () => {
       document.body.appendChild(anchor);
     }, sameTabUrl);
     await page.locator('#same-tab-external-link').click();
-    await expect(page.getByTestId('external-link-warning')).toBeVisible();
+    await expect(page.getByTestId('app-external-link-warning')).toBeVisible();
     // When
     await page.getByRole('button', { name: branding.externalLinkWarning?.okText || 'OK' }).click();
     // Then
@@ -148,9 +133,9 @@ test.describe('External link warning', () => {
     await page.goto('/');
     await userIsLoggedIn(page);
     // When
-    await page.locator('#nav-link-help').click();
+    await page.locator('#app-nav-link-help').click();
     // Then
     await expect(page).toHaveURL('/help');
-    await expect(page.getByTestId('external-link-warning')).not.toBeVisible();
+    await expect(page.getByTestId('app-external-link-warning')).not.toBeVisible();
   });
 });

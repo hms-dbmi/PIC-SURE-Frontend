@@ -39,7 +39,7 @@
 
 <div class="w-20 min-w-20">
   <button
-    data-testid={`connection-${data.cell}-edit-btn`}
+    data-testid={`admin-connection-edit-${data.cell}`}
     type="button"
     title="Edit (e)"
     data-key="e"
@@ -51,7 +51,7 @@
     <span class="sr-only">Edit (e)</span>
   </button>
   <Modal
-    data-testid="connection-{data.cell}-delete"
+    data-testid="admin-connection-delete-{data.cell}"
     title="Delete Connection?"
     triggerTitle="Delete (d)"
     data-key="d"

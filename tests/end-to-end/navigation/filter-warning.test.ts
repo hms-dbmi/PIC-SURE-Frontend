@@ -49,6 +49,8 @@ test.describe('Filter warning navigation', () => {
     await mockApiSuccess(page, '*/**/picsure/hpds/open/query/sync', {
       '\\_studies_consents\\': 100,
     });
+    // The app may refresh the signed-in user; answer with nothing new so it keeps the stored one
+    await mockApiSuccess(page, '*/**/psama/user/me?hasToken', {});
   });
 
   test('warns before moving from Discover to Explore with an unconsented filter', async ({
@@ -57,10 +59,10 @@ test.describe('Filter warning navigation', () => {
     await seedDeniedFilter(page);
 
     await page.goto('/discover');
-    await page.locator('#nav-link-explorer').click();
+    await page.locator('#app-nav-link-explorer').click();
 
     await expect(page).toHaveURL(/\/discover$/);
-    const warning = page.getByTestId('sendfilter-warning');
+    const warning = page.getByTestId('explorer-filter-warning');
     await expect(warning).toBeVisible();
     await expect(warning).toContainText(
       'You are not authorized to access the data in Explore based on your selected filters.',
@@ -73,13 +75,13 @@ test.describe('Filter warning navigation', () => {
     await seedDeniedFilter(page);
 
     await page.goto('/discover');
-    await page.locator('#nav-link-api').click();
+    await page.locator('#app-nav-link-api').click();
     await expect(page).toHaveURL(/\/api$/);
 
-    await page.locator('#nav-link-explorer').click();
+    await page.locator('#app-nav-link-explorer').click();
 
     await expect(page).toHaveURL(/\/api$/);
-    await expect(page.getByTestId('sendfilter-warning')).toBeVisible();
+    await expect(page.getByTestId('explorer-filter-warning')).toBeVisible();
   });
 
   test('returns to Explore with a genomic filter without warning', async ({ page }) => {
@@ -87,10 +89,10 @@ test.describe('Filter warning navigation', () => {
     await mockApiSuccess(page, countResultPath, 565);
 
     await page.goto('/api');
-    await page.locator('#nav-link-explorer').click();
+    await page.locator('#app-nav-link-explorer').click();
 
     await expect(page).toHaveURL(/\/explorer$/);
-    await expect(page.getByTestId('sendfilter-warning')).toBeHidden();
+    await expect(page.getByTestId('explorer-filter-warning')).toBeHidden();
   });
 
   [
@@ -104,14 +106,14 @@ test.describe('Filter warning navigation', () => {
       await seed(page);
 
       await page.goto(from);
-      const link = page.locator(`#nav-link-${to}`);
+      const link = page.locator(`#app-nav-link-${to}`);
       const unselectedBackground = await link.evaluate(
         (el) => getComputedStyle(el).backgroundColor,
       );
       await link.click();
       await page.getByRole('button', { name: back }).click();
 
-      await expect(page.getByTestId('sendfilter-warning')).toBeHidden();
+      await expect(page.getByTestId('explorer-filter-warning')).toBeHidden();
       // WebKit doesn't focus links on click, so the dialog has no link to return focus to.
       if (browserName !== 'webkit') await expect(link).toBeFocused();
       await page.mouse.move(0, 0);

@@ -66,7 +66,7 @@
 </script>
 
 <form onsubmit={saveRole}>
-  <fieldset data-testid="role-form" class="grid gap-4 my-3" disabled={!$isTopAdmin}>
+  <fieldset data-testid="admin-role-form" class="grid gap-4 my-3" disabled={!$isTopAdmin}>
     {#if role?.uuid}
       <label class="label">
         <span>UUID:</span>
@@ -91,7 +91,7 @@
       />
     </label>
 
-    <fieldset data-testid="privilege-checkboxes">
+    <fieldset data-testid="admin-role-privilege-checkboxes">
       <legend class="required">Privileges:</legend>
       {#each privilegeList as [name], index}
         <label class="flex items-center space-x-2">
@@ -102,7 +102,7 @@
     </fieldset>
 
     {#if validationError}
-      <ErrorAlert data-testid="validation-error" onclose={() => (validationError = '')}>
+      <ErrorAlert data-testid="admin-form-validation-error" onclose={() => (validationError = '')}>
         {validationError}
       </ErrorAlert>
     {/if}
@@ -110,14 +110,14 @@
     <div class="mt-2">
       <button
         type="submit"
-        data-testid="role-save-btn"
+        data-testid="admin-role-save"
         class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
       >
         Save
       </button>
       <a
         href={resolve('admin/configuration')}
-        data-testid="role-cancel-btn"
+        data-testid="admin-role-cancel"
         class="btn preset-tonal-secondary border border-secondary-500 hover:preset-filled-secondary-500"
       >
         Cancel

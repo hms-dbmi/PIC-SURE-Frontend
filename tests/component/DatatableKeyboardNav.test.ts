@@ -42,7 +42,7 @@ vi.mock('#lib/stores/ExpandableRow.ts', () => {
 import { TableHandler as ServerTableHandler } from '@vincjo/datatables/server';
 
 import RemoteTable from '#lib/components/datatable/RemoteTable.svelte';
-import { isTextEntryField, tableIdPrefix } from '#lib/components/datatable/keyboard.ts';
+import { isTextEntryField } from '#lib/components/datatable/keyboard.ts';
 import {
   activeTable,
   activeRow,
@@ -70,6 +70,7 @@ function renderTable(rowCount = 7, onAction?: () => void, expandable = false) {
   const handler = new TableHandler(makeRows(rowCount, onAction), { rowsPerPage: 5 });
   const result = render(RemoteTable, {
     tableName: 'KbdTest',
+    id: 'KbdTest',
     handler,
     columns,
     cellOverides: { id: KeyButtonCell },
@@ -219,6 +220,7 @@ describe('Datatable keyboard navigation', () => {
 
     const { container, rerender } = render(RemoteTable, {
       tableName: 'KbdTest',
+      id: 'KbdTest',
       handler,
       columns,
       cellOverides: { id: KeyButtonCell },
@@ -308,15 +310,6 @@ describe('Datatable keyboard navigation', () => {
     await fireEvent.keyDown(action, { key: 'Escape' });
     expect(vi.mocked(closeActiveRow)).toHaveBeenCalledTimes(1);
     expect(document.activeElement).toBe(action);
-  });
-});
-
-describe('tableIdPrefix', () => {
-  it('keeps selector-safe names intact and escapes the rest without collapsing them', () => {
-    expect(tableIdPrefix('ActiveDatasets')).toBe('ActiveDatasets');
-    expect(tableIdPrefix('Users-Site A')).toBe('Users-Site_20_A');
-    expect(tableIdPrefix('Users-A/B')).not.toBe(tableIdPrefix('Users-A?B'));
-    expect(tableIdPrefix('Users-"quoted"')).not.toContain('"');
   });
 });
 

@@ -15,7 +15,7 @@ test.describe('Branding overrides', () => {
     await page.goto('/login');
 
     // Then
-    const logo = page.getByTestId('nav-logo');
+    const logo = page.getByTestId('app-nav-logo');
     await expect(logo).toBeVisible();
     await expect(logo).toHaveAttribute('src', 'https://example.com/custom-logo.png');
     await expect(logo).toHaveAttribute('alt', 'Custom Logo Alt Text');
@@ -31,7 +31,7 @@ test.describe('Branding overrides', () => {
     await page.goto('/login');
 
     // Then
-    const logo = page.getByTestId('nav-logo');
+    const logo = page.getByTestId('app-nav-logo');
     await expect(logo).toBeVisible();
     await expect(logo).not.toHaveAttribute('src');
     // Falls back to applicationName, which uses a non-breaking hyphen (U+2011).

@@ -234,7 +234,7 @@
           <ul class="space-y-3">
             {#each capabilities as capability}
               {@const locked = !loggedIn && capability.requiresLogin}
-              <li data-testid="capability-item" class="flex items-center gap-3">
+              <li data-testid="api-capability-item" class="flex items-center gap-3">
                 {#if locked}
                   <i class="fa-regular fa-circle-xmark shrink-0 text-xl text-surface-400"></i>
                 {:else}
@@ -275,7 +275,7 @@
         {#snippet iconOpen()}<i class="fa-solid fa-angle-up text-xl"></i>{/snippet}
         {#snippet iconClosed()}<i class="fa-solid fa-angle-down text-xl"></i>{/snippet}
         {#each workflows as workflow}
-          <div id="workflow-{workflow.id}" data-testid="workflow-{workflow.id}">
+          <div id="workflow-{workflow.id}" data-testid="api-workflow-{workflow.id}">
             <Accordion.Item
               value={workflow.id}
               base="rounded-container border border-surface-200 bg-white dark:bg-surface-950 data-[state=open]:border-primary-500"
@@ -387,7 +387,7 @@
 
 <style>
   @media (prefers-reduced-motion: no-preference) {
-    :global(#page) {
+    :global(#app-page) {
       scroll-behavior: smooth;
     }
   }

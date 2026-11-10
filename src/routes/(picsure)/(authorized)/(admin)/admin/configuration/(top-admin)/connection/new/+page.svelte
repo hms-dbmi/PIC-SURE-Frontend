@@ -9,7 +9,7 @@
 </svelte:head>
 
 <Content title="New Connection" backUrl="/admin/configuration" backTitle="Back to Configuration">
-  <section id="connection-new">
+  <section id="admin-connection-new">
     <ConnectionForm />
   </section>
 </Content>

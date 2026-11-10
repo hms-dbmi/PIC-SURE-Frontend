@@ -101,6 +101,7 @@ function renderExplorerTable() {
 
   return render(RemoteTable, {
     tableName: 'ExplorerTable',
+    id: 'explorer-table',
     handler,
     columns,
     cellOverides: { id: Actions },
@@ -113,7 +114,7 @@ function renderExplorerTable() {
 // hook (find the first row with a filter button, mark it non-stigmatized) - reproduced
 // here since the hook is inline in that component and isn't exported.
 function markFirstRowNonStigmatized(container: HTMLElement) {
-  const table = container.querySelector('#ExplorerTable-table') as HTMLTableElement;
+  const table = container.querySelector('#explorer-table') as HTMLTableElement;
   const row = Array.from(table.querySelectorAll('tr')).find((tr) =>
     tr.querySelector('button.row-action-filter:not(:disabled)'),
   );
@@ -124,12 +125,12 @@ type Tour = { steps: { element: string }[] };
 const tours = tourConfig as unknown as Record<string, Tour>;
 
 // Every step selector that targets the search-results table's own markup
-// (as opposed to page-level chrome like #facet-side-bar, rendered elsewhere).
+// (as opposed to page-level chrome like #explorer-facet-sidebar, rendered elsewhere).
 const tableScopedSelectors = new Set(
   Object.values(tours)
     .flatMap((tour) => tour.steps.map((step) => step.element))
     .filter(
-      (selector) => selector.includes('ExplorerTable') || selector.includes('non-stigmatized-row'),
+      (selector) => selector.includes('explorer-table') || selector.includes('non-stigmatized-row'),
     ),
 );
 
@@ -161,6 +162,7 @@ describe('markFirstRowNonStigmatized under open access', () => {
 
     const { container } = render(RemoteTable, {
       tableName: 'ExplorerTable',
+      id: 'explorer-table',
       handler,
       columns,
       cellOverides: { id: Actions },
@@ -170,7 +172,7 @@ describe('markFirstRowNonStigmatized under open access', () => {
 
     markFirstRowNonStigmatized(container);
 
-    expect(container.querySelector('#ExplorerTable-row-0')).not.toHaveClass('non-stigmatized-row');
-    expect(container.querySelector('#ExplorerTable-row-1')).toHaveClass('non-stigmatized-row');
+    expect(container.querySelector('#explorer-table-row-0')).not.toHaveClass('non-stigmatized-row');
+    expect(container.querySelector('#explorer-table-row-1')).toHaveClass('non-stigmatized-row');
   });
 });

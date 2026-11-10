@@ -4,7 +4,7 @@
   let { filter }: { filter: Filter } = $props();
 </script>
 
-<div data-testid="any-record-of-filter-modal">
+<div data-testid="results-any-record-of-view">
   <header>
     <h1 class="text-lg font-normal">
       {`${(filter as AnyRecordOfFilterInterface)?.concepts?.length} variable(s) in ${filter.searchResult?.display || filter.searchResult?.name || filter.variableName} category`}

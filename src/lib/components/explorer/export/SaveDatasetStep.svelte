@@ -104,10 +104,10 @@
       <div class="card-body p-4 flex flex-col justify-center items-center">
         <div>
           <div class="flex items-center m-2">
-            <label for="dataset-name" class="font-bold mr-2">Dataset Name:</label>
+            <label for="export-dataset-name" class="font-bold mr-2">Dataset Name:</label>
             <input
               type="text"
-              id="dataset-name"
+              id="export-dataset-name"
               class="input w-80"
               placeholder="Enter a name"
               bind:value={datasetNameInput}
@@ -117,14 +117,14 @@
           <div class="flex items-center m-2">
             <div class="flex items-center">
               {#await datasetIdPromise}
-                <label for="dataset-id" class="font-bold mr-2">Dataset ID:</label>
+                <label for="export-dataset-id" class="font-bold mr-2">Dataset ID:</label>
                 <TimedLoading
                   size="micro"
                   messages={retrying ? RETRYING_MESSAGES : CREATING_MESSAGES}
                 />
               {:then}
-                <label for="dataset-id" class="font-bold mr-2">Dataset ID:</label>
-                <div id="dataset-id" class="mr-4">{getDatasetId()}</div>
+                <label for="export-dataset-id" class="font-bold mr-2">Dataset ID:</label>
+                <div id="export-dataset-id" class="mr-4">{getDatasetId()}</div>
               {:catch}
                 <ErrorAlert
                   title="An error occurred while getting the dataset ID. Please try again later."

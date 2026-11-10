@@ -10,7 +10,7 @@
   <Summary />
   <div class="flex flex-row justify-center">
     <CardButton
-      data-testid="csv-export-option"
+      data-testid="export-type-csv"
       title="Export as Data Frame or CSV"
       subtitle="Export data as a Python or R data frame or a comma-separated values file"
       size="other"
@@ -23,7 +23,7 @@
     ></CardButton>
     {#if config.features.explorer.enableExportTimeseries}
       <CardButton
-        data-testid="timeseries-export-option"
+        data-testid="export-type-timeseries"
         title="Export as Timeseries"
         subtitle="Export as an R or Python data frame or a comma-separated values file including timestamps"
         size="other"
@@ -36,7 +36,7 @@
       ></CardButton>
     {/if}
     <CardButton
-      data-testid="pfb-export-option"
+      data-testid="export-type-pfb"
       title="Export as PFB"
       subtitle="Export data in Portable Format for Biomedical Data file format"
       size="other"

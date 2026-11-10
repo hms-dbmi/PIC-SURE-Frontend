@@ -8,7 +8,7 @@
     activeComponent,
     setActiveRow,
   } from '#lib/stores/ExpandableRow.ts';
-  import { isFormField, tableIdPrefix } from '#lib/components/datatable/keyboard.ts';
+  import { isFormField } from '#lib/components/datatable/keyboard.ts';
   import { log, createLog, getPageContext } from '#lib/logger.ts';
 
   interface Props {
@@ -17,6 +17,7 @@
     index?: number;
     row?: Indexable;
     tableName?: string;
+    tableId: string;
     isClickable?: boolean;
     expandable?: boolean;
     rowClickHandler?: (row: Indexable) => void;
@@ -31,6 +32,7 @@
     index = -2,
     row = {},
     tableName = '',
+    tableId,
     isClickable = false,
     expandable = false,
     rowClickHandler = () => {},
@@ -40,9 +42,6 @@
   }: Props = $props();
 
   let rowElement: HTMLTableRowElement | undefined = $state();
-
-  // Element ids must be page-unique (multiple tables can render together).
-  const idPrefix = $derived(tableIdPrefix(tableName));
 
   function onClick(row: Indexable) {
     const willOpen = !(
@@ -93,7 +92,7 @@
 
 <tr
   bind:this={rowElement}
-  id="{idPrefix}-row-{index.toString()}"
+  id="{tableId}-row-{index.toString()}"
   onclick={() => onClick(row)}
   onkeydown={onKeydown}
   class={isClickable ? 'cursor-pointer' : ''}
@@ -102,7 +101,7 @@
 >
   {#each columns as column, colIndex}
     <td
-      id="{idPrefix}-row-{index.toString()}-col-{colIndex.toString()}"
+      id="{tableId}-row-{index.toString()}-col-{colIndex.toString()}"
       class={column?.class?.includes('text-center') ? 'text-center' : ''}
     >
       {#if cellOverides[column.dataElement]}
@@ -116,7 +115,7 @@
 </tr>
 
 {#if expandable && active && !!$activeRow}
-  <tr id="{idPrefix}-active-row-{index.toString()}" class="expandable-row">
+  <tr id="{tableId}-active-row-{index.toString()}" class="expandable-row">
     <td colspan={columns.length}>
       <div transition:slide={{ axis: 'y' }}>
         {#if $activeComponent}

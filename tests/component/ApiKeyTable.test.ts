@@ -131,9 +131,13 @@ describe('ApiKeyTable', () => {
     render(ApiKeyTable, { props: { keyType: 'USER', tableName: 'UserApiKeys' } });
 
     await screen.findByText('picsure_u_abc12345…');
-    expect(screen.getByTestId('api-key-uuid-active-revoke-btn')).toBeInTheDocument();
-    expect(screen.queryByTestId('api-key-uuid-revoked-revoke-btn')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('api-key-uuid-expired-revoke-btn')).not.toBeInTheDocument();
+    expect(screen.getByTestId('admin-api-key-revoke-uuid-active-trigger')).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('admin-api-key-revoke-uuid-revoked-trigger'),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId('admin-api-key-revoke-uuid-expired-trigger'),
+    ).not.toBeInTheDocument();
   });
 
   it('revokes a key through the confirmation dialog and refreshes the list', async () => {
@@ -150,9 +154,9 @@ describe('ApiKeyTable', () => {
     });
     render(ApiKeyTable, { props: { keyType: 'USER', tableName: 'UserApiKeys' } });
 
-    await fireEvent.click(await screen.findByTestId('api-key-uuid-active-revoke-btn'));
+    await fireEvent.click(await screen.findByTestId('admin-api-key-revoke-uuid-active-trigger'));
 
-    const dialog = await screen.findByTestId('api-key-uuid-active-revoke');
+    const dialog = await screen.findByTestId('admin-api-key-revoke-uuid-active');
     expect(dialog).toHaveTextContent('permanent and cannot be undone');
 
     await fireEvent.click(within(dialog).getByRole('button', { name: 'Revoke' }));
@@ -160,7 +164,9 @@ describe('ApiKeyTable', () => {
     expect(storeMocks.revokeApiKey).toHaveBeenCalledWith('uuid-active');
     expect(await screen.findByText('Revoked')).toBeInTheDocument();
     await waitFor(() =>
-      expect(screen.queryByTestId('api-key-uuid-active-revoke-btn')).not.toBeInTheDocument(),
+      expect(
+        screen.queryByTestId('admin-api-key-revoke-uuid-active-trigger'),
+      ).not.toBeInTheDocument(),
     );
   });
 
@@ -171,7 +177,7 @@ describe('ApiKeyTable', () => {
     });
     render(ApiKeyTable, { props: { keyType: 'USER', tableName: 'UserApiKeys' } });
 
-    const alert = await screen.findByTestId('api-key-list-error');
+    const alert = await screen.findByTestId('admin-api-key-list-error');
     expect(alert).toHaveTextContent('list failed');
   });
 });

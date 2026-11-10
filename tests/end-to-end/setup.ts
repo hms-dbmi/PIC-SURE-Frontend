@@ -20,8 +20,8 @@ Object.entries(userTypes).forEach(async ([user, userVariation]) => {
 
     // We must accept the Google consent dialog before we can interact with some elements in the page.
     await page.goto('/');
-    await page.waitForSelector('[data-testid="consentModal"]');
-    const acceptConsentButton = page.getByTestId('acceptGoogleConsent');
+    await page.waitForSelector('[data-testid="app-consent-modal"]');
+    const acceptConsentButton = page.getByTestId('app-consent-accept');
     await acceptConsentButton.click();
 
     const mockLoginResponse =
@@ -53,8 +53,8 @@ Object.entries(userTypes).forEach(async ([user, userVariation]) => {
 
 test('unauthenticated user', async ({ page }) => {
   await page.goto('/');
-  await page.waitForSelector('[data-testid="consentModal"]');
-  const acceptConsentButton = page.getByTestId('acceptGoogleConsent');
+  await page.waitForSelector('[data-testid="app-consent-modal"]');
+  const acceptConsentButton = page.getByTestId('app-consent-accept');
   await acceptConsentButton.click();
 
   // Unauthenticated users are redirected to /login; accepting consent doesn't navigate away.

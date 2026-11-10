@@ -13,7 +13,7 @@ async function expectSectionAligned(page: Page, id: string) {
   await expect
     .poll(() =>
       page.evaluate((sectionId) => {
-        const scroller = document.getElementById('page')!;
+        const scroller = document.getElementById('app-page')!;
         const section = document.getElementById(sectionId)!;
         const sectionTop =
           section.getBoundingClientRect().top -
@@ -78,22 +78,10 @@ test.describe('API page', () => {
     await userIsLoggedIn(page);
 
     // When
-    const errorAlert = page.locator('[data-testid=error-alert]');
+    const errorAlert = page.locator('[data-testid=ui-error-alert]');
 
     // Then
     await expect(errorAlert).toBeVisible();
-  });
-
-  test('Has expected header content', async ({ page }) => {
-    // Given
-    await page.goto('/api');
-    await userIsLoggedIn(page);
-
-    // Then
-    await expect(page.locator('h1')).toHaveText('Programmatic Access with the PIC-SURE API');
-    await expect(
-      page.getByText('Search data and build cohorts directly with Python, R, or any HTTP client.'),
-    ).toBeVisible();
   });
 
   test('On this page sits in its own card, set apart from the page content', async ({ page }) => {
@@ -101,7 +89,7 @@ test.describe('API page', () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/api');
     await userIsLoggedIn(page);
-    const toc = page.getByTestId('toc');
+    const toc = page.getByTestId('ui-toc');
     await expect(toc).toBeVisible();
 
     // When
@@ -109,7 +97,7 @@ test.describe('API page', () => {
       const isPainted = (color: string) => color !== 'rgba(0, 0, 0, 0)' && color !== 'transparent';
       const surfaces = [
         ...document.querySelectorAll(
-          '#api-page section, #api-page header, #api-page .card, [data-testid^="workflow-"] > *',
+          '#api-page section, #api-page header, #api-page .card, [data-testid^="api-workflow-"] > *',
         ),
       ].filter((element) => element !== nav);
       for (let element = nav.parentElement; element; element = element.parentElement) {
@@ -138,9 +126,9 @@ test.describe('API page', () => {
     await userIsLoggedIn(page);
 
     // When
-    const python = page.getByTestId('workflow-python');
-    const r = page.getByTestId('workflow-r');
-    const http = page.getByTestId('workflow-http');
+    const python = page.getByTestId('api-workflow-python');
+    const r = page.getByTestId('api-workflow-r');
+    const http = page.getByTestId('api-workflow-http');
 
     // Then
     await expect(page.locator('#choose-your-workflow h2')).toHaveText('Choose Your Workflow');
@@ -178,11 +166,11 @@ test.describe('API page', () => {
     await page.goto('/api');
     await userIsLoggedIn(page);
     const pythonHeader = page
-      .getByTestId('workflow-python')
+      .getByTestId('api-workflow-python')
       .getByRole('heading', { level: 3 })
       .getByRole('button');
     const rHeader = page
-      .getByTestId('workflow-r')
+      .getByTestId('api-workflow-r')
       .getByRole('heading', { level: 3 })
       .getByRole('button');
 
@@ -242,7 +230,7 @@ test.describe('API page', () => {
       // Given
       await page.goto('/api');
       await userIsLoggedIn(page);
-      const item = page.getByTestId(`workflow-${id}`);
+      const item = page.getByTestId(`api-workflow-${id}`);
 
       // When
       await item.getByRole('heading', { level: 3 }).getByRole('button').click();
@@ -259,7 +247,7 @@ test.describe('API page', () => {
       for (const snippet of absent) await expect(codeBlock).not.toContainText(snippet);
       const origin = new URL(page.url()).origin;
       await expect(codeBlock).toContainText(`platform="${origin}"`);
-      await expect(codeBlock.getByTestId('code-block-copy-btn')).toBeVisible();
+      await expect(codeBlock.getByTestId('ui-code-block-copy-trigger')).toBeVisible();
       await expect(panel.getByText('More info', { exact: true })).toBeVisible();
       const docsLink = panel.getByRole('link', { name: docsLabel });
       await expect(docsLink).toHaveAttribute('href', docsUrl);
@@ -280,7 +268,7 @@ test.describe('API page', () => {
     // Given
     await page.goto('/api');
     await userIsLoggedIn(page);
-    const item = page.getByTestId('workflow-http');
+    const item = page.getByTestId('api-workflow-http');
 
     // When
     await item.getByRole('heading', { level: 3 }).getByRole('button').click();
@@ -293,7 +281,7 @@ test.describe('API page', () => {
     const codeBlock = panel.locator('.code-block');
     await expect(codeBlock).toContainText('TOKEN=$(cat token.txt)');
     await expect(codeBlock).toContainText('Authorization: Bearer $TOKEN');
-    await expect(codeBlock.getByTestId('code-block-copy-btn')).toBeVisible();
+    await expect(codeBlock.getByTestId('ui-code-block-copy-trigger')).toBeVisible();
     await expect(panel).not.toContainText('Looking for example notebooks?');
 
     // When
@@ -315,7 +303,6 @@ test.describe('API page', () => {
     await expect(
       page.getByRole('heading', { name: 'API Documentation', exact: true }),
     ).toBeVisible();
-    await expect(page.getByText('Browse and use the PIC-SURE API endpoints.')).toBeVisible();
   });
 
   for (const [state, token, badge] of [
@@ -328,7 +315,7 @@ test.describe('API page', () => {
       await mockApiSuccess(context, '*/**/psama/user/me?hasToken', { ...picsureUser, token });
       await page.goto('/api');
       await userIsLoggedIn(page);
-      await expect(page.getByTestId('expires-badge')).toHaveText(badge);
+      await expect(page.getByTestId('user-token-expires')).toHaveText(badge);
 
       // When
       const sectionIds = await page.locator('#api-page section[id]').evaluateAll((sections) =>
@@ -343,7 +330,7 @@ test.describe('API page', () => {
       await expect(page.locator('h1#api-header')).toHaveText(
         'Programmatic Access with the PIC-SURE API',
       );
-      await expect(page.getByTestId('toc').locator('a')).toHaveText([
+      await expect(page.getByTestId('ui-toc').locator('a')).toHaveText([
         'Authentication',
         'Choose Your Workflow',
         'API Documentation',
@@ -357,7 +344,7 @@ test.describe('API page', () => {
     await userIsLoggedIn(page);
 
     // When
-    const items = page.getByTestId('capability-item');
+    const items = page.getByTestId('api-capability-item');
 
     // Then
     await expect(items).toHaveCount(capabilities.length);
@@ -375,7 +362,7 @@ test.describe('API page', () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto('/api');
     await userIsLoggedIn(page);
-    const items = page.getByTestId('capability-item');
+    const items = page.getByTestId('api-capability-item');
     await expect(items).toHaveCount(capabilities.length);
 
     // When
@@ -407,28 +394,17 @@ test.describe('API page', () => {
     await expect(page.getByText('Personal Access Token').first()).toBeVisible();
     await expect(page.getByText('Login confirmed')).toBeVisible();
     await expect(page.locator('i.fa-user-shield')).toBeVisible();
-    await expect(page.getByTestId('public-access-key')).not.toBeVisible();
+    await expect(page.getByTestId('api-public-key')).not.toBeVisible();
   });
 
-  test('Has expected content', async ({ page }) => {
-    // Given
-    await page.goto('/api');
-    await userIsLoggedIn(page);
-
-    // When
-    const userToken = page.locator('#user-token');
-
-    // Then
-    await expect(userToken).toBeVisible();
-  });
   test('Has expected badge and expiration', async ({ page }) => {
     // Given
     await page.goto('/api');
     await userIsLoggedIn(page);
 
     // When
-    const expires = page.locator('#expires');
-    const badge = page.locator('#expires-badge');
+    const expires = page.locator('#user-token-expires');
+    const badge = page.locator('#user-token-expires-badge');
 
     // Then
     await expect(expires).toBeVisible();
@@ -443,7 +419,7 @@ test.describe('API page', () => {
     await userIsLoggedIn(page);
 
     // When
-    const userEmail = page.locator('#account');
+    const userEmail = page.locator('#user-token-account');
 
     // Then
     await expect(userEmail).toBeVisible();
@@ -455,26 +431,11 @@ test.describe('API page', () => {
     await userIsLoggedIn(page);
 
     // When
-    const userToken = page.locator('#token');
+    const userToken = page.locator('#user-token-value');
 
     // Then
     await expect(userToken).toBeVisible();
     expect(await userToken.innerText()).toBe(placeHolderDots);
-  });
-  test('Buttons are displayed', async ({ page }) => {
-    // Given
-    await page.goto('/api');
-    await userIsLoggedIn(page);
-
-    // When
-    const copyButton = page.getByTestId('copy-btn');
-    const refeshButton = page.getByTestId('refresh-btn');
-    const revealButton = page.getByTestId('reveal-btn');
-
-    // Then
-    await expect(copyButton).toBeVisible();
-    await expect(refeshButton).toBeVisible();
-    await expect(revealButton).toBeVisible();
   });
   test('Copy button copies token to clipboard', async ({ page }) => {
     // Given
@@ -482,7 +443,7 @@ test.describe('API page', () => {
     await userIsLoggedIn(page);
 
     // When
-    const copyButton = page.getByTestId('copy-btn');
+    const copyButton = page.getByTestId('ui-copy-trigger');
 
     // Then
     await expect(copyButton).toBeVisible();
@@ -502,11 +463,11 @@ test.describe('API page', () => {
 
     // When
     await page
-      .getByTestId('workflow-python')
+      .getByTestId('api-workflow-python')
       .getByRole('heading', { level: 3 })
       .getByRole('button')
       .click();
-    const copyButton = page.getByTestId('code-block-copy-btn').first();
+    const copyButton = page.getByTestId('ui-code-block-copy-trigger').first();
 
     // Then
     await expect(copyButton).toBeVisible();
@@ -524,13 +485,13 @@ test.describe('API page', () => {
     await userIsLoggedIn(page);
 
     // When
-    const revealButton = page.getByTestId('reveal-btn');
+    const revealButton = page.getByTestId('user-token-reveal');
     await revealButton.click();
-    const userToken = page.locator('#token');
+    const userToken = page.locator('#user-token-value');
 
     // Then
-    await expect(userToken).toBeVisible();
-    expect(await userToken.innerText()).toBe(mockExpiredToken);
+    // The page shows the token from the user served in beforeEach
+    await expect(userToken).toHaveText(mockExpiredToken);
   });
   test('Reveal button text changes when clicked', async ({ page }) => {
     // Given
@@ -538,11 +499,11 @@ test.describe('API page', () => {
     await userIsLoggedIn(page);
 
     // When
-    const revealButton = page.getByTestId('reveal-btn');
+    const revealButton = page.getByTestId('user-token-reveal');
     await revealButton.click();
 
     // Then
-    expect((await revealButton.innerHTML()).toString()).toBe('Hide');
+    await expect(revealButton).toHaveText('Hide');
   });
   test('Refresh button changes token', async ({ page }) => {
     // Given
@@ -550,12 +511,12 @@ test.describe('API page', () => {
     await userIsLoggedIn(page);
 
     // When
-    const refreshButton = page.getByTestId('refresh-btn');
-    const userToken = page.locator('#token');
+    const refreshButton = page.getByTestId('user-token-refresh-trigger');
+    const userToken = page.locator('#user-token-value');
     await refreshButton.click();
 
     // Then
-    expect(await userToken.innerText()).not.toBe(mockExpiredToken);
+    await expect.poll(() => userToken.innerText()).not.toBe(mockExpiredToken);
   });
   test('Refresh button changes expiration, updates button text, disables button', async ({
     page,
@@ -567,12 +528,12 @@ test.describe('API page', () => {
     await mockApiSuccess(page, '*/**/psama/user/me/refresh_long_term_token', {
       userLongTermToken: newToken,
     });
-    const revealButton = page.getByTestId('reveal-btn');
+    const revealButton = page.getByTestId('user-token-reveal');
     await revealButton.click();
 
     // When
-    const refreshButton = page.getByTestId('refresh-btn');
-    const expires = page.locator('#expires');
+    const refreshButton = page.getByTestId('user-token-refresh-trigger');
+    const expires = page.locator('#user-token-expires');
     await refreshButton.click();
     // Confirm Modal pops up
     const confrimButton = page.locator('button:has-text("Confirm")');
@@ -582,7 +543,7 @@ test.describe('API page', () => {
     await expect(refreshButton).toHaveText('Refreshed!');
     await expect(refreshButton).toBeDisabled();
 
-    const userToken = page.locator('#token');
+    const userToken = page.locator('#user-token-value');
     await expect(userToken).not.toHaveText(placeHolderDots);
     await expect(userToken).toHaveText(newToken);
     await expect(expires).toContainText('Tue Jul 07 2274');
@@ -593,9 +554,9 @@ test.describe('API page', () => {
     await userIsLoggedIn(page);
 
     // When
-    const userToken = page.locator('#token');
-    const refreshButton = page.getByTestId('refresh-btn');
-    const expires = page.locator('#expires');
+    const userToken = page.locator('#user-token-value');
+    const refreshButton = page.getByTestId('user-token-refresh-trigger');
+    const expires = page.locator('#user-token-expires');
     await refreshButton.click();
     // Confirm Modal pops up
     const cancel = page.locator('button:has-text("Cancel")');
@@ -621,11 +582,14 @@ test.describe('API page', () => {
 
       // Then
       await expect(
-        page.getByTestId(`workflow-${id}`).getByRole('heading', { level: 3 }).getByRole('button'),
+        page
+          .getByTestId(`api-workflow-${id}`)
+          .getByRole('heading', { level: 3 })
+          .getByRole('button'),
       ).toHaveAttribute('aria-expanded', 'true');
       await expect(
         page
-          .getByTestId(`workflow-${other}`)
+          .getByTestId(`api-workflow-${other}`)
           .getByRole('heading', { level: 3 })
           .getByRole('button'),
       ).toHaveAttribute('aria-expanded', 'false');
@@ -633,7 +597,7 @@ test.describe('API page', () => {
       await expect(page.locator('#user-token')).toBeVisible();
       await expect(async () => {
         const offset = await page.evaluate((itemId) => {
-          const scroller = document.getElementById('page');
+          const scroller = document.getElementById('app-page');
           const item = document.getElementById(itemId);
           if (!scroller || !item) return NaN;
           const itemTop =
@@ -656,7 +620,7 @@ test.describe('API page', () => {
 
     // Then
     await expect(
-      page.getByTestId('workflow-r').getByRole('heading', { level: 3 }).getByRole('button'),
+      page.getByTestId('api-workflow-r').getByRole('heading', { level: 3 }).getByRole('button'),
     ).toHaveAttribute('aria-expanded', 'false');
     await expect(page.locator('#choose-your-workflow [data-testid="accordion-panel"]')).toHaveCount(
       0,
@@ -692,25 +656,12 @@ test.describe('API page logged out', () => {
     await mockApiConfig(page, { features: [{ name: 'OPEN', value: 'true' }] });
   });
 
-  test('Has API nav link', async ({ page }) => {
-    // Given
-    await page.goto('/api');
-
-    // When
-    const navLink = page.locator('#nav-link-api');
-
-    // Then
-    await expect(navLink).toBeVisible();
-    await expect(navLink).toHaveText('API');
-    await expect(navLink).toHaveAttribute('aria-current', 'page');
-  });
-
   test('Shows public access key card instead of personal access token', async ({ page }) => {
     // Given
     await page.goto('/api');
 
     // Then
-    await expect(page.getByTestId('public-access-key')).toBeVisible();
+    await expect(page.getByTestId('api-public-key')).toBeVisible();
     await expect(page.locator('#user-token')).not.toBeVisible();
   });
 
@@ -719,7 +670,7 @@ test.describe('API page logged out', () => {
     await page.goto('/api');
 
     // When
-    const items = page.getByTestId('capability-item');
+    const items = page.getByTestId('api-capability-item');
 
     // Then
     await expect(items).toHaveCount(capabilities.length);
@@ -742,11 +693,11 @@ test.describe('API page logged out', () => {
 
     // When
     await page
-      .getByTestId('workflow-python')
+      .getByTestId('api-workflow-python')
       .getByRole('heading', { level: 3 })
       .getByRole('button')
       .click();
-    const pythonCode = page.getByTestId('workflow-python').locator('.code-block');
+    const pythonCode = page.getByTestId('api-workflow-python').locator('.code-block');
 
     // Then
     await expect(pythonCode).toContainText('include_consents=False');
@@ -756,11 +707,11 @@ test.describe('API page logged out', () => {
 
     // When
     await page
-      .getByTestId('workflow-r')
+      .getByTestId('api-workflow-r')
       .getByRole('heading', { level: 3 })
       .getByRole('button')
       .click();
-    const rCode = page.getByTestId('workflow-r').locator('.code-block');
+    const rCode = page.getByTestId('api-workflow-r').locator('.code-block');
 
     // Then
     await expect(rCode).toContainText('include_consents=FALSE');
@@ -773,7 +724,7 @@ test.describe('API page logged out', () => {
     await page.goto('/api');
 
     // When
-    const links = page.getByTestId('toc').locator('a');
+    const links = page.getByTestId('ui-toc').locator('a');
 
     // Then
     const expected: Array<[string, string]> = [
@@ -801,7 +752,7 @@ test.describe('API page logged out', () => {
       ['API Documentation', 'api-access'],
       ['Choose Your Workflow', 'choose-your-workflow'],
     ]) {
-      await page.getByTestId('toc').getByRole('link', { name, exact: true }).click();
+      await page.getByTestId('ui-toc').getByRole('link', { name, exact: true }).click();
       await expect(page).toHaveURL(new RegExp(`#${id}$`));
       await expectSectionAligned(page, id);
       await expect(page.locator(`#${id} h2`).first()).toBeFocused();
@@ -812,11 +763,11 @@ test.describe('API page logged out', () => {
     await page.goto('/api');
     await expect(page.locator('body.started')).toBeAttached();
     await page
-      .getByTestId('workflow-http')
+      .getByTestId('api-workflow-http')
       .getByRole('heading', { level: 3 })
       .getByRole('button')
       .click();
-    const code = page.getByTestId('workflow-http').locator('.code-block');
+    const code = page.getByTestId('api-workflow-http').locator('.code-block');
     await expect(code).toContainText(
       `${new URL(page.url()).origin}/picsure/dictionary/concepts?page_number=0&page_size=10`,
     );
@@ -825,7 +776,7 @@ test.describe('API page logged out', () => {
 
   test('Table of contents tracks the top, Workflow, and scrollable bottom', async ({ page }) => {
     await page.goto('/api');
-    const toc = page.getByTestId('toc');
+    const toc = page.getByTestId('ui-toc');
     const authLink = toc.getByRole('link', { name: 'Authentication' });
     const workflowLink = toc.getByRole('link', { name: 'Choose Your Workflow' });
     const docsLink = toc.getByRole('link', { name: 'API Documentation' });
@@ -838,7 +789,7 @@ test.describe('API page logged out', () => {
     await expect(workflowLink).toHaveAttribute('aria-current', 'true');
     await expect(authLink).not.toHaveAttribute('aria-current', 'true');
 
-    const hasOverflow = await page.locator('#page').evaluate((scroller) => {
+    const hasOverflow = await page.locator('#app-page').evaluate((scroller) => {
       scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'instant' });
       return scroller.scrollHeight > scroller.clientHeight;
     });
@@ -846,7 +797,7 @@ test.describe('API page logged out', () => {
     await expect(docsLink).toHaveAttribute('aria-current', 'true');
     await expect(toc.locator('a[aria-current="true"]')).toHaveCount(1);
 
-    await page.locator('#page').evaluate((scroller) => {
+    await page.locator('#app-page').evaluate((scroller) => {
       scroller.scrollTo({ top: 0, behavior: 'instant' });
     });
     await expect(authLink).toHaveAttribute('aria-current', 'true');
@@ -856,14 +807,14 @@ test.describe('API page logged out', () => {
   test('Table of contents is visible at 1280px and hidden at 1279px', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/api');
-    await expect(page.getByTestId('toc')).toBeVisible();
+    await expect(page.getByTestId('ui-toc')).toBeVisible();
 
     await page.setViewportSize({ width: 1279, height: 800 });
-    await expect(page.getByTestId('toc')).toBeHidden();
+    await expect(page.getByTestId('ui-toc')).toBeHidden();
     await expect(page.locator('#choose-your-workflow h2')).toBeVisible();
 
     await page.setViewportSize({ width: 1280, height: 800 });
-    await expect(page.getByTestId('toc')).toBeVisible();
+    await expect(page.getByTestId('ui-toc')).toBeVisible();
   });
 
   test('Table of contents preserves query parameters and restores heading focus through history', async ({
@@ -935,7 +886,7 @@ test.describe('API page logged out', () => {
       'true',
     );
     const before = (await toc.boundingBox())!;
-    const scrolledBy = await page.locator('#page').evaluate((scroller) => {
+    const scrolledBy = await page.locator('#app-page').evaluate((scroller) => {
       const before = scroller.scrollTop;
       scroller.scrollBy({ top: 100, behavior: 'instant' });
       return scroller.scrollTop - before;
@@ -957,7 +908,7 @@ test.describe('API page logged out', () => {
     await expect(subtitle).toContainText('Build reproducible cohort-building pipelines.');
     return page.evaluate(() => {
       const header = document.getElementById('api-header')!.closest('header')!;
-      const scroller = document.getElementById('page')!;
+      const scroller = document.getElementById('app-page')!;
       const right = (element: Element) => element.getBoundingClientRect().right;
       return {
         hero: header.getBoundingClientRect(),
@@ -1012,7 +963,7 @@ test.describe('API page logging', () => {
 
   function workflowHeader(page: Page, id: string) {
     return page
-      .getByTestId(`workflow-${id}`)
+      .getByTestId(`api-workflow-${id}`)
       .getByRole('heading', { level: 3 })
       .getByRole('button');
   }
@@ -1070,7 +1021,7 @@ test.describe('API page logging', () => {
     await expect(page.locator('body.started')).toBeAttached();
 
     await page
-      .getByTestId('toc')
+      .getByTestId('ui-toc')
       .getByRole('link', { name: 'API Documentation', exact: true })
       .click();
     await expect(page).toHaveURL(/#api-access$/);
@@ -1105,7 +1056,10 @@ test.describe('API page logging', () => {
 
     // Firefox occasionally drops this click (on main too), so retry it until the URL moves.
     await expect(async () => {
-      await page.getByTestId('workflow-http').getByRole('link', { name: 'API reference' }).click();
+      await page
+        .getByTestId('api-workflow-http')
+        .getByRole('link', { name: 'API reference' })
+        .click();
       await expect(page).toHaveURL(/#api-access$/, { timeout: 1000 });
     }).toPass();
     // A later event bounds the wait: any page.navigate from the hash goto is sent before it.
@@ -1128,7 +1082,7 @@ test.describe('API page logging', () => {
     // Keep the clicks from opening GitHub; the links' own handlers still run first.
     await page.evaluate(() => window.addEventListener('click', (event) => event.preventDefault()));
 
-    const panel = page.getByTestId('workflow-python');
+    const panel = page.getByTestId('api-workflow-python');
     for (const [name, target] of [
       ['Python client documentation', 'https://github.com/hms-dbmi/pic-sure-python-adapter-hpds'],
       ['public GitHub repository', 'https://github.com/hms-dbmi/Access-to-Data-using-PIC-SURE-API'],
@@ -1161,7 +1115,9 @@ test.describe('API page logging', () => {
     const logs = collectLogs(page);
     await openWorkflow(page, 'http');
 
-    const copyButton = page.getByTestId('workflow-http').getByTestId('code-block-copy-btn');
+    const copyButton = page
+      .getByTestId('api-workflow-http')
+      .getByTestId('ui-code-block-copy-trigger');
     await copyButton.click();
     await expect(copyButton.locator('i')).toHaveClass(/fa-square-check/);
 

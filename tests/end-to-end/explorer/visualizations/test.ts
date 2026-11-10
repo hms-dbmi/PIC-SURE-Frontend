@@ -15,10 +15,10 @@ const countResultPath = '*/**/picsure/hpds/auth/query/sync';
 const distributionsPath = '*/**/picsure/visualization/auth/distributions';
 
 async function addFilterFromRow(page: import('@playwright/test').Page, rowIndex: number) {
-  await page.locator(`#ExplorerTable-row-${rowIndex} button[title^=Filter]`).click();
+  await page.locator(`#explorer-table-row-${rowIndex} button[title^=Filter]`).click();
   const firstItem = await getOption(page);
   await firstItem.click();
-  await page.getByTestId('add-filter').click();
+  await page.getByTestId('filter-add').click();
 }
 
 test.describe('Variable Distributions visualizations', () => {
@@ -70,9 +70,9 @@ test.describe('Variable Distributions visualizations', () => {
     await userIsLoggedIn(page);
     await addFilterFromRow(page, 0);
     await addFilterFromRow(page, 2);
-    await page.getByTestId('distributions-btn').click();
+    await page.getByTestId('results-distributions-open').click();
 
-    const warning = page.getByTestId('excluded-visualizations-warning');
+    const warning = page.getByTestId('explorer-visualizations-excluded-warning');
     await expect(warning).toBeVisible();
     await expect(warning).toContainText(
       'Some variables were excluded from visualization because there was insufficient participant data for the selected query.',
@@ -108,9 +108,9 @@ test.describe('Variable Distributions visualizations', () => {
     await page.goto('/explorer?search=somedata');
     await userIsLoggedIn(page);
     await addFilterFromRow(page, 0);
-    await page.getByTestId('distributions-btn').click();
+    await page.getByTestId('results-distributions-open').click();
 
-    await expect(page.getByTestId('excluded-visualizations-warning')).not.toBeVisible();
+    await expect(page.getByTestId('explorer-visualizations-excluded-warning')).not.toBeVisible();
     await expect(
       page.locator(
         '[aria-label="Column chart showing the visualization of Any family with heart attack?"]',
@@ -143,9 +143,9 @@ test.describe('Variable Distributions visualizations', () => {
     await page.goto('/explorer?search=somedata');
     await userIsLoggedIn(page);
     await addFilterFromRow(page, 0);
-    await page.getByTestId('distributions-btn').click();
+    await page.getByTestId('results-distributions-open').click();
 
-    const status = page.locator('#visualizations').getByRole('status');
+    const status = page.locator('#explorer-visualizations').getByRole('status');
     await expect(status).toHaveText('Generating visualizations…');
 
     releaseDistributions();

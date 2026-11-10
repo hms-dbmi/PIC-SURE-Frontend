@@ -5,7 +5,7 @@
 
   interface Props {
     text?: string;
-    id?: string;
+    'data-testid'?: string;
     type?: 'question' | 'info' | 'exclamation' | 'xmark';
     color?: string;
     size?: string;
@@ -15,7 +15,7 @@
 
   const {
     text,
-    id = '',
+    'data-testid': testid,
     type = 'question',
     color = 'primary',
     size = '',
@@ -25,8 +25,8 @@
 </script>
 
 {#if text || children}
-  <div data-testid={id}>
-    <Popover data-testid="{id}-content" triggerTypes={['click', 'hover']} size={popoverSize}>
+  <div data-testid={testid}>
+    <Popover data-testid="{testid}-content" triggerTypes={['click', 'hover']} size={popoverSize}>
       {#snippet trigger()}
         <i class="fa-solid fa-circle-{type} text-{color}-950-50 hover:text-{color}-300-700 {size}"
         ></i>

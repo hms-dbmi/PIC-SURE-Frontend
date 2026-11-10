@@ -153,7 +153,7 @@ describe('ConfigKindTab (single kind)', () => {
     render(ConfigKindTab, { kinds: ['features'], title: 'Features' });
 
     const checkbox = (await screen.findByTestId(
-      'config-field-input-ENABLE_FOO',
+      'admin-config-field-input-ENABLE_FOO',
     )) as HTMLInputElement;
     expect(checkbox.checked).toBe(true);
   });
@@ -168,7 +168,7 @@ describe('ConfigKindTab (single kind)', () => {
     render(ConfigKindTab, { kinds: ['features'], title: 'Features' });
 
     const checkbox = (await screen.findByTestId(
-      'config-field-input-ENABLE_FOO',
+      'admin-config-field-input-ENABLE_FOO',
     )) as HTMLInputElement;
     expect(checkbox.checked).toBe(true);
   });
@@ -179,8 +179,8 @@ describe('ConfigKindTab (single kind)', () => {
 
     render(ConfigKindTab, { kinds: ['features'], title: 'Features' });
 
-    expect(await screen.findByTestId('config-api-unavailable-features')).toBeInTheDocument();
-    expect(screen.getByTestId('config-field-input-ENABLE_FOO')).toBeDisabled();
+    expect(await screen.findByTestId('admin-config-api-unavailable-features')).toBeInTheDocument();
+    expect(screen.getByTestId('admin-config-field-input-ENABLE_FOO')).toBeDisabled();
   });
 
   it('invalidates the server-side cache and reloads when confirmed', async () => {
@@ -189,9 +189,9 @@ describe('ConfigKindTab (single kind)', () => {
     const reloadSpy = vi.spyOn(window.location, 'reload').mockImplementation(() => {});
 
     render(ConfigKindTab, { kinds: ['features'], title: 'Features' });
-    await screen.findByTestId('config-tab-features');
+    await screen.findByTestId('admin-config-tab-features');
 
-    await fireEvent.click(screen.getByTestId('config-invalidate-cache-features-btn'));
+    await fireEvent.click(screen.getByTestId('admin-config-invalidate-cache-features-trigger'));
     await fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
 
     expect(mockInvalidateConfigCache).toHaveBeenCalled();
@@ -205,9 +205,9 @@ describe('ConfigKindTab (single kind)', () => {
 
     render(ConfigKindTab, { kinds: ['features'], title: 'Features' });
 
-    expect(await screen.findByTestId('config-deprecated-row-OLD_FIELD')).toBeInTheDocument();
+    expect(await screen.findByTestId('admin-config-deprecated-row-OLD_FIELD')).toBeInTheDocument();
 
-    await fireEvent.click(screen.getByTestId('config-deprecated-delete-OLD_FIELD'));
+    await fireEvent.click(screen.getByTestId('admin-config-deprecated-delete-OLD_FIELD'));
 
     expect(mockDeleteConfigRow).toHaveBeenCalledWith('features', 'old-1');
   });
@@ -227,44 +227,44 @@ describe('ConfigKindTab grouping and search (single kind)', () => {
   it('renders a section header per group when a kind has more than one group', async () => {
     render(ConfigKindTab, { kinds: ['features'], title: 'Features' });
 
-    const tab = await screen.findByTestId('config-tab-features');
+    const tab = await screen.findByTestId('admin-config-tab-features');
     expect(tab).toHaveTextContent('Group One');
     expect(tab).toHaveTextContent('Group Two');
-    expect(screen.getByTestId('config-field-row-ENABLE_FOO')).toBeInTheDocument();
-    expect(screen.getByTestId('config-field-row-ENABLE_BAR')).toBeInTheDocument();
+    expect(screen.getByTestId('admin-config-field-row-ENABLE_FOO')).toBeInTheDocument();
+    expect(screen.getByTestId('admin-config-field-row-ENABLE_BAR')).toBeInTheDocument();
   });
 
   it('hides the section header when a kind has exactly one group', async () => {
     render(ConfigKindTab, { kinds: ['branding'], title: 'Branding' });
 
-    const tab = await screen.findByTestId('config-tab-branding');
+    const tab = await screen.findByTestId('admin-config-tab-branding');
     expect(tab).not.toHaveTextContent('Only Group');
-    expect(screen.getByTestId('config-field-row-BRANDING_FIELD')).toBeInTheDocument();
+    expect(screen.getByTestId('admin-config-field-row-BRANDING_FIELD')).toBeInTheDocument();
   });
 
   it('filters fields by search query, hiding groups with no matches', async () => {
     render(ConfigKindTab, { kinds: ['features'], title: 'Features' });
 
-    await screen.findByTestId('config-field-row-ENABLE_FOO');
+    await screen.findByTestId('admin-config-field-row-ENABLE_FOO');
 
-    await fireEvent.input(screen.getByTestId('config-search-features'), {
+    await fireEvent.input(screen.getByTestId('admin-config-search-features'), {
       target: { value: 'bar' },
     });
 
-    expect(screen.queryByTestId('config-field-row-ENABLE_FOO')).not.toBeInTheDocument();
-    expect(screen.getByTestId('config-field-row-ENABLE_BAR')).toBeInTheDocument();
+    expect(screen.queryByTestId('admin-config-field-row-ENABLE_FOO')).not.toBeInTheDocument();
+    expect(screen.getByTestId('admin-config-field-row-ENABLE_BAR')).toBeInTheDocument();
   });
 
   it('shows a no-results message when the search query matches nothing', async () => {
     render(ConfigKindTab, { kinds: ['features'], title: 'Features' });
 
-    await screen.findByTestId('config-field-row-ENABLE_FOO');
+    await screen.findByTestId('admin-config-field-row-ENABLE_FOO');
 
-    await fireEvent.input(screen.getByTestId('config-search-features'), {
+    await fireEvent.input(screen.getByTestId('admin-config-search-features'), {
       target: { value: 'nonexistent-field' },
     });
 
-    expect(await screen.findByTestId('config-no-results-features')).toBeInTheDocument();
+    expect(await screen.findByTestId('admin-config-no-results-features')).toBeInTheDocument();
   });
 });
 
@@ -282,22 +282,22 @@ describe('ConfigKindTab merged kinds (Settings & Features)', () => {
   it('loads and renders fields from every given kind', async () => {
     render(ConfigKindTab, { kinds: ['features', 'settings'], title: 'Settings & Features' });
 
-    await screen.findByTestId('config-tab-features-settings');
+    await screen.findByTestId('admin-config-tab-features-settings');
 
     expect(mockLoadAdminConfig).toHaveBeenCalledWith('features');
     expect(mockLoadAdminConfig).toHaveBeenCalledWith('settings');
-    expect(screen.getByTestId('config-field-row-ENABLE_FOO')).toBeInTheDocument();
-    expect(screen.getByTestId('config-field-row-SOLO_FIELD')).toBeInTheDocument();
+    expect(screen.getByTestId('admin-config-field-row-ENABLE_FOO')).toBeInTheDocument();
+    expect(screen.getByTestId('admin-config-field-row-SOLO_FIELD')).toBeInTheDocument();
   });
 
   it('buckets a feature and a setting sharing a group name into one section', async () => {
     render(ConfigKindTab, { kinds: ['features', 'settings'], title: 'Settings & Features' });
 
-    const group = await screen.findByTestId('config-group-features-settings-Export');
+    const group = await screen.findByTestId('admin-config-group-features-settings-Export');
     expect(group).toHaveTextContent('Export');
 
-    const featureRow = screen.getByTestId('config-field-row-FEATURE_EXPORT_THING');
-    const settingRow = screen.getByTestId('config-field-row-SETTING_EXPORT_THING');
+    const featureRow = screen.getByTestId('admin-config-field-row-FEATURE_EXPORT_THING');
+    const settingRow = screen.getByTestId('admin-config-field-row-SETTING_EXPORT_THING');
     expect(group).toContainElement(featureRow);
     expect(group).toContainElement(settingRow);
   });
@@ -305,14 +305,14 @@ describe('ConfigKindTab merged kinds (Settings & Features)', () => {
   it('filters across kinds by search query', async () => {
     render(ConfigKindTab, { kinds: ['features', 'settings'], title: 'Settings & Features' });
 
-    await screen.findByTestId('config-field-row-SOLO_FIELD');
+    await screen.findByTestId('admin-config-field-row-SOLO_FIELD');
 
-    await fireEvent.input(screen.getByTestId('config-search-features-settings'), {
+    await fireEvent.input(screen.getByTestId('admin-config-search-features-settings'), {
       target: { value: 'solo' },
     });
 
-    expect(screen.queryByTestId('config-field-row-ENABLE_FOO')).not.toBeInTheDocument();
-    expect(screen.getByTestId('config-field-row-SOLO_FIELD')).toBeInTheDocument();
+    expect(screen.queryByTestId('admin-config-field-row-ENABLE_FOO')).not.toBeInTheDocument();
+    expect(screen.getByTestId('admin-config-field-row-SOLO_FIELD')).toBeInTheDocument();
   });
 
   it('saves a settings-kind field via the settings API, not features', async () => {
@@ -320,9 +320,9 @@ describe('ConfigKindTab merged kinds (Settings & Features)', () => {
 
     render(ConfigKindTab, { kinds: ['features', 'settings'], title: 'Settings & Features' });
 
-    const checkbox = await screen.findByTestId('config-field-input-SOLO_FIELD');
+    const checkbox = await screen.findByTestId('admin-config-field-input-SOLO_FIELD');
     await fireEvent.click(checkbox);
-    await fireEvent.click(screen.getByTestId('config-field-save-SOLO_FIELD'));
+    await fireEvent.click(screen.getByTestId('admin-config-field-save-SOLO_FIELD'));
 
     expect(mockAddConfigRow).toHaveBeenCalledWith('settings', 'SOLO_FIELD', 'true');
   });
@@ -332,11 +332,11 @@ describe('ConfigKindTab merged kinds (Settings & Features)', () => {
 
     render(ConfigKindTab, { kinds: ['features', 'settings'], title: 'Settings & Features' });
 
-    const warning = await screen.findByTestId('config-api-unavailable-features-settings');
+    const warning = await screen.findByTestId('admin-config-api-unavailable-features-settings');
     expect(warning).toHaveTextContent('settings');
     expect(warning).not.toHaveTextContent('features in this environment');
-    expect(screen.getByTestId('config-field-input-SOLO_FIELD')).toBeDisabled();
-    expect(screen.getByTestId('config-field-input-ENABLE_FOO')).not.toBeDisabled();
+    expect(screen.getByTestId('admin-config-field-input-SOLO_FIELD')).toBeDisabled();
+    expect(screen.getByTestId('admin-config-field-input-ENABLE_FOO')).not.toBeDisabled();
   });
 
   it('lists deprecated rows from every kind and deletes with the right kind', async () => {
@@ -352,10 +352,12 @@ describe('ConfigKindTab merged kinds (Settings & Features)', () => {
 
     render(ConfigKindTab, { kinds: ['features', 'settings'], title: 'Settings & Features' });
 
-    expect(await screen.findByTestId('config-deprecated-row-OLD_FEATURE')).toBeInTheDocument();
-    expect(screen.getByTestId('config-deprecated-row-OLD_SETTING')).toBeInTheDocument();
+    expect(
+      await screen.findByTestId('admin-config-deprecated-row-OLD_FEATURE'),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('admin-config-deprecated-row-OLD_SETTING')).toBeInTheDocument();
 
-    await fireEvent.click(screen.getByTestId('config-deprecated-delete-OLD_SETTING'));
+    await fireEvent.click(screen.getByTestId('admin-config-deprecated-delete-OLD_SETTING'));
 
     expect(mockDeleteConfigRow).toHaveBeenCalledWith('settings', 'old-set');
   });

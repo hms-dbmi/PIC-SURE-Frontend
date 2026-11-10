@@ -10,11 +10,6 @@ vi.mock('#lib/configuration.svelte.ts', () => ({
   config: { branding: { explorePage: { queryErrorText: '', filterErrorText: '' } }, features: {} },
 }));
 
-vi.mock('#lib/stores/Filter.ts', async () => {
-  const { writable } = await import('svelte/store');
-  return { filters: writable([]) };
-});
-
 const mockState = vi.hoisted(() => ({
   current: {
     loading: false,
@@ -59,7 +54,7 @@ describe('Counts.svelte rendering', () => {
     render(Counts);
     const node = await screen.findByText('600±3');
     expect(node).toBeInTheDocument();
-    expect(node.id).toBe('result-count-number');
+    expect(node.id).toBe('results-count-number');
   });
 
   it('renders a plain numeric count with locale formatting', async () => {

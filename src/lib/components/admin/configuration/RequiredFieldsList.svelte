@@ -63,7 +63,7 @@
       class="text-primary-700-300 hover:text-secondary-700-300"
       aria-label="Add New Field"
       title="Add New Field"
-      data-testid="required-field-new-btn"
+      data-testid="admin-required-field-new"
       disabled={enableNewField}
       onclick={() => (enableNewField = !enableNewField)}
     >
@@ -85,7 +85,7 @@
   {/each}
 
   {#if duplicates.length > 0}
-    <ErrorAlert data-testid="validation-warn" color="warning">
+    <ErrorAlert data-testid="admin-required-field-validation-warning" color="warning">
       Fields with the same ID may not function properly.
     </ErrorAlert>
   {/if}

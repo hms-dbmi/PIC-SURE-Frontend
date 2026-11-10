@@ -42,11 +42,11 @@
 </script>
 
 <section
-  id="logins"
+  id="login-page"
   class="flex h-full w-full flex-col items-center place-content-center text-center text-lg"
   in:fly={{ duration: 600, x: '100%' }}
 >
-  <div id="title-box" class="flex flex-col items-center text-center mb-8 max-w-3/4">
+  <div id="login-title" class="flex flex-col items-center text-center mb-8 max-w-3/4">
     <h1 data-testid="login-title" class="mb-6 w-full flex gap-2 items-center justify-center">
       <Logo class="flex-none" height={config.branding.login.logoHeight || 7.5} />
     </h1>
@@ -62,7 +62,7 @@
         {/if}
       </header>
       <div class="flex flex-col items-center justify-center">
-        <div id="main-logins" class="grid grid-cols-1 gap-4 mb-4 w-full">
+        <div id="login-providers" class="grid grid-cols-1 gap-4 mb-4 w-full">
           {#if providers?.length === 0}
             <ErrorAlert>
               No main authentication providers are registered. Please add them to your
@@ -119,7 +119,7 @@
         {#await page.data?.altProviders}
           <Loading ring />
         {:then altProviders}
-          <div id="alt-logins" class="grid grid-cols-1 gap-4 mb-4 w-full">
+          <div id="login-alt-providers" class="grid grid-cols-1 gap-4 mb-4 w-full">
             {#each altProviders as provider}
               <LoginButton
                 buttonText={provider.description || provider.name}

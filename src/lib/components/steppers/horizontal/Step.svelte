@@ -35,7 +35,7 @@
 </script>
 
 {#if stepIndex === $stepperState.current}
-  <div class="step space-y-4" data-testid="step-{stepIndex + 1}">
+  <div class="step space-y-4" data-testid="ui-stepper-step-{stepIndex + 1}">
     {#if header}<header class="step-header text-2xl font-bold">{@render header()}</header>{/if}
     <div class="step-content space-y-4 px-2">
       {#if children}{@render children()}{:else}(Step {stepIndex + 1} Content){/if}
@@ -51,13 +51,17 @@
             {@render navigation()}
           </div>
         {:else if stepIndex !== 0}
-          <AngleButton onclick={onBack} disabled={$stepperState.current === 0}>Back</AngleButton>
+          <AngleButton
+            data-testid="ui-stepper-back"
+            onclick={onBack}
+            disabled={$stepperState.current === 0}>Back</AngleButton
+          >
         {:else}
           <div></div>
         {/if}
         {#if stepIndex < $stepperState.total - 1}
           <AngleButton
-            name="next"
+            data-testid="ui-stepper-next"
             angle="right"
             variant="filled"
             color="primary-500"
@@ -66,7 +70,7 @@
           >
         {:else}
           <AngleButton
-            name={buttonCompleteLabel || 'complete'}
+            data-testid="ui-stepper-complete"
             angle="right"
             variant="filled"
             color="primary-500"

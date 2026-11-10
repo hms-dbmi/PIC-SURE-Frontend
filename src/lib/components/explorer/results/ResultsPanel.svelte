@@ -113,7 +113,7 @@
   {#if showExportButton}
     <div class="h-11 mt-4">
       <button
-        id="export-data-button"
+        id="results-export-open"
         type="button"
         class="btn preset-filled-primary-500"
         disabled={resultCountsState.loading}
@@ -127,13 +127,13 @@
       </button>
     </div>
   {/if}
-  <div id="export-filters" class="flex flex-col items-center mt-7 w-80">
+  <div id="results-export-filters" class="flex flex-col items-center mt-7 w-80">
     <hr />
     <div class="flex content-center items-center mt-6">
       <h5 class="text-xl flex-auto ml-9 mr-2 mb-2 pt-1">Filtered Data Summary</h5>
       {#if hasFilterOrExport}
         <button
-          data-testid="clear-all-results-btn"
+          data-testid="results-reset"
           class="btn btn-xs preset-tonal-error border border-error-500 hover:preset-filled-error-500 flex-none"
           onclick={() => (modalOpen = true)}>Reset</button
         >
@@ -142,11 +142,11 @@
     <Filters {isDiscoverPage} />
     {#if $exports.length > 0}
       <div class="px-4 mb-1 w-80">
-        <header class="text-left ml-1" data-testid="export-header">
+        <header class="text-left ml-1" data-testid="results-exports-header">
           Added Variables
           {#if $exports.length > 10}
             <button
-              data-testid="clear-all-results-btn"
+              data-testid="results-exports-clear"
               class="anchor text-sm flex-none float-right mr-2"
               onclick={() => {
                 $exports = [];
@@ -170,8 +170,8 @@
         {#if showExplorerDistributions}
           <CardButton
             href={resolve('explorer/distributions')}
-            id="explorer-distributions-btn"
-            data-testid="distributions-btn"
+            id="results-distributions-open"
+            data-testid="results-distributions-open"
             title="Variable Distributions"
             icon="fa-solid fa-chart-pie"
             size="md"
@@ -181,8 +181,8 @@
         {#if showDiscoverDistributions}
           <CardButton
             href={resolve('discover/distributions')}
-            id="explorer-distributions-btn"
-            data-testid="distributions-btn"
+            id="results-distributions-open"
+            data-testid="results-distributions-open"
             title="Variable Distributions"
             icon="fa-solid fa-chart-pie"
             size="md"
@@ -192,7 +192,7 @@
         {#if showVariantExplorer}
           <CardButton
             href={resolve('explorer/variant')}
-            data-testid="variant-explorer-btn"
+            data-testid="results-variant-explorer-open"
             title="Variant Explorer"
             icon="fa-solid fa-dna"
             size="md"

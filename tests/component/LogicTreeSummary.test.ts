@@ -26,7 +26,7 @@ describe('LogicTreeSummary', () => {
 
     render(LogicTreeSummary, { root });
 
-    expect(screen.getByTestId('logic-tree-text').textContent).toBe('varA AND varB');
+    expect(screen.getByTestId('filter-logic-text').textContent).toBe('varA AND varB');
   });
 
   it('renders spaces around operators in nested groups', () => {
@@ -35,7 +35,7 @@ describe('LogicTreeSummary', () => {
 
     render(LogicTreeSummary, { root });
 
-    expect(screen.getByTestId('logic-tree-text').textContent).toBe('varA OR (varB AND varC)');
+    expect(screen.getByTestId('filter-logic-text').textContent).toBe('varA OR (varB AND varC)');
   });
 
   it('separates operators with breaking spaces so long summaries can wrap', () => {
@@ -43,7 +43,7 @@ describe('LogicTreeSummary', () => {
 
     render(LogicTreeSummary, { root });
 
-    const text = screen.getByTestId('logic-tree-text').textContent ?? '';
+    const text = screen.getByTestId('filter-logic-text').textContent ?? '';
     // A non-breaking space would render correctly but glue the operator to its
     // neighbours, so assert the separators are ordinary breaking spaces.
     expect(text).not.toContain('\u00a0');

@@ -27,7 +27,7 @@
       <div class="flex-none text-right">
         <button
           type="button"
-          data-testid={`snp-edit-btn-${snp.search}`}
+          data-testid={`genomic-snp-edit-${snp.search}`}
           title="Edit"
           aria-label="Edit"
           class="btn-icon-color"
@@ -37,7 +37,7 @@
         </button>
         <button
           type="button"
-          data-testid={`snp-delete-btn-${snp.search}`}
+          data-testid={`genomic-snp-delete-${snp.search}`}
           title="Delete"
           aria-label="Delete"
           class="btn-icon-color"

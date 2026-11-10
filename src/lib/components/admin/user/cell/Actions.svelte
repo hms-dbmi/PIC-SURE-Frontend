@@ -51,7 +51,7 @@
 
 {#if active}
   <button
-    data-testid="user-{data.cell}-edit-btn"
+    data-testid="admin-user-edit-{data.cell}"
     type="button"
     title="Edit (e)"
     aria-label="Edit (e)"
@@ -63,7 +63,7 @@
   </button>
 {/if}
 <Modal
-  data-testid="user-{data.cell}-{active ? 'D' : 'R'}eactivate"
+  data-testid="admin-user-{active ? 'deactivate' : 'reactivate'}-{data.cell}"
   title="{active ? 'D' : 'R'}eactivate User?"
   confirmText="{active ? 'D' : 'R'}eactivate"
   triggerTitle={active ? 'Deactivate user (d)' : 'Reactivate user (r)'}

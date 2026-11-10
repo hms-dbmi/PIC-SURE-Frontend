@@ -406,12 +406,12 @@
 {:else}
   <section
     class="min-w-0"
-    aria-labelledby="site-banners-title"
+    aria-labelledby="banner-management-title"
     style:--banner-arrival-duration={`${ARRIVAL_HIGHLIGHT_MS}ms`}
   >
     <header class="flex items-start justify-between gap-6">
       <div class="space-y-1">
-        <h2 id="site-banners-title" class="m-0">Site banners</h2>
+        <h2 id="banner-management-title" class="m-0">Site banners</h2>
         <p class="m-0">Create and manage announcements across PIC-SURE.</p>
       </div>
       <button

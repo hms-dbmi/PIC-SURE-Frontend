@@ -94,20 +94,22 @@
         </div>
       </header>
       <section class="p-4 grid grid-cols-2 gap-y-2 items-center">
-        <label for="account">Account:</label>
-        <span id="account" class="w-full">{account}</span>
-        <label for="token">Token:</label>
-        <div id="token" class="token-value">{revealed ? token : placeHolderToken}</div>
-        <label for="expires">Expires:</label>
+        <label for="user-token-account">Account:</label>
+        <span id="user-token-account" class="w-full">{account}</span>
+        <label for="user-token-value">Token:</label>
+        <div id="user-token-value" class="token-value">{revealed ? token : placeHolderToken}</div>
+        <label for="user-token-expires">Expires:</label>
         <div>
-          <span id="expires" class="w-1/3 mr-2"
+          <span id="user-token-expires" class="w-1/3 mr-2"
             >{getTokenExpirationAsDate($user?.token || '')
               ?.toString()
               ?.substring(0, 24)}</span
           >
           {#if badge}
-            <span id="expires-badge" class="badge {badge}" data-testid="expires-badge"
-              >{badge.toUpperCase()}</span
+            <span
+              id="user-token-expires-badge"
+              class="badge {badge}"
+              data-testid="user-token-expires">{badge.toUpperCase()}</span
             >
           {/if}
         </div>
@@ -119,7 +121,7 @@
           class="preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
         />
         <Modal
-          data-testid="refresh"
+          data-testid="user-token-refresh"
           title="Please Confirm"
           onconfirm={refreshToken}
           disabled={refreshButtonDisabled}
@@ -137,7 +139,7 @@
           Are you sure you wish to invalidate your old token and create a new one?
         </Modal>
         <button
-          data-testid="reveal-btn"
+          data-testid="user-token-reveal"
           class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
           onclick={revealToken}>{revealed ? 'Hide' : 'Reveal'}</button
         >

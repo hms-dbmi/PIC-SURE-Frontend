@@ -5,15 +5,17 @@ import brandingJson from '../../../src/lib/assets/configuration.json' with { typ
 const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
 
 test.describe('Help page', () => {
-  branding?.help?.links?.forEach(({ title }) => {
-    test(`Has expected link to ${title}`, async ({ page }) => {
-      await mockApiConfig(page, {
-        features: [{ name: 'OPEN', value: 'true' }],
-      });
-
-      await page.goto('/help');
-
-      await expect(page.locator('.main-content').getByText(title, { exact: true })).toBeVisible();
+  test('Has a link for each configured help link', async ({ page }) => {
+    await mockApiConfig(page, {
+      features: [{ name: 'OPEN', value: 'true' }],
     });
+
+    await page.goto('/help');
+
+    const links = branding?.help?.links ?? [];
+    expect(links.length).toBeGreaterThan(0);
+    for (const { title } of links) {
+      await expect(page.locator('.main-content').getByText(title, { exact: true })).toBeVisible();
+    }
   });
 });

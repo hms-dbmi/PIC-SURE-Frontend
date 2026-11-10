@@ -30,7 +30,7 @@ describe('rejecting the terms of service', () => {
     mockLogout.mockResolvedValue(undefined);
     render(Terms);
 
-    await fireEvent.click(await screen.findByTestId('terms-reject-btn'));
+    await fireEvent.click(await screen.findByTestId('terms-reject'));
 
     expect(mockLogout).toHaveBeenCalledWith(undefined, false, { discardQuery: true });
   });
@@ -39,7 +39,7 @@ describe('rejecting the terms of service', () => {
     mockLogout.mockResolvedValue(undefined);
     render(Terms);
 
-    await fireEvent.click(await screen.findByTestId('terms-reject-btn'));
+    await fireEvent.click(await screen.findByTestId('terms-reject'));
     await Promise.resolve();
 
     expect(mockGoto).not.toHaveBeenCalled();

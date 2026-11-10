@@ -44,7 +44,7 @@
   {#await load()}
     <Loading />
   {:then}
-    <section id="role-view">
+    <section id="admin-user-view">
       <table class="table bg-transparent">
         <tbody>
           <tr>

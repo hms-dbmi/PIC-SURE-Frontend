@@ -30,7 +30,7 @@ async function openForm() {
 }
 
 async function submitForm() {
-  await fireEvent.submit(screen.getByTestId('public-access-key').querySelector('form') as Element);
+  await fireEvent.submit(screen.getByTestId('api-public-key').querySelector('form') as Element);
 }
 
 describe('PublicAccessKey', () => {
@@ -63,7 +63,7 @@ describe('PublicAccessKey', () => {
     render(PublicAccessKey);
 
     expect(screen.queryByRole('button', { name: 'Request Public Key' })).not.toBeInTheDocument();
-    expect(screen.getByTestId('public-key-unavailable')).toBeInTheDocument();
+    expect(screen.getByTestId('api-public-key-unavailable')).toBeInTheDocument();
     expect(post).not.toHaveBeenCalled();
   });
 
@@ -81,12 +81,12 @@ describe('PublicAccessKey', () => {
       false,
     );
     await waitFor(() => {
-      expect(screen.getByTestId('public-key-value')).toHaveTextContent(mockKeyResponse.apiKey);
+      expect(screen.getByTestId('api-public-key-value')).toHaveTextContent(mockKeyResponse.apiKey);
     });
-    expect(screen.getByTestId('public-key-warning')).toHaveTextContent(
+    expect(screen.getByTestId('api-public-key-warning')).toHaveTextContent(
       'This key is shown only once and cannot be recovered.',
     );
-    expect(screen.getByTestId('public-key-expires').textContent).not.toBe('');
+    expect(screen.getByTestId('api-public-key-expires').textContent).not.toBe('');
   });
 
   it('sends trimmed name and email when entered', async () => {
@@ -121,7 +121,7 @@ describe('PublicAccessKey', () => {
     await openForm();
     await submitForm();
     await waitFor(() => {
-      expect(screen.getByTestId('public-key-value')).toBeInTheDocument();
+      expect(screen.getByTestId('api-public-key-value')).toBeInTheDocument();
     });
     await fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
 
@@ -167,9 +167,9 @@ describe('PublicAccessKey', () => {
     await openForm();
     await submitForm();
 
-    const alert = await screen.findByTestId('error-alert');
+    const alert = await screen.findByTestId('ui-error-alert');
     expect(alert).toHaveTextContent('CAPTCHA verification failed.');
-    expect(screen.queryByTestId('public-key-value')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('api-public-key-value')).not.toBeInTheDocument();
 
     await fireEvent.click(screen.getByRole('button', { name: 'Try Again' }));
     expect(screen.getByRole('button', { name: 'Generate Key' })).toBeInTheDocument();
@@ -194,7 +194,7 @@ describe('PublicAccessKey', () => {
     await openForm();
     await submitForm();
 
-    const alert = await screen.findByTestId('error-alert');
+    const alert = await screen.findByTestId('ui-error-alert');
     expect(alert).toHaveTextContent(
       'Unable to generate a public access key. Please try again later.',
     );
@@ -211,7 +211,7 @@ describe('PublicAccessKey', () => {
     await openForm();
     await submitForm();
 
-    const alert = await screen.findByTestId('error-alert');
+    const alert = await screen.findByTestId('ui-error-alert');
     expect(alert).toHaveTextContent(
       'Unable to generate a public access key. Please try again later.',
     );
@@ -227,7 +227,7 @@ describe('PublicAccessKey', () => {
     await openForm();
     await submitForm();
 
-    const alert = await screen.findByTestId('error-alert');
+    const alert = await screen.findByTestId('ui-error-alert');
     expect(alert).toHaveTextContent('Public key generation is not enabled.');
   });
 
@@ -236,7 +236,7 @@ describe('PublicAccessKey', () => {
 
     await openForm();
 
-    expect(screen.queryByTestId('turnstile-widget')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('app-turnstile-widget')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Generate Key' })).toBeEnabled();
   });
 
@@ -266,7 +266,7 @@ describe('PublicAccessKey', () => {
       render(PublicAccessKey, { props: { enabled: true } });
       await openForm();
 
-      expect(screen.getByTestId('turnstile-widget')).toBeInTheDocument();
+      expect(screen.getByTestId('app-turnstile-widget')).toBeInTheDocument();
       const generate = screen.getByRole('button', { name: 'Generate Key' });
       expect(generate).toBeDisabled();
 
@@ -314,7 +314,7 @@ describe('PublicAccessKey', () => {
       await waitFor(() => expect(generate).toBeEnabled());
 
       renderOptions?.['error-callback']();
-      await screen.findByTestId('public-key-captcha-failed');
+      await screen.findByTestId('api-public-key-captcha-failed');
       await waitFor(() => expect(generate).toBeDisabled());
       expect(post).not.toHaveBeenCalled();
     });
@@ -329,7 +329,7 @@ describe('PublicAccessKey', () => {
       render(PublicAccessKey, { props: { enabled: true } });
       await openForm();
 
-      const message = await screen.findByTestId('public-key-captcha-failed');
+      const message = await screen.findByTestId('api-public-key-captcha-failed');
       expect(message).toHaveTextContent('The security check could not be loaded.');
       expect(screen.getByRole('button', { name: 'Generate Key' })).toBeDisabled();
       expect(post).not.toHaveBeenCalled();
@@ -345,7 +345,7 @@ describe('PublicAccessKey', () => {
         expect(screen.getByRole('button', { name: 'Generate Key' })).toBeEnabled(),
       );
       await submitForm();
-      await screen.findByTestId('error-alert');
+      await screen.findByTestId('ui-error-alert');
 
       // tokens are single-use: re-entering the form must re-render the widget and
       // hold Generate disabled until a fresh token arrives

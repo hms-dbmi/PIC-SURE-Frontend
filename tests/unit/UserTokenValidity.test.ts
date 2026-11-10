@@ -7,6 +7,7 @@ vi.mock('$app/env', () => environment);
 
 import {
   getTokenExpiration,
+  getTokenExpirationAsDate,
   hasValidToken,
   isTokenExpired,
   removeToken,
@@ -67,6 +68,17 @@ describe('token expiration helpers', () => {
 
     expect(() => getTokenExpiration(token)).toThrow('Token expiration must be a finite number.');
     expect(isTokenExpired(token)).toBe(true);
+  });
+
+  it('throws when no token is provided', () => {
+    expect(() => getTokenExpiration('')).toThrow('No token provided.');
+  });
+
+  it('returns the expiration as a Date, or undefined for an invalid token', () => {
+    const exp = 1700000000;
+
+    expect(getTokenExpirationAsDate(makeToken(exp))?.getTime()).toBe(exp * 1000);
+    expect(getTokenExpirationAsDate('bad')).toBeUndefined();
   });
 });
 

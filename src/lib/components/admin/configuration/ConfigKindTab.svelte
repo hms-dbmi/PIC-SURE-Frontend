@@ -160,7 +160,7 @@
     <ErrorAlert
       color="secondary"
       iconSize="lg"
-      data-testid={`config-api-unavailable-${testIdBase}`}
+      data-testid={`admin-config-api-unavailable-${testIdBase}`}
     >
       <span class="font-bold">Some values are disabled</span> and can't be edited here:
       <ul class="ml-4 list-disc">
@@ -177,7 +177,7 @@
     </ErrorAlert>
   {/if}
   {#if kinds.includes('branding')}
-    <ErrorAlert color="secondary" iconSize="lg" data-testid="config-branding-scope-note">
+    <ErrorAlert color="secondary" iconSize="lg" data-testid="admin-config-branding-scope-note">
       <span class="font-bold">Limited scope:</span> Most branding is sourced from the build-time configuration
       file.
     </ErrorAlert>
@@ -188,7 +188,7 @@
         class="max-w-sm flex-1"
         placeholder="Search fields…"
         label="Search fields"
-        testId={`config-search-${testIdBase}`}
+        testId={`admin-config-search-${testIdBase}`}
         bind:value={query}
       />
       <span class="text-xs opacity-60 whitespace-nowrap">
@@ -198,7 +198,7 @@
     <div class="flex-1"></div>
     <Modal
       width="w-1/3"
-      data-testid={`config-invalidate-cache-${testIdBase}`}
+      data-testid={`admin-config-invalidate-cache-${testIdBase}`}
       title="Invalidate Cache?"
       confirmText="Yes"
       cancelText="No"
@@ -215,9 +215,9 @@
       values.
     </Modal>
   </div>
-  <div data-testid={`config-tab-${testIdBase}`}>
+  <div data-testid={`admin-config-tab-${testIdBase}`}>
     {#each filteredGroups as group (group.group)}
-      <div class="mb-8" data-testid={`config-group-${testIdBase}-${group.group}`}>
+      <div class="mb-8" data-testid={`admin-config-group-${testIdBase}-${group.group}`}>
         {#if showGroupHeaders}
           <div
             class="text-[13px] font-bold uppercase tracking-wide opacity-70 border-b border-surface-200-800 pb-2 mb-3.5"
@@ -242,7 +242,7 @@
     {#if filteredGroups.length === 0}
       <p
         class="text-center text-sm opacity-60 py-10"
-        data-testid={`config-no-results-${testIdBase}`}
+        data-testid={`admin-config-no-results-${testIdBase}`}
       >
         No fields match &ldquo;{query}&rdquo;.
       </p>
@@ -253,7 +253,7 @@
     (up to 4 hours) unless you invalidate the cache.
   </p>
   {#if deprecated.length > 0}
-    <div class="mt-6" data-testid={`config-deprecated-${testIdBase}`}>
+    <div class="mt-6" data-testid={`admin-config-deprecated-${testIdBase}`}>
       <h3 class="font-semibold text-sm opacity-80 mb-1">Deprecated Keys</h3>
       <p class="text-xs opacity-60 mb-2">
         These stored values do not correspond to a known {title} field, so they are not read by the app
@@ -274,7 +274,7 @@
         </thead>
         <tbody>
           {#each deprecated as entry (`${entry.kind}:${entry.row.uuid}`)}
-            <tr data-testid={`config-deprecated-row-${entry.row.name}`}>
+            <tr data-testid={`admin-config-deprecated-row-${entry.row.name}`}>
               <td class="font-mono text-xs">{entry.row.name}</td>
               {#if kinds.length > 1}
                 <td class="text-xs opacity-70 capitalize">{KIND_LABEL[entry.kind]}</td>
@@ -286,7 +286,7 @@
                   type="button"
                   title="Delete"
                   class="btn-icon-color"
-                  data-testid={`config-deprecated-delete-${entry.row.name}`}
+                  data-testid={`admin-config-deprecated-delete-${entry.row.name}`}
                   disabled={readOnly}
                   onclick={() => deleteDeprecated(entry)}
                 >

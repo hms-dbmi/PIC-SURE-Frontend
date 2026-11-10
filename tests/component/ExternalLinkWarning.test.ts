@@ -74,7 +74,7 @@ describe('ExternalLinkWarning', () => {
     const event = new MouseEvent('click', { bubbles: true, cancelable: true });
     await fireEvent(anchor, event);
 
-    expect(screen.getByTestId('external-link-warning')).toBeInTheDocument();
+    expect(screen.getByTestId('app-external-link-warning')).toBeInTheDocument();
     expect(screen.getByText('Leaving PIC-SURE-TEST')).toBeInTheDocument();
     expect(screen.getByText(/Are you sure you want to leave PIC-SURE-TEST\?/)).toBeInTheDocument();
     expect(event.defaultPrevented).toBe(true);
@@ -154,7 +154,7 @@ describe('ExternalLinkWarning', () => {
       await fireEvent(anchor, event);
       expect(event.defaultPrevented).toBe(false);
     }
-    expect(screen.queryByTestId('external-link-warning')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('app-external-link-warning')).not.toBeInTheDocument();
   });
 
   it('logs warning_shown, cancelled, and confirmed navigation events', async () => {

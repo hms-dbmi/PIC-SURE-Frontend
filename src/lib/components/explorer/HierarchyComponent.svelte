@@ -133,12 +133,12 @@
 
 <Modal
   bind:open={modalOpen}
-  data-testid="hierarchy-component-error-modal"
+  data-testid="explorer-hierarchy-error-modal"
   title="Data tree selection too large"
   closeable={true}
   width="w-1/2"
 >
-  <div data-testid="hierarchy-component-error-modal-content">
+  <div data-testid="explorer-hierarchy-error-content">
     <p class="m-0">
       The level of the data tree you selected exceeds 9,500 variables. This was not added as a
       filter to your query. Please make a selection lower in the data tree and try again.
@@ -150,7 +150,7 @@
   </div>
 </Modal>
 <div
-  data-testid="hierarchy-component"
+  data-testid="explorer-hierarchy"
   class="flex flex-row justify-between bg-surface-100 p-4 rounded-container"
 >
   <div class="flex flex-col gap-2">
@@ -187,7 +187,7 @@
   </div>
   <button
     class="btn btn-icon preset-filled-primary-500 m-1"
-    data-testid="add-filter"
+    data-testid="filter-add"
     aria-label={isLoading ? 'Adding Filter...' : 'Add Filter'}
     onclick={addSelection}
     disabled={isLoading || disableAddFilter}

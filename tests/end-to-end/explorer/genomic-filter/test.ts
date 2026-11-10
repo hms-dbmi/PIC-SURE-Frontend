@@ -1,6 +1,12 @@
 import { expect } from '@playwright/test';
 import { test, mockApiSuccess, mockApiConfig } from '../../custom-context';
-import { searchResults, facetsResponse, searchResultPath, facetResultPath } from '../../mock-data';
+import {
+  searchResults,
+  facetsResponse,
+  searchResultPath,
+  facetResultPath,
+  geneValues,
+} from '../../mock-data';
 import { userIsLoggedIn } from '../../utils';
 
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
@@ -22,7 +28,7 @@ test('Clicking the Genomic filter button navigates to genomic filter page', asyn
   await userIsLoggedIn(page);
 
   // When
-  await page.getByTestId('genomic-filter-btn').click();
+  await page.getByTestId('explorer-genomic-filter-open').click();
 
   // Then
   await expect(page).toHaveURL('/explorer/genome-filter');
@@ -42,17 +48,18 @@ test.describe('Single-flag branches', () => {
         { name: 'ENABLE_SNP_QUERY', value: 'false' },
       ],
     });
+    await mockApiSuccess(page, '*/**/picsure/hpds/auth/search/values?*', geneValues);
     await page.goto('/explorer');
     await userIsLoggedIn(page);
 
     // When
-    await page.getByTestId('genomic-filter-btn').click();
+    await page.getByTestId('explorer-genomic-filter-open').click();
 
     // Then
     await expect(page).toHaveURL('/explorer/genome-filter');
-    await expect(page.getByTestId('gene-variant-option')).not.toBeVisible();
-    await expect(page.getByTestId('snp-option')).not.toBeVisible();
-    await expect(page.locator('#gene-search')).toBeVisible();
+    await expect(page.getByTestId('genomic-type-gene')).not.toBeVisible();
+    await expect(page.getByTestId('genomic-type-snp')).not.toBeVisible();
+    await expect(page.locator('#genomic-gene-search')).toBeVisible();
   });
 
   test('ENABLE_GENE_QUERY=false / ENABLE_SNP_QUERY=true skips the type selector and goes straight to SNP search', async ({
@@ -69,13 +76,13 @@ test.describe('Single-flag branches', () => {
     await userIsLoggedIn(page);
 
     // When
-    await page.getByTestId('genomic-filter-btn').click();
+    await page.getByTestId('explorer-genomic-filter-open').click();
 
     // Then
     await expect(page).toHaveURL('/explorer/genome-filter');
-    await expect(page.getByTestId('gene-variant-option')).not.toBeVisible();
-    await expect(page.getByTestId('snp-option')).not.toBeVisible();
-    await expect(page.locator('#snp-search')).toBeVisible();
+    await expect(page.getByTestId('genomic-type-gene')).not.toBeVisible();
+    await expect(page.getByTestId('genomic-type-snp')).not.toBeVisible();
+    await expect(page.locator('#genomic-snp-search')).toBeVisible();
   });
 
   test('ENABLE_GENE_QUERY=false / ENABLE_SNP_QUERY=false hides the genomic filter entry point entirely', async ({
@@ -94,6 +101,6 @@ test.describe('Single-flag branches', () => {
     await userIsLoggedIn(page);
 
     // Then
-    await expect(page.getByTestId('genomic-filter-btn')).not.toBeVisible();
+    await expect(page.getByTestId('explorer-genomic-filter-open')).not.toBeVisible();
   });
 });

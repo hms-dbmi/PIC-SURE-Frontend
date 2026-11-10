@@ -82,7 +82,7 @@ This system is under active development and subject to change.
 ### Testing configuration
 
 - **e2e (Playwright):** use `mockApiConfig(page, { features, settings, branding })` from `tests/end-to-end/custom-context.ts` to set per-test feature/setting/branding rows. It works by seeding a cookie that `src/routes/+layout.server.ts` reads and applies to that `BrowserContext`'s requests only — real config, real backend calls, and other concurrent tests are unaffected. The override is only honored when the app is built/served with `--mode test` (how Playwright's `webServer` always runs it); it's inert in dev and production builds.
-- **Component tests (Vitest):** call `applyConfig(rows)` (from `#lib/configuration.svelte.ts`) with raw `ConfigObject[]` rows to exercise the real API-row mapping/precedence pipeline, or mutate `config.features`/`config.settings`/`config.branding` fields directly for values not resolvable from API rows (e.g. `config.branding.explorePage.resultInfo`, sourced from `configuration.json`). `tests/component/setup.ts` calls `resetConfig()` after every test automatically, so tests don't need to clean up after themselves.
+- **Component tests (Vitest):** call `applyConfig(rows)` (from `#lib/configuration.svelte.ts`) with raw `ConfigObject[]` rows to exercise the real API-row mapping/precedence pipeline, or mutate `config.features`/`config.settings`/`config.branding` fields directly for values not resolvable from API rows (e.g. `config.branding.explorePage.resultInfo`, sourced from `configuration.json`). `tests/support/setup.ts` calls `resetConfig()` after every test automatically, so tests don't need to clean up after themselves.
 
 ## Project Structure
 
@@ -134,15 +134,15 @@ src/lib/
 | `pnpm run dev`                   | Start dev server with hot reload                                                  |
 | `pnpm run build`                 | Production build                                                                  |
 | `pnpm run preview`               | Preview the production build locally                                              |
-| `pnpm run check`                 | Svelte and TypeScript checks                                                      |
-| `pnpm run check:watch`           | `check`, re-run on file changes                                                   |
+| `pnpm run check`                 | Svelte and TypeScript checks, plus a check that every `vi.mock` path resolves     |
+| `pnpm run check:watch`           | `svelte-check`, re-run on file changes                                            |
 | `pnpm run format`                | Format code with Prettier                                                         |
 | `pnpm run lint`                  | Lint with Prettier + ESLint                                                       |
 | `pnpm run clean`                 | `format` + `lint`                                                                 |
 | `pnpm run test`                  | Run all tests (`test:vitest` + `test:integration`)                                |
 | `pnpm run test:vitest`           | Run unit + component tests (Vitest)                                               |
-| `pnpm run test:unit`             | Run unit tests only                                                               |
-| `pnpm run test:component`        | Run component tests only                                                          |
+| `pnpm run test:unit`             | Run the Vitest `node` project (`*.test.ts`)                                       |
+| `pnpm run test:component`        | Run the Vitest `client` project (`*.svelte.test.ts`, `tests/component`)           |
 | `pnpm run test:integration`      | Run integration/e2e tests (Playwright, all browsers)                              |
 | `pnpm run test:integration:slim` | Playwright, Chromium only, minimal reporter, `--retries=1` — faster local/CI runs |
 | `pnpm run playwright`            | Open Playwright's UI mode against the built app                                   |
@@ -164,6 +164,9 @@ If this is your first time running integration tests, install Playwright browser
 ```bash
 pnpx playwright install
 ```
+
+Playwright serves the app on port 4173. Set `E2E_PORT` to use another port, e.g. when two checkouts run e2e at
+the same time: Playwright reuses any server already on its port, so the second run would test the first one's build.
 
 ## Contributing
 

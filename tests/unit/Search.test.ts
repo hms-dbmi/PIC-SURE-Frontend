@@ -1,8 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { get } from 'svelte/store';
 
-const console_def = console;
-
 vi.mock('$app/env', () => ({ browser: true }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/explorer') } }));
 
@@ -120,8 +118,8 @@ let load: LoadCallback;
 let release: () => void;
 
 beforeEach(() => {
-  console.error = () => {};
-  console.log = () => {};
+  vi.spyOn(console, 'error').mockImplementation(() => {});
+  vi.spyOn(console, 'log').mockImplementation(() => {});
   mockState.searchDictionarySpy.mockReset();
   mockState.updateFacetsSpy.mockReset().mockImplementation(() => Promise.resolve([]));
   mockState.logSpy.mockClear();
@@ -139,8 +137,8 @@ beforeEach(() => {
   loadSpy.mockRestore();
 });
 afterEach(() => {
-  console.error = console_def.error;
-  console.log = console_def.log;
+  vi.mocked(console.error).mockRestore();
+  vi.mocked(console.log).mockRestore();
 });
 
 describe('concept request race', () => {

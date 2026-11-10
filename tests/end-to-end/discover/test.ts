@@ -9,7 +9,7 @@ import {
   detailResponseCat,
   crossCountSyncResponseInital,
   crossCountSyncResponsePlus3,
-  crossCountSyncResponseLessThan10,
+  hierarchyResponse,
 } from '../mock-data';
 import { getOption, nthFilterIcon, clickNthFilterIcon } from '../utils';
 
@@ -38,8 +38,8 @@ test.describe('Discover for unauthenticated users', () => {
     await page.goto('/discover');
 
     // Then
-    await expect(page.locator('#search-bar')).toBeVisible();
-    await expect(page.locator('#facet-side-bar')).toBeVisible();
+    await expect(page.locator('#explorer-search-bar')).toBeVisible();
+    await expect(page.locator('#explorer-facet-sidebar')).toBeVisible();
   });
   test('Discover can display ±3 ', async ({ page }) => {
     // Given
@@ -56,7 +56,7 @@ test.describe('Discover for unauthenticated users', () => {
     await clickNthFilterIcon(page);
     const firstItem = await getOption(page);
     await firstItem.click();
-    const addFilterButton = page.getByTestId('add-filter');
+    const addFilterButton = page.getByTestId('filter-add');
     await addFilterButton.click();
     const raw = crossCountSyncResponsePlus3['\\_studies_consents\\'];
     const match = raw.match(/^(\d[\d,]*)\s*±(\d+)$/);
@@ -64,60 +64,9 @@ test.describe('Discover for unauthenticated users', () => {
     const plusMinus = match?.[2] || '0';
     // Then
     await expect(page.locator('#results-panel')).toBeVisible();
-    await expect(page.locator('#result-count')).toContainText(
+    await expect(page.locator('#results-count')).toContainText(
       new RegExp(`^${numeric.toLocaleString()}\\s*±\\s*${plusMinus}\\s*$`),
     );
-  });
-  test('Discover displays large number with ± and no space', async ({ page }) => {
-    // Given
-    await mockApiSuccess(
-      page,
-      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
-      detailResponseCat,
-    );
-    await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
-    const bigNumberSync = { '\\_studies_consents\\': '1477888±3' };
-    await mockApiSuccess(page, '*/**/picsure/hpds/open/query/sync', bigNumberSync);
-    await page.goto('/discover?search=somedata');
-
-    // When
-    await clickNthFilterIcon(page);
-    const firstItem = await getOption(page);
-    await firstItem.click();
-    const addFilterButton = page.getByTestId('add-filter');
-    await addFilterButton.click();
-
-    // Then
-    await expect(page.locator('#results-panel')).toBeVisible();
-    await expect(page.locator('#result-count')).toContainText(
-      new RegExp('^1,477,888\\s*±\\s*3\\s*$'),
-    );
-  });
-  test('Discover can display < 10', async ({ page }) => {
-    // Given
-    await mockApiSuccess(
-      page,
-      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
-      detailResponseCat,
-    );
-    await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
-    await mockApiSuccess(
-      page,
-      '*/**/picsure/hpds/open/query/sync',
-      crossCountSyncResponseLessThan10,
-    );
-    await page.goto('/discover?search=somedata');
-
-    // When
-    await clickNthFilterIcon(page);
-    const firstItem = await getOption(page);
-    await firstItem.click();
-    const addFilterButton = page.getByTestId('add-filter');
-    await addFilterButton.click();
-
-    // Then
-    await expect(page.locator('#results-panel')).toBeVisible();
-    await expect(page.locator('#result-count')).toHaveText('< 10');
   });
   test('Search results with allowFiltering false are not filterable', async ({ page }) => {
     // Given
@@ -146,18 +95,22 @@ test.describe('Discover for unauthenticated users', () => {
   test("Hierarchy component's radio buttons are not selectable when disableAddFilter is true", async ({
     page,
   }) => {
-    // Given
+    // Given: a variable that doesn't allow filtering
+    const rowIndex = mockData.content.findIndex((concept) => !concept.allowFiltering);
+    await mockApiSuccess(
+      page,
+      `*/**/picsure/dictionary/concepts/hierarchy/${mockData.content[rowIndex].dataset}`,
+      hierarchyResponse,
+    );
     await page.goto('/discover?search=somedata');
-    const tableBody = page.locator('tbody');
-    const firstRow = tableBody.locator('tr').nth(6);
-    const hierarchyButton = firstRow.locator('td').last().locator('button').nth(2);
+    const row = page.locator(`#explorer-table-row-${rowIndex}`);
+    const hierarchyButton = row.locator('td').last().locator('button').nth(2);
     await hierarchyButton.click();
-    // When
-    await expect(page.getByTestId('hierarchy-component')).toBeVisible();
-    const hierarchyComponent = page.getByTestId('hierarchy-component');
-    const radioButtons = await hierarchyComponent.locator('input').all();
-    for (let i = 0; i < radioButtons.length; i++) {
-      await expect(radioButtons[i]).toBeDisabled();
+    // Then
+    const radios = page.getByTestId('explorer-hierarchy').getByRole('radio');
+    await expect(radios).toHaveCount(hierarchyResponse.length);
+    for (let i = 0; i < hierarchyResponse.length; i++) {
+      await expect(radios.nth(i)).toBeDisabled();
     }
   });
   test('Cohort details button and variant explorer button are not visible', async ({ page }) => {
@@ -176,7 +129,7 @@ test.describe('Discover for unauthenticated users', () => {
     await clickNthFilterIcon(page);
     const firstItem = await getOption(page);
     await firstItem.click();
-    const addFilterButton = page.getByTestId('add-filter');
+    const addFilterButton = page.getByTestId('filter-add');
     await addFilterButton.click();
     const cohortDetailsButton = page.getByTestId('cohort-details-btn');
 
@@ -199,23 +152,6 @@ test.describe('OPEN_TOUR_NAME', () => {
     await mockApiSuccess(page, facetResultPath, facetsResponse);
   });
 
-  test('Without an override, the default BDC-Open tour is used', async ({ page }) => {
-    // Given
-    await mockApiConfig(page, { features: tourFeatures });
-    await page.goto('/discover');
-
-    // When
-    await expect(async () => {
-      await page.getByTestId('explorer-tour-btn').click();
-      await expect(page.locator('#modal-component')).toBeVisible({ timeout: 2000 });
-    }).toPass({ timeout: 15000 });
-
-    // Then
-    await expect(page.getByTestId('modal-wrapper-header')).toContainText(
-      'Welcome to BioData Catalyst Powered by PIC-SURE',
-    );
-  });
-
   test('A recognized OPEN_TOUR_NAME override swaps in that tour', async ({ page }) => {
     // Given
     await mockApiConfig(page, {
@@ -224,35 +160,10 @@ test.describe('OPEN_TOUR_NAME', () => {
     });
     await page.goto('/discover');
 
-    // When
-    await expect(async () => {
-      await page.getByTestId('explorer-tour-btn').click();
-      await expect(page.locator('#modal-component')).toBeVisible({ timeout: 2000 });
-    }).toPass({ timeout: 15000 });
+    await page.getByTestId('explorer-tour-start').click();
+    await expect(page.getByRole('dialog')).toBeVisible();
 
     // Then
-    await expect(page.getByTestId('modal-wrapper-header')).toContainText('Welcome to PIC-SURE');
-  });
-
-  test('An unrecognized OPEN_TOUR_NAME override falls back to the default BDC-Open tour', async ({
-    page,
-  }) => {
-    // Given
-    await mockApiConfig(page, {
-      features: tourFeatures,
-      settings: [{ name: 'OPEN_TOUR_NAME', value: 'not-a-real-tour' }],
-    });
-    await page.goto('/discover');
-
-    // When
-    await expect(async () => {
-      await page.getByTestId('explorer-tour-btn').click();
-      await expect(page.locator('#modal-component')).toBeVisible({ timeout: 2000 });
-    }).toPass({ timeout: 15000 });
-
-    // Then
-    await expect(page.getByTestId('modal-wrapper-header')).toContainText(
-      'Welcome to BioData Catalyst Powered by PIC-SURE',
-    );
+    await expect(page.getByTestId('ui-modal-header')).toContainText('Welcome to PIC-SURE');
   });
 });

@@ -105,8 +105,8 @@ describe('QuerySummary', () => {
     // Wait for the {#await} block to resolve
     await screen.findByTestId('dataset-filters-container');
 
-    expect(screen.getByTestId('restore-filters-btn')).toBeEnabled();
-    expect(screen.queryByTestId('error-alert')).not.toBeInTheDocument();
+    expect(screen.getByTestId('dataset-restore-filters-trigger')).toBeEnabled();
+    expect(screen.queryByTestId('ui-error-alert')).not.toBeInTheDocument();
   });
 
   it('passes a V3 summary through to loadQuerySummaryData without filtering system fields', async () => {
@@ -164,10 +164,10 @@ describe('QuerySummary', () => {
     await screen.findByTestId('dataset-filters-container');
 
     // Modal trigger is replaced by the disabled Popover button
-    expect(screen.queryByTestId('restore-filters-btn')).not.toBeInTheDocument();
-    expect(screen.getByTestId('restore-popover-btn')).toBeDisabled();
-    expect(screen.getByTestId('error-alert')).toBeInTheDocument();
-    expect(screen.getByTestId('error-alert')).toHaveTextContent('\\phs001\\');
+    expect(screen.queryByTestId('dataset-restore-filters-trigger')).not.toBeInTheDocument();
+    expect(screen.getByTestId('dataset-restore-popover-trigger')).toBeDisabled();
+    expect(screen.getByTestId('ui-error-alert')).toBeInTheDocument();
+    expect(screen.getByTestId('ui-error-alert')).toHaveTextContent('\\phs001\\');
   });
 
   it('keeps restoring a saved V2 query disabled when the compatibility flag is off', async () => {
@@ -176,8 +176,8 @@ describe('QuerySummary', () => {
 
     await screen.findByTestId('dataset-filters-container');
 
-    expect(screen.queryByTestId('restore-filters-btn')).not.toBeInTheDocument();
-    expect(screen.getByTestId('restore-popover-btn')).toBeDisabled();
+    expect(screen.queryByTestId('dataset-restore-filters-trigger')).not.toBeInTheDocument();
+    expect(screen.getByTestId('dataset-restore-popover-trigger')).toBeDisabled();
   });
 
   it('enables restoring a saved V2 query when the compatibility flag is on', async () => {
@@ -187,7 +187,7 @@ describe('QuerySummary', () => {
 
     await screen.findByTestId('dataset-filters-container');
 
-    expect(screen.getByTestId('restore-filters-btn')).toBeEnabled();
+    expect(screen.getByTestId('dataset-restore-filters-trigger')).toBeEnabled();
   });
 
   it('hides the Restore Filters button for V2 queries when restoreV2queries is false', async () => {
@@ -197,8 +197,8 @@ describe('QuerySummary', () => {
 
     await screen.findByTestId('dataset-filters-container');
 
-    expect(screen.queryByTestId('restore-filters-btn')).not.toBeInTheDocument();
-    const popover = screen.getByTestId('restore-popover-btn');
+    expect(screen.queryByTestId('dataset-restore-filters-trigger')).not.toBeInTheDocument();
+    const popover = screen.getByTestId('dataset-restore-popover-trigger');
     expect(popover).toBeDisabled();
     expect(popover).toHaveTextContent('Restore Filters');
   });
@@ -210,7 +210,7 @@ describe('QuerySummary', () => {
 
     await screen.findByTestId('dataset-filters-container');
 
-    expect(screen.getByTestId('restore-filters-btn')).toBeEnabled();
-    expect(screen.queryByTestId('restore-popover-btn')).not.toBeInTheDocument();
+    expect(screen.getByTestId('dataset-restore-filters-trigger')).toBeEnabled();
+    expect(screen.queryByTestId('dataset-restore-popover-trigger')).not.toBeInTheDocument();
   });
 });

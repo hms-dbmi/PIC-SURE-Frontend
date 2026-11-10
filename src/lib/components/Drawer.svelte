@@ -35,7 +35,6 @@
   positionerPadding=""
   transitionsPositionerIn={{ x: -480, duration: 200 }}
   transitionsPositionerOut={{ x: -480, duration: 200 }}
-  ids={{ content: 'drawer' }}
   {trigger}
 >
   {#snippet content()}

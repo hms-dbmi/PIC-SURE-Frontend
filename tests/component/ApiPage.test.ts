@@ -40,7 +40,7 @@ function actions(name: string) {
 }
 
 function workflowHeader(id: string) {
-  return within(screen.getByTestId(`workflow-${id}`)).getAllByRole('button')[0];
+  return within(screen.getByTestId(`api-workflow-${id}`)).getAllByRole('button')[0];
 }
 
 describe('API page logging', () => {
@@ -94,9 +94,9 @@ describe('API page logging', () => {
     window.location.hash = '#workflow-http';
     render(ApiPage);
     await tick();
-    const http = screen.getByTestId('workflow-http');
+    const http = screen.getByTestId('api-workflow-http');
 
-    await fireEvent.click(within(http).getByTestId('code-block-copy-btn'));
+    await fireEvent.click(within(http).getByTestId('ui-code-block-copy-trigger'));
     await fireEvent.click(within(http).getByRole('link', { name: 'API reference' }));
     await fireEvent.click(screen.getByTestId('api-login-link'));
     await fireEvent.click(
@@ -118,7 +118,7 @@ describe('API page logging', () => {
     window.location.hash = '#workflow-python';
     render(ApiPage);
     await tick();
-    const python = screen.getByTestId('workflow-python');
+    const python = screen.getByTestId('api-workflow-python');
 
     await fireEvent.click(
       within(python).getByRole('link', { name: 'Python client documentation' }),

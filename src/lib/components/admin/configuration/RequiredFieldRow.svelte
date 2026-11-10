@@ -38,7 +38,7 @@
 
 <div
   class="flex gap-4 p-3 odd:bg-surface-100-900 even:bg-surface-50-950"
-  data-testid={`required-field-row-${field.id ? field.id : 'new'}`}
+  data-testid={`admin-required-field-row-${field.id ? field.id : 'new'}`}
 >
   <label class="label flex-1">
     <span>Label:</span>
@@ -68,7 +68,7 @@
       <button
         type="button"
         title="Save"
-        data-testid="required-field-save-btn"
+        data-testid="admin-required-field-save"
         class="btn-icon-color"
         disabled={!label || !id || !dirtyForm}
         onclick={saveField}
@@ -81,7 +81,7 @@
           type="button"
           title="Reset and cancel"
           class="btn-icon-color"
-          data-testid="required-field-reset-btn"
+          data-testid="admin-required-field-reset"
           onclick={resetField}
         >
           <i class="fa-solid fa-arrow-rotate-right fa-xl"></i>
@@ -92,7 +92,7 @@
           type="button"
           title="Cancel"
           class="btn-icon-color"
-          data-testid="required-field-cancel-btn"
+          data-testid="admin-required-field-cancel"
           onclick={toggleEdit}
         >
           <i class="fa-solid fa-ban fa-xl"></i>
@@ -104,7 +104,7 @@
         type="button"
         title="Edit"
         class="btn-icon-color"
-        data-testid="required-field-edit-btn"
+        data-testid="admin-required-field-edit"
         onclick={toggleEdit}
       >
         <i class="fa-solid fa-pen fa-xl"></i>
@@ -115,7 +115,7 @@
       type="button"
       title="Delete"
       class="btn-icon-color"
-      data-testid="required-field-delete-btn"
+      data-testid="admin-required-field-delete"
       onclick={deleteField}
     >
       <i class="fa-solid fa-trash fa-xl"></i>

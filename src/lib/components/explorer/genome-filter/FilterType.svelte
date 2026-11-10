@@ -15,7 +15,7 @@
 <div class="flex flex-row justify-center justify-items-center gap-16 {className ?? ''}">
   {#if config.features.enableGENEQuery}
     <CardButton
-      data-testid="gene-variant-option"
+      data-testid="genomic-type-gene"
       title="Variants by gene name"
       subtitle="Ex: Rare BRCA1 variants with high severity"
       size="other"
@@ -26,7 +26,7 @@
   {/if}
   {#if config.features.enableSNPQuery}
     <CardButton
-      data-testid="snp-option"
+      data-testid="genomic-type-snp"
       title="Specific Variants"
       subtitle="Ex: chr5,148481541,T,A"
       size="other"

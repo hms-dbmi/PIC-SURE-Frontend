@@ -28,6 +28,19 @@ test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 test.describe('Facet checkbox reordering', () => {
   test.beforeEach(({ page }) => mockApiConfig(page));
 
+  test('Clicking a parent facet name checks it instead of expanding it', async ({ page }) => {
+    await mockApiSuccess(page, searchResultPath, searchResults);
+    await mockApiSuccess(page, facetResultPath, nestedFacetsResponse);
+    await page.goto('/explorer?search=age');
+    await userIsLoggedIn(page);
+
+    const label = page.getByTestId('explorer-facet-label-nested_facet');
+    await label.locator('span').last().click();
+
+    await expect(label.getByRole('checkbox')).toBeChecked();
+    await expect(page.getByTestId('explorer-facet-children-nested_facet')).toHaveCount(0);
+  });
+
   for (const nested of [false, true]) {
     test(`Only the selected ${nested ? 'nested child' : 'facet'} is checked before reload`, async ({
       page,
@@ -39,12 +52,14 @@ test.describe('Facet checkbox reordering', () => {
       await page.goto('/explorer?search=age');
       await userIsLoggedIn(page);
 
-      if (nested) await page.getByTestId('facet-nested_facet-arrow').click();
+      if (nested) await page.getByTestId('explorer-facet-toggle-nested_facet').click();
       const list = nested
-        ? page.getByTestId('facet-nested_facet-children')
+        ? page.getByTestId('explorer-facet-children-nested_facet')
         : page.getByTestId('accordion-item').first();
       const selectedName = nested ? 'nested_facet_child_3' : 'phs000284';
-      const checkbox = list.locator(`input[id="${selectedName}"]`);
+      const checkbox = list
+        .getByTestId(`explorer-facet-label-${selectedName}`)
+        .getByRole('checkbox');
       await expect(checkbox).toBeVisible();
       await expect(list.locator('input[type="checkbox"]:checked')).toHaveCount(0);
 
@@ -53,7 +68,7 @@ test.describe('Facet checkbox reordering', () => {
       await checkbox.click();
 
       await expect(list.locator('input[type="checkbox"]').first()).toHaveAttribute(
-        'id',
+        'name',
         selectedName,
       );
       await expect(checkbox).toBeChecked();
@@ -82,10 +97,10 @@ test.describe('Facet checkbox reordering', () => {
     await mockApiSuccess(page, facetResultPath, nestedFacetsResponse);
     await page.goto('/explorer?search=age');
     await userIsLoggedIn(page);
-    await page.getByTestId('facet-nested_facet-arrow').click();
+    await page.getByTestId('explorer-facet-toggle-nested_facet').click();
 
-    const child = page.getByTestId('facet-nested_facet_child-label').locator('input');
-    const parent = page.getByTestId('facet-nested_facet-label').locator('input');
+    const child = page.getByTestId('explorer-facet-label-nested_facet_child').locator('input');
+    const parent = page.getByTestId('explorer-facet-label-nested_facet').locator('input');
     const childReloaded = page.waitForResponse(facetResultPath);
     await child.click();
     await childReloaded;
@@ -97,7 +112,9 @@ test.describe('Facet checkbox reordering', () => {
 
     await expect(parent).not.toHaveClass(/indeterminate/);
     await expect(parent).not.toBeChecked();
-    await expect(page.locator('#facet-side-bar input[type="checkbox"]:checked')).toHaveCount(0);
+    await expect(
+      page.locator('#explorer-facet-sidebar input[type="checkbox"]:checked'),
+    ).toHaveCount(0);
 
     const reloaded = page.waitForResponse(facetResultPath);
     await page.clock.resume();
@@ -119,7 +136,7 @@ test.describe('Facet Side Bar', () => {
     await page.goto('/explorer?search=age');
     await userIsLoggedIn(page);
     //When
-    const facetSideBar = page.locator('#facet-side-bar');
+    const facetSideBar = page.locator('#explorer-facet-sidebar');
 
     await expect(facetSideBar).toBeVisible();
   });
@@ -131,8 +148,8 @@ test.describe('Facet Side Bar', () => {
     await mockApiFail(page, facetResultPath, 'aborted');
     await page.goto('/explorer?search=age');
     await userIsLoggedIn(page);
-    const facetSideBar = page.locator('#facet-side-bar');
-    const errorAlert = page.getByTestId('error-alert');
+    const facetSideBar = page.locator('#explorer-facet-sidebar');
+    const errorAlert = page.getByTestId('ui-error-alert');
     //When
 
     await expect(facetSideBar).toBeVisible();
@@ -153,7 +170,7 @@ test.describe('Facet Side Bar', () => {
     //When
     await page.goto('/explorer?search=age');
     await userIsLoggedIn(page);
-    const facetSideBar = page.locator('#facet-side-bar');
+    const facetSideBar = page.locator('#explorer-facet-sidebar');
     await expect(facetSideBar).toBeVisible();
     const accordionDiv = facetSideBar.getByTestId('accordion');
     await expect(accordionDiv).toBeVisible();
@@ -177,7 +194,7 @@ test.describe('Facet Side Bar', () => {
     //When
     await page.goto('/explorer?search=age');
     await userIsLoggedIn(page);
-    const facetSideBar = page.locator('#facet-side-bar');
+    const facetSideBar = page.locator('#explorer-facet-sidebar');
     await expect(facetSideBar).toBeVisible();
     const accordionDiv = facetSideBar.getByTestId('accordion');
     await expect(accordionDiv).toBeVisible();
@@ -250,7 +267,7 @@ test.describe('Facet Categories', () => {
     );
     await page.goto('/explorer?search=age');
     await userIsLoggedIn(page);
-    const facetSideBar = page.locator('#facet-side-bar');
+    const facetSideBar = page.locator('#explorer-facet-sidebar');
     await expect(facetSideBar).toBeVisible();
 
     for (let i = 0; i < facetsResponse.length; i++) {
@@ -278,7 +295,7 @@ test.describe('Facet Categories', () => {
     );
     await page.goto('/explorer?search=age');
     await userIsLoggedIn(page);
-    const facetSideBar = page.locator('#facet-side-bar');
+    const facetSideBar = page.locator('#explorer-facet-sidebar');
     await expect(facetSideBar).toBeVisible();
 
     for (let i = 0; i < facetsResponse.length; i++) {
@@ -287,7 +304,7 @@ test.describe('Facet Categories', () => {
       const numFacets = facetsResponse[i].facets.length;
       // Then
       if (numFacets > MAX_FACETS_TO_SHOW) {
-        const moreButton = facetList.getByTestId('show-more-facets');
+        const moreButton = facetList.getByTestId('explorer-facets-show-more');
         const moreButtonIcon = moreButton.locator('i');
         await expect(moreButton).toBeVisible();
         await expect(moreButton).toHaveText('Show More');
@@ -307,14 +324,14 @@ test.describe('Facet Categories', () => {
     );
     await page.goto('/explorer?search=age');
     await userIsLoggedIn(page);
-    const facetSideBar = page.locator('#facet-side-bar');
+    const facetSideBar = page.locator('#explorer-facet-sidebar');
     await expect(facetSideBar).toBeVisible();
 
     for (let i = 0; i < facetsResponseToTestZeroCount.length; i++) {
       //When
       const facetList = page.getByTestId('accordion-item').nth(i);
       // Then
-      const moreButton = facetList.getByTestId('show-more-facets');
+      const moreButton = facetList.getByTestId('explorer-facets-show-more');
       await expect(moreButton).not.toBeVisible();
     }
   });
@@ -328,7 +345,7 @@ test.describe('Facet Categories', () => {
     );
     await page.goto('/explorer?search=age');
     await userIsLoggedIn(page);
-    const facetSideBar = page.locator('#facet-side-bar');
+    const facetSideBar = page.locator('#explorer-facet-sidebar');
     await expect(facetSideBar).toBeVisible();
 
     for (let i = 0; i < facetsResponse.length; i++) {
@@ -337,7 +354,7 @@ test.describe('Facet Categories', () => {
       const numFacets = facetsResponse[i].facets.length;
       // Then
       if (numFacets > MAX_FACETS_TO_SHOW) {
-        const moreButton = facetList.getByTestId('show-more-facets');
+        const moreButton = facetList.getByTestId('explorer-facets-show-more');
         await expect(moreButton).toBeVisible();
         await moreButton.click();
         const facetsToExpect = facetsResponse[i].facets.filter((facet) => facet.count > 0);
@@ -357,7 +374,7 @@ test.describe('Facet Categories', () => {
     );
     await page.goto('/explorer?search=age');
     await userIsLoggedIn(page);
-    const facetSideBar = page.locator('#facet-side-bar');
+    const facetSideBar = page.locator('#explorer-facet-sidebar');
     await expect(facetSideBar).toBeVisible();
 
     for (let i = 0; i < facetsResponse.length; i++) {
@@ -366,7 +383,7 @@ test.describe('Facet Categories', () => {
       const numFacets = facetsResponse[i].facets.length;
       // Then
       if (numFacets > MAX_FACETS_TO_SHOW) {
-        const moreButton = facetList.getByTestId('show-more-facets');
+        const moreButton = facetList.getByTestId('explorer-facets-show-more');
         await expect(moreButton).toBeVisible();
         await moreButton.click();
         await expect(moreButton).toHaveText('Show Less');
@@ -385,7 +402,7 @@ test.describe('Facet Categories', () => {
     );
     await page.goto('/explorer?search=age');
     await userIsLoggedIn(page);
-    const facetSideBar = page.locator('#facet-side-bar');
+    const facetSideBar = page.locator('#explorer-facet-sidebar');
     await expect(facetSideBar).toBeVisible();
 
     for (let i = 0; i < facetsResponse.length; i++) {
@@ -394,7 +411,7 @@ test.describe('Facet Categories', () => {
       const numFacets = facetsResponse[i].facets.length;
       // Then
       if (numFacets > MAX_FACETS_TO_SHOW) {
-        const moreButton = facetList.getByTestId('show-more-facets');
+        const moreButton = facetList.getByTestId('explorer-facets-show-more');
         await expect(moreButton).toBeVisible();
         await moreButton.click();
         await expect(moreButton).toHaveText('Show Less');
@@ -416,7 +433,7 @@ test.describe('Facet Categories', () => {
     );
     await page.goto('/explorer?search=age');
     await userIsLoggedIn(page);
-    const facetSideBar = page.locator('#facet-side-bar');
+    const facetSideBar = page.locator('#explorer-facet-sidebar');
     await expect(facetSideBar).toBeVisible();
 
     //When
@@ -438,7 +455,7 @@ test.describe('Facet Categories', () => {
     );
     await page.goto('/explorer?search=age');
     await userIsLoggedIn(page);
-    const facetSideBar = page.locator('#facet-side-bar');
+    const facetSideBar = page.locator('#explorer-facet-sidebar');
     await expect(facetSideBar).toBeVisible();
 
     //When
@@ -464,7 +481,7 @@ test.describe('Facet Categories', () => {
     );
     await page.goto('/explorer?search=age');
     await userIsLoggedIn(page);
-    const facetSideBar = page.locator('#facet-side-bar');
+    const facetSideBar = page.locator('#explorer-facet-sidebar');
     await expect(facetSideBar).toBeVisible();
 
     // When
@@ -487,7 +504,7 @@ test.describe('Facet Categories', () => {
     );
     await page.goto('/explorer?search=age');
     await userIsLoggedIn(page);
-    const facetSideBar = page.locator('#facet-side-bar');
+    const facetSideBar = page.locator('#explorer-facet-sidebar');
     await expect(facetSideBar).toBeVisible();
 
     // When
@@ -517,7 +534,7 @@ test.describe('Facet Categories', () => {
     );
     await page.goto('/explorer?search=age');
     await userIsLoggedIn(page);
-    const facetSideBar = page.locator('#facet-side-bar');
+    const facetSideBar = page.locator('#explorer-facet-sidebar');
     await expect(facetSideBar).toBeVisible();
 
     // When
@@ -551,7 +568,9 @@ test.describe('Facet & search', () => {
     await page.goto('/explorer?search=age');
     await userIsLoggedIn(page);
     const firstCheckName = facetsResponse[0].facets[0].name;
-    const facetCheckBox = page.locator('input#' + firstCheckName);
+    const facetCheckBox = page
+      .getByTestId(`explorer-facet-label-${firstCheckName}`)
+      .getByRole('checkbox');
     await facetCheckBox.waitFor();
     await expect(facetCheckBox).toBeVisible();
 
@@ -573,14 +592,16 @@ test.describe('Facet & search', () => {
     await page.goto('/explorer?search=age');
     await userIsLoggedIn(page);
     const firstCheckName = facetsResponse[0].facets[0].name;
-    const facetCheckBox = page.locator('input#' + firstCheckName);
+    const facetCheckBox = page
+      .getByTestId(`explorer-facet-label-${firstCheckName}`)
+      .getByRole('checkbox');
     const facetCategory = page.getByTestId('accordion-control').first();
     await facetCheckBox.waitFor();
     await expect(facetCheckBox).toBeVisible();
 
     // When
     await facetCheckBox.click();
-    const badge = page.locator(`#${facetsResponse[0].facets[0].name}.badge`);
+    const badge = page.getByTestId(`explorer-facet-badge-${facetsResponse[0].facets[0].name}`);
     await expect(badge).not.toBeVisible();
     await setCategoryOpen(facetCategory, false);
     // Then
@@ -597,7 +618,9 @@ test.describe('Facet & search', () => {
     await page.goto('/explorer?search=age');
     await userIsLoggedIn(page);
     const firstCheckName = facetsResponse[0].facets[0].name;
-    const facetCheckBox = page.locator('input#' + firstCheckName);
+    const facetCheckBox = page
+      .getByTestId(`explorer-facet-label-${firstCheckName}`)
+      .getByRole('checkbox');
     await facetCheckBox.waitFor();
     await facetCheckBox.click();
     await expect(facetCheckBox).toBeVisible();
@@ -620,10 +643,12 @@ test.describe('Facet & search', () => {
     await userIsLoggedIn(page);
     const facetCategory = page.getByTestId('accordion-control').first();
     const firstCheckName = facetsResponse[0].facets[0].name;
-    const facetCheckBox = page.locator('input#' + firstCheckName);
+    const facetCheckBox = page
+      .getByTestId(`explorer-facet-label-${firstCheckName}`)
+      .getByRole('checkbox');
     await facetCheckBox.waitFor();
     await facetCheckBox.click();
-    const badge = page.locator(`#${facetsResponse[0].facets[0].name}.badge`);
+    const badge = page.getByTestId(`explorer-facet-badge-${facetsResponse[0].facets[0].name}`);
     await expect(facetCheckBox).toBeVisible();
 
     //When
@@ -649,10 +674,12 @@ test.describe('Facet & search', () => {
     await userIsLoggedIn(page);
     const facetCategory = page.getByTestId('accordion-control').first();
     const firstCheckName = facetsResponse[0].facets[0].name;
-    const facetCheckBox = page.locator('input#' + firstCheckName);
+    const facetCheckBox = page
+      .getByTestId(`explorer-facet-label-${firstCheckName}`)
+      .getByRole('checkbox');
     await facetCheckBox.waitFor(); // Wait for element to exist
     await facetCheckBox.click(); // to Included state
-    const badge = page.locator(`#${facetsResponse[0].facets[0].name}.badge`);
+    const badge = page.getByTestId(`explorer-facet-badge-${facetsResponse[0].facets[0].name}`);
     await expect(facetCheckBox).toBeVisible();
 
     //When
@@ -677,7 +704,9 @@ test.describe('Facet & search', () => {
     await page.goto('/explorer?search=age');
     await userIsLoggedIn(page);
     const firstCheckName = facetsResponse[0].facets[0].name;
-    const facetCheckBox = page.locator('input#' + firstCheckName);
+    const facetCheckBox = page
+      .getByTestId(`explorer-facet-label-${firstCheckName}`)
+      .getByRole('checkbox');
     await facetCheckBox.waitFor();
     await facetCheckBox.click();
     await expect(facetCheckBox).toBeVisible();
@@ -701,7 +730,7 @@ test.describe('Facet & search', () => {
 
     //When
     const firstCheckName = facetsResponse[0].facets[0].name;
-    const facetCheckBox = page.getByTestId(`facet-${firstCheckName}-label`);
+    const facetCheckBox = page.getByTestId(`explorer-facet-label-${firstCheckName}`);
     const spanInInput = facetCheckBox.locator('span');
     await expect(spanInInput).toBeVisible();
 
@@ -757,8 +786,10 @@ test.describe('Facet & search', () => {
 
     await page.goto('/explorer');
     await userIsLoggedIn(page);
-    const facetLabel = page.getByTestId(`facet-${firstCheckName}-label`);
-    const facetCheckBox = page.locator(`input#${firstCheckName}`);
+    const facetLabel = page.getByTestId(`explorer-facet-label-${firstCheckName}`);
+    const facetCheckBox = page
+      .getByTestId(`explorer-facet-label-${firstCheckName}`)
+      .getByRole('checkbox');
     await expect(facetLabel).toBeVisible();
 
     // When
@@ -786,7 +817,7 @@ test.describe('Nested Facets', () => {
 
     // When
     const nestedCategory = page.getByText('Nested Category');
-    const nestedFacetArrow = page.getByTestId('facet-nested_facet-arrow');
+    const nestedFacetArrow = page.getByTestId('explorer-facet-toggle-nested_facet');
 
     // Then
     await expect(nestedCategory).toBeVisible();
@@ -804,11 +835,11 @@ test.describe('Nested Facets', () => {
     await userIsLoggedIn(page);
 
     // When
-    const nestedFacetArrow = page.getByTestId('facet-nested_facet-arrow');
+    const nestedFacetArrow = page.getByTestId('explorer-facet-toggle-nested_facet');
     await nestedFacetArrow.click();
 
     // Then
-    const nestedFacetChildren = page.getByTestId('facet-nested_facet-children');
+    const nestedFacetChildren = page.getByTestId('explorer-facet-children-nested_facet');
     await expect(nestedFacetChildren).toBeVisible();
     await nestedFacetArrow.click();
     await expect(nestedFacetChildren).not.toBeVisible();
@@ -823,16 +854,16 @@ test.describe('Nested Facets', () => {
     );
     await page.goto('/explorer?search=age');
     await userIsLoggedIn(page);
-    await page.getByTestId('facet-nested_facet-arrow').click();
+    await page.getByTestId('explorer-facet-toggle-nested_facet').click();
 
     // When
     const facetsReloaded = page.waitForResponse(facetResultPath);
-    await page.getByTestId('facet-nested_facet_child-label').locator('input').click();
+    await page.getByTestId('explorer-facet-label-nested_facet_child').locator('input').click();
     await facetsReloaded;
 
     // Then
-    await expect(page.getByTestId('facet-nested_facet-children')).toBeVisible();
-    await expect(page.getByTestId('facet-nested_facet_child_2-label')).toBeVisible();
+    await expect(page.getByTestId('explorer-facet-children-nested_facet')).toBeVisible();
+    await expect(page.getByTestId('explorer-facet-label-nested_facet_child_2')).toBeVisible();
   });
 });
 
@@ -848,7 +879,7 @@ test.describe('Hidden Facets', () => {
     );
     await page.goto('/explorer?search=age');
     await userIsLoggedIn(page);
-    const facetSideBar = page.locator('#facet-side-bar');
+    const facetSideBar = page.locator('#explorer-facet-sidebar');
     await expect(facetSideBar).toBeVisible();
 
     //When
@@ -857,10 +888,14 @@ test.describe('Hidden Facets', () => {
     // Then - Verify that facets with count=0 are not shown
     for (const facet of facetsResponseToTestZeroCount[0].facets) {
       if (facet.count === 0) {
-        const facetCheckBox = studyCategoryPanel.locator(`#${facet.name}`);
+        const facetCheckBox = studyCategoryPanel
+          .getByTestId(`explorer-facet-label-${facet.name}`)
+          .getByRole('checkbox');
         await expect(facetCheckBox).not.toBeVisible();
       } else {
-        const facetCheckBox = studyCategoryPanel.locator(`#${facet.name}`);
+        const facetCheckBox = studyCategoryPanel
+          .getByTestId(`explorer-facet-label-${facet.name}`)
+          .getByRole('checkbox');
         await expect(facetCheckBox).toBeVisible();
       }
     }
@@ -880,14 +915,16 @@ test.describe('Hidden Facets', () => {
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponseToTestZeroCount }),
     );
-    await page.getByTestId('search-box').fill('new search term');
-    await page.locator('#search-button').click();
+    await page.getByTestId('ui-search-input').fill('new search term');
+    await page.locator('#explorer-search-submit').click();
 
     // Then - Zero count facets from the second response should be hidden
     const studyCategoryPanel = page.getByTestId('accordion-item').first();
     for (const facet of facetsResponseToTestZeroCount[0].facets) {
       if (facet.count === 0) {
-        const facetCheckBox = studyCategoryPanel.locator(`#${facet.name}`);
+        const facetCheckBox = studyCategoryPanel
+          .getByTestId(`explorer-facet-label-${facet.name}`)
+          .getByRole('checkbox');
         await expect(facetCheckBox).not.toBeVisible();
       }
     }

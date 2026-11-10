@@ -69,10 +69,10 @@ describe('logout while the query is being discarded', () => {
   it('waits for the navigation of a later logout that supersedes the first', async () => {
     mockApiGet.mockResolvedValue({});
 
-    logout(undefined, false);
+    void logout(undefined, false);
     await settle();
     expect(navigations).toHaveLength(1);
-    logout(undefined, false);
+    void logout(undefined, false);
     await settle();
     expect(navigations).toHaveLength(2);
 

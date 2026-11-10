@@ -113,7 +113,7 @@
 </script>
 
 <div
-  data-testid="public-access-key"
+  data-testid="api-public-key"
   class="rounded-container border border-surface-700 bg-surface-100-900/50 p-6 min-h-80 flex flex-col"
 >
   <header class="flex items-center gap-4 mb-4">
@@ -137,7 +137,7 @@
         Request Public Key
       </button>
     {:else}
-      <p data-testid="public-key-unavailable" class="mx-0 my-auto text-center">
+      <p data-testid="api-public-key-unavailable" class="mx-0 my-auto text-center">
         Public access keys are not available on this deployment. Please log in for authorized
         access.
       </p>
@@ -145,9 +145,9 @@
   {:else if view === 'form'}
     <form class="flex flex-col gap-4 flex-1" onsubmit={generateKey}>
       <div class="label">
-        <label for="public-key-name">Name <span class="text-sm">(optional)</span></label>
+        <label for="api-public-key-name">Name <span class="text-sm">(optional)</span></label>
         <input
-          id="public-key-name"
+          id="api-public-key-name"
           class="input"
           type="text"
           name="name"
@@ -159,9 +159,9 @@
         />
       </div>
       <div class="label">
-        <label for="public-key-email">Email <span class="text-sm">(optional)</span></label>
+        <label for="api-public-key-email">Email <span class="text-sm">(optional)</span></label>
         <input
-          id="public-key-email"
+          id="api-public-key-email"
           class="input"
           type="email"
           name="email"
@@ -169,11 +169,11 @@
           placeholder="you@example.org"
           pattern="[^\s@]+@[^\s@]+\.[^\s@]+"
           title="Enter an email address like you@example.org"
-          aria-describedby="public-key-email-hint"
+          aria-describedby="api-public-key-email-hint"
           bind:value={email}
           disabled={submitting}
         />
-        <span id="public-key-email-hint" class="text-sm">
+        <span id="api-public-key-email-hint" class="text-sm">
           Only used to contact you if there is a problem with your key. No account is created.
         </span>
       </div>
@@ -186,12 +186,16 @@
           />
         </div>
         {#if captchaFailed}
-          <p data-testid="public-key-captcha-failed" role="alert" class="mx-0 text-center text-sm">
+          <p
+            data-testid="api-public-key-captcha-failed"
+            role="alert"
+            class="mx-0 text-center text-sm"
+          >
             The security check could not be loaded. Check your connection and reload the page to try
             again.
           </p>
         {:else if !captchaToken}
-          <span id="public-key-captcha-hint" class="sr-only">
+          <span id="api-public-key-captcha-hint" class="sr-only">
             Complete the security check to enable key generation.
           </span>
         {/if}
@@ -202,7 +206,7 @@
           class="btn preset-filled-primary-500"
           disabled={submitting || (!!turnstileSiteKey && !captchaToken)}
           aria-describedby={turnstileSiteKey && !captchaToken && !captchaFailed
-            ? 'public-key-captcha-hint'
+            ? 'api-public-key-captcha-hint'
             : undefined}
         >
           {#if submitting}
@@ -223,7 +227,7 @@
     </form>
   {:else if view === 'revealed' && publicKey}
     <aside
-      data-testid="public-key-warning"
+      data-testid="api-public-key-warning"
       role="alert"
       tabindex="-1"
       bind:this={warning}
@@ -236,7 +240,7 @@
       </p>
     </aside>
     <div class="flex items-center gap-2">
-      <div data-testid="public-key-value" class="token-value grow">
+      <div data-testid="api-public-key-value" class="token-value grow">
         <code class="font-mono text-sm break-all">{publicKey.apiKey}</code>
       </div>
       <CopyButton
@@ -248,7 +252,7 @@
     </div>
     <div class="mt-4">
       <span class="font-bold">Expires:</span>
-      <span data-testid="public-key-expires">{expires}</span>
+      <span data-testid="api-public-key-expires">{expires}</span>
     </div>
   {:else if view === 'error'}
     <!-- ErrorAlert has no live region of its own; announce the async failure -->

@@ -62,33 +62,33 @@ describe('FacetItem nested facet expansion', () => {
   it('shows children and records the facet in expandedNestedFacets when the arrow is clicked', async () => {
     renderFacetItem();
 
-    expect(screen.queryByTestId('facet-parent-facet-children')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('explorer-facet-children-parent-facet')).not.toBeInTheDocument();
 
-    await fireEvent.click(screen.getByTestId('facet-parent-facet-arrow'));
+    await fireEvent.click(screen.getByTestId('explorer-facet-toggle-parent-facet'));
 
-    expect(screen.getByTestId('facet-parent-facet-children')).toBeInTheDocument();
-    expect(screen.getByTestId('facet-parent-facet-child-1-label')).toBeInTheDocument();
+    expect(screen.getByTestId('explorer-facet-children-parent-facet')).toBeInTheDocument();
+    expect(screen.getByTestId('explorer-facet-label-parent-facet-child-1')).toBeInTheDocument();
     expect(get(expandedNestedFacets)).toContain(nestedFacetKey('test-category', 'parent-facet'));
   });
 
   it('keeps children expanded when the component remounts, as on a facet reload', async () => {
     const first = renderFacetItem();
-    await fireEvent.click(screen.getByTestId('facet-parent-facet-arrow'));
+    await fireEvent.click(screen.getByTestId('explorer-facet-toggle-parent-facet'));
     first.unmount();
 
     renderFacetItem();
 
-    expect(screen.getByTestId('facet-parent-facet-children')).toBeInTheDocument();
+    expect(screen.getByTestId('explorer-facet-children-parent-facet')).toBeInTheDocument();
   });
 
   it('updates expansion when the facet prop changes', async () => {
     const view = renderFacetItem('parent-facet');
-    await fireEvent.click(screen.getByTestId('facet-parent-facet-arrow'));
-    expect(screen.getByTestId('facet-parent-facet-children')).toBeInTheDocument();
+    await fireEvent.click(screen.getByTestId('explorer-facet-toggle-parent-facet'));
+    expect(screen.getByTestId('explorer-facet-children-parent-facet')).toBeInTheDocument();
 
     await view.rerender({ facet: makeFacet('other-facet') });
 
-    expect(screen.queryByTestId('facet-other-facet-children')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('explorer-facet-children-other-facet')).not.toBeInTheDocument();
     expect(get(expandedNestedFacets)).toEqual([nestedFacetKey('test-category', 'parent-facet')]);
   });
 
@@ -96,18 +96,18 @@ describe('FacetItem nested facet expansion', () => {
     expandedNestedFacets.set([nestedFacetKey('some-other-category', 'parent-facet')]);
     renderFacetItem();
 
-    expect(screen.queryByTestId('facet-parent-facet-children')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('explorer-facet-children-parent-facet')).not.toBeInTheDocument();
   });
 
   it('collapses children and removes the facet from expandedNestedFacets on a second click', async () => {
     expandedNestedFacets.set([nestedFacetKey('test-category', 'parent-facet')]);
     renderFacetItem();
 
-    expect(screen.getByTestId('facet-parent-facet-children')).toBeInTheDocument();
+    expect(screen.getByTestId('explorer-facet-children-parent-facet')).toBeInTheDocument();
 
-    await fireEvent.click(screen.getByTestId('facet-parent-facet-arrow'));
+    await fireEvent.click(screen.getByTestId('explorer-facet-toggle-parent-facet'));
 
-    expect(screen.queryByTestId('facet-parent-facet-children')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('explorer-facet-children-parent-facet')).not.toBeInTheDocument();
     expect(get(expandedNestedFacets)).not.toContain(
       nestedFacetKey('test-category', 'parent-facet'),
     );
@@ -116,11 +116,11 @@ describe('FacetItem nested facet expansion', () => {
   it('keeps an explicitly collapsed facet collapsed across a remount', async () => {
     expandedNestedFacets.set([nestedFacetKey('test-category', 'parent-facet')]);
     const first = renderFacetItem();
-    await fireEvent.click(screen.getByTestId('facet-parent-facet-arrow'));
+    await fireEvent.click(screen.getByTestId('explorer-facet-toggle-parent-facet'));
     first.unmount();
 
     renderFacetItem();
 
-    expect(screen.queryByTestId('facet-parent-facet-children')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('explorer-facet-children-parent-facet')).not.toBeInTheDocument();
   });
 });

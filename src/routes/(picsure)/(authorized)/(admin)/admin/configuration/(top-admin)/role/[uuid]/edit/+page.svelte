@@ -33,7 +33,7 @@
   {#await load()}
     <Loading />
   {:then}
-    <section id="role-edit">
+    <section id="admin-role-edit">
       <RoleForm privilegeList={$privilegeList} {role} />
     </section>
   {:catch}

@@ -18,7 +18,7 @@
     autocomplete="off"
     class="search-box w-full"
     id="explorer-search-box"
-    data-testid="search-box"
+    data-testid="ui-search-input"
     aria-label="Type search terms here, use enter or the search button to submit search"
     title="Type search terms here, use enter or the search button to submit search"
     {placeholder}
@@ -26,7 +26,7 @@
     onkeydown={(e) => e.key === 'Enter' && search()}
   />
   <button
-    id="search-button"
+    id="explorer-search-submit"
     class="btn preset-filled-primary-500 search-button"
     aria-label="Search"
     title="Search"

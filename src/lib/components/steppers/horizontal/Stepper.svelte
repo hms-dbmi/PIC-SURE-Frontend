@@ -66,7 +66,7 @@
   setContext('onComplete', _onComplete);
 </script>
 
-<div class="stepper space-y-4 {className}" data-testid="stepper">
+<div class="stepper space-y-4 {className}" data-testid="ui-stepper">
   {#if $stepperState.total}
     <header
       class="stepper-header flex items-center border-t mt-[15px] mb-7 border-surface-500 gap-4"
@@ -79,7 +79,7 @@
           class:flex-1={isActive(step)}
         >
           <span
-            data-testid="step-{$stepperState.stepMap[step]}"
+            data-testid="ui-stepper-step-{$stepperState.stepMap[step]}"
             class="badge rounded-2xl text-sm {isActive(step)
               ? 'preset-filled-primary-500'
               : 'preset-filled-surface-500'}">{isActive(step) ? `Step ${step + 1}` : step + 1}</span

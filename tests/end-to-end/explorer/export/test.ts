@@ -1,5 +1,11 @@
 import { expect, type Route, type Page } from '@playwright/test';
-import { test, mockApiSuccess, mockApiSuccessByMethod, mockApiConfig } from '../../custom-context';
+import {
+  test,
+  mockApiSuccess,
+  mockApiSuccessByMethod,
+  mockApiConfig,
+  mockQuerySync,
+} from '../../custom-context';
 import {
   conceptTreePath,
   conceptsDetailPath,
@@ -75,26 +81,26 @@ async function setupExportPageAndAddFilterAndExport(
   await filterIcon.click();
   const firstFilter = await getOption(page);
   await firstFilter.click();
-  const addFilterButton = page.getByTestId('add-filter');
+  const addFilterButton = page.getByTestId('filter-add');
   await addFilterButton.click();
-  await expect(page.getByTestId(`added-filter-${expectedRowIds[0]}`)).toBeVisible();
+  await expect(page.getByTestId(`results-filter-item-${expectedRowIds[0]}`)).toBeVisible();
 
   const secondRow = tableBody.locator('tr').nth(1);
   const exportButton = secondRow.locator('td').last().locator('button').last();
   await exportButton.click();
-  await expect(page.getByTestId(`added-export-${expectedRowIds[1]}`)).toBeVisible();
+  await expect(page.getByTestId(`results-export-item-${expectedRowIds[1]}`)).toBeVisible();
 
   if (includeGenomicFilter) {
-    await page.getByTestId('genomic-filter-btn').click();
-    await page.getByTestId('gene-variant-option').click();
-    await expect(page.getByTestId('add-filter-btn')).not.toBeEnabled();
-    const optionsContainer = page.locator('#options-container');
+    await page.getByTestId('explorer-genomic-filter-open').click();
+    await page.getByTestId('genomic-type-gene').click();
+    await expect(page.getByTestId('genomic-filter-add')).not.toBeEnabled();
+    const optionsContainer = page.getByTestId('ui-options-selection-list-available');
     await optionsContainer.getByLabel(geneValues.results[0]).click();
     await mockApiSuccess(page, countResultPath, 200);
-    await page.getByTestId('add-filter-btn').click();
+    await page.getByTestId('genomic-filter-add').click();
   }
 
-  const exportForAnalysisButton = page.locator('button#export-data-button');
+  const exportForAnalysisButton = page.locator('button#results-export-open');
   await expect(exportForAnalysisButton).toBeVisible();
   await exportForAnalysisButton.click();
 }
@@ -115,13 +121,15 @@ async function checkStepRenderedCorrectly(
 
   // Check that the summary section is rendered if expected
   if (showSummary) {
-    await expect(page.locator('div#stats')).toBeVisible();
+    await expect(page.locator('div#export-summary-stats')).toBeVisible();
   } else {
-    await expect(page.locator('div#stats')).not.toBeVisible();
+    await expect(page.locator('div#export-summary-stats')).not.toBeVisible();
   }
 
   // Check that the next button is rendered with correct text and disabled state
-  const nextButton = page.getByTestId(`${nextStepButtonText?.toLowerCase()}-btn`);
+  const nextButton = page.getByTestId(
+    nextStepButtonText === 'Next' ? 'ui-stepper-next' : 'ui-stepper-complete',
+  );
   await expect(nextButton).toBeVisible();
   await expect(nextButton).toContainText(nextStepButtonText);
   if (nextStepDisabled) {
@@ -159,7 +167,7 @@ test.describe('Export Page', () => {
     await expect(page).toHaveURL('/explorer/export');
     await expect(page.locator('h1')).toHaveText('Export Data for Research Analysis');
     await expect(page.getByRole('button', { name: 'Learn How' })).toBeVisible();
-    await expect(page.getByTestId('back-btn')).toBeVisible();
+    await expect(page.getByTestId('ui-page-back')).toBeVisible();
   });
 
   test('Export page renders', async ({ page }) => {
@@ -181,8 +189,8 @@ test.describe('Export Page', () => {
 
     // Then
     await expect(page).toHaveURL('/explorer/export');
-    await expect(page.getByTestId('landing-error')).toBeVisible();
-    await expect(page.getByTestId('next-btn')).toBeDisabled();
+    await expect(page.getByTestId('export-review-error')).toBeVisible();
+    await expect(page.getByTestId('ui-stepper-next')).toBeDisabled();
   });
 
   test('Export page renders expected data', async ({ page }) => {
@@ -196,44 +204,44 @@ test.describe('Export Page', () => {
 
     // Verify standard identifiers come first (Patient ID hardcoded, then system fields from env)
     for (let i = 0; i < standardIdentifiers.length; i++) {
-      await expect(page.locator(`#ExportSummary-row-${i}-col-0`)).toHaveText(
+      await expect(page.locator(`#export-summary-table-row-${i}-col-0`)).toHaveText(
         standardIdentifiers[i].name,
       );
-      await expect(page.locator(`#ExportSummary-row-${i}-col-1`)).toHaveText(
+      await expect(page.locator(`#export-summary-table-row-${i}-col-1`)).toHaveText(
         standardIdentifiers[i].description,
       );
-      await expect(page.locator(`#ExportSummary-row-${i}-col-2`)).toHaveText(
+      await expect(page.locator(`#export-summary-table-row-${i}-col-2`)).toHaveText(
         standardIdentifiers[i].type,
       );
     }
 
     // System field from VITE_EXPORT_SYSTEM_FIELDS (_consents)
     const systemFieldOffset = standardIdentifiers.length;
-    await expect(page.locator(`#ExportSummary-row-${systemFieldOffset}-col-0`)).toHaveText(
+    await expect(page.locator(`#export-summary-table-row-${systemFieldOffset}-col-0`)).toHaveText(
       '_consents',
     );
 
     // Filter row
     const filterRowIndex = systemFieldOffset + 1;
-    await expect(page.locator(`#ExportSummary-row-${filterRowIndex}-col-0`)).toHaveText(
+    await expect(page.locator(`#export-summary-table-row-${filterRowIndex}-col-0`)).toHaveText(
       detailResponseCat.display,
     );
-    await expect(page.locator(`#ExportSummary-row-${filterRowIndex}-col-1`)).toHaveText(
+    await expect(page.locator(`#export-summary-table-row-${filterRowIndex}-col-1`)).toHaveText(
       detailResponseCat.description,
     );
-    await expect(page.locator(`#ExportSummary-row-${filterRowIndex}-col-2`)).toHaveText(
+    await expect(page.locator(`#export-summary-table-row-${filterRowIndex}-col-2`)).toHaveText(
       detailResponseCat.type,
     );
 
     // Export row
     const exportRowIndex = filterRowIndex + 1;
-    await expect(page.locator(`#ExportSummary-row-${exportRowIndex}-col-0`)).toHaveText(
+    await expect(page.locator(`#export-summary-table-row-${exportRowIndex}-col-0`)).toHaveText(
       detailResponseCatSameDataset.display,
     );
-    await expect(page.locator(`#ExportSummary-row-${exportRowIndex}-col-1`)).toHaveText(
+    await expect(page.locator(`#export-summary-table-row-${exportRowIndex}-col-1`)).toHaveText(
       detailResponseCatSameDataset.description,
     );
-    await expect(page.locator(`#ExportSummary-row-${exportRowIndex}-col-2`)).toHaveText(
+    await expect(page.locator(`#export-summary-table-row-${exportRowIndex}-col-2`)).toHaveText(
       detailResponseCatSameDataset.type,
     );
   });
@@ -259,7 +267,7 @@ test.describe('Export Page', () => {
     await setupExportPageAndAddFilterAndExport(page, true);
     await expect(page).toHaveURL('/explorer/export');
 
-    const nextButton = page.getByTestId('next-btn');
+    const nextButton = page.getByTestId('ui-stepper-next');
     await checkStepRenderedCorrectly(page, 1, 'Review Cohort Details:', false, 'Next', true);
     await nextButton.click();
     await checkStepRenderedCorrectly(page, 2, 'Finalize Data:', false, 'Next', true);
@@ -272,7 +280,7 @@ test.describe('Export Page', () => {
   test('All steps render as expected', async ({ page }) => {
     await setupExportPageAndAddFilterAndExport(page);
     await expect(page).toHaveURL('/explorer/export');
-    const nextButton = page.getByTestId('next-btn');
+    const nextButton = page.getByTestId('ui-stepper-next');
 
     // Review Cohort Details
     await checkStepRenderedCorrectly(page, 1, 'Review Cohort Details:', false, 'Next', true);
@@ -284,8 +292,8 @@ test.describe('Export Page', () => {
 
     // Review and Save Dataset
     await checkStepRenderedCorrectly(page, 3, 'Review and Save Dataset:', true, 'Next', true);
-    const csvExportOption = page.getByTestId('csv-export-option');
-    const pfbExportOption = page.getByTestId('pfb-export-option');
+    const csvExportOption = page.getByTestId('export-type-csv');
+    const pfbExportOption = page.getByTestId('export-type-pfb');
     await expect(csvExportOption).toBeVisible();
     await expect(pfbExportOption).toBeVisible();
     await expect(csvExportOption).toHaveClass(/preset-outlined-primary-500/);
@@ -302,10 +310,12 @@ test.describe('Export Page', () => {
 
     // Save Dataset ID
     await checkStepRenderedCorrectly(page, 4, 'Save Dataset ID:', true, 'Next', true);
-    const datasetNameInput = page.locator('input#dataset-name');
+    const datasetNameInput = page.locator('input#export-dataset-name');
     await expect(datasetNameInput).toBeVisible();
     await datasetNameInput.fill('test-dataset');
-    await expect(page.locator('div#dataset-id')).toHaveText(newDatasetResponse.picsureResultId);
+    await expect(page.locator('div#export-dataset-id')).toHaveText(
+      newDatasetResponse.picsureResultId,
+    );
     await expect(nextButton).not.toBeDisabled();
     await mockApiSuccess(page, `*/**/picsure/operations/dataset/named`, newDatasetResponse);
     await mockApiSuccessByMethod(
@@ -330,7 +340,7 @@ test.describe('Export Page', () => {
     await expect(codeBlock).not.toContainText('github.com');
     const origin = new URL(page.url()).origin;
     await expect(codeBlock).toContainText(`platform="${origin}"`);
-    const rTab = tabGroup.getByTestId('tabs-control').nth(1);
+    const rTab = tabGroup.getByTestId('ui-tabs-control').nth(1);
     await expect(rTab).toHaveText('R');
     await rTab.click();
     const rCodeBlock = page
@@ -344,7 +354,7 @@ test.describe('Export Page', () => {
       ),
     );
     await expect(rCodeBlock).toContainText(`platform="${origin}"`);
-    const tab = tabGroup.getByTestId('tabs-control').nth(2);
+    const tab = tabGroup.getByTestId('ui-tabs-control').nth(2);
     await expect(tab).toBeVisible();
     await expect(tab).toHaveText('Download');
     await tab.click();
@@ -353,9 +363,9 @@ test.describe('Export Page', () => {
     await expect(downloadButton).toBeEnabled();
     const userToken = page.locator('div#user-token');
     await expect(userToken).toBeVisible();
-    await expect(userToken.locator('span#account')).toHaveText(picsureUser.email || '');
+    await expect(userToken.locator('span#user-token-account')).toHaveText(picsureUser.email || '');
 
-    const doneButton = page.getByTestId('done-btn');
+    const doneButton = page.getByTestId('ui-stepper-complete');
     await expect(doneButton).toBeVisible();
     await doneButton.click();
     await expect(page).toHaveURL('/explorer');
@@ -368,7 +378,7 @@ test.describe('Export Page', () => {
     const expectedSelectFields = [addedExportConcept, addedFilterConcept];
     await setupExportPageAndAddFilterAndExport(page);
     await expect(page).toHaveURL('/explorer/export');
-    const nextButton = page.getByTestId('next-btn');
+    const nextButton = page.getByTestId('ui-stepper-next');
 
     // Review Cohort Details
     await nextButton.click();
@@ -377,7 +387,7 @@ test.describe('Export Page', () => {
     await nextButton.click();
 
     // Review and Save Dataset=
-    await page.getByTestId('csv-export-option').click();
+    await page.getByTestId('export-type-csv').click();
     await expect(nextButton).not.toBeDisabled();
     await page.route(queryPath, (route: Route) => {
       const request = route.request().postDataJSON();
@@ -409,14 +419,14 @@ test.describe('Export Page', () => {
   test('System fields are included in query select on submit', async ({ page }) => {
     await setupExportPageAndAddFilterAndExport(page);
     await expect(page).toHaveURL('/explorer/export');
-    const nextButton = page.getByTestId('next-btn');
+    const nextButton = page.getByTestId('ui-stepper-next');
 
     // Step through to save-dataset
     await nextButton.click(); // Review Cohort Details
     await nextButton.click(); // Tree Step
 
     // Select CSV export type
-    await page.getByTestId('csv-export-option').click();
+    await page.getByTestId('export-type-csv').click();
     await expect(nextButton).not.toBeDisabled();
 
     // Intercept the query request to verify system fields are included
@@ -430,7 +440,9 @@ test.describe('Export Page', () => {
     await nextButton.click(); // Submit query
 
     // Wait for the dataset ID to appear (indicating query was submitted)
-    await expect(page.locator('div#dataset-id')).toHaveText(newDatasetResponse.picsureResultId);
+    await expect(page.locator('div#export-dataset-id')).toHaveText(
+      newDatasetResponse.picsureResultId,
+    );
 
     // Verify the captured query contains the system fields but NOT patient_id
     expect(capturedQuery).not.toBeNull();
@@ -440,10 +452,10 @@ test.describe('Export Page', () => {
 
   test('shows a loading message while the dataset ID is created', async ({ page }) => {
     await setupExportPageAndAddFilterAndExport(page);
-    const nextButton = page.getByTestId('next-btn');
+    const nextButton = page.getByTestId('ui-stepper-next');
     await nextButton.click(); // Review Cohort Details
     await nextButton.click(); // Tree Step
-    await page.getByTestId('csv-export-option').click();
+    await page.getByTestId('export-type-csv').click();
 
     let releaseQuery = () => {};
     const queryHeld = new Promise<void>((resolve) => (releaseQuery = resolve));
@@ -457,17 +469,19 @@ test.describe('Export Page', () => {
     await expect(
       page.getByRole('status').filter({ hasText: 'Creating dataset ID…' }),
     ).toBeVisible();
-    await expect(page.locator('#dataset-name')).toBeVisible();
+    await expect(page.locator('#export-dataset-name')).toBeVisible();
     releaseQuery();
-    await expect(page.locator('div#dataset-id')).toHaveText(newDatasetResponse.picsureResultId);
+    await expect(page.locator('div#export-dataset-id')).toHaveText(
+      newDatasetResponse.picsureResultId,
+    );
   });
 
   test('shows a retry message while a failed dataset ID request is retried', async ({ page }) => {
     await setupExportPageAndAddFilterAndExport(page);
-    const nextButton = page.getByTestId('next-btn');
+    const nextButton = page.getByTestId('ui-stepper-next');
     await nextButton.click(); // Review Cohort Details
     await nextButton.click(); // Tree Step
-    await page.getByTestId('csv-export-option').click();
+    await page.getByTestId('export-type-csv').click();
 
     let attempts = 0;
     let releaseRetry = () => {};
@@ -490,7 +504,9 @@ test.describe('Export Page', () => {
       }),
     ).toBeVisible();
     releaseRetry();
-    await expect(page.locator('div#dataset-id')).toHaveText(newDatasetResponse.picsureResultId);
+    await expect(page.locator('div#export-dataset-id')).toHaveText(
+      newDatasetResponse.picsureResultId,
+    );
   });
 
   async function setupExportPageWithSampleIdMocks(page: Page) {
@@ -550,17 +566,8 @@ test.describe('Export Page', () => {
     await expect(page).toHaveURL('/explorer/export');
 
     // Now set up mocks for the sample IDs checkbox AFTER the page is loaded
-    // Unroute the existing count route and set up our own
     await page.unroute(countResultPath);
-    await page.route(countResultPath, async (route) => {
-      const request = route.request();
-      const postData = request.postDataJSON();
-      if (postData?.query?.expectedResultType === 'CROSS_COUNT') {
-        await route.fulfill({ json: crossCountResponse });
-      } else {
-        await route.fulfill({ body: '9999' });
-      }
-    });
+    await mockQuerySync(page, { CROSS_COUNT: crossCountResponse, COUNT: '9999' });
 
     // Mock the genomic concepts search (page_size=10000 is used for sample IDs)
     await page.route(searchResultPathForSampleIds, async (route) => {
@@ -572,7 +579,7 @@ test.describe('Export Page', () => {
     await setupExportPageWithSampleIdMocks(page);
 
     // Find and click the sample IDs checkbox
-    const sampleIdsCheckbox = page.getByTestId('sample-ids-checkbox');
+    const sampleIdsCheckbox = page.getByTestId('export-sample-ids-checkbox');
     await expect(sampleIdsCheckbox).toBeVisible();
     await expect(sampleIdsCheckbox).not.toBeChecked();
     await sampleIdsCheckbox.click();
@@ -591,14 +598,14 @@ test.describe('Export Page', () => {
     });
 
     // Now navigate to save-dataset step and capture the query
-    const nextButton = page.getByTestId('next-btn');
+    const nextButton = page.getByTestId('ui-stepper-next');
 
     // Step through to save-dataset, capturing the query sent
     await nextButton.click(); // Review -> Tree Step
     await nextButton.click(); // Tree Step -> Select Type
 
     // Select CSV export type
-    const csvExportOption = page.getByTestId('csv-export-option');
+    const csvExportOption = page.getByTestId('export-type-csv');
     await csvExportOption.click();
 
     // Intercept the query request to verify sample IDs are included
@@ -612,7 +619,9 @@ test.describe('Export Page', () => {
     await nextButton.click(); // Select Type -> Save Dataset (this triggers submitQuery)
 
     // Wait for the dataset ID to appear (indicating query was submitted)
-    await expect(page.locator('div#dataset-id')).toHaveText(newDatasetResponse.picsureResultId);
+    await expect(page.locator('div#export-dataset-id')).toHaveText(
+      newDatasetResponse.picsureResultId,
+    );
 
     // Verify the captured query contains the sample ID fields
     expect(capturedQuery).not.toBeNull();
@@ -622,13 +631,13 @@ test.describe('Export Page', () => {
 
   test('Sample ID rows persist after navigating forward and back', async ({ page }) => {
     await setupExportPageWithSampleIdMocks(page);
-    const sampleIdsCheckbox = page.getByTestId('sample-ids-checkbox');
+    const sampleIdsCheckbox = page.getByTestId('export-sample-ids-checkbox');
     await sampleIdsCheckbox.click();
     await expect(sampleIdsCheckbox).toBeChecked();
     const tableBody = page.locator('tbody');
     await expect(tableBody.getByText('Sample ID - Study 1')).toBeVisible();
 
-    await page.getByTestId('next-btn').click();
+    await page.getByTestId('ui-stepper-next').click();
     await expect(sampleIdsCheckbox).toBeHidden();
     await page.getByRole('button', { name: 'Back', exact: true }).click();
 
@@ -647,20 +656,20 @@ test.describe('Export Page', () => {
     page,
   }) => {
     await setupExportPageWithSampleIdMocks(page);
-    const sampleIdsCheckbox = page.getByTestId('sample-ids-checkbox');
+    const sampleIdsCheckbox = page.getByTestId('export-sample-ids-checkbox');
     await sampleIdsCheckbox.click();
     await expect(sampleIdsCheckbox).toBeChecked();
 
     // Re-enter the export page so the sample IDs are already exported when it loads
-    await page.getByTestId('back-btn').click();
-    await page.locator('button#export-data-button').click();
+    await page.getByTestId('ui-page-back').click();
+    await page.locator('button#results-export-open').click();
     await expect(sampleIdsCheckbox).toBeChecked();
     const tableBody = page.locator('tbody');
     await expect(tableBody.getByText('Sample ID - Study 1')).toBeVisible();
 
     await sampleIdsCheckbox.click();
     await expect(sampleIdsCheckbox).not.toBeChecked();
-    await page.getByTestId('next-btn').click();
+    await page.getByTestId('ui-stepper-next').click();
     await expect(sampleIdsCheckbox).toBeHidden();
     await page.getByRole('button', { name: 'Back', exact: true }).click();
 
@@ -672,16 +681,16 @@ test.describe('Export Page', () => {
 
   async function navigateToDownloadTab(page: Page) {
     await setupExportPageAndAddFilterAndExport(page);
-    const nextButton = page.getByTestId('next-btn');
+    const nextButton = page.getByTestId('ui-stepper-next');
 
     await nextButton.click(); // Review Cohort Details -> Tree Step
     await nextButton.click(); // Tree Step -> Select Type
 
-    await page.getByTestId('csv-export-option').click();
+    await page.getByTestId('export-type-csv').click();
     await mockApiSuccess(page, queryPath, newDatasetResponse);
     await nextButton.click(); // Submit query -> Save Dataset ID
 
-    await page.locator('input#dataset-name').fill('test-dataset');
+    await page.locator('input#export-dataset-name').fill('test-dataset');
     await mockApiSuccess(page, `*/**/picsure/operations/dataset/named`, newDatasetResponse);
     await mockApiSuccessByMethod(
       page,
@@ -693,7 +702,7 @@ test.describe('Export Page', () => {
     await nextButton.click(); // -> Start Analysis
 
     const tabGroup = page.getByTestId('tabs-list');
-    await tabGroup.getByTestId('tabs-control').nth(2).click(); // Download tab
+    await tabGroup.getByTestId('ui-tabs-control').nth(2).click(); // Download tab
   }
 
   test('CONFIRM_DOWNLOAD=true opens a confirmation modal before downloading', async ({ page }) => {
@@ -711,9 +720,9 @@ test.describe('Export Page', () => {
     await downloadButton.click();
 
     // Then
-    const modal = page.locator('#modal-component');
+    const modal = page.getByRole('dialog');
     await expect(modal).toBeVisible();
-    await expect(modal.getByTestId('modal-wrapper-header')).toContainText(
+    await expect(modal.getByTestId('ui-modal-header')).toContainText(
       'Are you sure you want to download data?',
     );
     expect(await downloadResult).toBeNull();
@@ -744,6 +753,6 @@ test.describe('Export Page', () => {
     expect(request.method()).toBe('GET');
     expect(request.postData()).toBeNull();
     expect(download).toBeTruthy();
-    await expect(page.locator('#modal-component')).not.toBeVisible();
+    await expect(page.getByRole('dialog')).not.toBeVisible();
   });
 });

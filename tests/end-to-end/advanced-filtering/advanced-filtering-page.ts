@@ -35,6 +35,8 @@ export class AdvancedFilteringPage {
 
   // Root group controls
   readonly rootAndOrSegment: Locator;
+  // Names in the list itself, without the copy in the drag preview
+  readonly listedFilterNames: Locator;
 
   // Equation Summary
   readonly logicTreeSection: Locator;
@@ -60,16 +62,17 @@ export class AdvancedFilteringPage {
     this.filteringArea = page.locator('.main-content');
 
     // Buttons
-    this.advancedFilteringBtn = page.getByTestId('advanced-filtering-btn');
+    this.advancedFilteringBtn = page.getByTestId('results-advanced-filtering-open');
     this.addGroupButton = page.getByRole('button', { name: 'Add Subquery' });
     this.applyChangesButton = page.getByRole('button', { name: 'Apply Changes' });
 
     // Root group AND/OR segment (first one on the page)
     this.rootAndOrSegment = this.modal.getByRole('radiogroup').first();
+    this.listedFilterNames = this.modal.getByTestId('filter-root').getByTestId('filter-name');
 
     // Equation Summary
-    this.logicTreeSection = page.getByTestId('logic-tree-summary');
-    this.logicTreeText = page.getByTestId('logic-tree-text');
+    this.logicTreeSection = page.getByTestId('filter-logic-summary');
+    this.logicTreeText = page.getByTestId('filter-logic-text');
   }
 
   // ==================== Setup ====================
@@ -100,13 +103,13 @@ export class AdvancedFilteringPage {
     );
     await clickNthFilterIcon(this.page, rowIndex);
     if (selectAll) {
-      const selectAllButton = this.page.locator('#select-all');
+      const selectAllButton = this.page.getByTestId('ui-options-selection-list-select-all');
       await selectAllButton.click();
     } else {
       const firstItem = await getOption(this.page);
       await firstItem.click();
     }
-    await this.page.getByTestId('add-filter').click();
+    await this.page.getByTestId('filter-add').click();
   }
 
   /**
@@ -115,7 +118,7 @@ export class AdvancedFilteringPage {
    */
   async addNumericFilter(rowIndex: number) {
     await clickNthFilterIcon(this.page, rowIndex);
-    await this.page.getByTestId('add-filter').click();
+    await this.page.getByTestId('filter-add').click();
   }
 
   /**
@@ -261,14 +264,6 @@ export class AdvancedFilteringPage {
     return this.modal.locator('.badge');
   }
 
-  getAndBadges(): Locator {
-    return this.filteringArea.locator('.badge').filter({ hasText: /^AND$/i });
-  }
-
-  getOrBadges(): Locator {
-    return this.filteringArea.locator('.badge').filter({ hasText: /^OR$/i });
-  }
-
   // ==================== AND/OR Segment Controls ====================
 
   getAndRadio(): Locator {
@@ -337,10 +332,6 @@ export class AdvancedFilteringPage {
     await expect(this.modal).toBeVisible();
   }
 
-  async expectModalTitle() {
-    await expect(this.modalTitle).toBeVisible();
-  }
-
   async expectFilterVisible(filterName: string) {
     await expect(this.getFilterByName(filterName)).toBeVisible();
   }
@@ -354,15 +345,8 @@ export class AdvancedFilteringPage {
     await expect(this.getOrRadio()).toBeVisible();
   }
 
-  async expectDragHandlesExist() {
-    const count = await this.getAllDragHandles().count();
-    expect(count).toBeGreaterThan(0);
-  }
-
   async expectAndIsDefault() {
-    const andBadges = this.getAndBadges();
-    const count = await andBadges.count();
-    expect(count).toBeGreaterThan(0);
+    await this.expectBadgeText('AND');
   }
 
   async expectBadgeText(expectedText: 'AND' | 'OR') {
@@ -370,14 +354,6 @@ export class AdvancedFilteringPage {
       hasText: new RegExp(`^${expectedText}$`, 'i'),
     });
     await expect(badges.first()).toBeVisible();
-  }
-
-  async expectApplyButtonVisible() {
-    await expect(this.applyChangesButton).toBeVisible();
-  }
-
-  async expectApplyButtonHasPrimaryStyle() {
-    await expect(this.applyChangesButton).toHaveClass(/preset-filled-primary/);
   }
 
   async expectModalClosed() {
@@ -389,23 +365,11 @@ export class AdvancedFilteringPage {
     // User should still be on the advanced-filtering page
     expect(this.page.url()).toContain('/advanced-filtering');
     // The sidebar should have opened (panelOpen auto-opens on filter change)
-    await expect(this.page.locator('#side-panel')).toBeVisible();
+    await expect(this.page.locator('#results-side-panel')).toBeVisible();
   }
 
   async expectAddGroupButtonVisible() {
     await expect(this.addGroupButton).toBeVisible();
-  }
-
-  async expectNewGroupHasAndOrControls() {
-    const andOptions = this.getAllAndRadios();
-    const orOptions = this.getAllOrRadios();
-
-    const andCount = await andOptions.count();
-    const orCount = await orOptions.count();
-
-    // Should have more than one set (root + new group)
-    expect(andCount).toBeGreaterThan(1);
-    expect(orCount).toBeGreaterThan(1);
   }
 
   async expectMultipleRadioGroups() {
@@ -444,7 +408,7 @@ export class AdvancedFilteringPage {
   }
 
   async clickUnsavedCancel() {
-    await this.getUnsavedModal().getByTestId('modal-close-button').click();
+    await this.getUnsavedModal().getByTestId('ui-modal-close').click();
   }
 
   async clickUnsavedDiscard() {
@@ -489,18 +453,84 @@ export class AdvancedFilteringPage {
   }
 
   getDropPreviews(): Locator {
-    return this.page.getByTestId('drop-preview');
+    return this.page.getByTestId('filter-drop-preview');
   }
 
   getMoveHereZones(): Locator {
-    return this.page.getByTestId('group-drop-zone').filter({ hasText: 'Move here' });
+    return this.page.getByTestId('filter-group-drop-zone').filter({ hasText: 'Move here' });
   }
 
   /**
-   * Perform a drag on a handle element, keeping the pointer within the scroll
-   * container bounds. Firefox with Playwright's synthetic pointer events does
-   * not auto-scroll, so dragging past the container edge causes dnd-kit to
-   * lose track of the pointer and the drag never ends properly.
+   * Get a drag handle ready: wait for the previous drop to finish (a press during its animation
+   * doesn't start a new drag), center the handle in its scroll container and wait for it to hold
+   * still for a frame. dnd-kit scrolls during a drag when the card nears the container's edge (the
+   * pointer sensor auto-scrolls within 20% of it, the keyboard sensor scrolls the card into view on
+   * pickup and after each move), which moves the cards under a position Playwright holds still, so
+   * where the card lands would depend on how fast the machine scrolls. Playwright's actionability
+   * checks aren't used to wait: they scroll the container back to the top.
+   */
+  private async readyToDrag(handle: Locator) {
+    await expect(this.page.locator('[data-dnd-dragging]')).toHaveCount(0);
+    await expect(handle).toBeVisible();
+    await handle.evaluate((el) => {
+      el.scrollIntoView({ block: 'center' });
+      return new Promise<void>((resolve) => {
+        let last = '';
+        const tick = () => {
+          const { x, y } = el.getBoundingClientRect();
+          if (`${x},${y}` === last) return resolve();
+          last = `${x},${y}`;
+          requestAnimationFrame(tick);
+        };
+        tick();
+      });
+    });
+  }
+
+  /**
+   * Move a filter with dnd-kit's keyboard sensor: pick up, arrow keys, drop. Assumes a flat list,
+   * where each press moves the filter one place.
+   */
+  async moveFilterWithKeyboard(filterName: string, key: 'ArrowDown' | 'ArrowUp', presses = 1) {
+    const handle = this.getFilterCard(filterName).getByRole('button', {
+      name: 'Click and drag to reorder and group filters',
+    });
+    await this.readyToDrag(handle);
+    const names = this.listedFilterNames;
+    const from = (await names.allTextContents()).indexOf(filterName);
+    await handle.focus();
+    await this.page.keyboard.press('Enter');
+    await expect(this.getDropPreviews().first()).toBeVisible();
+    for (let i = 0; i < presses; i++) await this.page.keyboard.press(key);
+    // Drop only once the move shows
+    await expect(names.nth(from + (key === 'ArrowDown' ? presses : -presses))).toHaveText(
+      filterName,
+    );
+    await this.page.keyboard.press('Enter');
+  }
+
+  /**
+   * Press the pointer on a drag handle and resolve once dnd-kit has started the drag. A mouse press
+   * on a handle activates immediately, so the pointer hasn't moved and nothing has been reordered
+   * yet: other cards can be measured in the drag layout and approached from where they are.
+   */
+  async pickUp(handle: Locator): Promise<{ startX: number; startY: number }> {
+    await this.readyToDrag(handle);
+
+    const handleBox = await handle.boundingBox();
+    expect(handleBox).not.toBeNull();
+    const startX = handleBox!.x + handleBox!.width / 2;
+    const startY = handleBox!.y + handleBox!.height / 2;
+
+    await this.page.mouse.move(startX, startY);
+    await this.page.mouse.down();
+    await expect(this.getDropPreviews().first()).toBeVisible();
+
+    return { startX, startY };
+  }
+
+  /**
+   * Pick up a handle and drag it `distance` pixels up or down, clamped to the filter list's box.
    *
    * Returns the start coordinates so callers can release at a known position.
    */
@@ -509,29 +539,9 @@ export class AdvancedFilteringPage {
     direction: 'down' | 'up' = 'down',
     distance = 80,
   ): Promise<{ startX: number; startY: number }> {
-    await expect(handle).toBeVisible();
+    const { startX, startY } = await this.pickUp(handle);
 
-    // Scroll the handle to the vertical center of the scroll container so there
-    // is always room to drag in either direction, regardless of container height.
-    const container = this.modal.locator('.overflow-auto').first();
-    const handleEl = await handle.elementHandle();
-    if (handleEl) {
-      await container.evaluate((el, h) => {
-        const containerRect = el.getBoundingClientRect();
-        const handleRect = h.getBoundingClientRect();
-        const handleOffsetInContainer = handleRect.top - containerRect.top + el.scrollTop;
-        el.scrollTop = handleOffsetInContainer - containerRect.height / 2;
-      }, handleEl);
-    }
-    await this.page.waitForTimeout(200);
-
-    const handleBox = await handle.boundingBox();
-    expect(handleBox).not.toBeNull();
-    const startX = handleBox!.x + handleBox!.width / 2;
-    const startY = handleBox!.y + handleBox!.height / 2;
-
-    // Clamp drag distance to stay within the scroll container
-    const containerBox = await container.boundingBox();
+    const containerBox = await this.modal.locator('.overflow-auto').first().boundingBox();
     if (containerBox) {
       const maxDown = containerBox.y + containerBox.height - startY - 10;
       const maxUp = startY - containerBox.y - 10;
@@ -541,11 +551,9 @@ export class AdvancedFilteringPage {
         distance = Math.min(distance, maxUp);
       }
     }
-    distance = Math.max(distance, 30); // always move enough to trigger drag
+    distance = Math.max(distance, 30);
 
     const sign = direction === 'down' ? 1 : -1;
-    await this.page.mouse.move(startX, startY);
-    await this.page.mouse.down();
     await this.page.mouse.move(startX, startY + sign * 20, { steps: 3 });
     await this.page.mouse.move(startX, startY + sign * distance, { steps: 10 });
 
@@ -559,20 +567,20 @@ export class AdvancedFilteringPage {
   async endDrag(startX: number, startY: number) {
     await this.page.mouse.move(startX, startY, { steps: 5 });
     await this.page.mouse.up();
-    await this.page.waitForTimeout(500);
+    await expect(this.getDropPreviews()).toHaveCount(0);
   }
 
   // ==================== Genomic Filter Locators ====================
 
   getGenomicFiltersSection(): Locator {
-    return this.page.getByTestId('genomic-filters-section');
+    return this.page.getByTestId('filter-genomic-section');
   }
 
   getGenomicFilterItems(): Locator {
-    return this.page.getByTestId('genomic-filter-item');
+    return this.page.getByTestId('filter-genomic-item');
   }
 
   getGenomicAndSeparator(): Locator {
-    return this.page.getByTestId('genomic-and-separator');
+    return this.page.getByTestId('filter-genomic-separator');
   }
 }

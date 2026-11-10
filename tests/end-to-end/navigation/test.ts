@@ -1,50 +1,23 @@
 import { expect } from '@playwright/test';
-import { test, mockApiConfig } from '../custom-context';
-import { picsureUser, userTypes } from '../mock-data';
+import { test, mockApiConfig, mockApiSuccess } from '../custom-context';
+import { picsureUser } from '../mock-data';
 import { userIsLoggedIn } from '../utils';
-import { routes } from '../../../src/lib/routes';
-import { PicsurePrivileges } from '../../../src/lib/models/Privilege';
-import type { Route, RoutePrivilege } from '../../../src/lib/models/Route';
 
-// TODO: This should probably be moved to a component test, not an e2e/integration test.
+// Every role x route combination is covered by tests/component/Navigation.test.ts; these
+// check the real app wires the signed-in user and current page into the bar.
 
 test.describe('Public Routes Navigation', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
-  test.beforeEach(({ page }) =>
-    // OPEN lets unauthenticated users past the root redirect-to-login guard;
-    // DASHBOARD/DISCOVER control whether those nav links render at all.
-    mockApiConfig(page, {
-      features: [
-        { name: 'OPEN', value: 'true' },
-        { name: 'DASHBOARD', value: 'true' },
-        { name: 'DISCOVER', value: 'true' },
-      ],
-    }),
-  );
-  routes
-    .filter((route) => route.privilege === undefined)
-    .forEach((route, _index, routes) => {
-      test(`Path ${route.path} navigation bar has correct active element before login`, async ({
-        page,
-      }) => {
-        // Given
-        await page.goto(route.path);
+  test('Marks the current page before login', async ({ page }) => {
+    // OPEN lets unauthenticated users past the root redirect-to-login guard
+    await mockApiConfig(page, { features: [{ name: 'OPEN', value: 'true' }] });
 
-        // Then
-        // Check that this element is active
-        const navItem = page.locator(`#nav-link${route.path.replaceAll('/', '-')}`);
-        await expect(navItem).toHaveAttribute('aria-current', 'page');
+    await page.goto('/help');
 
-        // Check that other routes elements aren't active
-        const inactive = routes
-          .filter((altRoute) => altRoute.path !== route.path)
-          .map((altRoute) => {
-            const navItem = page.locator(`#nav-link${altRoute.path.replaceAll('/', '-')}`);
-            return expect(navItem).not.toHaveAttribute('aria-current');
-          });
-        await Promise.all(inactive);
-      });
-    });
+    await expect(page.locator('#app-nav-link-help')).toHaveAttribute('aria-current', 'page');
+    await expect(page.locator('#app-nav-link-api')).not.toHaveAttribute('aria-current');
+    await expect(page.locator('#app-nav-link-dataset')).toHaveCount(0);
+  });
 });
 
 test.describe('Any logged in user', () => {
@@ -56,38 +29,37 @@ test.describe('Any logged in user', () => {
     await mockApiConfig(page, {
       features: [{ name: 'OPEN', value: 'true' }],
     });
+    await mockApiSuccess(page, '*/**/psama/logout', {});
     await page.goto('/');
     await userIsLoggedIn(page);
   });
 
   test('Session avatar should reflect correct user initial after login', async ({ page }) => {
     // Then
-    await expect(page.locator('#user-session-avatar')).toContainText(
+    await expect(page.locator('#app-nav-user')).toContainText(
       (picsureUser as { email: string }).email.charAt(0).toUpperCase(),
     );
   });
   test('Session avatar should not have user initial after logout', async ({ page }) => {
-    // When — retry the open; click-outside handler can close the popout on the same event
-    await expect(async () => {
-      await page.locator('#user-session-avatar button').first().click();
-      await expect(page.locator('#user-logout-btn')).toBeVisible();
-    }).toPass({ timeout: 15000 });
+    // When
+    await page.locator('#app-nav-user button').first().click();
+    await expect(page.locator('#app-nav-logout')).toBeVisible();
 
-    const logoutButton = page.locator('#user-logout-btn');
+    const logoutButton = page.locator('#app-nav-logout');
     await logoutButton.click();
     await page.waitForURL(/\/login/);
 
     await page.goto('/');
 
     // Then
-    await expect(page.locator('#user-session-avatar')).toContainText('Login');
+    await expect(page.locator('#app-nav-user')).toContainText('Login');
   });
   test('Clicking logout redirects to login page', async ({ page }) => {
     // When
-    const popoutButton = page.locator('#user-session-avatar button').first();
+    const popoutButton = page.locator('#app-nav-user button').first();
     await popoutButton.click();
 
-    const logoutButton = page.locator('#user-logout-btn');
+    const logoutButton = page.locator('#app-nav-logout');
     await expect(logoutButton).toBeVisible();
     await logoutButton.click();
     await page.waitForURL('/login');
@@ -97,76 +69,28 @@ test.describe('Any logged in user', () => {
   });
 });
 
-const testRoles = {
-  generalUser: userTypes.generalUser,
-  adminUser: userTypes.adminUser,
-  superUser: userTypes.superUser,
-};
-
-// Every default-off feature that gates a route in src/lib/routes.ts, enabled
-// here so privilege — not feature flags — is the only variable under test.
-// (analyzeApi defaults true and doesn't need to be listed.)
-const enabledFeatureFlags = [
-  { name: 'DASHBOARD', value: 'true' },
-  { name: 'DISCOVER', value: 'true' },
+const roleLandings = [
+  { userType: 'generalUser', path: '/explorer', hidden: '#app-nav-link-admin-users' },
+  { userType: 'adminUser', path: '/admin/users', hidden: undefined },
+  { userType: 'superUser', path: '/admin/configuration', hidden: undefined },
 ];
 
-// Mirrors config.features keys once enabledFeatureFlags above are applied.
-const featureEnabled: Record<string, boolean> = {
-  dashboard: true,
-  discover: true,
-  analyzeApi: true,
-};
-
-Object.entries(testRoles).forEach(([userType, userData]) => {
-  // Mirrors src/lib/stores/User.ts's userRoutes derivation: a route needs
-  // ANY (not all) of its required privileges (route.privilege is an array),
-  // and SUPER users bypass the privilege check entirely (but not feature gates).
-  const isSuper = userData.privileges.includes(PicsurePrivileges.SUPER);
-  const testRoutes = routes.filter((route: Route) => {
-    // KNOWN BUG (deprioritized, /dataset/request is mildly deprecated):
-    // Navigation.svelte's currentPage() matches via pathname.includes(route.path),
-    // so /dataset/request always also marks the /dataset nav-link as current,
-    // breaking the mutual-exclusivity assertion below. Excluded until that's fixed.
-    if (route.path === '/dataset/request') return false;
-    const hasFeature = route.feature ? featureEnabled[route.feature] : true;
-    const hasPrivilege =
-      !route.privilege ||
-      isSuper ||
-      route.privilege.some((priv) => (userData.privileges as RoutePrivilege[]).includes(priv));
-    return hasFeature && hasPrivilege;
-  });
-
+roleLandings.forEach(({ userType, path, hidden }) => {
   test.describe(`${userType} Navigation`, () => {
     test.use({ storageState: `tests/end-to-end/.auth/${userType}.json` });
-    test.beforeEach(({ page }) => mockApiConfig(page, { features: enabledFeatureFlags }));
 
-    testRoutes
-      .filter((route) => !route.children)
-      .forEach((route, _index, routes) => {
-        test(`Path ${route.path} navigation bar has correct active element after login`, async ({
-          page,
-        }) => {
-          // Given
-          await page.goto(route.path);
-          await userIsLoggedIn(page);
-          const navItem = page.locator(`#nav-link${route.path.replaceAll('/', '-')}`);
-          await expect(navItem).toBeVisible();
+    test(`Marks ${path} as the current page after login`, async ({ page }) => {
+      await mockApiConfig(page);
+      await mockApiSuccess(page, '*/**/psama/user', []);
 
-          // Then
-          // Check that this element is active
-          await expect(navItem).toHaveAttribute('aria-current', 'page', { timeout: 10000 });
+      await page.goto(path);
+      await userIsLoggedIn(page);
 
-          // Check that other routes elements aren't active
-          const inactive = routes
-            .filter((altRoute) => altRoute.path !== route.path)
-            .map((altRoute) => {
-              const navItem = page.locator(`#nav-link${altRoute.path.replaceAll('/', '-')}`);
-              return expect(navItem).not.toHaveAttribute('aria-current');
-            });
-          await Promise.all(inactive);
-        });
-      });
+      const navItem = page.locator(`#app-nav-link${path.replaceAll('/', '-')}`);
+      await expect(navItem).toHaveAttribute('aria-current', 'page');
+      await expect(page.locator('#app-nav-link-help')).not.toHaveAttribute('aria-current');
+      if (hidden) await expect(page.locator(hidden)).toHaveCount(0);
+    });
   });
 });
 
@@ -182,7 +106,7 @@ test.describe('Navigation', () => {
     await page.goto('/');
 
     // When
-    const loginButton = page.locator('#user-login-btn');
+    const loginButton = page.locator('#app-nav-login');
     await expect(loginButton).toBeVisible();
     await loginButton.click();
 
@@ -199,7 +123,7 @@ test.describe('Navigation', () => {
     await page.goto('/?search=somedata');
 
     // When
-    const loginButton = page.locator('#user-login-btn');
+    const loginButton = page.locator('#app-nav-login');
     await expect(loginButton).toBeVisible();
     await loginButton.click();
 
@@ -214,12 +138,12 @@ test.describe('Navigation', () => {
     await page.goto('/help');
 
     // When
-    const logo = page.getByTestId('nav-logo');
+    const logo = page.getByTestId('app-nav-logo');
     await logo.click();
 
     // Then
     await expect(page).toHaveURL('/');
-    await expect(page.locator('#landing')).toBeVisible();
+    await expect(page.locator('#landing-page')).toBeVisible();
   });
   test('Print page hides navigation links', async ({ page }) => {
     // Given
@@ -229,7 +153,7 @@ test.describe('Navigation', () => {
     await page.emulateMedia({ media: 'print' });
 
     // Then
-    await expect(page.locator('#page-navigation')).not.toBeVisible();
+    await expect(page.locator('#app-nav')).not.toBeVisible();
   });
 });
 

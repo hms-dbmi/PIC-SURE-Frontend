@@ -99,7 +99,7 @@
     {#if edit}
       <div class="flex justify-end my-4">
         <button
-          data-testid="save-filter-btn"
+          data-testid="genomic-filter-save"
           type="button"
           class="btn btn-sm preset-filled-primary-500 text-lg disabled:opacity-75"
           onclick={onComplete}
@@ -109,9 +109,9 @@
         </button>
       </div>
     {:else}
-      <div class="flex justify-end my-4" data-testid="filter-options-container">
+      <div class="flex justify-end my-4" data-testid="genomic-filter-options">
         <button
-          data-testid="add-filter-btn"
+          data-testid="genomic-filter-add"
           type="button"
           class="btn btn-sm preset-filled-primary-500 text-lg disabled:opacity-75"
           title={canComplete

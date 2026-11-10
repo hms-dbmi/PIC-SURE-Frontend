@@ -16,7 +16,7 @@
     title = '',
     subtitle = '',
     required = false,
-    'data-testid': testid = '',
+    'data-testid': testid,
     class: className = '',
     action,
     help,
@@ -24,10 +24,7 @@
   }: Props = $props();
 </script>
 
-<div
-  class="flex flex-col {className}"
-  data-testid={testid || title.replaceAll(' ', '-').toLowerCase()}
->
+<div class="flex flex-col {className}" data-testid={testid}>
   <div class="relative rounded-t-2xl bg-primary-300-700 p-4 items-center flex">
     {#if required}<span class="absolute top-0 left-1 p-1 text-error-600-400 text-xs"
         >* Required</span

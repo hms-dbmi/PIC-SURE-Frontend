@@ -39,16 +39,16 @@
   );
 </script>
 
-<div data-testid="data-summary-{authString}" class="w-full flex flex-col items-center">
+<div data-testid="landing-summary-{authString}" class="w-full flex flex-col items-center">
   <div class="w-2/4">
     <!-- eslint-disable-next-line svelte/no-at-html-tags -->
     {@html browser ? sanitizeHTML(description) : description}
   </div>
   <div class="grid {gridClass} grid-flow-col justify-center p-2 my-2 gap-y-9 {width}">
-    {#each $stats as stat (`${authString}-${stat.key}-${stat.label}`)}
+    {#each $stats as stat, i (`${authString}-${stat.key}-${stat.label}`)}
       <div class="p-2 not-last:border-r border-surface-500">
         <div
-          data-testid="value-{authString}-{stat.key}-{stat.label}"
+          data-testid="landing-stat-{authString}-{i}"
           class="flex flex-col justify-center items-center text-2xl"
         >
           {#await Promise.allSettled(StatPromise.list(stat).map(({ promise }) => promise))}
@@ -67,7 +67,7 @@
               <HelpInfoPopup
                 type="exclamation"
                 color="warning"
-                id="result-count-error"
+                data-testid="landing-stat-error-{authString}-{i}"
                 text="We're having trouble fetching some data points right now. Please try again later."
               />
             {/if}

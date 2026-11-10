@@ -110,14 +110,14 @@
       <Loading ring size="medium" />
     {:then searchResultDetail}
       {@const variableRows = variableInfoRows(searchResultDetail)}
-      <section data-testid="variable-info" class="flex flex-col w-full p-4">
+      <section data-testid="explorer-variable-info" class="flex flex-col w-full p-4">
         <h3 class="text-primary-500">
           {config.branding.explorePage.resultInfo.variableHeader || 'Variable Information'}
         </h3>
         {@render infoRows(getVisibleRows(variableRows, showAllVariableInfo))}
         {#if variableRows.length > MAX_INFO_ROWS}
           <ShowMoreButton
-            data-testid="show-more-variable-info"
+            data-testid="explorer-variable-info-show-more"
             expanded={showAllVariableInfo}
             onclick={() => (showAllVariableInfo = !showAllVariableInfo)}
           />
@@ -132,7 +132,7 @@
           {@render infoRows(getVisibleRows(datasetRows, showAllDatasetInfo))}
           {#if datasetRows.length > MAX_INFO_ROWS}
             <ShowMoreButton
-              data-testid="show-more-dataset-info"
+              data-testid="explorer-dataset-info-show-more"
               expanded={showAllDatasetInfo}
               onclick={() => (showAllDatasetInfo = !showAllDatasetInfo)}
             />
@@ -141,14 +141,14 @@
       {/if}
       {#if searchResultDetail.study}
         {@const studyRows = studyInfoRows(searchResultDetail)}
-        <section data-testid="study-info" class="flex flex-col w-full p-4">
+        <section data-testid="explorer-study-info" class="flex flex-col w-full p-4">
           <h3 class="text-primary-500">
             {config.branding.explorePage.resultInfo.studyHeader || 'Study Information'}
           </h3>
           {@render infoRows(getVisibleRows(studyRows, showAllStudyInfo))}
           {#if studyRows.length > MAX_INFO_ROWS}
             <ShowMoreButton
-              data-testid="show-more-study-info"
+              data-testid="explorer-study-info-show-more"
               expanded={showAllStudyInfo}
               onclick={() => (showAllStudyInfo = !showAllStudyInfo)}
             />

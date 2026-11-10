@@ -122,7 +122,7 @@ beforeEach(() => {
     ['api-access', { top: 1390, height: 1500 }],
   ]);
   scroller = document.createElement('main');
-  scroller.id = 'page';
+  scroller.id = 'app-page';
   scroller.innerHTML = `
     <header id="hero"><h1 id="api-header">API</h1></header>
     <section id="authentication"><h2>Authentication</h2></section>

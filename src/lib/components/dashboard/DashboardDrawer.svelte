@@ -23,13 +23,13 @@
 </script>
 
 {#if title}
-  <h2 data-testid="drawer-title" class="text-2xl font-bold ml-4">{title}</h2>
+  <h2 data-testid="dashboard-drawer-title" class="text-2xl font-bold ml-4">{title}</h2>
 {/if}
 <hr />
 {#await getDataset()}
   <Loading ring size="medium" />
 {:then details}
-  <ul data-testid="drawer-details" class="m-4 p-4">
+  <ul data-testid="dashboard-drawer-details" class="m-4 p-4">
     {#each Object.entries(details) as [key, value]}
       {#if value}
         <li class="m-2">

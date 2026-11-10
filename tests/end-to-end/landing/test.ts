@@ -1,4 +1,5 @@
-import { expect } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import { expect, type BrowserContext } from '@playwright/test';
 import { test, mockApiSuccess, mockApiFail, mockApiConfig } from '../custom-context';
 import {
   searchResults as mockSearchResults,
@@ -8,11 +9,21 @@ import {
   searchResults,
   mockConsents,
   countResultPath,
+  picsureUser,
 } from '../mock-data';
 import { userIsLoggedIn } from '../utils';
 import type { Branding } from '../../../src/lib/models/Configuration';
 import brandingJson from '../../../src/lib/assets/configuration.json' with { type: 'json' };
 const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
+
+// A stat's testid names its position among the stats shown to logged-in (auth) or anonymous
+// (open) users.
+function statTestId(auth: 'auth' | 'open', key: string) {
+  const shown = (branding?.landing?.stats ?? []).filter((stat) =>
+    auth === 'auth' ? stat.auth !== false : stat.auth !== true,
+  );
+  return `landing-stat-${auth}-${shown.findIndex((stat) => stat.key === key)}`;
+}
 
 const loggedInActions = branding?.landing?.actions?.filter((action) => action.showIfLoggedIn);
 const loggedOutActions = branding?.landing?.actions?.filter(
@@ -29,7 +40,11 @@ interface MockLandingStat {
 
 test.describe('Landing page', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
-  test.beforeEach(({ page }) => mockApiConfig(page));
+  test.beforeEach(async ({ page }) => {
+    await mockApiConfig(page);
+    // The app may refresh the signed-in user; answer with nothing new so it keeps the stored one
+    await mockApiSuccess(page, '*/**/psama/user/me?hasToken', {});
+  });
 
   test.describe('Search', () => {
     test('Has expected search to go to explorer', async ({ page }) => {
@@ -108,9 +123,9 @@ test.describe('Landing page', () => {
       ?.filter((stat) => stat.key !== 'hardcoded')
       .forEach((stat) => {
         const mockStat: MockLandingStat = stats.find((s) => s.key === stat.key) || notFound;
-        const testID = `value-auth-${stat.key}-${stat.label}`;
+        const testID = statTestId('auth', stat.key);
 
-        test(`Has expected stat of ${stat.label}`, async ({ page }) => {
+        test(`Has expected stat label and value for ${stat.label}`, async ({ page }) => {
           // Given
           await mockApiSuccess(page, mockStat.route, mockStat.api);
           await page.goto('/');
@@ -118,16 +133,8 @@ test.describe('Landing page', () => {
 
           // Then
           await expect(
-            page.getByTestId('data-summary-auth').getByText(stat.label, { exact: true }),
+            page.getByTestId('landing-summary-auth').getByText(stat.label, { exact: true }),
           ).toBeVisible();
-        });
-        test(`Has expected stat value for ${stat.label}`, async ({ page }) => {
-          // Given
-          await mockApiSuccess(page, mockStat.route, mockStat.api);
-          await page.goto('/');
-          await userIsLoggedIn(page);
-
-          // Then
           await expect(page.getByTestId(testID)).toHaveText(mockStat.value);
         });
         test(`Should display error message if api returns error for ${stat.label}`, async ({
@@ -143,16 +150,26 @@ test.describe('Landing page', () => {
         });
       });
 
-    test('Loads authenticated stats when only the login token is restored', async ({
-      browser,
-      context,
-    }) => {
-      // A separate context keeps the token without the fixture's sessionStorage user injection.
-      const page = await browser.newPage({
-        baseURL: 'http://localhost:4173',
-        storageState: await context.storageState(),
+    test.describe('with only the login token restored', () => {
+      // The generalUser state minus its stored user, so the fixture has no user to put in
+      // sessionStorage and the app starts from the token alone. Read when the test runs:
+      // the setup project writes the file after this module has loaded.
+      test.use({
+        // eslint-disable-next-line no-empty-pattern -- Playwright fixtures must destructure their first argument
+        storageState: async ({}, use) => {
+          const tokenOnlyState = JSON.parse(
+            readFileSync('tests/end-to-end/.auth/generalUser.json', 'utf-8'),
+          ) as Awaited<ReturnType<BrowserContext['storageState']>>;
+          for (const origin of tokenOnlyState.origins) {
+            origin.localStorage = origin.localStorage.filter(({ name }) => name !== 'user');
+          }
+          await use(tokenOnlyState);
+        },
       });
-      try {
+
+      test('Loads authenticated stats', async ({ page }) => {
+        await mockApiSuccess(page, '*/**/psama/user/me?hasToken', picsureUser);
+        await mockApiSuccess(page, '*/**/psama/user/me', picsureUser);
         await mockApiSuccess(page, '*/**/psama/user/me/consents', { consents: mockConsents });
         await mockApiSuccess(page, countResultPath, '88');
         await mockApiSuccess(
@@ -163,39 +180,26 @@ test.describe('Landing page', () => {
         await mockApiSuccess(page, '*/**/picsure/dictionary/facets', facetsResponse);
         await page.goto('/');
 
-        await expect(page.getByTestId('value-auth-dict:concepts-Variables')).toHaveText(
+        await expect(page.getByTestId(statTestId('auth', 'dict:concepts'))).toHaveText(
           searchResults.totalElements.toLocaleString(),
         );
         const datasets = facetsResponse.find((category) => category.name === 'dataset_id')!;
-        await expect(page.getByTestId('value-auth-dict:facets:dataset_id-Data Sources')).toHaveText(
+        await expect(page.getByTestId(statTestId('auth', 'dict:facets:dataset_id'))).toHaveText(
           datasets.facets.filter((facet) => facet.count > 0).length.toLocaleString(),
         );
         await expect(page.getByTestId('toast-root')).not.toBeVisible();
-      } finally {
-        await page.close();
-      }
+      });
     });
   });
   test.describe('Actions', () => {
-    loggedInActions.forEach(({ description, icon, url, title }) => {
-      test(`Logged In user Has expected action of description: ${description}`, async ({
-        page,
-      }) => {
+    loggedInActions.forEach(({ description, icon, url }, i) => {
+      test(`Logged In user Has expected action: ${description}`, async ({ page }) => {
         // Given
         await page.goto('/');
         await userIsLoggedIn(page);
         // Then
         await expect(page.getByText(description, { exact: true })).toBeVisible();
-      });
-      test(`Logged In user Has expected icon of: ${icon}`, async ({ page }) => {
-        // Given
-        await page.goto('/');
-        await userIsLoggedIn(page);
-        // Then
-        const iconElement = page.locator(`.${icon.replaceAll(' ', '.')}`);
-        const pattern = new RegExp(`.*${icon}.*`);
-        await expect(iconElement).toBeVisible();
-        await expect(iconElement).toHaveClass(pattern);
+        await expect(page.locator(`.${icon.replaceAll(' ', '.')}`)).toBeVisible();
       });
       test(`Action button "${description}"'s click leads to ${url}`, async ({ page }) => {
         // Given
@@ -204,7 +208,7 @@ test.describe('Landing page', () => {
         await userIsLoggedIn(page);
 
         // When
-        const action = page.getByTestId(`landing-action-${title}-btn`);
+        const action = page.getByTestId(`landing-action-${i}`);
         await expect(action).toBeVisible();
 
         // Then
@@ -287,24 +291,17 @@ test.describe('Logged Out Landing', () => {
       ?.filter((stat) => stat.key !== 'hardcoded')
       .forEach((stat) => {
         const mockStat: MockLandingStat = stats.find((s) => s.key === stat.key) || notFound;
-        const testID = `value-open-${stat.key}-${stat.label}`;
+        const testID = statTestId('open', stat.key);
 
-        test(`Has expected stat of ${stat.label}`, async ({ page }) => {
+        test(`Has expected stat label and value for ${stat.label}`, async ({ page }) => {
           // Given
           await mockApiSuccess(page, mockStat.route, mockStat.api);
           await page.goto('/');
 
           // Then
           await expect(
-            page.getByTestId('data-summary-open').getByText(stat.label, { exact: true }),
+            page.getByTestId('landing-summary-open').getByText(stat.label, { exact: true }),
           ).toBeVisible();
-        });
-        test(`Has expected stat value for ${stat.label}`, async ({ page }) => {
-          // Given
-          await mockApiSuccess(page, mockStat.route, mockStat.api);
-          await page.goto('/');
-
-          // Then
           await expect(page.getByTestId(testID)).toHaveText(mockStat.value);
         });
         test(`Should display error message if api returns error for ${stat.label}`, async ({
@@ -320,21 +317,13 @@ test.describe('Logged Out Landing', () => {
       });
   });
 
-  loggedOutActions.forEach(({ description, icon, url, title }) => {
-    test(`Has expected action of description: ${description}`, async ({ page }) => {
+  loggedOutActions.forEach(({ description, icon, url }, i) => {
+    test(`Has expected action: ${description}`, async ({ page }) => {
       // Given
       await page.goto('/');
       // Then
       await expect(page.getByText(description, { exact: true })).toBeVisible();
-    });
-    test(`Has expected icon of: ${icon}`, async ({ page }) => {
-      // Given
-      await page.goto('/');
-      // Then
-      const iconElement = page.locator(`.${icon.replaceAll(' ', '.')}`);
-      const pattern = new RegExp(`.*${icon}.*`);
-      await expect(iconElement).toBeVisible();
-      await expect(iconElement).toHaveClass(pattern);
+      await expect(page.locator(`.${icon.replaceAll(' ', '.')}`)).toBeVisible();
     });
     test(`Button "${description}"'s click leads to ${url}`, async ({ page }) => {
       // Given
@@ -342,8 +331,8 @@ test.describe('Logged Out Landing', () => {
       await page.goto('/');
 
       // When
-      const action = page.getByTestId(`landing-action-${title}-btn`);
-      await action.isVisible();
+      const action = page.getByTestId(`landing-action-${i}`);
+      await expect(action).toBeVisible();
 
       // Then
       if ((await action.getAttribute('target')) !== '_blank') {

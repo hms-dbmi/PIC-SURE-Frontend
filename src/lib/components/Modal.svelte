@@ -71,7 +71,7 @@
   {#if !!trigger}
     <button
       type="button"
-      data-testid="{testid}-btn"
+      data-testid="{testid}-trigger"
       title={triggerTitle}
       data-key={dataKey}
       onclick={(e) => {
@@ -91,20 +91,19 @@
     onOpenChange={(e) => (modalOpen = e.open)}
     contentBase="card bg-surface-50-950 p-4 pb-6 space-4 shadow-xl overflow-auto max-w-screen {width} max-h-screen {height} {className}"
     backdropClasses="backdrop-blur-sm"
-    ids={{ content: 'modal-component' }}
     closeOnInteractOutside={closeable}
     closeOnEscape={closeable}
   >
     {#snippet content()}
       <div data-testid={testid}>
         <header
-          data-testid="modal-wrapper-header"
+          data-testid="ui-modal-header"
           class="text-2xl font-bold block {title ? '' : 'text-right'}"
         >
           {#if title}<h2 class="inline text-black dark:text-white">{title}</h2>{/if}
           {#if closeable}<button
               type="button"
-              data-testid="modal-close-button"
+              data-testid="ui-modal-close"
               class="hover:text-secondary-500"
               class:float-right={title}
               onclick={modalClose}>×</button

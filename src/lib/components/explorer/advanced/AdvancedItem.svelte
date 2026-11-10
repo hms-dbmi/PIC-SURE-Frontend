@@ -149,7 +149,7 @@
 
   {#if !isOverlay && activeId === filter.uuid}
     <div
-      data-testid="drop-preview"
+      data-testid="filter-drop-preview"
       class="max-md:hidden absolute inset-0 bg-primary-500/10 border border-dashed border-primary-500 rounded-lg flex items-center justify-center"
     >
       <span class="text-primary-600 text-xs font-semibold uppercase tracking-wide">

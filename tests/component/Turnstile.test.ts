@@ -44,7 +44,7 @@ describe('Turnstile', () => {
       render(Turnstile, { props: { sitekey: SITEKEY, onToken: vi.fn() } });
 
       await waitFor(() => expect(turnstileRender).toHaveBeenCalledTimes(1));
-      expect(screen.getByTestId('turnstile-widget')).toBeInTheDocument();
+      expect(screen.getByTestId('app-turnstile-widget')).toBeInTheDocument();
       expect(renderOptions).toMatchObject({
         sitekey: SITEKEY,
         action: 'generate-api-key',

@@ -45,7 +45,7 @@ const mintedFixture = {
 };
 
 async function openFormAndFill() {
-  await fireEvent.click(screen.getByTestId('mint-platform-key-btn'));
+  await fireEvent.click(screen.getByTestId('admin-api-key-mint-trigger'));
   await fireEvent.input(await screen.findByLabelText(/name/i), {
     target: { value: 'CI Pipeline' },
   });
@@ -71,7 +71,7 @@ describe('MintPlatformKeyModal', () => {
       email: 'ops@example.org',
     });
 
-    const key = await screen.findByTestId('minted-api-key');
+    const key = await screen.findByTestId('admin-api-key-minted-value');
     expect(key).toHaveTextContent(FAKE_KEY);
     expect(screen.getByText('picsure_p_zzz99999…')).toBeInTheDocument();
 
@@ -103,7 +103,7 @@ describe('MintPlatformKeyModal', () => {
     render(MintPlatformKeyModal);
 
     await openFormAndFill();
-    await fireEvent.click(screen.getByTestId('expiry-never'));
+    await fireEvent.click(screen.getByTestId('admin-api-key-expiry-never'));
     await fireEvent.click(screen.getByRole('button', { name: 'Mint Key' }));
 
     expect(storeMocks.mintPlatformKey).toHaveBeenCalledWith({
@@ -119,10 +119,12 @@ describe('MintPlatformKeyModal', () => {
 
     await openFormAndFill();
     await fireEvent.click(screen.getByRole('button', { name: 'Mint Key' }));
-    await screen.findByTestId('minted-api-key');
+    await screen.findByTestId('admin-api-key-minted-value');
 
-    await fireEvent.click(screen.getByTestId('done-minted-key'));
-    await waitFor(() => expect(screen.queryByTestId('minted-api-key')).not.toBeInTheDocument());
+    await fireEvent.click(screen.getByTestId('admin-api-key-minted-done'));
+    await waitFor(() =>
+      expect(screen.queryByTestId('admin-api-key-minted-value')).not.toBeInTheDocument(),
+    );
   });
 
   it('never passes the plaintext key to the logger', async () => {
@@ -131,8 +133,8 @@ describe('MintPlatformKeyModal', () => {
 
     await openFormAndFill();
     await fireEvent.click(screen.getByRole('button', { name: 'Mint Key' }));
-    await screen.findByTestId('minted-api-key');
-    await fireEvent.click(screen.getByTestId('done-minted-key'));
+    await screen.findByTestId('admin-api-key-minted-value');
+    await fireEvent.click(screen.getByTestId('admin-api-key-minted-done'));
 
     const logged = JSON.stringify([vi.mocked(log).mock.calls, vi.mocked(createLog).mock.calls]);
     expect(logged).not.toContain(FAKE_KEY);
@@ -151,8 +153,8 @@ describe('MintPlatformKeyModal', () => {
     await openFormAndFill();
     await fireEvent.click(screen.getByRole('button', { name: 'Mint Key' }));
 
-    const alert = await screen.findByTestId('mint-key-error');
+    const alert = await screen.findByTestId('admin-api-key-mint-error');
     expect(alert).toHaveTextContent('Expiry must be in the future');
-    expect(screen.queryByTestId('minted-api-key')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('admin-api-key-minted-value')).not.toBeInTheDocument();
   });
 });

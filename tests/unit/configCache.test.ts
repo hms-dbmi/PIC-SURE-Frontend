@@ -10,8 +10,6 @@ const ENV_KEYS = [
 
 const savedEnv: Record<string, string | undefined> = {};
 
-const console_def = console;
-
 function jsonResponse(body: unknown) {
   return {
     ok: true,
@@ -30,9 +28,9 @@ describe('configCache', () => {
   let fetchMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    console.error = () => {};
-    console.warn = () => {};
-    console.log = () => {};
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.spyOn(console, 'log').mockImplementation(() => {});
     for (const key of ENV_KEYS) {
       savedEnv[key] = import.meta.env[key];
     }
@@ -59,9 +57,9 @@ describe('configCache', () => {
         import.meta.env[key] = savedEnv[key];
       }
     }
-    console.error = console_def.error;
-    console.warn = console_def.warn;
-    console.log = console_def.log;
+    vi.mocked(console.error).mockRestore();
+    vi.mocked(console.warn).mockRestore();
+    vi.mocked(console.log).mockRestore();
   });
 
   it('caches a kind that succeeds even though another kind fails', async () => {

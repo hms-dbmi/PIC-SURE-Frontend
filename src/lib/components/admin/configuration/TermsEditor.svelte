@@ -43,7 +43,7 @@
     <Modal
       title="Publish"
       width="w-1/3"
-      data-testid="publish-terms"
+      data-testid="admin-terms-publish"
       triggerBase="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500 mt-3"
       disabled={!dirty}
       withDefault={true}

@@ -169,7 +169,11 @@
      mounted, so only the open tab renders its notice. -->
 {#snippet readOnlyNotice(tab: string)}
   {#if !$isTopAdmin && tabSet === tab}
-    <ErrorAlert data-testid="top-admin-only-error" title="Top Administrator Only" color="warning">
+    <ErrorAlert
+      data-testid="admin-top-admin-required"
+      title="Top Administrator Only"
+      color="warning"
+    >
       <p>
         These settings are READ ONLY for admin users. Please contact your administrator to make
         changes.
@@ -188,7 +192,7 @@
     {#snippet content()}
       {#if $isTopAdmin}
         <Tabs.Panel value="Access Control">
-          <div id="role-table" class="mb-10">
+          <div id="admin-role-section" class="mb-10">
             <h2>Roles Management</h2>
             {#await loadRoles()}
               <Loading />
@@ -196,7 +200,7 @@
               <div class="flex gap-4 my-6">
                 <div class="flex-auto">
                   <a
-                    data-testid="add-role"
+                    data-testid="admin-role-add"
                     class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
                     href={resolve('admin/configuration/role/new')}
                   >
@@ -206,6 +210,8 @@
               </div>
               <Datatable
                 tableName="Roles"
+                data-testid="admin-role-table"
+                id="admin-role-table"
                 data={$roles}
                 columns={roleTable.columns}
                 cellOverides={roleTable.overrides}
@@ -218,7 +224,7 @@
               </ErrorAlert>
             {/await}
           </div>
-          <div id="privilege-table" class="mb-10">
+          <div id="admin-privilege-section" class="mb-10">
             <h2>Privileges Management</h2>
             {#await loadAppsAndPriv()}
               <Loading />
@@ -226,7 +232,7 @@
               <div class="flex gap-4 my-6">
                 <div class="flex-auto">
                   <a
-                    data-testid="add-privilege"
+                    data-testid="admin-privilege-add"
                     class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
                     href={resolve('admin/configuration/privilege/new')}
                   >
@@ -236,6 +242,8 @@
               </div>
               <Datatable
                 tableName="Privileges"
+                data-testid="admin-privilege-table"
+                id="admin-privilege-table"
                 data={$privileges}
                 columns={privilegesTable.columns}
                 cellOverides={privilegesTable.overrides}
@@ -248,7 +256,7 @@
               </ErrorAlert>
             {/await}
           </div>
-          <div id="connection-table" class="mb-10">
+          <div id="admin-connection-section" class="mb-10">
             <h2>Connections Management</h2>
             {#await loadConnections()}
               <Loading />
@@ -256,7 +264,7 @@
               <div class="flex gap-4 my-6">
                 <div class="flex-auto">
                   <a
-                    data-testid="add-connection"
+                    data-testid="admin-connection-add"
                     class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
                     href={resolve('admin/configuration/connection/new')}
                   >
@@ -266,6 +274,8 @@
               </div>
               <Datatable
                 tableName="Connections"
+                data-testid="admin-connection-table"
+                id="admin-connection-table"
                 data={$connections}
                 columns={connectionTable.columns}
                 cellOverides={connectionTable.overrides}

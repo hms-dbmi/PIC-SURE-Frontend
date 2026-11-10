@@ -29,7 +29,12 @@
     status: string;
   }
 
-  const { keyType, tableName }: { keyType: ApiKeyType; tableName: string } = $props();
+  const {
+    keyType,
+    tableName,
+    id,
+    'data-testid': testid,
+  }: { keyType: ApiKeyType; tableName: string; id?: string; 'data-testid'?: string } = $props();
 
   let loadError = $state('');
 
@@ -86,7 +91,15 @@
 </script>
 
 {#if loadError}
-  <ErrorAlert title="API Error" data-testid="api-key-list-error">{loadError}</ErrorAlert>
+  <ErrorAlert title="API Error" data-testid="admin-api-key-list-error">{loadError}</ErrorAlert>
 {:else}
-  <RemoteTable {tableName} {handler} {columns} {cellOverides} tableAuto={false} />
+  <RemoteTable
+    {tableName}
+    {id}
+    data-testid={testid}
+    {handler}
+    {columns}
+    {cellOverides}
+    tableAuto={false}
+  />
 {/if}

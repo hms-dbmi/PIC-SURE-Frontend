@@ -64,16 +64,14 @@ function mockSearchResult(conceptPath: string, dataset = 'test-dataset'): Search
     children: [],
   } as SearchResult;
 }
-const console_def = console;
-
 beforeEach(() => {
-  console.error = () => {};
-  console.warn = () => {};
+  vi.spyOn(console, 'error').mockImplementation(() => {});
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
 });
 
 afterEach(() => {
-  console.error = console_def.error;
-  console.warn = console_def.warn;
+  vi.mocked(console.error).mockRestore();
+  vi.mocked(console.warn).mockRestore();
 });
 
 describe('consent-based filter access', () => {

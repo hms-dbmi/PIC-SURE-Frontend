@@ -7,7 +7,6 @@
     variant?: string;
     color?: string;
     disabled?: boolean;
-    name?: string;
     'data-testid'?: string;
     class?: string;
     onclick?: () => void;
@@ -20,8 +19,7 @@
     variant = 'tonal',
     color = 'primary',
     disabled = false,
-    name = '',
-    'data-testid': testid = '',
+    'data-testid': testid,
     class: className = '',
     onclick = () => {},
     children,
@@ -30,7 +28,6 @@
   const btnStyle = $derived(
     `btn btn-sm h-fit border preset-${variant}-${color} hover:preset-filled-${color}-500 text-lg`,
   );
-  const clean_testid = $derived(testid || name.replaceAll(' ', '-').toLowerCase() + '-btn');
 </script>
 
 {#snippet label()}
@@ -42,7 +39,7 @@
 {#if href}
   {#if href.startsWith('/')}
     <a
-      data-testid={clean_testid}
+      data-testid={testid}
       aria-disabled={disabled}
       class="{btnStyle} &[aria-disabled=“true”]:opacity-75 {className}"
       href={resolve(appPath(href))}
@@ -51,7 +48,7 @@
     </a>
   {:else}
     <a
-      data-testid={clean_testid}
+      data-testid={testid}
       aria-disabled={disabled}
       class="{btnStyle} &[aria-disabled=“true”]:opacity-75 {className}"
       rel="external"
@@ -62,7 +59,7 @@
   {/if}
 {:else}
   <button
-    data-testid={clean_testid}
+    data-testid={testid}
     type="button"
     class="{btnStyle} disabled:opacity-75 {className}"
     {onclick}

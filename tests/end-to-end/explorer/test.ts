@@ -15,6 +15,7 @@ import {
 import { type SearchResult } from '../../../src/lib/models/Search';
 import { Internal } from '../../../src/lib/paths';
 import {
+  expectUniqueIds,
   getOption,
   clickNthFilterIcon,
   optionsHaveLoaded,
@@ -38,24 +39,15 @@ test.describe('Explorer for authenticated users', () => {
 
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
-  test('Has filters, and searchbar', async ({ page }) => {
-    // Given
-    await page.goto('/explorer');
-    await userIsLoggedIn(page);
-
-    // Then
-    await expect(page.locator('#search-bar')).toBeVisible();
-    await expect(page.locator('#facet-side-bar')).toBeVisible();
-  });
   test('Has filters, and searchbar when a search is from the landing page', async ({ page }) => {
     // Given
     await page.goto('/');
-    await page.getByTestId('search-box').fill('somedata');
-    await page.locator('#search-button').click();
+    await page.getByTestId('ui-search-input').fill('somedata');
+    await page.locator('#explorer-search-submit').click();
 
     // Then
-    await expect(page.locator('#search-bar')).toBeVisible();
-    await expect(page.locator('#facet-side-bar')).toBeVisible();
+    await expect(page.locator('#explorer-search-bar')).toBeVisible();
+    await expect(page.locator('#explorer-facet-sidebar')).toBeVisible();
   });
   test('Has filters, and searchbar when a search is from the url', async ({ page }) => {
     // Given
@@ -63,8 +55,8 @@ test.describe('Explorer for authenticated users', () => {
     await userIsLoggedIn(page);
 
     // Then
-    await expect(page.locator('#search-bar')).toBeVisible();
-    await expect(page.locator('#facet-side-bar')).toBeVisible();
+    await expect(page.locator('#explorer-search-bar')).toBeVisible();
+    await expect(page.locator('#explorer-facet-sidebar')).toBeVisible();
   });
   test('Facets with zero count are hidden', async ({ page }) => {
     await page.route(facetResultPath, async (route: Route) =>
@@ -75,12 +67,12 @@ test.describe('Explorer for authenticated users', () => {
     await userIsLoggedIn(page);
 
     // Then
-    await expect(page.locator('#facet-side-bar')).toBeVisible();
+    await expect(page.locator('#explorer-facet-sidebar')).toBeVisible();
     await expect(
       page
         .getByTestId('accordion-item')
         .first()
-        .getByTestId(`facet-${facetResponseWithZeroCount[0].name}-label`),
+        .getByTestId(`explorer-facet-label-${facetResponseWithZeroCount[0].name}`),
     ).not.toBeVisible();
   });
   test('Can search with empty search bar', async ({ page }) => {
@@ -89,8 +81,8 @@ test.describe('Explorer for authenticated users', () => {
     await userIsLoggedIn(page);
 
     // Then
-    await expect(page.locator('#search-bar')).toBeVisible();
-    await expect(page.locator('#search-button')).not.toBeDisabled();
+    await expect(page.locator('#explorer-search-bar')).toBeVisible();
+    await expect(page.locator('#explorer-search-submit')).not.toBeDisabled();
   });
   test('Has search result table when search is executed', async ({ page }) => {
     // Given
@@ -101,8 +93,8 @@ test.describe('Explorer for authenticated users', () => {
     await userIsLoggedIn(page);
 
     // When
-    await page.getByTestId('search-box').fill('somedata');
-    await page.locator('#search-button').click();
+    await page.getByTestId('ui-search-input').fill('somedata');
+    await page.locator('#explorer-search-submit').click();
 
     // Then
     await expect(page.locator('table')).toBeVisible();
@@ -113,7 +105,7 @@ test.describe('Explorer for authenticated users', () => {
     await userIsLoggedIn(page);
 
     // Then
-    const actions = page.locator('#ExplorerTable-row-0 td').last().locator('button');
+    const actions = page.locator('#explorer-table-row-0 td').last().locator('button');
     await expect(actions).toHaveCount(4);
     const tops = await actions.evaluateAll((buttons) =>
       buttons.map((button) => Math.round(button.getBoundingClientRect().top)),
@@ -133,7 +125,7 @@ test.describe('Explorer for authenticated users', () => {
     });
 
     // When
-    await page.locator('#search-button').click();
+    await page.locator('#explorer-search-submit').click();
 
     // Then
     await expect
@@ -188,10 +180,10 @@ test.describe('Explorer for authenticated users', () => {
     await userIsLoggedIn(page);
 
     await page.getByLabel('Rows per page').selectOption('100');
-    await expect(
-      page.locator('#ExplorerTable-table tbody tr[id^="ExplorerTable-row-"]'),
-    ).toHaveCount(100);
-    const scrollContainer = page.locator('#page');
+    await expect(page.locator('#explorer-table tbody tr[id^="explorer-table-row-"]')).toHaveCount(
+      100,
+    );
+    const scrollContainer = page.locator('#app-page');
     await scrollContainer.evaluate((element) => element.scrollTo(0, element.scrollHeight));
     expect(await scrollContainer.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
 
@@ -200,8 +192,8 @@ test.describe('Explorer for authenticated users', () => {
     await expect(page.getByText('page-two-result-0', { exact: true })).toBeVisible();
     await expect
       .poll(() =>
-        page.locator('#ExplorerTable-table').evaluate((table) => {
-          const container = document.querySelector('#page');
+        page.locator('#explorer-table').evaluate((table) => {
+          const container = document.querySelector('#app-page');
           return Math.abs(
             table.getBoundingClientRect().top - (container?.getBoundingClientRect().top ?? 0),
           );
@@ -212,7 +204,7 @@ test.describe('Explorer for authenticated users', () => {
     const currentPageButton = page.getByLabel('Page 2');
     await currentPageButton.scrollIntoViewIfNeeded();
     const currentPageScroll = await currentPageButton.evaluate((button) => {
-      const container = document.querySelector('#page');
+      const container = document.querySelector('#app-page');
       if (!container) throw new Error('Page scroll container not found');
 
       const before = container.scrollTop;
@@ -229,7 +221,7 @@ test.describe('Explorer for authenticated users', () => {
     await userIsLoggedIn(page);
 
     // Then
-    await expect(page.getByTestId('error-alert')).toBeVisible();
+    await expect(page.getByTestId('ui-error-alert')).toBeVisible();
   });
   test.describe('Search row actions', () => {
     // TODO: Some feartures will be hidden in the future. Cannot use nth.
@@ -250,7 +242,7 @@ test.describe('Explorer for authenticated users', () => {
 
         // When
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="explorer-table-row-"]').first();
         await expect(firstRow).toBeVisible();
         await firstRow.focus();
         await page.keyboard.press('Enter');
@@ -259,7 +251,7 @@ test.describe('Explorer for authenticated users', () => {
         const infoPanel = tableBody
           .locator('tr.expandable-row')
           .first()
-          .getByTestId('variable-info');
+          .getByTestId('explorer-variable-info');
         await expect(infoPanel).toBeVisible();
 
         // When
@@ -279,22 +271,22 @@ test.describe('Explorer for authenticated users', () => {
 
         // When
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="explorer-table-row-"]').first();
         await expect(firstRow).toBeVisible();
         await firstRow.focus();
         await page.keyboard.press('ArrowDown');
 
         // Then
-        await expect(tableBody.locator('#ExplorerTable-row-1')).toBeFocused();
+        await expect(tableBody.locator('#explorer-table-row-1')).toBeFocused();
 
         // When
         await page.keyboard.press('ArrowUp');
-        await expect(tableBody.locator('#ExplorerTable-row-0')).toBeFocused();
+        await expect(tableBody.locator('#explorer-table-row-0')).toBeFocused();
         await page.keyboard.press('f');
 
         // Then
         await expect(tableBody.locator('tr.expandable-row').first()).toBeVisible();
-        await expect(page.getByTestId('categoical-filter')).toBeVisible();
+        await expect(page.getByTestId('filter-categorical')).toBeVisible();
       });
     });
     test.describe('Info Actions', () => {
@@ -309,7 +301,7 @@ test.describe('Explorer for authenticated users', () => {
         // When
         await expect(page.locator('tbody')).toBeVisible();
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="explorer-table-row-"]').first();
         await expect(firstRow).toBeVisible();
         await firstRow.click();
 
@@ -317,7 +309,7 @@ test.describe('Explorer for authenticated users', () => {
         const infoPanel = tableBody
           .locator('tr.expandable-row')
           .first()
-          .getByTestId('variable-info');
+          .getByTestId('explorer-variable-info');
         await expect(infoPanel).toBeVisible();
       });
       test('Clicking the row again closes the info panel', async ({ page }) => {
@@ -331,7 +323,7 @@ test.describe('Explorer for authenticated users', () => {
         // When
         const tableBody = page.locator('tbody');
         await expect(tableBody).toBeVisible();
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="explorer-table-row-"]').first();
         await expect(firstRow).toBeVisible();
         await firstRow.click();
 
@@ -339,7 +331,7 @@ test.describe('Explorer for authenticated users', () => {
         const infoPanel = tableBody
           .locator('tr.expandable-row')
           .first()
-          .getByTestId('variable-info');
+          .getByTestId('explorer-variable-info');
         await expect(infoPanel).toBeVisible();
 
         // Then
@@ -357,7 +349,7 @@ test.describe('Explorer for authenticated users', () => {
         // When
         await expect(page.locator('tbody')).toBeVisible();
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="explorer-table-row-"]').first();
         const infoIcon = firstRow.locator('td').last().locator('button').first();
         await expect(infoIcon).toBeVisible();
         await infoIcon.click();
@@ -366,7 +358,7 @@ test.describe('Explorer for authenticated users', () => {
         const infoPanel = tableBody
           .locator('tr.expandable-row')
           .first()
-          .getByTestId('variable-info');
+          .getByTestId('explorer-variable-info');
         await expect(infoPanel).toBeVisible();
 
         // Then
@@ -386,7 +378,7 @@ test.describe('Explorer for authenticated users', () => {
         // When
         await expect(page.locator('tbody')).toBeVisible();
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="explorer-table-row-"]').first();
         const infoIcon = firstRow.locator('td').last().locator('button').first();
         await expect(infoIcon).toBeVisible();
         await infoIcon.click();
@@ -394,7 +386,7 @@ test.describe('Explorer for authenticated users', () => {
         // Then
         const infoPanel = tableBody.locator('tr.expandable-row').first();
         await expect(infoPanel).toBeVisible();
-        const variableInfo = infoPanel.getByTestId('variable-info');
+        const variableInfo = infoPanel.getByTestId('explorer-variable-info');
         await expect(variableInfo).toBeVisible();
         // Check Variable Information
         await expect(variableInfo.getByText('Variable Information')).toBeVisible();
@@ -413,7 +405,7 @@ test.describe('Explorer for authenticated users', () => {
         );
 
         // Check Study Information
-        const studyInfo = infoPanel.getByTestId('study-info');
+        const studyInfo = infoPanel.getByTestId('explorer-study-info');
         await expect(studyInfo.getByText('Study Information')).toBeVisible();
         await expect(studyInfo).toContainText('Study Name: ' + detailResponseCat.study.fullName);
         await expect(studyInfo).toContainText('Study Accession: ' + detailResponseCat.study.ref);
@@ -435,13 +427,14 @@ test.describe('Explorer for authenticated users', () => {
         await expect(filterPanel).toBeVisible();
         // Filtered to data rows, so the open expansion row between them - and the
         // spinner row during loading - cannot shift the index.
-        const secondDataRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').nth(1);
+        const secondDataRow = tableBody.locator('tr[id^="explorer-table-row-"]').nth(1);
         await expect(secondDataRow).toBeVisible();
         await secondDataRow.click();
-        await page.waitForTimeout(1000);
 
         // Then
-        const infoPanel = tableBody.locator('tr.expandable-row').getByTestId('variable-info');
+        const infoPanel = tableBody
+          .locator('tr.expandable-row')
+          .getByTestId('explorer-variable-info');
         await expect(infoPanel).toBeVisible();
         await expect(filterPanel).not.toBeVisible();
       });
@@ -486,9 +479,9 @@ test.describe('Explorer for authenticated users', () => {
         const panel = tableBody.locator('tr.expandable-row').first();
         await expect(panel).toBeVisible();
         if (mockdataType === 'Categorical') {
-          await expect(page.getByTestId('categoical-filter')).toBeVisible();
+          await expect(page.getByTestId('filter-categorical')).toBeVisible();
         } else {
-          await expect(page.getByTestId('numerical-filter')).toBeVisible();
+          await expect(page.getByTestId('filter-numerical')).toBeVisible();
         }
       });
       test('Clicking the filter button opens the correct filter panel (numerical)', async ({
@@ -510,9 +503,9 @@ test.describe('Explorer for authenticated users', () => {
         const panel = tableBody.locator('tr.expandable-row').first();
         await expect(panel).toBeVisible();
         if (mockdataType === 'Categorical') {
-          await expect(page.getByTestId('categoical-filter')).toBeVisible();
+          await expect(page.getByTestId('filter-categorical')).toBeVisible();
         } else {
-          await expect(page.getByTestId('numerical-filter')).toBeVisible();
+          await expect(page.getByTestId('filter-numerical')).toBeVisible();
         }
       });
       test('Searching in filter shows only searched options', async ({ page }) => {
@@ -534,7 +527,7 @@ test.describe('Explorer for authenticated users', () => {
 
         // When
         await page
-          .getByTestId('optional-selection-list')
+          .getByTestId('ui-options-selection-list')
           .getByPlaceholder('Search...')
           .fill(searchValue);
 
@@ -543,7 +536,7 @@ test.describe('Explorer for authenticated users', () => {
           value.toLowerCase().includes(searchValue.toLowerCase());
         const include = (row.values || []).filter(searchString);
         const exclude = (row.values || []).filter((value) => !searchString(value));
-        const options = page.locator('#options-container');
+        const options = page.getByTestId('ui-options-selection-list-available');
         await Promise.all([
           ...include.map((value) =>
             expect(options.getByLabel(value, { exact: true })).toBeVisible(),
@@ -552,6 +545,7 @@ test.describe('Explorer for authenticated users', () => {
             expect(options.getByLabel(value, { exact: true })).not.toBeVisible(),
           ),
         ]);
+        await expectUniqueIds(page);
       });
       test('Select all disabled when all options are added', async ({ page }) => {
         // Given
@@ -569,11 +563,11 @@ test.describe('Explorer for authenticated users', () => {
         await clickNthFilterIcon(page, 0);
 
         // When
-        const searchBtn = page.locator('#select-all');
-        await page.locator('#select-all').click();
+        const searchBtn = page.getByTestId('ui-options-selection-list-select-all');
+        await page.getByTestId('ui-options-selection-list-select-all').click();
 
         // Then
-        await expect(page.locator('#options-container')).toBeEmpty();
+        await expect(page.getByTestId('ui-options-selection-list-available')).toBeEmpty();
         await expect(searchBtn).toBeDisabled();
       });
       test('The dictionary details are different for the same dataset', async ({ page }) => {
@@ -632,7 +626,7 @@ test.describe('Explorer for authenticated users', () => {
         expect(firstItemText?.trim()).toBe(detailResponseCat.values[0]);
         // Close the filter panel and wait for it to fully disappear
         await clickNthFilterIcon(page);
-        await expect(page.getByTestId('optional-selection-list')).toHaveCount(0);
+        await expect(page.getByTestId('ui-options-selection-list')).toHaveCount(0);
 
         // Then Given
         await page.route(
@@ -650,7 +644,7 @@ test.describe('Explorer for authenticated users', () => {
         // Then Given
         // This should not be hit so I am putting detailResponseCat2 which is wrong
         await clickNthFilterIcon(page, 1);
-        await expect(page.getByTestId('optional-selection-list')).toHaveCount(0);
+        await expect(page.getByTestId('ui-options-selection-list')).toHaveCount(0);
         await page.route(
           `${conceptsDetailPath}/${detailResponseCat.dataset}`,
           async (route: Route) => route.fulfill({ json: detailResponseCat2 }),
@@ -677,7 +671,7 @@ test.describe('Explorer for authenticated users', () => {
         // When
         await expect(page.locator('tbody')).toBeVisible();
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="explorer-table-row-"]').first();
         const exportButton = firstRow.locator('td').last().locator('button').last();
         await expect(exportButton).toBeVisible();
         const iconExport = exportButton.locator('i');
@@ -700,7 +694,7 @@ test.describe('Explorer for authenticated users', () => {
         // When
         await expect(page.locator('tbody')).toBeVisible();
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="explorer-table-row-"]').first();
         const exportButton = firstRow.locator('td').last().locator('button').last();
         await exportButton.click();
 
@@ -720,14 +714,14 @@ test.describe('Explorer for authenticated users', () => {
         // When
         await expect(page.locator('tbody')).toBeVisible();
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="explorer-table-row-"]').first();
         const exportButton = firstRow.locator('td').last().locator('button').last();
         await exportButton.click();
 
         // Then
-        await expect(page.getByTestId('export-header')).toBeVisible();
+        await expect(page.getByTestId('results-exports-header')).toBeVisible();
         await expect(
-          page.getByTestId(`added-export-${mockData.content[0].conceptPath}`),
+          page.getByTestId(`results-export-item-${mockData.content[0].conceptPath}`),
         ).toBeVisible();
       });
       test('Clicking an export remove button removes the export', async ({ page }) => {
@@ -742,18 +736,17 @@ test.describe('Explorer for authenticated users', () => {
         // When
         await expect(page.locator('tbody')).toBeVisible();
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="explorer-table-row-"]').first();
         const exportButton = firstRow.locator('td').last().locator('button').last();
         await exportButton.click();
-        const removeButton = page
-          .getByTestId(`added-export-${mockData.content[0].conceptPath}`)
-          .locator('button');
-        removeButton.click();
+        const addedExport = page.getByTestId(
+          `results-export-item-${mockData.content[0].conceptPath}`,
+        );
+        await expect(addedExport).toBeVisible();
+        await addedExport.locator('button').click();
         // Then
-        await expect(page.getByTestId('export-header')).not.toBeVisible();
-        await expect(
-          page.getByTestId(`added-export-${mockData.content[0].display}`),
-        ).not.toBeVisible();
+        await expect(page.getByTestId('results-exports-header')).not.toBeVisible();
+        await expect(addedExport).not.toBeVisible();
       });
       test('Clicking a second export adds a second export', async ({ page }) => {
         // Given
@@ -766,20 +759,20 @@ test.describe('Explorer for authenticated users', () => {
         // When
         await expect(page.locator('tbody')).toBeVisible();
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="explorer-table-row-"]').first();
         const exportButton = firstRow.locator('td').last().locator('button').last();
-        const firstRow2 = tableBody.locator('tr[id^="ExplorerTable-row-"]').nth(1);
+        const firstRow2 = tableBody.locator('tr[id^="explorer-table-row-"]').nth(1);
         const exportButton2 = firstRow2.locator('td').last().locator('button').last();
         await exportButton.click();
         await exportButton2.click();
 
         // Then
-        await expect(page.getByTestId('export-header')).toBeVisible();
+        await expect(page.getByTestId('results-exports-header')).toBeVisible();
         await expect(
-          page.getByTestId(`added-export-${mockData.content[0].conceptPath}`),
+          page.getByTestId(`results-export-item-${mockData.content[0].conceptPath}`),
         ).toBeVisible();
         await expect(
-          page.getByTestId(`added-export-${mockData.content[1].conceptPath}`),
+          page.getByTestId(`results-export-item-${mockData.content[1].conceptPath}`),
         ).toBeVisible();
       });
       test('Exports remmain after closing and opening the results panel', async ({ page }) => {
@@ -793,9 +786,9 @@ test.describe('Explorer for authenticated users', () => {
         // When
         await expect(page.locator('tbody')).toBeVisible();
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="explorer-table-row-"]').first();
         const exportButton = firstRow.locator('td').last().locator('button').last();
-        const firstRow2 = tableBody.locator('tr[id^="ExplorerTable-row-"]').nth(1);
+        const firstRow2 = tableBody.locator('tr[id^="explorer-table-row-"]').nth(1);
         const exportButton2 = firstRow2.locator('td').last().locator('button').last();
         await exportButton.click();
         await exportButton2.click();
@@ -807,12 +800,12 @@ test.describe('Explorer for authenticated users', () => {
 
         // Then
         await expect(page.locator('#results-panel')).toBeVisible();
-        await expect(page.getByTestId('export-header')).toBeVisible();
+        await expect(page.getByTestId('results-exports-header')).toBeVisible();
         await expect(
-          page.getByTestId(`added-export-${mockData.content[0].conceptPath}`),
+          page.getByTestId(`results-export-item-${mockData.content[0].conceptPath}`),
         ).toBeVisible();
         await expect(
-          page.getByTestId(`added-export-${mockData.content[1].conceptPath}`),
+          page.getByTestId(`results-export-item-${mockData.content[1].conceptPath}`),
         ).toBeVisible();
       });
     });
@@ -829,7 +822,7 @@ test.describe('Explorer for authenticated users', () => {
         await userIsLoggedIn(page);
         // When
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="explorer-table-row-"]').first();
         const hierarchyButton = firstRow.locator('td').last().locator('button').nth(2);
         await hierarchyButton.click();
       });
@@ -837,58 +830,43 @@ test.describe('Explorer for authenticated users', () => {
         // When
         await expect(page.locator('tbody')).toBeVisible();
         // Then
-        await expect(page.getByTestId('hierarchy-component')).toBeVisible();
+        await expect(page.getByTestId('explorer-hierarchy')).toBeVisible();
       });
       test('Hierarchy component is not visible when action button is clicked again', async ({
         page,
       }) => {
         // When
-        await expect(page.getByTestId('hierarchy-component')).toBeVisible();
+        await expect(page.getByTestId('explorer-hierarchy')).toBeVisible();
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="explorer-table-row-"]').first();
         const hierarchyButton = firstRow.locator('td').last().locator('button').nth(2);
         await hierarchyButton.click();
         // Then
-        await expect(page.getByTestId('hierarchy-component')).not.toBeVisible();
+        await expect(page.getByTestId('explorer-hierarchy')).not.toBeVisible();
       });
       test('Hierarchy component data is expected', async ({ page }) => {
-        // Then
-        await expect(page.getByTestId('hierarchy-component')).toBeVisible();
-        const hierarchyComponent = page.getByTestId('hierarchy-component');
-        const treeItems = await hierarchyComponent.locator('details').all();
-        const conceptPathItems = hierarchyResponse.reverse();
-        for (let i = 0; i < conceptPathItems.length; i++) {
-          const treeItem = treeItems[i];
-          const treeItemText = await treeItem.locator('> summary label').textContent();
-          expect(treeItemText).toContain(conceptPathItems[i].display);
-          expect(treeItemText).toContain(conceptPathItems[i].name);
-        }
+        // Then: the tree runs from the shallowest concept down to the selected one
+        const labels = page.getByTestId('explorer-hierarchy').locator('label');
+        await expect(labels).toHaveText(
+          [...hierarchyResponse].reverse().map(({ display, name }) => `${display} (${name})`),
+        );
       });
       test("Hierarchy component's last item is the only one selected", async ({ page }) => {
         // Then
-        const allRadioButtons = await page
-          .locator('details')
-          .locator('summary')
-          .locator('input')
-          .all();
-        for (let i = 0; i < allRadioButtons.length - 1; i++) {
-          if (i === allRadioButtons.length) {
-            await expect(allRadioButtons[i]).toBeChecked();
-          } else {
-            await expect(allRadioButtons[i]).not.toBeChecked();
-          }
+        const radios = page.getByTestId('explorer-hierarchy').getByRole('radio');
+        await expect(radios).toHaveCount(hierarchyResponse.length);
+        for (let i = 0; i < hierarchyResponse.length - 1; i++) {
+          await expect(radios.nth(i)).not.toBeChecked();
         }
+        await expect(radios.last()).toBeChecked();
       });
       test("Hierarchy component's last radio buttons are selectable", async ({ page }) => {
         // Then
-        const allRadioButtons = await page
-          .locator('details')
-          .locator('summary')
-          .locator('input')
-          .all();
-        for (let i = 0; i < allRadioButtons.length; i++) {
-          await allRadioButtons[i].click();
-          await expect(allRadioButtons[i]).toBeChecked();
+        const radios = page.getByTestId('explorer-hierarchy').getByRole('radio');
+        await expect(radios).toHaveCount(hierarchyResponse.length);
+        for (let i = 0; i < hierarchyResponse.length; i++) {
+          await radios.nth(i).click();
+          await expect(radios.nth(i)).toBeChecked();
         }
       });
     });
@@ -916,7 +894,7 @@ test.describe('Explorer for unauthenticated users', () => {
     // Then
     await expect(page).toHaveURL('/explorer');
     await userIsLoggedOut(page);
-    await expect(page.locator('#search-bar')).toBeVisible();
+    await expect(page.locator('#explorer-search-bar')).toBeVisible();
   });
 
   test('User is prompted to login if not authenticated and explorer is not open', async ({

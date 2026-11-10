@@ -33,7 +33,7 @@
 </script>
 
 <div
-  id="plot-{index}"
+  id="explorer-plot-{index}"
   aria-label={screenReaderText + meta.unformatedTitle}
   title={'Visualization of ' + meta.unformatedTitle}
   bind:this={plotContainer}

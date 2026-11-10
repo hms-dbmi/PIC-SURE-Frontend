@@ -89,7 +89,7 @@
     <div class="flex gap-4 mb-6">
       <div class="flex-auto">
         <a
-          data-testid="add-user-btn"
+          data-testid="admin-user-add"
           class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
           href={resolve('admin/users/new')}
         >
@@ -97,10 +97,12 @@
         </a>
       </div>
     </div>
-    {#each $usersByConnection as connection}
-      <div id={`user-table-${connection.label.replaceAll(' ', '_')}`} class="mb-10">
+    {#each $usersByConnection as connection, i}
+      <div class="mb-10">
         <Datatable
           tableName="Users-{connection.label}"
+          data-testid="admin-user-table-{i}"
+          id="admin-user-table-{i}"
           data={connection.users}
           {columns}
           {cellOverides}

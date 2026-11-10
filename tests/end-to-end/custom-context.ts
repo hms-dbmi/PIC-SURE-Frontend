@@ -1,8 +1,21 @@
-import { test as base, type Route, type BrowserContext, type Page } from '@playwright/test';
+import { test as base, expect, type Route, type BrowserContext, type Page } from '@playwright/test';
 import type { TestInfo } from '@playwright/test';
 import type { ConfigCache } from '../../src/lib/models/Configuration';
+import type { ExpectedResultType } from '../../src/lib/models/query/Query';
 import { TEST_CONFIG_COOKIE } from '../../src/lib/testConfig';
+import * as mockData from './mock-data';
 import { configurationPath } from './mock-data';
+
+// Fixtures are shared by every test in a worker, so a test that mutates one silently changes
+// what later tests see. Freeze them so a mutation throws where it happens instead; spread a
+// copy (`{ ...picsureUser, token }`) to customise one.
+function deepFreeze(value: unknown) {
+  if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+    Object.freeze(value);
+    Object.values(value).forEach(deepFreeze);
+  }
+}
+Object.values(mockData).forEach(deepFreeze);
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export function mockApiSuccess(context: BrowserContext | Page, path: string, json: any) {
@@ -22,6 +35,32 @@ export function mockApiSuccessByMethod(
     }
     await route.fallback();
   });
+}
+
+// HPDS answers every query on one endpoint and decides what to return from the request's
+// expectedResultType. Give the response per type; a type the test didn't list falls through
+// to the fixture's unmocked-call check, which fails the test and names the type. An Error
+// value aborts that type's request instead.
+export function mockQuerySync(
+  context: BrowserContext | Page,
+  results: Partial<Record<ExpectedResultType, unknown>>,
+  access: 'auth' | 'open' = 'auth',
+) {
+  return context.route(`*/**/picsure/hpds/${access}/query/sync`, (route: Route) => {
+    const type: ExpectedResultType = route.request().postDataJSON()?.query?.expectedResultType;
+    if (!(type in results)) return route.fallback();
+    const result = results[type];
+    return result instanceof Error ? route.abort('failed') : route.fulfill({ json: result });
+  });
+}
+
+function pagePathname(route: Route): string | undefined {
+  try {
+    return new URL(route.request().frame().url()).pathname;
+  } catch {
+    // Service worker requests have no frame
+    return undefined;
+  }
 }
 
 export function mockApiFail(
@@ -118,22 +157,69 @@ export const test = base.extend({
     await context.route('**/api/v1/log', (route) =>
       route.fulfill({ status: 202, json: { result: 'accepted' } }),
     );
-    await context.route('**/*', (request) => {
-      const url = request.request().url();
-      if (
-        // url.startsWith('https://www.googletagmanager.com') // Google Analytics
-        !url.startsWith('http://localhost') // ignore all non local api endpoints to improve speed.
-      ) {
-        request.abort();
-      } else {
-        request.continue();
+    // Backend calls that no test route answered. Every route a test registers is registered
+    // after this one, so it runs first; anything that reaches here would otherwise hit the
+    // preview server (which has no backend) and fail in a way the test never asked for.
+    const unmockedApiCalls: string[] = [];
+    await context.route('**/*', (route) => {
+      const url = new URL(route.request().url());
+      if (url.hostname !== 'localhost') {
+        // ignore all non local api endpoints to improve speed.
+        return route.abort();
       }
+      if (/\/(picsure|psama)\//.test(url.pathname)) {
+        const resultType = url.pathname.endsWith('/query/sync')
+          ? ` (${route.request().postDataJSON()?.query?.expectedResultType})`
+          : '';
+        unmockedApiCalls.push(
+          `${route.request().method()} ${url.pathname}${url.search}${resultType}`,
+        );
+        return route.fulfill({ status: 501, body: 'Not mocked by this test' });
+      }
+      // fallback(), not continue(): continue() sends the request straight to the network,
+      // skipping context routes registered before this one (e.g. the log stub above).
+      return route.fallback();
     });
 
     // Stub TOS endpoint so the terms modal doesn't block authenticated tests
     await context.route('*/**/psama/tos/latest', (route) =>
       route.fulfill({ status: 200, body: '<p>Test Terms of Service</p>' }),
     );
+    // Anonymous pages ask PSAMA for an open-access session before their first data request. A 404
+    // means sessions are off here, so requests go out keyless; session tests answer it themselves.
+    await context.route('**/psama/open/session', (route) => route.fulfill({ status: 404 }));
+
+    // An empty backend for reads pages make incidentally: the banner feed on every page, the
+    // API page's documentation registry, and the admin Configuration tabs' lists. GET only, so
+    // an unmocked write still fails the test. Tests that care register their own routes,
+    // which run before these.
+    const emptyReads: [string, unknown][] = [
+      ['**/picsure/operations/banners/active', []],
+      ['**/picsure/operations/banners', []],
+      ['**/picsure/openapi', []],
+      ['**/psama/role', []],
+      ['**/psama/privilege', []],
+      ['**/psama/connection', []],
+      ['**/psama/application', []],
+    ];
+    for (const [path, json] of emptyReads) {
+      await mockApiSuccessByMethod(context, path, 'GET', json);
+    }
+    // The landing page loads its stats from the same endpoints the explorer uses, so answer
+    // them empty only while the page is the landing page; elsewhere they must be mocked.
+    const emptyLandingStats: [string, unknown][] = [
+      [
+        '**/picsure/dictionary/concepts?page_number=1&page_size=1',
+        { content: [], totalElements: 0 },
+      ],
+      ['**/picsure/dictionary/facets', []],
+      ['**/picsure/hpds/*/query/sync', 0],
+    ];
+    for (const [path, json] of emptyLandingStats) {
+      await context.route(path, (route) =>
+        pagePathname(route) === '/' ? route.fulfill({ json }) : route.fallback(),
+      );
+    }
 
     // The admin Configuration page mounts all of its tabs' content up front (see
     // ConfigKindTab.svelte), so every test that visits /admin/configuration - not just
@@ -142,15 +228,35 @@ export const test = base.extend({
     // that care about specific rows override per-kind via a page-level mockApiSuccess,
     // which takes precedence over this context-level default.
     await context.route(`${configurationPath}?kind=*`, (route) => route.fulfill({ json: [] }));
-    // Site banners is the first tab plain admins see there, so it loads on their every visit.
-    await context.route('**/picsure/operations/banners', (route) =>
-      route.request().method() === 'GET' ? route.fulfill({ json: [] }) : route.fallback(),
-    );
 
-    use(context);
+    await use(context);
+
+    expect(
+      [...new Set(unmockedApiCalls)],
+      'API calls this test did not mock (mock them, or mockApiFail them on purpose)',
+    ).toEqual([]);
   },
   page: async ({ page }, use, testInfo) => {
     await mockApiSuccess(page, 'https://www.googletagmanager.com/**/*', {});
+    // Clicks that land before hydration are silently dropped, so page loads wait for the root
+    // layout's hydration marker (see src/routes/+layout.svelte) before returning.
+    const waitForHydration = async () => {
+      if (new URL(page.url()).hostname === 'localhost') {
+        await page.locator('html[data-hydrated]').waitFor({ state: 'attached' });
+      }
+    };
+    const goto = page.goto.bind(page);
+    page.goto = async (url, options) => {
+      const response = await goto(url, options);
+      await waitForHydration();
+      return response;
+    };
+    const reload = page.reload.bind(page);
+    page.reload = async (options) => {
+      const response = await reload(options);
+      await waitForHydration();
+      return response;
+    };
     await use(page);
     // Take screenshot on failure
     await screenshotOnFailure({ page }, testInfo);

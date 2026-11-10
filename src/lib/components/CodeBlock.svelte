@@ -30,7 +30,7 @@
     itemToCopy={code}
     {logAction}
     {logMetadata}
-    data-testid="code-block-copy"
+    data-testid="ui-code-block-copy"
     class="absolute top-2 right-2 text-surface-300"
   />
   <!-- eslint-disable-next-line svelte/no-at-html-tags -->

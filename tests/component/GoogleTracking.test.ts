@@ -112,7 +112,7 @@ describe('GoogleTracking', () => {
 
     const analyticsScriptsBefore = injectedScripts.filter((s) => s.id === 'analytics').length;
 
-    await fireEvent.click(screen.getByTestId('acceptGoogleConsent'));
+    await fireEvent.click(screen.getByTestId('app-consent-accept'));
 
     const update = findCommand('consent', 'update');
     expect(update, 'expected a consent "update" command after Accept').toBeDefined();
@@ -141,7 +141,7 @@ describe('GoogleTracking', () => {
     // Tracking still initializes despite the bad stored value...
     expect(findCommand('config')).toBeDefined();
     // ...and a malformed value is treated as "no valid consent", so we re-prompt.
-    expect(screen.queryByTestId('consentModal')).not.toBeNull();
+    expect(screen.queryByTestId('app-consent-modal')).not.toBeNull();
   });
 
   it('falls back to deny-all without throwing when localStorage access is blocked', () => {
@@ -165,7 +165,7 @@ describe('GoogleTracking', () => {
 
     // Should not throw even though setItem is blocked; if updateConsent rethrew,
     // the click handler would reject and this await would fail the test.
-    await fireEvent.click(screen.getByTestId('acceptGoogleConsent'));
+    await fireEvent.click(screen.getByTestId('app-consent-accept'));
 
     // The choice still applies for the session via a consent update.
     const update = findCommand('consent', 'update');

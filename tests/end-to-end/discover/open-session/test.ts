@@ -79,7 +79,7 @@ test.describe('Open-access session for anonymous discover', () => {
     );
 
     await page.goto('/discover?search=somedata');
-    await expect(page.locator('#search-bar')).toBeVisible();
+    await expect(page.locator('#explorer-search-bar')).toBeVisible();
 
     await expect
       .poll(() => page.evaluate(() => localStorage.getItem('open-session')))
@@ -107,7 +107,7 @@ test.describe('Open-access session for anonymous discover', () => {
     );
 
     await page.goto('/discover?search=somedata');
-    await expect(page.locator('#search-bar')).toBeVisible();
+    await expect(page.locator('#explorer-search-bar')).toBeVisible();
 
     await expect
       .poll(() => page.evaluate(() => localStorage.getItem('open-session')))

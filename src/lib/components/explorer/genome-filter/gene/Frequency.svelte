@@ -10,7 +10,7 @@
 <label class="cursor-pointer block hover:preset-tonal-surface hover:rounded-md">
   <input
     bind:group={$selectedFrequency}
-    id="Rare"
+    id="genomic-frequency-rare"
     type="checkbox"
     value="Rare"
     onchange={() => onFrequencyChange('Rare')}
@@ -20,7 +20,7 @@
 <label class="cursor-pointer block hover:preset-tonal-surface hover:rounded-md">
   <input
     bind:group={$selectedFrequency}
-    id="Common"
+    id="genomic-frequency-common"
     type="checkbox"
     value="Common"
     onchange={() => onFrequencyChange('Common')}
@@ -30,7 +30,7 @@
 <label class="cursor-pointer block hover:preset-tonal-surface hover:rounded-md">
   <input
     bind:group={$selectedFrequency}
-    id="Novel"
+    id="genomic-frequency-novel"
     type="checkbox"
     value="Novel"
     onchange={() => onFrequencyChange('Novel')}

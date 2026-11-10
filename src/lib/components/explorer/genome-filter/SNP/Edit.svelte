@@ -8,7 +8,7 @@
 </script>
 
 <span class="mr-4">{snp.search}</span>
-<select class="!w-96" data-testid="snp-constraint" required bind:value={constraint}>
+<select class="!w-96" data-testid="genomic-snp-constraint" required bind:value={constraint}>
   <option selected disabled value>Select Genotype</option>
   <option value={Genotype.Heterozygous}>Heterozygous</option>
   <option value={Genotype.Homozygous}>Homozygous</option>
@@ -18,7 +18,7 @@
 <button
   type="button"
   aria-label="Save SNP"
-  data-testid="snp-save-btn"
+  data-testid="genomic-snp-save"
   class="btn btn-sm preset-filled-primary-500 text-lg disabled:opacity-75"
   onclick={() => onsave({ search: snp.search, constraint })}
   disabled={constraint === ''}

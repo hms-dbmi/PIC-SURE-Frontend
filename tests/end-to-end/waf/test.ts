@@ -77,7 +77,7 @@ test.describe('AWS WAF CAPTCHA recovery', () => {
     expect(logActions.filter((action) => action === 'waf.captcha_shown')).toHaveLength(1);
     expect(logActions.filter((action) => action === 'waf.captcha_resolved')).toHaveLength(1);
 
-    await expect(page.locator('#search-bar')).toBeVisible();
+    await expect(page.locator('#explorer-search-bar')).toBeVisible();
 
     expect(await page.evaluate(() => sessionStorage.getItem('waf-captcha-pending'))).toBeNull();
     expect(await page.evaluate(() => sessionStorage.getItem('waf-captcha-guard'))).not.toBeNull();

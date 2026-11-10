@@ -66,10 +66,10 @@ describe('ConfigFieldRow', () => {
 
     render(ConfigFieldRow, baseProps(booleanSchema));
 
-    const checkbox = screen.getByTestId('config-field-input-ENABLE_FOO') as HTMLInputElement;
+    const checkbox = screen.getByTestId('admin-config-field-input-ENABLE_FOO') as HTMLInputElement;
     expect(checkbox.checked).toBe(true);
     // Pre-populated, unedited state must not look dirty - Save stays hidden entirely.
-    expect(screen.queryByTestId('config-field-save-ENABLE_FOO')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('admin-config-field-save-ENABLE_FOO')).not.toBeInTheDocument();
   });
 
   it('pre-populates a boolean field from its schema default when there is no API row or env var', () => {
@@ -77,9 +77,9 @@ describe('ConfigFieldRow', () => {
 
     render(ConfigFieldRow, baseProps({ ...booleanSchema, default: true }));
 
-    const checkbox = screen.getByTestId('config-field-input-ENABLE_FOO') as HTMLInputElement;
+    const checkbox = screen.getByTestId('admin-config-field-input-ENABLE_FOO') as HTMLInputElement;
     expect(checkbox.checked).toBe(true);
-    expect(screen.queryByTestId('config-field-save-ENABLE_FOO')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('admin-config-field-save-ENABLE_FOO')).not.toBeInTheDocument();
   });
 
   it('pre-populates a text field from its schema default', () => {
@@ -87,9 +87,9 @@ describe('ConfigFieldRow', () => {
 
     render(ConfigFieldRow, baseProps(stringSchema));
 
-    const input = screen.getByTestId('config-field-input-APP_NAME') as HTMLInputElement;
+    const input = screen.getByTestId('admin-config-field-input-APP_NAME') as HTMLInputElement;
     expect(input.value).toBe('PIC-SURE');
-    expect(screen.queryByTestId('config-field-save-APP_NAME')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('admin-config-field-save-APP_NAME')).not.toBeInTheDocument();
   });
 
   it('prefers the API row value over env/default when origin is api', () => {
@@ -102,9 +102,9 @@ describe('ConfigFieldRow', () => {
 
     render(ConfigFieldRow, baseProps(stringSchema, { [apiRow.name]: apiRow }));
 
-    expect((screen.getByTestId('config-field-input-APP_NAME') as HTMLInputElement).value).toBe(
-      'Custom Name',
-    );
+    expect(
+      (screen.getByTestId('admin-config-field-input-APP_NAME') as HTMLInputElement).value,
+    ).toBe('Custom Name');
   });
 
   it('shows Save, enabled, once the pre-populated value is edited', async () => {
@@ -112,12 +112,12 @@ describe('ConfigFieldRow', () => {
 
     render(ConfigFieldRow, baseProps(stringSchema));
 
-    const input = screen.getByTestId('config-field-input-APP_NAME');
-    expect(screen.queryByTestId('config-field-save-APP_NAME')).not.toBeInTheDocument();
+    const input = screen.getByTestId('admin-config-field-input-APP_NAME');
+    expect(screen.queryByTestId('admin-config-field-save-APP_NAME')).not.toBeInTheDocument();
 
     await fireEvent.input(input, { target: { value: 'Something Else' } });
 
-    expect(screen.getByTestId('config-field-save-APP_NAME')).toBeEnabled();
+    expect(screen.getByTestId('admin-config-field-save-APP_NAME')).toBeEnabled();
   });
 
   it('disables inputs when the field is disabled (env overrides in override mode)', () => {
@@ -129,9 +129,9 @@ describe('ConfigFieldRow', () => {
 
     render(ConfigFieldRow, baseProps(booleanSchema));
 
-    expect(screen.getByTestId('config-field-input-ENABLE_FOO')).toBeDisabled();
+    expect(screen.getByTestId('admin-config-field-input-ENABLE_FOO')).toBeDisabled();
     // Unedited (not dirty), so Save stays hidden regardless of the disabled state.
-    expect(screen.queryByTestId('config-field-save-ENABLE_FOO')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('admin-config-field-save-ENABLE_FOO')).not.toBeInTheDocument();
   });
 
   it('saves an edited value by adding a new API row when none exists yet', async () => {
@@ -140,10 +140,10 @@ describe('ConfigFieldRow', () => {
 
     render(ConfigFieldRow, baseProps(stringSchema));
 
-    await fireEvent.input(screen.getByTestId('config-field-input-APP_NAME'), {
+    await fireEvent.input(screen.getByTestId('admin-config-field-input-APP_NAME'), {
       target: { value: 'New Name' },
     });
-    await fireEvent.click(screen.getByTestId('config-field-save-APP_NAME'));
+    await fireEvent.click(screen.getByTestId('admin-config-field-save-APP_NAME'));
 
     expect(mockAddConfigRow).toHaveBeenCalledWith('features', 'APP_NAME', 'New Name');
     expect(mockUpdateConfigRow).not.toHaveBeenCalled();
@@ -160,10 +160,10 @@ describe('ConfigFieldRow', () => {
 
     render(ConfigFieldRow, baseProps(stringSchema, { [apiRow.name]: apiRow }));
 
-    await fireEvent.input(screen.getByTestId('config-field-input-APP_NAME'), {
+    await fireEvent.input(screen.getByTestId('admin-config-field-input-APP_NAME'), {
       target: { value: 'Updated Name' },
     });
-    await fireEvent.click(screen.getByTestId('config-field-save-APP_NAME'));
+    await fireEvent.click(screen.getByTestId('admin-config-field-save-APP_NAME'));
 
     expect(mockUpdateConfigRow).toHaveBeenCalledWith('features', {
       ...apiRow,
@@ -182,7 +182,7 @@ describe('ConfigFieldRow', () => {
 
     render(ConfigFieldRow, baseProps(stringSchema, { [apiRow.name]: apiRow }));
 
-    await fireEvent.click(screen.getByTestId('config-field-reset-APP_NAME'));
+    await fireEvent.click(screen.getByTestId('admin-config-field-reset-APP_NAME'));
 
     expect(mockDeleteConfigRow).toHaveBeenCalledWith('features', 'row-1');
   });
@@ -193,10 +193,10 @@ describe('ConfigFieldRow', () => {
 
     render(ConfigFieldRow, baseProps({ ...stringSchema, description: longDescription }));
 
-    const description = screen.getByTestId('config-field-description-APP_NAME');
+    const description = screen.getByTestId('admin-config-field-description-APP_NAME');
     expect(description.textContent?.length).toBeLessThan(longDescription.length);
 
-    await fireEvent.click(screen.getByTestId('config-field-expand-APP_NAME'));
+    await fireEvent.click(screen.getByTestId('admin-config-field-expand-APP_NAME'));
 
     expect(description.textContent).toBe(longDescription);
   });
@@ -208,8 +208,10 @@ describe('ConfigFieldRow', () => {
 
     render(ConfigFieldRow, baseProps({ ...stringSchema, description }));
 
-    expect(screen.getByTestId('config-field-description-APP_NAME').textContent).toBe(description);
-    expect(screen.queryByTestId('config-field-expand-APP_NAME')).not.toBeInTheDocument();
+    expect(screen.getByTestId('admin-config-field-description-APP_NAME').textContent).toBe(
+      description,
+    );
+    expect(screen.queryByTestId('admin-config-field-expand-APP_NAME')).not.toBeInTheDocument();
   });
 
   it('does not show a Show more toggle for a short description', () => {
@@ -217,7 +219,7 @@ describe('ConfigFieldRow', () => {
 
     render(ConfigFieldRow, baseProps(stringSchema));
 
-    expect(screen.queryByTestId('config-field-expand-APP_NAME')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('admin-config-field-expand-APP_NAME')).not.toBeInTheDocument();
   });
 
   it('disables Save for an invalid integer value', async () => {
@@ -232,11 +234,11 @@ describe('ConfigFieldRow', () => {
 
     render(ConfigFieldRow, baseProps(intSchema));
 
-    const input = screen.getByTestId('config-field-input-MAX_ITEMS') as HTMLInputElement;
+    const input = screen.getByTestId('admin-config-field-input-MAX_ITEMS') as HTMLInputElement;
     await fireEvent.input(input, { target: { value: '12abc' } });
 
-    expect(screen.getByTestId('config-field-error-MAX_ITEMS')).toBeInTheDocument();
-    expect(screen.getByTestId('config-field-save-MAX_ITEMS')).toBeDisabled();
+    expect(screen.getByTestId('admin-config-field-error-MAX_ITEMS')).toBeInTheDocument();
+    expect(screen.getByTestId('admin-config-field-save-MAX_ITEMS')).toBeDisabled();
   });
 
   it('disables Save for malformed JSON', async () => {
@@ -251,11 +253,11 @@ describe('ConfigFieldRow', () => {
 
     render(ConfigFieldRow, baseProps(jsonSchema));
 
-    const textarea = screen.getByTestId('config-field-input-BAD_JSON') as HTMLTextAreaElement;
+    const textarea = screen.getByTestId('admin-config-field-input-BAD_JSON') as HTMLTextAreaElement;
     await fireEvent.input(textarea, { target: { value: '{not valid json' } });
 
-    expect(screen.getByTestId('config-field-error-BAD_JSON')).toBeInTheDocument();
-    expect(screen.getByTestId('config-field-save-BAD_JSON')).toBeDisabled();
+    expect(screen.getByTestId('admin-config-field-error-BAD_JSON')).toBeInTheDocument();
+    expect(screen.getByTestId('admin-config-field-save-BAD_JSON')).toBeDisabled();
   });
 
   it('reformats JSON via the Pretty-print action', async () => {
@@ -270,9 +272,11 @@ describe('ConfigFieldRow', () => {
 
     render(ConfigFieldRow, baseProps(jsonSchema));
 
-    const textarea = screen.getByTestId('config-field-input-SOME_JSON') as HTMLTextAreaElement;
+    const textarea = screen.getByTestId(
+      'admin-config-field-input-SOME_JSON',
+    ) as HTMLTextAreaElement;
     await fireEvent.input(textarea, { target: { value: '{"a":1,"b":2}' } });
-    await fireEvent.click(screen.getByTestId('config-field-prettify-SOME_JSON'));
+    await fireEvent.click(screen.getByTestId('admin-config-field-prettify-SOME_JSON'));
 
     expect(textarea.value).toBe(JSON.stringify({ a: 1, b: 2 }, null, 2));
   });
