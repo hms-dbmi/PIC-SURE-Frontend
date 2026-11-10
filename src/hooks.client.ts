@@ -1,7 +1,7 @@
 import type { ClientInit, HandleClientError } from '@sveltejs/kit/hooks';
-import { goto } from '$app/navigation';
+import { goto, invalidateAll } from '$app/navigation';
 import { resolve } from '$app/paths';
-import { page } from '$app/state';
+import { navigating, page } from '$app/state';
 import { appPath } from '#lib/utils/appPath.ts';
 import { showAccessUnavailable } from '#lib/auth/accessUnavailable.ts';
 import { session } from '#lib/auth/session.svelte.ts';
@@ -12,6 +12,16 @@ import { log, createLog } from '#lib/telemetry/logger.ts';
 export const init: ClientInit = () => {
   session.connect({
     navigate: (path) => goto(resolve(appPath(path))),
+    rerunGuards: async () => {
+      await invalidateAll();
+      // A navigation that started meanwhile replaced the re-run, and others may replace that one:
+      // settle with the last.
+      let settled: Promise<void> | null = null;
+      while (navigating.complete && navigating.complete !== settled) {
+        settled = navigating.complete;
+        await settled.catch(() => {});
+      }
+    },
     currentUrl: () => page.url,
     showAccessUnavailable,
   });

@@ -3,13 +3,18 @@ import type { NavigationEvent } from '@sveltejs/kit';
 
 const logger = vi.hoisted(() => ({ log: vi.fn(), createLog: vi.fn() }));
 vi.mock('#lib/telemetry/logger.ts', () => logger);
-const { goto, session } = vi.hoisted(() => ({
+const { goto, invalidateAll, session } = vi.hoisted(() => ({
   goto: vi.fn(),
+  invalidateAll: vi.fn(),
   session: { connect: vi.fn() },
 }));
-vi.mock('$app/navigation', () => ({ goto }));
+vi.mock('$app/navigation', () => ({ goto, invalidateAll }));
 vi.mock('$app/paths', () => ({ resolve: (path: string) => `/base/${path}` }));
-vi.mock('$app/state', () => ({ page: { url: new URL('https://picsure.test/explorer?q=1') } }));
+const navigating = vi.hoisted(() => ({ complete: null as Promise<void> | null }));
+vi.mock('$app/state', () => ({
+  navigating,
+  page: { url: new URL('https://picsure.test/explorer?q=1') },
+}));
 vi.mock('#lib/auth/session.svelte.ts', () => ({ session }));
 
 import { handleError, init } from './hooks.client';
@@ -73,5 +78,27 @@ describe('client init', () => {
 
     expect(goto).toHaveBeenCalledWith('/base/login?redirectTo=%2Fexplorer');
     expect(shell.currentUrl()).toMatchObject({ pathname: '/explorer', search: '?q=1' });
+  });
+
+  it('lets the session run the guards again, settling with the navigations that replaced them', async () => {
+    await init();
+    const shell: SessionShell = session.connect.mock.calls[0][0];
+    const first = Promise.withResolvers<void>();
+    const second = Promise.withResolvers<void>();
+    navigating.complete = first.promise;
+    let settled = false;
+
+    const rerun = shell.rerunGuards().then(() => (settled = true));
+    await new Promise((resolve) => setTimeout(resolve));
+    navigating.complete = second.promise;
+    first.reject(new Error('navigation aborted'));
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(invalidateAll).toHaveBeenCalledOnce();
+    expect(settled).toBe(false);
+
+    second.resolve();
+    navigating.complete = null;
+    await rerun;
+    expect(settled).toBe(true);
   });
 });

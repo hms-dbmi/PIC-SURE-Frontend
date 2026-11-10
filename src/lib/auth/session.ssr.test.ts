@@ -23,6 +23,7 @@ describe('the session during server rendering', () => {
       () =>
         session.connect({
           async navigate() {},
+          async rerunGuards() {},
           currentUrl: () => new URL('http://x'),
           showAccessUnavailable() {},
         }),

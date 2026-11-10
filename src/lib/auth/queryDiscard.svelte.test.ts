@@ -15,9 +15,13 @@ import { request } from '#lib/api/client.ts';
 import { session } from '#lib/auth/session.svelte.ts';
 import { config } from '#lib/config/config.svelte.ts';
 
-const navigations: Array<{ resolve: () => void; reject: (error: Error) => void }> = [];
+type Pending = { resolve: () => void; reject: (error: Error) => void };
+const navigations: Pending[] = [];
+// Guard re-runs after another tab signs out, which navigate when a guard redirects.
+const reruns: Pending[] = [];
 session.connect({
   navigate: () => new Promise<void>((resolve, reject) => navigations.push({ resolve, reject })),
+  rerunGuards: () => new Promise<void>((resolve, reject) => reruns.push({ resolve, reject })),
   currentUrl: () => new URL('http://localhost/explorer'),
   showAccessUnavailable: vi.fn(),
 });
@@ -27,6 +31,19 @@ session.onQueryDiscard(() => {
   events.push('discarded');
   return () => events.push('lifted');
 });
+
+/** An unsigned JWT for `sub`. */
+function jwt(sub: string): string {
+  const encode = (part: object) => btoa(JSON.stringify(part)).replace(/=+$/, '');
+  return `${encode({ alg: 'none' })}.${encode({ sub })}.signature`;
+}
+
+/** Stores `token` the way another tab does, and tells this tab as the browser would. */
+function storeFromAnotherTab(token: string) {
+  if (token) localStorage.setItem('token', token);
+  else localStorage.removeItem('token');
+  window.dispatchEvent(new StorageEvent('storage', { key: 'token' }));
+}
 
 async function settle() {
   await new Promise((resolve) => setTimeout(resolve));
@@ -43,8 +60,8 @@ function respondFirstWith(status: number, body = '') {
   );
 }
 
-/** Holds the first request open and returns what answers it with a 403. Later requests get `{}`. */
-function forbidOnceInFlight(): () => void {
+/** Holds the first request open and returns what answers it. Later requests get `{}`. */
+function holdFirstRequest(): (response: Response) => void {
   let respond: (response: Response) => void = () => {};
   vi.stubGlobal(
     'fetch',
@@ -53,17 +70,18 @@ function forbidOnceInFlight(): () => void {
       .mockImplementationOnce(() => new Promise<Response>((resolve) => (respond = resolve)))
       .mockResolvedValue(new Response('{}')),
   );
-  return () => respond(new Response('', { status: 403 }));
+  return (response) => respond(response);
 }
 
 beforeEach(() => {
   session.setToken('token');
   events.length = 0;
   navigations.length = 0;
+  reruns.length = 0;
 });
 
 afterEach(async () => {
-  navigations.forEach((navigation) => navigation.resolve());
+  [...navigations, ...reruns].forEach((navigation) => navigation.resolve());
   await settle();
   session.clear();
   config.features.termsOfService = false;
@@ -206,12 +224,12 @@ describe('a request the backend forbids', () => {
   });
 
   it('discards the query when the 403 answers a token the session has since dropped', async () => {
-    const answer = forbidOnceInFlight();
+    const answer = holdFirstRequest();
 
     const refused = request('picsure/query/sync');
     await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
     session.removeToken();
-    answer();
+    answer(new Response('', { status: 403 }));
     await expect(refused).rejects.toMatchObject({ code: 'forbidden' });
 
     expect(events).toEqual(['discarded']);
@@ -311,5 +329,175 @@ describe('logout and the query', () => {
     navigations[0].resolve();
     await settle();
     expect(events).toEqual(['discarded', 'lifted']);
+  });
+});
+
+describe('a logout in another tab', () => {
+  // The other tab writes these; the storage events reach every tab but that one.
+  const announceDiscard = () => {
+    window.dispatchEvent(
+      new StorageEvent('storage', { key: 'discard-query', oldValue: null, newValue: '1' }),
+    );
+    window.dispatchEvent(
+      new StorageEvent('storage', { key: 'discard-query', oldValue: '1', newValue: null }),
+    );
+  };
+  const removeToken = () => storeFromAnotherTab('');
+
+  it('discards the query here too, and lifts the discard once this tab has followed the sign-out', async () => {
+    announceDiscard();
+    expect(events).toEqual(['discarded']);
+
+    removeToken();
+    expect(reruns).toHaveLength(1);
+    await settle();
+    expect(events).toEqual(['discarded']);
+
+    reruns[0].resolve();
+    await settle();
+    expect(events).toEqual(['discarded', 'lifted']);
+  });
+
+  it('lifts the discard once the guards have run again when the sign-out arrives first', async () => {
+    removeToken();
+    announceDiscard();
+    expect(events).toEqual(['discarded']);
+
+    reruns[0].resolve();
+    await settle();
+    expect(events).toEqual(['discarded', 'lifted']);
+  });
+
+  it('lifts the discard at once when this tab has already followed the sign-out', async () => {
+    removeToken();
+    reruns[0].resolve();
+    await settle();
+
+    announceDiscard();
+
+    expect(events).toEqual(['discarded', 'lifted']);
+  });
+
+  it('lifts the discard when running the guards again fails', async () => {
+    announceDiscard();
+    removeToken();
+    reruns[0].reject(new Error('load failed'));
+    await settle();
+
+    expect(events).toEqual(['discarded', 'lifted']);
+  });
+
+  it('lifts the discard at once when the token it then hears of is still the same user’s', () => {
+    session.setToken(jwt('sleeper'));
+    // the other tab logged out and back in while this one slept, so it sees no sign-out
+    announceDiscard();
+    storeFromAnotherTab(jwt('sleeper') + 'x');
+
+    expect(reruns).toHaveLength(0);
+    expect(events).toEqual(['discarded', 'lifted']);
+  });
+
+  it('keeps the query when the other tab’s session timed out', async () => {
+    removeToken();
+    reruns[0].resolve();
+    await settle();
+
+    expect(events).toEqual([]);
+  });
+});
+
+describe('a logout in this tab', () => {
+  /** Records this tab's localStorage writes, in order. */
+  function recordStorageWrites(): string[] {
+    const writes: string[] = [];
+    const storage = localStorage;
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.getItem(key),
+      setItem: (key: string, value: string) => {
+        writes.push(`set ${key}`);
+        storage.setItem(key, value);
+      },
+      removeItem: (key: string) => {
+        writes.push(`remove ${key}`);
+        storage.removeItem(key);
+      },
+    });
+    return writes;
+  }
+
+  beforeEach(() => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(new Response('{}'))),
+    );
+  });
+
+  it('tells the other tabs to discard the query right before it removes the token', async () => {
+    const answer = holdFirstRequest();
+    const writes = recordStorageWrites();
+
+    const loggedOut = session.logout(undefined, false, { discardQuery: true });
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+    // a tab closed while PSAMA answers its logout has told the others nothing
+    expect(writes).toEqual([]);
+
+    answer(new Response('{}'));
+    await loggedOut;
+
+    expect(writes.slice(0, 3)).toEqual([
+      'set discard-query',
+      'remove discard-query',
+      'remove token',
+    ]);
+  });
+
+  it('tells the other tabs at once when there is no token left to remove', () => {
+    session.removeToken();
+    const writes = recordStorageWrites();
+
+    void session.logout(undefined, false, { discardQuery: true });
+
+    expect(writes).toEqual(['set discard-query', 'remove discard-query']);
+  });
+
+  it('tells the other tabs when another tab signs out while PSAMA answers', async () => {
+    const answer = holdFirstRequest();
+    const writes = recordStorageWrites();
+
+    const loggedOut = session.logout(undefined, false, { discardQuery: true });
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+    storeFromAnotherTab('');
+    reruns.forEach((rerun) => rerun.resolve());
+    await settle();
+    answer(new Response('{}'));
+    await loggedOut;
+
+    expect(writes).toContain('set discard-query');
+    expect(events).toEqual(['discarded']);
+  });
+
+  it('lifts the discard only once it has navigated, though a guard run under way settles first', async () => {
+    storeFromAnotherTab(jwt('someone-else'));
+    const writes = recordStorageWrites();
+
+    const loggedOut = session.logout(undefined, false, { discardQuery: true });
+    reruns[0].resolve();
+    await loggedOut;
+    await settle();
+
+    expect(writes).toContain('set discard-query');
+    expect(events).toEqual(['discarded']);
+    navigations[0].resolve();
+    await settle();
+    expect(events).toEqual(['discarded', 'lifted']);
+  });
+
+  it('tells the other tabs nothing when the session times out', async () => {
+    const writes = recordStorageWrites();
+
+    await session.logout(undefined, true);
+
+    expect(writes).toContain('remove token');
+    expect(writes).not.toContain('set discard-query');
   });
 });

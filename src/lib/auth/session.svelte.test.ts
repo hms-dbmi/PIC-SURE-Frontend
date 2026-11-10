@@ -388,6 +388,7 @@ describe('a refusal that may mean the user has not accepted the terms', () => {
     const showAccessUnavailable = vi.fn();
     session.connect({
       navigate: vi.fn(),
+      rerunGuards: vi.fn(),
       currentUrl: () => new URL('http://localhost/'),
       showAccessUnavailable,
     });
@@ -407,6 +408,49 @@ describe('another tab changing the token', () => {
     else localStorage.removeItem('token');
     window.dispatchEvent(new StorageEvent('storage', { key: 'token' }));
   };
+  const rerunGuards = vi.fn(async () => {});
+
+  beforeEach(() => {
+    rerunGuards.mockClear();
+    session.connect({
+      navigate: vi.fn(),
+      rerunGuards,
+      currentUrl: () => new URL('http://localhost/explorer'),
+      showAccessUnavailable: vi.fn(),
+    });
+  });
+
+  it('runs this page’s guards again when the other tab signs out', () => {
+    session.setToken(jwt('signing-out'));
+
+    storeFromAnotherTab('');
+
+    expect(rerunGuards).toHaveBeenCalledOnce();
+  });
+
+  it('runs this page’s guards again when the other tab clears the storage', () => {
+    session.setToken(jwt('cleared'));
+
+    localStorage.clear();
+    window.dispatchEvent(new StorageEvent('storage', { key: null }));
+
+    expect(rerunGuards).toHaveBeenCalledOnce();
+  });
+
+  it('runs this page’s guards again for the new user when the other tab signs in as someone else', async () => {
+    stubPsama({ privileges: ['NAMED_DATASET'] });
+    session.setToken(jwt('admin'));
+    session.user = { privileges: ['SUPER_ADMIN'], consents: {} };
+    let guardedToken = '';
+    rerunGuards.mockImplementationOnce(async () => {
+      guardedToken = session.token;
+    });
+
+    storeFromAnotherTab(jwt('analyst'));
+
+    expect(rerunGuards).toHaveBeenCalledOnce();
+    expect(guardedToken).toBe(jwt('analyst'));
+  });
 
   it('forgets this tab’s profile when the other tab signs out', () => {
     session.setToken(jwt('signing-out'));
@@ -440,6 +484,7 @@ describe('another tab changing the token', () => {
 
     expect(session.privileges).toEqual(['QUERY']);
     expect(paths).toEqual([]);
+    expect(rerunGuards).not.toHaveBeenCalled();
   });
 });
 

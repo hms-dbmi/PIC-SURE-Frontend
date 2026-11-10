@@ -30,6 +30,7 @@ const runOutRetries = () => vi.advanceTimersByTimeAsync(5_000);
 
 session.connect({
   navigate: vi.fn(),
+  rerunGuards: vi.fn(),
   currentUrl: () => new URL('http://localhost'),
   showAccessUnavailable,
 });
