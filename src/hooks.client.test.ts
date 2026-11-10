@@ -33,17 +33,43 @@ beforeEach(() => {
 });
 
 describe('client handleError', () => {
-  it('sends unexpected errors to telemetry', async () => {
-    await handleError({ kind: 'unknown', error: new Error('boom'), event });
+  it('sends unexpected errors to telemetry with their name and stack', async () => {
+    const error = new TypeError('boom');
+    error.stack = 'TypeError: boom\n    at load (app.js:1:2)';
+    await handleError({ kind: 'unknown', error, event });
 
     expect(logger.log).toHaveBeenCalledWith(
       {
         event_type: 'ERROR',
         action: 'client.error',
-        metadata: { kind: 'unknown', message: 'boom', route: '/explorer' },
+        metadata: {
+          kind: 'unknown',
+          name: 'TypeError',
+          message: 'boom',
+          stack: 'TypeError: boom\n    at load (app.js:1:2)',
+          route: '/explorer',
+        },
       },
       { keepalive: true },
     );
+  });
+
+  it('caps the stack so the logging service accepts the event', async () => {
+    const error = new Error('boom');
+    error.stack = 'x'.repeat(20_000);
+    await handleError({ kind: 'unknown', error, event });
+
+    expect(logger.createLog.mock.calls[0][2].stack).toHaveLength(4000);
+  });
+
+  it('logs thrown values that are not Errors as a message', async () => {
+    await handleError({ kind: 'unknown', error: 'plain string', event });
+
+    expect(logger.createLog).toHaveBeenCalledWith('ERROR', 'client.error', {
+      kind: 'unknown',
+      message: 'plain string',
+      route: '/explorer',
+    });
   });
 
   it('sends framework errors with their status', async () => {

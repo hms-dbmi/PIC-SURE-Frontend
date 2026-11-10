@@ -36,7 +36,18 @@
         ? 'The page you are looking for does not exist or has moved.'
         : (page.error?.message ?? 'An unknown error occurred.')}
     </p>
-    <Button data-testid="app-error-home" href={resolve('')}>Go to the home page</Button>
+    <div class="flex flex-wrap justify-center gap-2">
+      <!-- An unexpected error may be a one-off, such as a failed load, and the visitor may
+           already be on the home page, so offer a reload as well. -->
+      {#if !notFound}
+        <Button data-testid="app-error-retry" onclick={() => location.reload()}>Try again</Button>
+      {/if}
+      <Button
+        data-testid="app-error-home"
+        variant={notFound ? 'filled' : 'tonal'}
+        href={resolve('')}>Go to the home page</Button
+      >
+    </div>
   </section>
 {/snippet}
 

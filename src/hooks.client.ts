@@ -27,13 +27,18 @@ export const init: ClientInit = () => {
   });
 };
 
+// The logging service rejects strings over 10KB; the top frames are what matter.
+const STACK_LIMIT = 4000;
+
 // SvelteKit requires handleError never to throw.
 export const handleError: HandleClientError = ({ kind, error, event }) => {
   if (kind === 'unknown') console.error(error);
   try {
     const details =
       kind === 'unknown'
-        ? { message: error instanceof Error ? error.message : String(error) }
+        ? error instanceof Error
+          ? { name: error.name, message: error.message, stack: error.stack?.slice(0, STACK_LIMIT) }
+          : { message: String(error) }
         : { status: error.status, message: error.message };
     // keepalive: after a client-side 404, SvelteKit reloads the page straight away.
     log(createLog('ERROR', 'client.error', { kind, ...details, route: event.route.id }), {
