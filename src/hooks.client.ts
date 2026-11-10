@@ -27,8 +27,23 @@ export const init: ClientInit = () => {
   });
 };
 
-// The logging service rejects strings over 10KB; the top frames are what matter.
-const STACK_LIMIT = 4000;
+// pic-sure-logging's AuditHandler rejects JSON strings over 10KB (maxStringLength).
+const FIELD_LIMIT = 4000;
+
+// The logging service keeps only `metadata` from a frontend event, not its top-level
+// http_user_agent, so the browser goes here too.
+function unexpectedErrorDetails(error: unknown) {
+  if (!(error instanceof Error)) {
+    return { message: String(error).slice(0, FIELD_LIMIT), user_agent: navigator.userAgent };
+  }
+  return {
+    name: error.name,
+    message: error.message.slice(0, FIELD_LIMIT),
+    // Frame URLs can carry the page's query or fragment, which hold auth tokens on /login/loading.
+    stack: error.stack?.replace(/[?#][^\s)]*?(?=:\d+:\d+|[\s)]|$)/gm, '').slice(0, FIELD_LIMIT),
+    user_agent: navigator.userAgent,
+  };
+}
 
 // SvelteKit requires handleError never to throw.
 export const handleError: HandleClientError = ({ kind, error, event }) => {
@@ -36,9 +51,7 @@ export const handleError: HandleClientError = ({ kind, error, event }) => {
   try {
     const details =
       kind === 'unknown'
-        ? error instanceof Error
-          ? { name: error.name, message: error.message, stack: error.stack?.slice(0, STACK_LIMIT) }
-          : { message: String(error) }
+        ? unexpectedErrorDetails(error)
         : { status: error.status, message: error.message };
     // keepalive: after a client-side 404, SvelteKit reloads the page straight away.
     log(createLog('ERROR', 'client.error', { kind, ...details, route: event.route.id }), {

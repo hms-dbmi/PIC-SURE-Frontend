@@ -47,6 +47,7 @@ describe('client handleError', () => {
           name: 'TypeError',
           message: 'boom',
           stack: 'TypeError: boom\n    at load (app.js:1:2)',
+          user_agent: navigator.userAgent,
           route: '/explorer',
         },
       },
@@ -54,12 +55,28 @@ describe('client handleError', () => {
     );
   });
 
-  it('caps the stack so the logging service accepts the event', async () => {
-    const error = new Error('boom');
+  it('caps the message and stack so the logging service accepts the event', async () => {
+    const error = new Error('m'.repeat(20_000));
     error.stack = 'x'.repeat(20_000);
     await handleError({ kind: 'unknown', error, event });
 
-    expect(logger.createLog.mock.calls[0][2].stack).toHaveLength(4000);
+    const metadata = logger.createLog.mock.calls[0][2];
+    expect(metadata.message).toHaveLength(4000);
+    expect(metadata.stack).toHaveLength(4000);
+  });
+
+  it('drops query strings and fragments from stack frame URLs, which can hold auth tokens', async () => {
+    const error = new Error('boom');
+    error.stack =
+      'Error: boom\n    at https://picsure.test/login/loading#access_token=secret:3:4\n' +
+      '    at start (https://picsure.test/_app/start.js?code=secret:1:2)';
+    await handleError({ kind: 'unknown', error, event });
+
+    const { stack } = logger.createLog.mock.calls[0][2];
+    expect(stack).toBe(
+      'Error: boom\n    at https://picsure.test/login/loading:3:4\n' +
+        '    at start (https://picsure.test/_app/start.js:1:2)',
+    );
   });
 
   it('logs thrown values that are not Errors as a message', async () => {
@@ -68,6 +85,7 @@ describe('client handleError', () => {
     expect(logger.createLog).toHaveBeenCalledWith('ERROR', 'client.error', {
       kind: 'unknown',
       message: 'plain string',
+      user_agent: navigator.userAgent,
       route: '/explorer',
     });
   });
