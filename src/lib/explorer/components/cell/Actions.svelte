@@ -59,36 +59,40 @@
   let shouldDisableFilter = $derived(isOpenAccess() && !row.allowFiltering);
 </script>
 
-<IconButton
-  icon="fa-solid fa-circle-info fa-xl"
-  label="Information (i)"
-  shortcut="i"
-  class="row-action-info"
-  onclick={insertInfoContent}
-/>
-<IconButton
-  icon="fa-solid fa-filter fa-xl"
-  label={shouldDisableFilter ? 'Filtering is not available for this variable' : 'Filter (f)'}
-  shortcut="f"
-  class="row-action-filter"
-  disabled={shouldDisableFilter}
-  onclick={insertFilterContent}
-/>
-{#if config.features.explorer.enableHierarchy}
+<div class="whitespace-nowrap">
   <IconButton
-    icon="fa-solid fa-sitemap fa-xl"
-    label="Data Hierarchy (h)"
-    shortcut="h"
-    class="row-action-hierarchy"
-    onclick={insertHierarchyContent}
+    icon="fa-solid fa-circle-info fa-xl"
+    label="Information (i)"
+    shortcut="i"
+    class="row-action-info"
+    onclick={insertInfoContent}
   />
-{/if}
-{#if config.features.explorer.exportsEnableExport && !isOpenAccess()}
   <IconButton
-    icon={isExported ? 'fa-regular fa-square-check fa-xl' : 'fa-solid fa-right-from-bracket fa-xl'}
-    label={isExported ? 'Remove from Analysis (e)' : 'Add for Analysis (e)'}
-    shortcut="e"
-    class="row-action-export"
-    onclick={insertExportContent}
+    icon="fa-solid fa-filter fa-xl"
+    label={shouldDisableFilter ? 'Filtering is not available for this variable' : 'Filter (f)'}
+    shortcut="f"
+    class="row-action-filter"
+    disabled={shouldDisableFilter}
+    onclick={insertFilterContent}
   />
-{/if}
+  {#if config.features.explorer.enableHierarchy}
+    <IconButton
+      icon="fa-solid fa-sitemap fa-xl"
+      label="Data Hierarchy (h)"
+      shortcut="h"
+      class="row-action-hierarchy"
+      onclick={insertHierarchyContent}
+    />
+  {/if}
+  {#if config.features.explorer.exportsEnableExport && !isOpenAccess()}
+    <IconButton
+      icon={isExported
+        ? 'fa-regular fa-square-check fa-xl'
+        : 'fa-solid fa-right-from-bracket fa-xl'}
+      label={isExported ? 'Remove from Analysis (e)' : 'Add for Analysis (e)'}
+      shortcut="e"
+      class="row-action-export"
+      onclick={insertExportContent}
+    />
+  {/if}
+</div>

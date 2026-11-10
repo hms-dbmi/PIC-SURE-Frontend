@@ -99,6 +99,19 @@ test.describe('Explorer for authenticated users', () => {
     // Then
     await expect(page.locator('table')).toBeVisible();
   });
+  test('Row actions stay on one line', async ({ page }) => {
+    // Given
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+
+    // Then
+    const actions = page.locator('#explorer-table-row-0 td').last().locator('button');
+    await expect(actions).toHaveCount(4);
+    const tops = await actions.evaluateAll((buttons) =>
+      buttons.map((button) => Math.round(button.getBoundingClientRect().top)),
+    );
+    expect(new Set(tops).size).toBe(1);
+  });
   test('Searching again for the current term still logs page.navigate', async ({ page }) => {
     // Given
     await page.goto('/explorer?search=somedata');
