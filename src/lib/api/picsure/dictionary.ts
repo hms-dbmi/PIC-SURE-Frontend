@@ -1,7 +1,7 @@
 import { request } from '#lib/api/client.ts';
 import { Picsure, PicsurePaths } from '#lib/api/paths.ts';
-import type { SearchResult } from '#lib/explorer/types.ts';
 import type {
+  SearchResult,
   DashboardResponse,
   DatasetDetails,
   DictionaryConceptResult,

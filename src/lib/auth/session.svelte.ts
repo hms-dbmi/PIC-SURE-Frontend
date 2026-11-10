@@ -4,7 +4,6 @@ import { ApiError } from '#lib/api/errors.ts';
 import * as psamaUser from '#lib/api/psama/user.ts';
 import { registerSessionHooks } from '#lib/api/sessionHooks.ts';
 import { asksForTerms, awaitsTerms } from '#lib/auth/access.ts';
-import { discardingQuery } from '#lib/auth/discardingQuery.ts';
 import { loginRedirectPath } from '#lib/auth/loginRedirect.ts';
 import { isTopAdmin, type ConsentsMap, type User } from '#lib/auth/model/user.ts';
 import type AuthProvider from '#lib/auth/providers/AuthProvider.ts';
@@ -28,7 +27,7 @@ import { assertNoSsrWrite } from '#lib/utils/ssrWrite.ts';
 export interface SessionShell {
   /**
    * Navigates within the app to a path such as `/login?redirectTo=%2Fexplorer`. Settles once the
-   * navigation has.
+   * navigation has, or never when it falls back to loading the page.
    */
   navigate(path: string): Promise<void>;
   /** The page on screen, so a user whose session timed out can come back to it. */
@@ -108,8 +107,11 @@ export class Session {
   // A 401 or 403 from PSAMA's logout call makes the API client start another logout, which would
   // navigate to /login a second time, so later calls share the logout already running.
   #pendingLogout: Promise<void> | undefined;
-  #logoutNavigation = 0;
   #endListeners: (() => void)[] = [];
+  #discardListeners: (() => (() => void) | void)[] = [];
+  // From a logout that discards the query until it has navigated: what the listeners returned.
+  #discard: (() => void)[] | undefined;
+  #navigations = 0;
 
   constructor() {
     if (!browser) return;
@@ -145,6 +147,36 @@ export class Session {
     return () => {
       this.#endListeners = this.#endListeners.filter((l) => l !== listener);
     };
+  }
+
+  /**
+   * Runs `listener` when a logout discards the user's query (filters, search, export selections),
+   * before that logout navigates. A logout the user chose discards it, and so does one after a
+   * forbidden request for anything but open-access data: restored at the next login, the query
+   * would be refused again. A session timeout keeps it. A listener added before that logout has
+   * navigated runs at once. The function the listener returns runs once the logout has navigated,
+   * or failed to, so the page being left can't rerun its requests without a token. Returns the
+   * unsubscribe.
+   */
+  onQueryDiscard(listener: () => (() => void) | void): () => void {
+    this.#discardListeners.push(listener);
+    // Untracked: an effect that subscribes must not re-run when the listener reads state.
+    if (this.#discard) untrack(() => this.#notifyDiscard(listener));
+    return () => {
+      this.#discardListeners = this.#discardListeners.filter((l) => l !== listener);
+    };
+  }
+
+  #discardQuery() {
+    assertNoSsrWrite('session');
+    if (this.#discard) return;
+    this.#discard = [];
+    for (const listener of this.#discardListeners) this.#notifyDiscard(listener);
+  }
+
+  #notifyDiscard(listener: () => (() => void) | void) {
+    const lift = listener();
+    if (lift) this.#discard?.push(lift);
   }
 
   connect(shell: SessionShell) {
@@ -391,15 +423,14 @@ export class Session {
   }
 
   /**
-   * Pass `discardQuery` for logouts the user chose: the query is dropped once the logout has navigated.
-   * A session timeout keeps it so the user can log back in and carry on.
+   * `discardQuery`: the user chose this logout, or a request was forbidden. See `onQueryDiscard`.
    */
   logout(
     authProvider?: AuthProvider,
     redirect = false,
     { discardQuery = false } = {},
   ): Promise<void> {
-    if (discardQuery) discardingQuery.set(true);
+    if (discardQuery) this.#discardQuery();
     this.#pendingLogout ??= untrack(() => this.#endSession(authProvider, redirect)).finally(() => {
       this.#pendingLogout = undefined;
     });
@@ -436,16 +467,27 @@ export class Session {
     if (browser) localStorage.removeItem(OKTA_ID_TOKEN_KEY);
   }
 
-  async #leave(redirect: boolean) {
-    const navigation = ++this.#logoutNavigation;
+  #leave(redirect: boolean) {
     this.user = {};
     log(createLog('AUTH', 'logout.success'));
+    void this.#navigateAway(redirect ? loginRedirectPath(this.#shell.currentUrl()) : '/login');
+  }
+
+  async #navigateAway(path: string) {
+    const navigation = ++this.#navigations;
     try {
-      await this.#shell.navigate(redirect ? loginRedirectPath(this.#shell.currentUrl()) : '/login');
+      await this.#shell.navigate(path);
     } finally {
-      // If a later logout superseded this navigation, the page being left is still mounted, so leave it to that one
-      if (navigation === this.#logoutNavigation) discardingQuery.set(false);
+      // A later logout superseded this navigation, so the page being left is still mounted:
+      // leave lifting the discard to that one.
+      if (navigation === this.#navigations) this.#liftDiscard();
     }
+  }
+
+  #liftDiscard() {
+    const lifts = this.#discard;
+    this.#discard = undefined;
+    lifts?.forEach((lift) => lift());
   }
 }
 

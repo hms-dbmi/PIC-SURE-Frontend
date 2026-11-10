@@ -1,10 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('$app/env', () => ({ browser: true }));
-vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost') } }));
-vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('#lib/api/client.ts', () => ({ request: vi.fn() }));
-vi.mock('$app/paths', () => ({ resolve: (path: string) => path }));
 
 import Fence from '#lib/auth/providers/FENCE.ts';
 

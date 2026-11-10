@@ -7,8 +7,8 @@ vi.mock('#lib/auth/nav.ts', () => ({ routes: [] }));
 import {
   sanitizeLocation,
   createLog,
-  isHashOnlyGoto,
   registerSignedInUser,
+  isHashOnlyGoto,
 } from '#lib/telemetry/logger.ts';
 
 function stubLocation(href: string) {

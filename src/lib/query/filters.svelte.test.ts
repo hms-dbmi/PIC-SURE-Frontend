@@ -1,10 +1,21 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { flushSync } from 'svelte';
 
+const discardListeners = vi.hoisted(() => [] as Array<() => (() => void) | void>);
 const mockSession = vi.hoisted(() => ({
   user: {} as { consents?: Record<string, string[]> },
   ensureConsentsLoaded: vi.fn(),
+  onQueryDiscard: (listener: () => (() => void) | void) => {
+    discardListeners.push(listener);
+    return () => {};
+  },
 }));
+
+/** Discards the query as a logout does. Returns what runs once the logout has navigated. */
+function discardQuery() {
+  const lifts = discardListeners.map((listener) => listener());
+  return () => lifts.forEach((lift) => lift?.());
+}
 
 vi.mock('$app/env', () => ({ browser: true }));
 vi.mock('#lib/auth/session.svelte.ts', () => ({ session: mockSession }));
@@ -16,9 +27,10 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
   registerAssociatedStudies: vi.fn(),
 }));
 
-import { FilterState } from '#lib/query/filters.svelte.ts';
+import { FilterState, filterState } from '#lib/query/filters.svelte.ts';
 import { buildRequest } from '#lib/query/build.ts';
 import { getConceptDetails } from '#lib/explorer/Dictionary.ts';
+import { log } from '#lib/telemetry/logger.ts';
 import {
   createCategoricalFilter,
   createFilterGroup,
@@ -28,7 +40,7 @@ import {
   isFilterGroup,
   type FilterInterface,
 } from '#lib/query/filter.svelte.ts';
-import type { SearchResult } from '#lib/explorer/types.ts';
+import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
 import { LogicTree } from '#lib/query/logicTree.svelte.ts';
 import { createQuery, type PhenotypicFilter } from '#lib/query/query.ts';
 import { queryToFilterTree } from '#lib/query/restore.ts';
@@ -335,6 +347,31 @@ describe('adding, updating and removing', () => {
     expect(filters.hasGenomicFilter).toBe(true);
   });
 
+  describe('genomic filter checks', () => {
+    const snpFilter = () => createSnpsFilter([{ search: 'chr1,12345,A,G', constraint: '0/1' }]);
+
+    it('counts a SNP-only filter for Discover but not as a gene filter', () => {
+      filters.add(snpFilter());
+
+      expect(filters.hasGenomicOrSnpFilter).toBe(true);
+      expect(filters.hasGenomicFilter).toBe(false);
+    });
+
+    it('counts a gene-only filter for both', () => {
+      filters.add(createGenomicFilter({ Gene_with_variant: ['BRCA1'] }));
+
+      expect(filters.hasGenomicOrSnpFilter).toBe(true);
+      expect(filters.hasGenomicFilter).toBe(true);
+    });
+
+    it('counts neither for phenotypic filters only', () => {
+      filters.add(createCategoricalFilter(mockSearchResult('\\a\\'), ['x']));
+
+      expect(filters.hasGenomicOrSnpFilter).toBe(false);
+      expect(filters.hasGenomicFilter).toBe(false);
+    });
+  });
+
   it('removes unallowed filters from both lists', () => {
     const allowed = createCategoricalFilter(mockSearchResult('\\a\\'), ['x']);
     const unallowed = createCategoricalFilter(
@@ -405,5 +442,50 @@ describe('enrich', () => {
     filters.enrich(filter, enriched.conceptPath, enriched.dataset);
 
     expect(getConceptDetails).not.toHaveBeenCalled();
+  });
+});
+
+describe('the filters of a forbidden logout', () => {
+  const storedFilterCount = () => {
+    const tree = sessionStorage.getItem('filterTree');
+    return tree === null ? null : JSON.parse(tree).children.length;
+  };
+  let lift: () => void;
+
+  beforeEach(() => {
+    filterState.clear();
+    sessionStorage.clear();
+    filterState.add(createCategoricalFilter(mockSearchResult('\\study\\variable\\'), ['Yes']));
+    filterState.add(createGenomicFilter({ Gene_with_variant: ['BRCA1'] }));
+    vi.mocked(log).mockClear();
+    lift = () => {};
+  });
+
+  afterEach(() => lift());
+
+  it('are removed from storage at once and kept until the logout navigates', () => {
+    lift = discardQuery();
+
+    expect(sessionStorage.getItem('filterTree')).toBeNull();
+    expect(sessionStorage.getItem('genomicFilters')).toBeNull();
+    expect(filterState.tree.root.children).toHaveLength(1);
+    expect(filterState.genomic).toHaveLength(1);
+  });
+
+  it('are not stored again when they change before the logout navigates', () => {
+    lift = discardQuery();
+
+    filterState.add(createCategoricalFilter(mockSearchResult('\\study\\other\\'), ['No']));
+
+    expect(sessionStorage.getItem('filterTree')).toBeNull();
+  });
+
+  it('are reset once the logout navigates, without logging a user clear', () => {
+    discardQuery()();
+
+    expect(filterState.tree.root.children).toHaveLength(0);
+    expect(filterState.genomic).toHaveLength(0);
+    expect(storedFilterCount()).toBe(0);
+    expect(log).not.toHaveBeenCalled();
   });
 });

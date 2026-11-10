@@ -689,4 +689,49 @@ describe('FlatFilterTree Model', () => {
       });
     });
   });
+  describe('moveNode', () => {
+    it('moves a node into another group at an index counted after the detach', () => {
+      const tree = new LogicTree<TestTreeNode>(createTestGroup);
+      const [A, B, C, D] = ['A', 'B', 'C', 'D'].map(createTestNode);
+      const OR = createTestGroup([C, D], Operator.OR);
+      tree.add(A, B, OR);
+
+      tree.moveNode(A, OR, 1);
+      expect(print(tree)).toBe('(B AND (C OR A OR D))');
+      expect(A.parent).toBe(OR);
+
+      tree.moveNode(C, tree.root);
+      expect(print(tree)).toBe('(B AND (A OR D) AND C)');
+      expect(C.parent).toBe(tree.root);
+    });
+
+    it('reorders within a group and appends past the end, without pruning', () => {
+      const tree = new LogicTree<TestTreeNode>(createTestGroup);
+      const [A, B, C] = ['A', 'B', 'C'].map(createTestNode);
+      const OR = createTestGroup([B, C], Operator.OR);
+      tree.add(A, OR);
+
+      tree.moveNode(B, OR, 5);
+      expect(print(tree)).toBe('(A AND (C OR B))');
+      tree.moveNode(C, tree.root, 0);
+      expect(print(tree)).toBe('(C AND A AND (B))');
+    });
+  });
+
+  describe('isDescendant', () => {
+    it('is true only below the ancestor', () => {
+      const tree = new LogicTree<TestTreeNode>(createTestGroup);
+      const [A, B, C] = ['A', 'B', 'C'].map(createTestNode);
+      const inner = createTestGroup([B, C], Operator.AND);
+      const outer = createTestGroup([inner], Operator.OR);
+      tree.add(A, outer);
+
+      expect(tree.isDescendant(B, inner)).toBe(true);
+      expect(tree.isDescendant(B, outer)).toBe(true);
+      expect(tree.isDescendant(inner, outer)).toBe(true);
+      expect(tree.isDescendant(outer, outer)).toBe(false);
+      expect(tree.isDescendant(outer, inner)).toBe(false);
+      expect(tree.isDescendant(A, outer)).toBe(false);
+    });
+  });
 });

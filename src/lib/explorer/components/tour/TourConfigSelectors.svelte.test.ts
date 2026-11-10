@@ -2,11 +2,13 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render } from '@testing-library/svelte';
+import { createRawSnippet } from 'svelte';
 import { TableHandler } from '@vincjo/datatables';
 
 import tourConfig from '#lib/assets/TourConfiguration.json';
 
-vi.mock('#lib/telemetry/logger.ts', () => ({
+vi.mock('#lib/telemetry/logger.ts', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('#lib/telemetry/logger.ts')>()),
   log: vi.fn(),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   createLog: vi.fn((...args: any[]) => args),
@@ -31,53 +33,27 @@ vi.mock('#lib/explorer/mode.ts', () => ({
   isOpenAccess: vi.fn(() => false),
 }));
 
-// Same minimal store stub used by ui/datatable's Row.svelte.test.ts and RemoteTable.svelte.test.ts:
-// the real store eagerly imports explorer components that touch localStorage at
-// module load, which isn't available in this environment.
-vi.mock('#lib/explorer/ExpandableRow.ts', () => {
-  const make = (value: unknown) => {
-    let current = value;
-    const subscribers = new Set<(v: unknown) => void>();
-    return {
-      subscribe(fn: (v: unknown) => void) {
-        fn(current);
-        subscribers.add(fn);
-        return () => subscribers.delete(fn);
-      },
-      set(next: unknown) {
-        current = next;
-        subscribers.forEach((fn) => fn(current));
-      },
-    };
-  };
-  return {
-    activeTable: make(''),
-    activeRow: make(''),
-    activeComponent: make(undefined),
-    setActiveRow: vi.fn(),
-    closeActiveRow: vi.fn(),
-  };
-});
-
-import RemoteTable from '#lib/ui/datatable/RemoteTable.svelte';
-import Actions from '#lib/explorer/components/cell/Actions.svelte';
-import { activeTable, activeRow } from '#lib/explorer/ExpandableRow.ts';
+import ResultsTable from '#lib/explorer/components/ResultsTable.svelte';
+import { markFirstFilterableRow } from '#lib/explorer/components/tour/tourActions.ts';
+import type { Column } from '#lib/ui/datatable/types.ts';
+import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
+import { explorerPanel } from '#lib/explorer/panel.svelte.ts';
 import { isOpenAccess } from '#lib/explorer/mode.ts';
+
+// Explorer.svelte renders the row's info, filter or hierarchy view here.
+const expandedRow = createRawSnippet(() => ({ render: () => '<div>expanded</div>' }));
 
 afterEach(() => {
   vi.clearAllMocks();
   vi.mocked(isOpenAccess).mockReturnValue(false);
-  activeTable.set('');
-  activeRow.set('');
+  explorerPanel.closeRow();
 });
 
-// Mirrors Explorer.svelte's real columns: default branding columns (Dataset, Variable
-// Name) plus the Actions column it always appends. The tour's "row-0-col-2" selectors
-// assume Actions lands at index 2 - this fixture is what pins that assumption down.
-const columns = [
+// The default branding columns (Dataset, Variable Name). The tour's "row-0-col-2" selectors
+// assume the Actions column ResultsTable appends lands at index 2.
+const columns: Column<SearchResult>[] = [
   { label: 'Dataset', dataElement: 'dataset' },
   { label: 'Variable Name', dataElement: 'name' },
-  { dataElement: 'id', label: 'Actions' },
 ];
 
 function makeRow(i: number) {
@@ -87,7 +63,7 @@ function makeRow(i: number) {
     dataset: `Dataset ${i}`,
     name: `Variable ${i}`,
     display: `Variable ${i}`,
-  };
+  } as unknown as SearchResult;
 }
 
 function renderExplorerTable() {
@@ -96,29 +72,9 @@ function renderExplorerTable() {
 
   // Row 0 is expanded, as it is by the time the tour reaches its
   // "active-row"/"row-0-col-2" steps (it drives the row open first).
-  activeTable.set('ExplorerTable');
-  activeRow.set(rows[0].conceptPath);
+  explorerPanel.toggleRow(rows[0].conceptPath);
 
-  return render(RemoteTable, {
-    tableName: 'ExplorerTable',
-    id: 'explorer-table',
-    handler,
-    columns,
-    cellOverides: { id: Actions },
-    isClickable: true,
-    expandable: true,
-  });
-}
-
-// Mirrors ExplorerTour.svelte's findAndSetFirstNonStigmatizedAvailableFilterThenNext
-// hook (find the first row with a filter button, mark it non-stigmatized) - reproduced
-// here since the hook is inline in that component and isn't exported.
-function markFirstRowNonStigmatized(container: HTMLElement) {
-  const table = container.querySelector('#explorer-table') as HTMLTableElement;
-  const row = Array.from(table.querySelectorAll('tr')).find((tr) =>
-    tr.querySelector('button.row-action-filter:not(:disabled)'),
-  );
-  row?.classList.add('non-stigmatized-row');
+  return render(ResultsTable, { handler, columns, expandedRow });
 }
 
 type Tour = { steps: { element: string }[] };
@@ -143,14 +99,14 @@ describe('TourConfiguration.json selectors against the real datatable markup', (
     '"%s" resolves against a rendered ExplorerTable',
     (selector) => {
       const { container } = renderExplorerTable();
-      markFirstRowNonStigmatized(container);
+      markFirstFilterableRow();
 
       expect(container.querySelector(selector)).not.toBeNull();
     },
   );
 });
 
-describe('markFirstRowNonStigmatized under open access', () => {
+describe('markFirstFilterableRow under open access', () => {
   it('skips row 0 when its filter button is disabled and marks row 1 instead', () => {
     vi.mocked(isOpenAccess).mockReturnValue(true);
 
@@ -160,17 +116,9 @@ describe('markFirstRowNonStigmatized under open access', () => {
     ];
     const handler = new TableHandler(rows, { rowsPerPage: 10 });
 
-    const { container } = render(RemoteTable, {
-      tableName: 'ExplorerTable',
-      id: 'explorer-table',
-      handler,
-      columns,
-      cellOverides: { id: Actions },
-      isClickable: true,
-      expandable: true,
-    });
+    const { container } = render(ResultsTable, { handler, columns, expandedRow });
 
-    markFirstRowNonStigmatized(container);
+    markFirstFilterableRow();
 
     expect(container.querySelector('#explorer-table-row-0')).not.toHaveClass('non-stigmatized-row');
     expect(container.querySelector('#explorer-table-row-1')).toHaveClass('non-stigmatized-row');

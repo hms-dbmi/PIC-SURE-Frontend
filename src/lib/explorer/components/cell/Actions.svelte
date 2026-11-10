@@ -1,40 +1,30 @@
 <script lang="ts">
   import IconButton from '#lib/ui/IconButton.svelte';
-  import type { SearchResult } from '#lib/explorer/types.ts';
-  import { setActiveRow } from '#lib/explorer/ExpandableRow.ts';
-  import {
-    exports,
-    addExport,
-    removeExport,
-    mapSearchResultAsExport,
-  } from '#lib/explorer/export/Export.ts';
-  import { panelOpen } from '#lib/explorer/panel.ts';
+  import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
+  import { exportState, mapSearchResultAsExport } from '#lib/explorer/export/export.svelte.ts';
+  import { explorerPanel, type RowView } from '#lib/explorer/panel.svelte.ts';
   import { config } from '#lib/config/config.svelte.ts';
   import { isOpenAccess } from '#lib/explorer/mode.ts';
   import { log, createLog, getPageContext } from '#lib/telemetry/logger.ts';
 
   interface Props {
-    data: { row: SearchResult; tableName?: string };
+    row: SearchResult;
   }
 
-  let { data }: Props = $props();
-  let exportItem = $derived(mapSearchResultAsExport(data.row));
+  let { row }: Props = $props();
+  let exportItem = $derived(mapSearchResultAsExport(row));
 
-  function updateActiveRow(componentName: string) {
+  function updateActiveRow(view: RowView) {
     return (event: Event) => {
       event.stopPropagation();
       log(
-        createLog('ACTION', `search_result.${componentName}`, {
-          variable: data.row.display || data.row.name,
-          conceptPath: data.row.conceptPath,
+        createLog('ACTION', `search_result.${view}`, {
+          variable: row.display || row.name,
+          conceptPath: row.conceptPath,
           pageContext: getPageContext(),
         }),
       );
-      setActiveRow({
-        row: data.row.conceptPath,
-        component: componentName,
-        table: data?.tableName,
-      });
+      explorerPanel.toggleRow(row.conceptPath, view);
     };
   }
 
@@ -47,29 +37,26 @@
     if (isExported) {
       log(
         createLog('ACTION', 'search_result.export_remove', {
-          variable: data.row.display || data.row.name,
-          conceptPath: data.row.conceptPath,
+          variable: row.display || row.name,
+          conceptPath: row.conceptPath,
           pageContext: getPageContext(),
         }),
       );
-      removeExport(exportItem);
+      exportState.remove(exportItem);
     } else {
       log(
         createLog('ACTION', 'search_result.export_add', {
-          variable: data.row.display || data.row.name,
-          conceptPath: data.row.conceptPath,
+          variable: row.display || row.name,
+          conceptPath: row.conceptPath,
           pageContext: getPageContext(),
         }),
       );
-      addExport(exportItem);
-      $panelOpen = true;
+      exportState.add(exportItem);
     }
   }
 
-  let isExported = $derived(
-    $exports.map((exp) => exp.conceptPath).includes(exportItem.conceptPath),
-  );
-  let shouldDisableFilter = $derived(isOpenAccess() && !data.row.allowFiltering);
+  let isExported = $derived(exportState.has(exportItem.conceptPath));
+  let shouldDisableFilter = $derived(isOpenAccess() && !row.allowFiltering);
 </script>
 
 <div class="whitespace-nowrap">

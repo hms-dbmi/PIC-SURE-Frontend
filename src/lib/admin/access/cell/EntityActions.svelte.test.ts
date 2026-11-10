@@ -35,7 +35,7 @@ describe('EntityActions', () => {
     ['privilege', admin.privileges, "privilege 'ADMIN'"],
     ['role', admin.roles, "role 'ADMIN'"],
   ] as const)('deletes a %s by uuid', async (kind, resource, subject) => {
-    render(EntityActions, { kind, data: { cell: 'u-1', row } });
+    render(EntityActions, { kind, uuid: 'u-1', row });
 
     await confirmDelete(kind);
 
@@ -53,7 +53,7 @@ describe('EntityActions', () => {
     ['role', admin.roles, "role 'ADMIN' as it is still in use by a user"],
   ] as const)('says what still uses a %s it cannot delete', async (kind, resource, message) => {
     vi.mocked(resource.remove).mockRejectedValue({ status: 409 });
-    render(EntityActions, { kind, data: { cell: 'u-1', row } });
+    render(EntityActions, { kind, uuid: 'u-1', row });
 
     await confirmDelete(kind);
 

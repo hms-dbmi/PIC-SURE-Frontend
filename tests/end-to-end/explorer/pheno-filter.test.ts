@@ -23,7 +23,7 @@ import {
   userIsLoggedIn,
 } from '../utils';
 import { createCategoricalFilter, createNumericFilter } from '../../../src/lib/query/filter.svelte';
-import type { SearchResult } from '../../../src/lib/explorer/types';
+import type { SearchResult } from '../../../src/lib/api/picsure/dictionary.types';
 
 test.beforeEach(async ({ page }) => {
   await mockApiConfig(page, {
@@ -611,10 +611,9 @@ test.describe('Add Filters', () => {
     }
     const addFilterButtoEdit = modal.getByTestId('filter-add');
     await addFilterButtoEdit.click();
-    const openButton = firstAddedFilter.locator('button').last();
-    await openButton.click();
+    await expect(modal).toBeHidden();
 
-    // Then
+    // Then: the card opened above stays open and shows the edited filter.
     const infoSection = firstAddedFilter.locator('section');
     await expect(infoSection).toBeVisible();
     await expect(infoSection).toContainText(`Restricting to ${selectedOptions.length} values.`);

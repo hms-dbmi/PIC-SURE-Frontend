@@ -5,23 +5,14 @@ import prettier from 'eslint-config-prettier';
 import svelte from 'eslint-plugin-svelte';
 import globals from 'globals';
 
-// Files that already imported app code when the ui/utils boundary rules were added. The PR that
-// cleans one removes it from this list; nothing new gets added.
-const boundaryExceptions = [
-  'src/lib/ui/OptionsSelectionList.svelte',
-  'src/lib/ui/PlotlyPlot.svelte',
-  'src/lib/ui/datatable/RemoteTable.svelte',
-  'src/lib/ui/datatable/Row.svelte',
-  'src/lib/ui/datatable/accessories/Pagination.svelte',
-  'src/lib/ui/datatable/accessories/Rows.svelte',
-  'src/lib/ui/datatable/accessories/Search.svelte',
-  'src/lib/ui/stepper/Stepper.svelte',
-  'src/lib/ui/unsavedGuard.svelte.ts',
-];
-
 const skeletonOnlyInUi = {
   group: ['@skeletonlabs/*'],
   message: 'Only src/lib/ui/ may import Skeleton; use or add a ui/ primitive.',
+};
+
+const dndKitOnlyInUi = {
+  group: ['@dnd-kit/*'],
+  message: 'Only src/lib/ui/ may import dnd-kit; use or extend ui/sortable.',
 };
 
 // Skeleton class names, with any variant prefixes (hover:, md:dark:, [&:hover]:) and `!`. A lone
@@ -33,25 +24,31 @@ const skeletonClass = String.raw`(^|\s)${variantPrefix}(${skeletonClassName})!?(
 const cardClass = `${variantPrefix}${cardClassName}!?`;
 const cardInClassList = String.raw`(^|\s)${cardClass}\s|\s${cardClass}$`;
 
-// `folder` (under src/lib/) may import only from `allowed` folders and packages: no `#lib/` or
-// `$lib/` specifier outside them, and no relative path that climbs out of `folder` (one config per
-// nesting depth, so `../` is allowed exactly as deep as the file sits). Stylesheets are exempt.
-// `pending` maps a file (under src/lib/) to the `#lib/` modules outside `allowed` it still imports
-// until the PR named beside it removes them; nothing new gets added.
-function importBoundary(folder, allowed, pending = {}) {
-  const message = `${folder}/ may import only ${allowed.map((f) => `${f}/`).join(', ')} and packages.`;
-  const rules = (depth, exempt = []) => ({
+// `folder` (under src/lib/) may import only from `allowed` folders, files (another feature's
+// `index.ts`) and packages: no `#lib/` or `$lib/` specifier outside them, and no relative path
+// that climbs out of `folder` (one config per nesting depth, so `../` is allowed exactly as deep
+// as the file sits). Stylesheets are exempt.
+// `pending` maps a file (under src/lib/) to the `#lib/` modules outside `allowed` it still imports,
+// until a later change removes them; nothing new gets added. `extra` maps a file to more
+// restricted-import patterns of its own.
+function importBoundary(folder, allowed, pending = {}, extra = {}) {
+  const isFile = (entry) => entry.endsWith('.ts');
+  const folders = allowed.filter((entry) => !isFile(entry));
+  const files = allowed.filter(isFile);
+  const message = `${folder}/ may import only ${allowed.map((f) => (isFile(f) ? f : `${f}/`)).join(', ')} and packages.`;
+  const rules = (depth, exempt = [], patterns = []) => ({
     'no-restricted-imports': [
       'error',
       {
         patterns: [
           {
-            regex: `^[#$]lib/(?!(${allowed.join('|')})(/|$)${exempt.map((path) => `|${path.replace(/[.]/g, '\\.')}$`).join('')})`,
+            regex: `^[#$]lib/(?!(${folders.join('|')})(/|$)${[...files, ...exempt].map((path) => `|${path.replace(/[.]/g, '\\.')}$`).join('')})`,
             message,
           },
           { regex: `^(\\.\\./){${depth - 1}}\\.\\.(/|$)(?!.*\\.css$)`, message },
-          // A later config's rule replaces an earlier one's, so repeat the Skeleton rule here.
-          ...(folder === 'ui' ? [] : [skeletonOnlyInUi]),
+          // A later config's rule replaces an earlier one's, so repeat the ui-only rules here.
+          ...(folder === 'ui' ? [] : [skeletonOnlyInUi, dndKitOnlyInUi]),
+          ...patterns,
         ],
       },
     ],
@@ -59,12 +56,16 @@ function importBoundary(folder, allowed, pending = {}) {
   return [
     ...[1, 2, 3, 4, 5, 6].map((depth) => ({
       files: [`src/lib/${folder}/${'*/'.repeat(depth - 1)}*.{ts,svelte}`],
-      ignores: ['**/*.test.ts', ...boundaryExceptions],
+      ignores: ['**/*.test.ts'],
       rules: rules(depth),
     })),
     ...Object.entries(pending).map(([file, exempt]) => ({
       files: [`src/lib/${file}`],
       rules: rules(file.split('/').length - 1, exempt),
+    })),
+    ...Object.entries(extra).map(([file, patterns]) => ({
+      files: [`src/lib/${file}`],
+      rules: rules(file.split('/').length - 1, pending[file], patterns),
     })),
   ];
 }
@@ -165,7 +166,7 @@ export default [
     files: ['src/**/*.{ts,svelte}', 'tests/**/*.ts'],
     ignores: ['src/lib/ui/**'],
     rules: {
-      'no-restricted-imports': ['error', { patterns: [skeletonOnlyInUi] }],
+      'no-restricted-imports': ['error', { patterns: [skeletonOnlyInUi, dndKitOnlyInUi] }],
     },
   },
   {
@@ -195,32 +196,51 @@ export default [
   ...importBoundary('utils', ['utils']),
   ...importBoundary('config', ['config', 'api', 'assets', 'ui', 'utils']),
   ...importBoundary('auth', ['auth', 'api', 'config', 'telemetry', 'ui', 'utils']),
-  // PR 20 (explorer) removes the pending imports: SearchResult moves to the dictionary types,
-  // mode.ts reads layout data, and the dictionary and export state get a public surface.
+  // query/ sits below the explorer but still imports its concept lookup, consent rule and explore
+  // mode. Moving them below query/ (or injecting them) is left for after the refactor.
   ...importBoundary('query', ['query', 'api', 'auth', 'config', 'telemetry', 'ui', 'utils'], {
-    'query/restore.ts': [
-      'explorer/types.ts',
-      'explorer/export/Export.ts',
-      'explorer/export/types.ts',
-    ],
-    'query/filter.svelte.ts': ['explorer/types.ts'],
     'query/filters.svelte.ts': ['explorer/Dictionary.ts'],
     'query/counts/providers.ts': ['explorer/mode.ts'],
     'query/counts/statProviders.ts': ['explorer/Dictionary.ts', 'explorer/mode.ts'],
   }),
-  ...importBoundary(
+  ...importBoundary('datasets', [
     'datasets',
-    ['datasets', 'query', 'api', 'auth', 'config', 'telemetry', 'ui', 'utils'],
+    'explorer/index.ts',
+    'query',
+    'api',
+    'auth',
+    'config',
+    'telemetry',
+    'ui',
+    'utils',
+  ]),
+  ...importBoundary(
+    'explorer',
+    ['explorer', 'query', 'api', 'assets', 'auth', 'config', 'shell', 'telemetry', 'ui', 'utils'],
+    {},
     {
-      'datasets/components/QuerySummary.svelte': [
-        'explorer/Dictionary.ts',
-        'explorer/export/Export.ts',
+      // The dictionary helpers sit below explorer search; importing it back restores the cycle
+      // that ExplorerSearch removed.
+      'explorer/Dictionary.ts': [
+        {
+          regex: String.raw`(^|/)search\.svelte(\.ts)?$`,
+          message: 'Dictionary.ts must not import explorer search state.',
+        },
       ],
-      'datasets/components/SelectedVariablesSummary.svelte': ['explorer/export/types.ts'],
     },
   ),
   ...importBoundary('admin', [
     'admin',
+    'query',
+    'api',
+    'auth',
+    'config',
+    'telemetry',
+    'ui',
+    'utils',
+  ]),
+  ...importBoundary('banners', [
+    'banners',
     'query',
     'api',
     'auth',

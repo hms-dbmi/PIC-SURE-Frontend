@@ -12,7 +12,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('$app/env', () => ({ browser: false }));
 vi.mock('#lib/utils/ssrWrite.ts', () => ({ assertNoSsrWrite: vi.fn() }));
 vi.mock('#lib/auth/session.svelte.ts', () => ({
-  session: { user: {}, ensureConsentsLoaded: vi.fn() },
+  session: { user: {}, ensureConsentsLoaded: vi.fn(), onQueryDiscard: vi.fn() },
 }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/') } }));
 vi.mock('#lib/api/client.ts', () => ({ request: vi.fn() }));
@@ -43,7 +43,7 @@ import {
   type FilterInterface,
 } from '#lib/query/filter.svelte.ts';
 import { LogicTree } from '#lib/query/logicTree.svelte.ts';
-import type { SearchResult } from '#lib/explorer/types.ts';
+import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
 import type { StatConfig } from '#lib/config/index.ts';
 import { statEntries, statProvider } from '#lib/query/counts/statProviders.ts';
 

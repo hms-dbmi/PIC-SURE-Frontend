@@ -1,5 +1,3 @@
-export const BANNER_LABEL_LENGTH = 48;
-
 export const BANNER_APPEARANCES = [
   'PRIMARY',
   'SECONDARY',
@@ -10,19 +8,6 @@ export const BANNER_APPEARANCES = [
   'SURFACE',
 ] as const;
 export type BannerAppearance = (typeof BANNER_APPEARANCES)[number];
-
-export const BANNER_APPEARANCE_DETAILS: Record<
-  BannerAppearance,
-  { label: string; swatchClass: string }
-> = {
-  PRIMARY: { label: 'Primary', swatchClass: 'bg-primary-500' },
-  SECONDARY: { label: 'Secondary', swatchClass: 'bg-secondary-500' },
-  TERTIARY: { label: 'Tertiary', swatchClass: 'bg-tertiary-500' },
-  SUCCESS: { label: 'Success', swatchClass: 'bg-success-500' },
-  WARNING: { label: 'Warning', swatchClass: 'bg-warning-500' },
-  ERROR: { label: 'Error', swatchClass: 'bg-error-500' },
-  SURFACE: { label: 'Surface', swatchClass: 'bg-surface-500' },
-};
 
 export const BANNER_ICONS = ['NONE', 'INFORMATION', 'SUCCESS', 'WARNING', 'ERROR'] as const;
 export type BannerIcon = (typeof BANNER_ICONS)[number];

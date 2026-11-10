@@ -10,7 +10,6 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
   registerSignedInUser: vi.fn(),
 }));
 
-import { logout, setToken } from '#lib/auth/User.ts';
 import { session } from '#lib/auth/session.svelte.ts';
 import { request } from '#lib/api/client.ts';
 import { createLog } from '#lib/telemetry/logger.ts';
@@ -19,6 +18,7 @@ import { findSessionProvider, saveSessionProvider } from '#lib/auth/providers/Au
 import { createInstance } from '#lib/auth/providerRegistry.ts';
 import AUTH0 from '#lib/auth/providers/AUTH0.ts';
 import FENCE from '#lib/auth/providers/FENCE.ts';
+import { FENCE_REAUTH_KEY } from '#lib/auth/token.ts';
 
 /** An unsigned JWT for `sub` that expires in an hour. */
 function jwt(sub: string): string {
@@ -45,7 +45,7 @@ const psamaLogoutFailures = {
 describe('logout', () => {
   beforeEach(() => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
-    setToken('token');
+    session.setToken('token');
   });
 
   afterEach(() => {
@@ -61,7 +61,7 @@ describe('logout', () => {
       vi.fn(() => Promise.resolve(new Response('{}'))),
     );
 
-    await Promise.all([logout(), logout()]);
+    await Promise.all([session.logout(), session.logout()]);
 
     expect(fetch).toHaveBeenCalledOnce();
     expect(navigate).toHaveBeenCalledOnce();
@@ -78,9 +78,27 @@ describe('logout', () => {
       },
     };
 
-    await logout(provider as unknown as AuthProvider);
+    await session.logout(provider as unknown as AuthProvider);
 
     expect(navigate).toHaveBeenCalledExactlyOnceWith('/login');
+  });
+
+  it('goes to the login page once when a provider logout returns no redirect', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(new Response('{}'))),
+    );
+    vi.mocked(createLog).mockClear();
+    const provider = { logout: async () => undefined };
+
+    await session.logout(provider as unknown as AuthProvider);
+
+    expect(navigate).toHaveBeenCalledExactlyOnceWith('/login');
+    const loggedOut = vi
+      .mocked(createLog)
+      .mock.calls.filter((call) => call[1] === 'logout.success');
+    expect(loggedOut).toHaveLength(1);
+    expect(console.error).not.toHaveBeenCalled();
   });
 
   const common = { description: 'Log in', enabled: true, alt: false };
@@ -94,7 +112,7 @@ describe('logout', () => {
       () =>
         new FENCE({ ...common, name: 'FENCE', type: 'FENCE', uri: 'u', clientid: 'c', idp: 'i' }),
     ],
-  ])('through %s, which leaves its IdP session alone', (_, create) => {
+  ])('through %s, which returns no logout URL', (_, create) => {
     it('ends the session once, without an error', async () => {
       vi.stubGlobal(
         'fetch',
@@ -106,7 +124,7 @@ describe('logout', () => {
       const ended = vi.fn();
       const stopListening = session.onEnd(ended);
 
-      await logout(provider);
+      await session.logout(provider);
       stopListening();
 
       expect(navigate).toHaveBeenCalledExactlyOnceWith('/login');
@@ -121,6 +139,26 @@ describe('logout', () => {
     });
   });
 
+  it('leaves the flag that makes the next FENCE login ask for the account again', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(new Response('{}'))),
+    );
+    const fence = new FENCE({
+      ...common,
+      name: 'FENCE',
+      type: 'FENCE',
+      uri: 'u',
+      clientid: 'c',
+      idp: 'i',
+    });
+    saveSessionProvider(fence);
+
+    await session.logout(fence);
+
+    expect(localStorage.getItem(FENCE_REAUTH_KEY)).toBe('true');
+  });
+
   it('ends the session once when another user logs in through another provider, and once on logout', async () => {
     vi.stubGlobal(
       'fetch',
@@ -131,7 +169,7 @@ describe('logout', () => {
       { ...common, name: 'AUTH0', type: 'AUTH0', clientid: 'c', connection: 'x' },
     ];
     saveSessionProvider(providers[0]);
-    setToken(jwt('first'));
+    session.setToken(jwt('first'));
     const ended = vi.fn();
     const stopListening = session.onEnd(ended);
 
@@ -142,7 +180,7 @@ describe('logout', () => {
 
     const provider = findSessionProvider(providers);
     expect(provider?.name).toBe('AUTH0');
-    await logout(provider && (await createInstance(provider)));
+    await session.logout(provider && (await createInstance(provider)));
     stopListening();
 
     expect(ended).toHaveBeenCalledTimes(2);
@@ -167,14 +205,14 @@ describe('logout', () => {
         }),
       };
 
-      await logout(provider as unknown as AuthProvider);
+      await session.logout(provider as unknown as AuthProvider);
 
       expect(seenByProvider).toBe('id-token');
       expect(localStorage.getItem('oktaIdToken')).toBeNull();
     });
 
     it('goes on a logout without a provider', async () => {
-      await logout();
+      await session.logout();
 
       expect(localStorage.getItem('oktaIdToken')).toBeNull();
     });
@@ -189,7 +227,7 @@ describe('logout', () => {
       localStorage.setItem('token', `${btoa('{}')}.${btoa(JSON.stringify({ exp: 1 }))}.sig`);
 
       vi.resetModules();
-      await import('#lib/auth/User.ts');
+      await import('#lib/auth/session.svelte.ts');
 
       expect(localStorage.getItem('oktaIdToken')).toBeNull();
     });
@@ -203,7 +241,7 @@ describe('logout', () => {
       });
 
       it('navigates to login once without a provider', async () => {
-        await logout();
+        await session.logout();
 
         expect(fetch).toHaveBeenCalledOnce();
         expect(navigate).toHaveBeenCalledOnce();
@@ -214,7 +252,7 @@ describe('logout', () => {
       it('navigates to login once when the provider logout fails too', async () => {
         const provider = { logout: vi.fn().mockRejectedValue(new Error('not implemented')) };
 
-        await logout(provider as unknown as AuthProvider);
+        await session.logout(provider as unknown as AuthProvider);
 
         expect(navigate).toHaveBeenCalledOnce();
         expect(navigate).toHaveBeenCalledWith('/login');

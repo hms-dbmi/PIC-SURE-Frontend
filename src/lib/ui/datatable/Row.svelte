@@ -1,80 +1,36 @@
 <script lang="ts">
   import { slide } from 'svelte/transition';
-  import type { Column } from '#lib/ui/datatable/types.ts';
-  import type { Indexable } from '#lib/utils/objects.ts';
-  import {
-    activeTable,
-    activeRow,
-    activeComponent,
-    setActiveRow,
-  } from '#lib/explorer/ExpandableRow.ts';
-  import { isFormField } from '#lib/ui/datatable/keyboard.ts';
-  import { log, createLog, getPageContext } from '#lib/telemetry/logger.ts';
+  import type { Row } from './types.ts';
+  import { getTableContext } from './context.ts';
+  import { isFormField } from './keyboard.ts';
 
   interface Props {
-    cellOverides?: Indexable;
-    columns?: Column[];
-    index?: number;
-    row?: Indexable;
-    tableName?: string;
-    tableId: string;
-    isClickable?: boolean;
-    expandable?: boolean;
-    rowClickHandler?: (row: Indexable) => void;
-    rowClickKeys?: string[];
-    rowClickLogAction?: string;
-    tabindex?: number;
+    index: number;
+    row: Row;
   }
 
-  let {
-    cellOverides = {},
-    columns = [],
-    index = -2,
-    row = {},
-    tableName = '',
-    tableId,
-    isClickable = false,
-    expandable = false,
-    rowClickHandler = () => {},
-    rowClickKeys = [],
-    rowClickLogAction,
-    tabindex = isClickable ? 0 : -1,
-  }: Props = $props();
+  let { index, row }: Props = $props();
 
+  const table = getTableContext();
   let rowElement: HTMLTableRowElement | undefined = $state();
-
-  function onClick(row: Indexable) {
-    const willOpen = !(
-      $activeTable === tableName &&
-      ($activeRow === row?.conceptPath || $activeRow === row.dataset_id)
-    );
-    if (rowClickLogAction) {
-      log(
-        createLog('ACTION', rowClickLogAction, {
-          variable: row.conceptPath || row.dataset_id,
-          open: willOpen,
-          pageContext: getPageContext(),
-        }),
-      );
-    }
-    setActiveRow({ row: row.conceptPath || row.dataset_id, table: tableName });
-    rowClickHandler(row);
-  }
+  let active = $derived(table.isExpanded(row));
 
   function onKeydown(event: KeyboardEvent) {
-    if (!isClickable || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+    if (!table.clickable || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) {
+      return;
+    }
     // A held key must not rapid-fire activations (e.g. toggling export on/off).
     if (event.repeat) return;
     if ((event.key === 'Enter' || event.key === ' ') && event.target === rowElement) {
       event.preventDefault();
-      onClick(row);
+      table.activate(row);
       return;
     }
     const key = event.key.toLowerCase();
     if (!/^[a-z]$/.test(key) || isFormField(event.target)) return;
-    if (rowClickKeys.includes(key)) {
+    if (table.rowClickKeys.includes(key)) {
       event.preventDefault();
-      onClick(row);
+      table.activate(row);
       return;
     }
     const shortcut = rowElement?.querySelector(`[data-key="${key}"]`)?.closest('button, a');
@@ -83,30 +39,24 @@
       (shortcut as HTMLElement).click();
     }
   }
-
-  let active = $derived(
-    $activeTable === tableName &&
-      ($activeRow === row?.conceptPath || $activeRow === row.dataset_id),
-  );
 </script>
 
 <tr
   bind:this={rowElement}
-  id="{tableId}-row-{index.toString()}"
-  onclick={() => onClick(row)}
+  id="{table.id}-row-{index.toString()}"
+  onclick={() => table.activate(row)}
   onkeydown={onKeydown}
-  class={isClickable ? 'cursor-pointer' : ''}
-  aria-expanded={expandable ? active : undefined}
-  {tabindex}
+  class={table.clickable ? 'cursor-pointer' : ''}
+  aria-expanded={table.expandedRow ? active : undefined}
+  tabindex={table.tabindex(index)}
 >
-  {#each columns as column, colIndex}
+  {#each table.columns as column, colIndex}
     <td
-      id="{tableId}-row-{index.toString()}-col-{colIndex.toString()}"
+      id="{table.id}-row-{index.toString()}-col-{colIndex.toString()}"
       class={column?.class?.includes('text-center') ? 'text-center' : ''}
     >
-      {#if cellOverides[column.dataElement]}
-        {@const SvelteComponent = cellOverides[column.dataElement]}
-        <SvelteComponent data={{ tableName, index, row, cell: row[column.dataElement] }} />
+      {#if column.cell}
+        {@render column.cell(row)}
       {:else}
         {row[column.dataElement] ? row[column.dataElement] : ''}
       {/if}
@@ -114,14 +64,11 @@
   {/each}
 </tr>
 
-{#if expandable && active && !!$activeRow}
-  <tr id="{tableId}-active-row-{index.toString()}" class="expandable-row">
-    <td colspan={columns.length}>
+{#if table.expandedRow && active}
+  <tr id="{table.id}-active-row-{index.toString()}" class="expandable-row">
+    <td colspan={table.columns.length}>
       <div transition:slide={{ axis: 'y' }}>
-        {#if $activeComponent}
-          {@const SvelteComponent = $activeComponent}
-          <SvelteComponent data={row} />
-        {/if}
+        {@render table.expandedRow(row)}
       </div>
     </td>
   </tr>

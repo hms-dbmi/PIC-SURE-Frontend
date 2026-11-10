@@ -3,10 +3,10 @@
   import type { FilterGroupInterface } from '#lib/query/filter.svelte.ts';
   import { page } from '$app/state';
   import { filterState } from '#lib/query/filters.svelte.ts';
-  import { exports } from '#lib/explorer/export/Export.ts';
+  import { exportState } from '#lib/explorer/export/export.svelte.ts';
 
   import FilterComponent from '#lib/explorer/components/results/AddedFilter.svelte';
-  import ResultsFilterGroup from '#lib/explorer/components/results/ResultsFilterGroup.svelte';
+  import FilterTreeView from '#lib/query/components/FilterTreeView.svelte';
   import Popover from '#lib/ui/popover/Popover.svelte';
   import Button from '#lib/ui/Button.svelte';
 
@@ -20,7 +20,7 @@
   let advancedFilteringDisabled = $derived(filterState.phenotypic.length <= 1);
 </script>
 
-{#if filterState.phenotypic.length + filterState.genomic.length + $exports.length === 0}
+{#if filterState.phenotypic.length + filterState.genomic.length + exportState.variables.length === 0}
   <p class="text-center">No filters added</p>
 {:else}
   <div class="px-4 mb-1 w-80">
@@ -61,7 +61,23 @@
       </div>
     {/if}
     <section class="py-1">
-      <ResultsFilterGroup group={filterState.tree.root as FilterGroupInterface} />
+      <div class="flex flex-col">
+        <FilterTreeView group={filterState.tree.root as FilterGroupInterface}>
+          {#snippet filter(node)}
+            <FilterComponent filter={node} />
+          {/snippet}
+          {#snippet separator(operator)}
+            <span class="font-semibold text-xs py-0.5" data-testid="results-filter-operator"
+              >{operator}</span
+            >
+          {/snippet}
+          {#snippet subgroup({ children })}
+            <div class="flex flex-col border-l-3 border-gray-400 pl-2 ml-1">
+              {@render children()}
+            </div>
+          {/snippet}
+        </FilterTreeView>
+      </div>
       {#if filterState.genomic.length > 0 && filterState.phenotypic.length > 0}
         <span class="font-semibold text-xs py-0.5">AND</span>
       {/if}

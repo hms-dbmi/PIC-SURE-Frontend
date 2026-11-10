@@ -44,6 +44,11 @@ export function resolveLocalMinute(value: string, timeZone: string): LocalMinute
   return { status: options.length > 1 ? 'ambiguous' : 'resolved', options };
 }
 
+/** The instant in the ISO form `resolveLocalMinute` produces, so the two compare as strings. */
+export function canonicalInstant(instant: string): string {
+  return new Date(instant).toISOString();
+}
+
 export function formatInstantAsLocalMinute(instant: string, timeZone: string): string {
   const parts = zonedParts(new Date(instant).getTime(), timeZone);
   return `${parts.year}-${pad(parts.month)}-${pad(parts.day)}T${pad(parts.hour)}:${pad(parts.minute)}`;

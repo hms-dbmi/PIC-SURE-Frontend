@@ -26,7 +26,7 @@ const user = {
 };
 
 async function deactivate() {
-  render(Actions, { data: { cell: 'u-1', row: { status: 'Active', email: user.email } } });
+  render(Actions, { uuid: 'u-1', status: 'Active', email: user.email });
   await fireEvent.click(screen.getByTestId('admin-user-deactivate-u-1-trigger'));
   await fireEvent.click(screen.getByRole('button', { name: 'Deactivate' }));
 }

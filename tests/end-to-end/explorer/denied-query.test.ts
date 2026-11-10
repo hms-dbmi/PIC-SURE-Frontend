@@ -75,6 +75,48 @@ test.describe('Logout from a rejected query', () => {
     await expect.poll(async () => (await storedFilterIds(page)) ?? []).toEqual([]);
   });
 
+  test('keeps saved filters when a request for open-access data is forbidden', async ({ page }) => {
+    await mockApiConfig(page, { features: [{ name: 'DISCOVER', value: 'true' }] });
+    await mockApiSuccess(page, '*/**/picsure/hpds/open/query/sync', '9999');
+    await page.route('*/**/picsure/visualization/open/distributions', forbid);
+
+    await page.goto('/discover/distributions');
+
+    await expect(page).toHaveURL(/\/login$/);
+    expect(await storedFilterIds(page)).toEqual(['\\denied-study\\variable\\']);
+  });
+
+  test('keeps saved filters when Discover’s distributions are forbidden on an open explorer', async ({
+    page,
+  }) => {
+    // explore-without-login sends Discover's distributions to the authorized endpoint
+    await mockApiConfig(page, {
+      features: [
+        { name: 'DISCOVER', value: 'true' },
+        { name: 'OPEN', value: 'true' },
+        { name: 'OPEN_EXPLORER', value: 'true' },
+      ],
+    });
+    await mockApiSuccess(page, countResultPath, '9999');
+    await mockApiSuccess(page, '*/**/picsure/hpds/open/query/sync', '9999');
+    await page.route('*/**/picsure/visualization/auth/distributions', forbid);
+
+    await page.goto('/discover/distributions');
+
+    await expect(page).toHaveURL(/\/login$/);
+    expect(await storedFilterIds(page)).toEqual(['\\denied-study\\variable\\']);
+  });
+
+  test('clears saved filters when the explorer’s distributions are forbidden', async ({ page }) => {
+    await mockApiSuccess(page, countResultPath, '9999');
+    await page.route('*/**/picsure/visualization/auth/distributions', forbid);
+
+    await page.goto('/explorer/distributions');
+
+    await expect(page).toHaveURL(/\/login$/);
+    await expect.poll(() => storedFilterIds(page)).toEqual([]);
+  });
+
   test('keeps saved filters when the session expires', async ({ page }) => {
     await page.route(countResultPath, (route) =>
       route.fulfill({

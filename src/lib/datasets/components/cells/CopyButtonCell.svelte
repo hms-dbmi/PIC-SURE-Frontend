@@ -2,17 +2,21 @@
   import CopyButton from '#lib/ui/CopyButton.svelte';
   import { log, createLog } from '#lib/telemetry/logger.ts';
 
-  let { data = { cell: '', row: {} } } = $props();
+  interface Props {
+    value: string;
+  }
+
+  let { value }: Props = $props();
 </script>
 
 <div class="flex items-center">
-  <span class="monospace">{data.cell}</span>
+  <span class="monospace">{value}</span>
   <CopyButton
-    data-testid="dataset-query-copy-{data.cell}"
+    data-testid="dataset-query-copy-{value}"
     useIcon
     triggerTitle="Copy dataset ID (c)"
     data-key="c"
-    itemToCopy={data.cell}
-    oncopy={() => log(createLog('ACTION', 'dataset.copy_id', { value: data.cell }))}
+    itemToCopy={value}
+    oncopy={() => log(createLog('ACTION', 'dataset.copy_id', { value }))}
   />
 </div>

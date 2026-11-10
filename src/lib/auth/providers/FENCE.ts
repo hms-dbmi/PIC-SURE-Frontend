@@ -4,14 +4,13 @@ import { browser } from '$app/env';
 import * as psamaUser from '#lib/api/psama/user.ts';
 import type { User } from '#lib/auth/model/user.ts';
 import { newLoginState, verifyLoginState } from '#lib/auth/loginState.ts';
+import { FENCE_REAUTH_KEY } from '#lib/auth/token.ts';
 
 interface FenceData extends AuthData {
   uri: string;
   clientid: string;
   idp: string;
 }
-
-const REAUTH_FLAG = 'fence-reauth';
 
 class Fence extends AuthProvider implements FenceData {
   uri: string;
@@ -61,17 +60,16 @@ class Fence extends AuthProvider implements FenceData {
    */
   logout = async (): Promise<void> => {
     try {
-      localStorage.setItem(REAUTH_FLAG, 'true');
+      localStorage.setItem(FENCE_REAUTH_KEY, 'true');
     } catch {
       return;
     }
   };
 
-  /** Returns whether a logout left the re-authentication flag set, and clears it. */
   private consumeReauthFlag(): boolean {
     try {
-      const flagged = localStorage.getItem(REAUTH_FLAG) === 'true';
-      localStorage.removeItem(REAUTH_FLAG);
+      const flagged = localStorage.getItem(FENCE_REAUTH_KEY) === 'true';
+      localStorage.removeItem(FENCE_REAUTH_KEY);
       return flagged;
     } catch {
       return false;

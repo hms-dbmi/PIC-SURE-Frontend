@@ -22,22 +22,21 @@ vi.mock('#lib/api/picsure/banners.ts', () => ({
   updateSavedBanner: vi.fn(),
 }));
 
-const sensors = vi.hoisted(() => ({ keyboard: Symbol('keyboard'), pointer: Symbol('pointer') }));
-vi.mock('@dnd-kit-svelte/svelte', async () => ({
-  DragDropProvider: (
-    await import('../../../../../tests/support/fixtures/DragDropProviderMock.svelte')
-  ).default,
+vi.mock('#lib/ui/sortable/SortableProvider.svelte', async () => ({
+  default: (await import('../../../../../tests/support/fixtures/DragDropProviderMock.svelte'))
+    .default,
+}));
+vi.mock('#lib/ui/sortable/sortable.ts', async () => ({
   DragOverlay: (await import('../../../../../tests/support/fixtures/DragOverlayMock.svelte'))
     .default,
-  KeyboardSensor: sensors.keyboard,
-  PointerSensor: sensors.pointer,
-}));
-vi.mock('@dnd-kit-svelte/svelte/sortable', () => ({
-  useSortable: () => ({ ref: vi.fn(), handleRef: vi.fn() }),
+  createSortable: () => ({ attach: vi.fn(), attachHandle: vi.fn() }),
 }));
 vi.mock('#lib/ui/toaster.ts', () => ({ toaster: { success: vi.fn(), error: vi.fn() } }));
 
 import BannerManagementView from '#lib/banners/components/admin/BannerManagementView.svelte';
+import { UnsavedChanges } from '#lib/ui/unsavedGuard.svelte.ts';
+import type { Component } from 'svelte';
+import UnsavedChangesHost from '../../../../../tests/support/fixtures/UnsavedChangesHost.svelte';
 import {
   archiveBanner,
   disableBanner,
@@ -184,9 +183,6 @@ describe('BannerManagementView', () => {
     render(BannerManagementView);
     await screen.findByText('System maintenance tonight');
 
-    expect(
-      (globalThis as typeof globalThis & { __bannerDndSensors?: unknown[] }).__bannerDndSensors,
-    ).toEqual([sensors.keyboard, sensors.pointer]);
     const grips = screen.getAllByRole('button', { name: /Reorder banner/ });
     expect(grips).toHaveLength(2);
     expect(grips[0]).toHaveClass('focus-visible:ring-3');
@@ -371,11 +367,12 @@ describe('BannerManagementView', () => {
   });
 
   it('guards lifecycle, create, edit, and Configuration tab transitions while order is dirty', async () => {
-    const resolveTab = vi.fn();
+    const unsaved = new UnsavedChanges();
     vi.mocked(getManagedBanners).mockResolvedValue([base, scheduled, records[1]]);
-    const view = render(BannerManagementView, {
-      props: { ontabchangerequestresolve: resolveTab },
-    });
+    // A component without props doesn't fit the host's generic Component<P> (props are
+    // contravariant), whatever the host's props type
+    const child = BannerManagementView as Component<Record<string, unknown>>;
+    render(UnsavedChangesHost, { props: { child, props: {}, unsaved } });
     await screen.findByText('System maintenance tonight');
 
     await drag(base.uuid, scheduled.uuid);
@@ -398,13 +395,13 @@ describe('BannerManagementView', () => {
     ).not.toBeInTheDocument();
     await fireEvent.click(screen.getByRole('button', { name: 'Keep ordering' }));
 
-    await view.rerender({
-      ontabchangerequestresolve: resolveTab,
-      tabchangerequest: 'Branding',
-    });
-    expect(screen.getByRole('heading', { name: 'Unsaved Changes' })).toBeInTheDocument();
+    const showBranding = vi.fn();
+    unsaved.request('Branding', showBranding);
+    expect(await screen.findByRole('heading', { name: 'Unsaved Changes' })).toBeInTheDocument();
+    expect(showBranding).not.toHaveBeenCalled();
     await fireEvent.click(screen.getByRole('button', { name: 'Discard order changes' }));
-    expect(resolveTab).toHaveBeenCalledWith('Branding');
+    expect(showBranding).toHaveBeenCalledOnce();
+    expect(bannerRowOrder()).toEqual([base.uuid, scheduled.uuid]);
   });
 
   it('continues the guarded lifecycle and editor transitions after discarding order changes', async () => {

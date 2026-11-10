@@ -13,11 +13,11 @@
 
   interface Props {
     kind: AccessKind;
-    /** The table's cell contract: `cell` is the row's uuid. */
-    data: { cell: string; row: Row };
+    uuid: string;
+    row: Row;
   }
 
-  let { kind, data }: Props = $props();
+  let { kind, uuid, row }: Props = $props();
 
   const KINDS = {
     connection: {
@@ -41,14 +41,14 @@
   } satisfies Record<AccessKind, unknown>;
 
   const config = $derived(KINDS[kind]);
-  const name = $derived(config.name(data.row) ?? '');
+  const name = $derived(config.name(row) ?? '');
 
   function edit(event: Event) {
     event.stopPropagation();
     goto(
       resolve(
         '/(picsure)/(authorized)/(admin)/admin/configuration/(top-admin)/[kind=accessKind]/[uuid]/edit',
-        { kind, uuid: data.cell },
+        { kind, uuid },
       ),
     );
   }
@@ -59,7 +59,7 @@
     const { resource, inUseBy } = config;
     const subject = `${kind} '${name}'`;
     try {
-      await resource.remove(data.cell);
+      await resource.remove(uuid);
       toaster.success({ title: `Successfully deleted ${subject}` });
     } catch (error) {
       console.error(error);
@@ -77,7 +77,7 @@
   <IconButton
     icon="fa-solid fa-pen-to-square fa-xl"
     label="Edit (e)"
-    data-testid="admin-{kind}-edit-{data.cell}"
+    data-testid="admin-{kind}-edit-{uuid}"
     shortcut="e"
     disabled={!session.isTopAdmin}
     onclick={edit}
@@ -86,7 +86,7 @@
     icon="fa-solid fa-trash fa-xl"
     label="Delete (d)"
     shortcut="d"
-    data-testid="admin-{kind}-delete-{data.cell}"
+    data-testid="admin-{kind}-delete-{uuid}"
     title={config.title}
     confirmLabel="Yes"
     cancelLabel="No"

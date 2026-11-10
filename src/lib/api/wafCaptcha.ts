@@ -1,7 +1,7 @@
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
 import { page } from '$app/state';
-import { appPath } from '#lib/api/paths.ts';
+import { appPath } from '#lib/utils/appPath.ts';
 import { sessionHooks } from '#lib/api/sessionHooks.ts';
 import { log, createLog } from '#lib/telemetry/logger.ts';
 
@@ -23,7 +23,7 @@ export function handleWafCaptcha(path: string): boolean {
   if (reloadInitiated) return true;
 
   // explorer/mode.ts's isOpenAccess(), which would bring the session module into api/
-  const openAccess = page.url.pathname.includes('/discover') || !sessionHooks().getToken();
+  const openAccess = page.data.mode === 'discover' || !sessionHooks().getToken();
   const mode = openAccess ? 'open' : 'authorized';
 
   const lastReload = Number(sessionStorage.getItem(GUARD_KEY));

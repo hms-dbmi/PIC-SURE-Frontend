@@ -3,10 +3,7 @@
   import Tabs, { type Tab } from '#lib/ui/Tabs.svelte';
   import CodeBlock from '#lib/ui/CodeBlock.svelte';
   import DownloadButton from './DownloadButton.svelte';
-  import {
-    getDatasetId,
-    getQueryRequest,
-  } from '#lib/explorer/export/ExportStepperManager.svelte.ts';
+  import { exportState } from '#lib/explorer/export/export.svelte.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
 
   type AnalysisTab = 'Python' | 'R' | 'Download';
@@ -44,7 +41,7 @@
           lang="python"
           code={config.branding.explorePage.codeBlocks.PythonExport.replace(
             '{{queryId}}',
-            getDatasetId() ?? 'DATASET_ID_MISSING',
+            exportState.datasetId ?? 'DATASET_ID_MISSING',
           ) || 'Code not set for Python in configuration'}
         />
       {:else if tab === 'R'}
@@ -52,12 +49,12 @@
           lang="r"
           code={config.branding.explorePage.codeBlocks.RExport.replace(
             '{{queryId}}',
-            getDatasetId() ?? 'DATASET_ID_MISSING',
+            exportState.datasetId ?? 'DATASET_ID_MISSING',
           ) || 'Code not set for R in configuration'}
         />
       {:else}
         <div class="flex justify-center w-full">
-          <DownloadButton query={getQueryRequest()} datasetId={getDatasetId()} />
+          <DownloadButton query={exportState.request} datasetId={exportState.datasetId} />
         </div>
       {/if}
     {/snippet}

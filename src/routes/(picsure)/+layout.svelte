@@ -4,8 +4,11 @@
   import { beforeNavigate } from '$app/navigation';
 
   import Toaster from '#lib/ui/Toaster.svelte';
+  import { setTableEvents } from '#lib/ui/datatable/context.ts';
+  import { tableEvents } from '#lib/telemetry/tableEvents.ts';
 
   import { filterState } from '#lib/query/filters.svelte.ts';
+  import { exploreMode, routeMode } from '#lib/explorer/mode.ts';
 
   import Shell from '#lib/shell/Shell.svelte';
   import Navigation from '#lib/shell/Navigation.svelte';
@@ -16,38 +19,42 @@
 
   let { children }: { children?: Snippet } = $props();
   let filterWarningModal: boolean = $state(false);
+  let filterWarningTrigger: HTMLElement | undefined = $state();
+  setTableEvents(tableEvents);
 
   onMount(() => {
     document.body.classList.add('started');
   });
 
   let showSidebar = $derived(
-    (page.url.pathname.includes('/explorer') || page.url.pathname.includes('/discover')) &&
+    exploreMode() !== undefined &&
       !page.url.pathname.includes('/export') &&
       !page.url.pathname.includes('/distributions'),
   );
 
   beforeNavigate(({ to, cancel }) => {
+    const toMode = routeMode(to?.route.id);
     const notAuthorized =
-      !page.url.pathname.includes('/explorer') &&
-      to?.url.pathname.includes('/explorer') &&
-      filterState.hasInvalidFilter;
+      exploreMode() !== 'explorer' && toMode === 'explorer' && filterState.hasInvalidFilter;
     const stigmatizing =
-      to?.url.pathname.includes('/discover') &&
-      (filterState.hasGenomicFilter || filterState.hasUnallowedFilter);
+      toMode === 'discover' &&
+      (filterState.hasGenomicOrSnpFilter || filterState.hasUnallowedFilter);
 
     if (stigmatizing || notAuthorized) {
       if (stigmatizing) filterState.warning = 'stigmatizing';
       else if (notAuthorized) filterState.warning = 'notAuthorized';
 
       cancel();
+      const active = document.activeElement;
+      filterWarningTrigger =
+        active instanceof HTMLElement && active !== document.body ? active : undefined;
       filterWarningModal = true;
     }
   });
 </script>
 
 <Toaster />
-<FilterWarning bind:open={filterWarningModal} />
+<FilterWarning bind:open={filterWarningModal} returnFocus={filterWarningTrigger} />
 <Shell>
   {#snippet header()}
     <SiteBannerRegion />

@@ -1,6 +1,5 @@
 <script lang="ts">
-  import { useSortable } from '@dnd-kit-svelte/svelte/sortable';
-  import { CollisionPriority } from '@dnd-kit/abstract';
+  import { CollisionPriority, createDroppable } from '#lib/ui/sortable/sortable.ts';
   import { cardClass } from '#lib/ui/surface.ts';
 
   interface Props {
@@ -11,11 +10,10 @@
 
   // No group parameter - accepts drops from any group
   // Highest priority ensures this wins over parent containers
-  const { ref, isDropTarget } = useSortable({
+  const zone = createDroppable({
     get id() {
       return `empty-${groupId}`;
     },
-    index: () => 0,
     type: 'item',
     accept: ['item', 'group'],
     collisionPriority: CollisionPriority.Highest,
@@ -27,9 +25,9 @@
 
 <div
   class="{cardClass} bg-surface-50 text-center text-surface-400 italic py-4 transition-colors"
-  class:bg-primary-100={isDropTarget.current}
-  class:text-primary-600={isDropTarget.current}
-  {@attach ref}
+  class:bg-primary-100={zone.isDropTarget}
+  class:text-primary-600={zone.isDropTarget}
+  {@attach zone.attach}
 >
-  {isDropTarget.current ? 'Drop here' : 'Drop items here'}
+  {zone.isDropTarget ? 'Drop here' : 'Drop items here'}
 </div>

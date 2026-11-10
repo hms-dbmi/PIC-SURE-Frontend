@@ -3,6 +3,7 @@ import type { ArchivedBanner, BannerDraft, ManagedBanner } from '#lib/banners/mo
 import { Picsure, PicsurePaths } from '#lib/api/paths.ts';
 import { expectArray, expectRecord, isRecord } from '#lib/api/picsure/guards.ts';
 import { hasBannerContent, sanitizeBannerHTML } from '#lib/banners/model/html.ts';
+import { BANNER_CONTENT_MAX_LENGTH, BANNER_TITLE_MAX_LENGTH } from '#lib/banners/model/limits.ts';
 import { normalizeBannerPageTargets } from '#lib/banners/model/pageTargets.ts';
 
 export async function publishBanner(draft: BannerDraft): Promise<ManagedBanner> {
@@ -71,12 +72,14 @@ function authorablePayload(
   if (!hasBannerContent(htmlContent)) {
     throw new Error('Banner content is required');
   }
-  if (htmlContent.length > 5_000) {
-    throw new Error('Banner content must be 5,000 characters or fewer');
+  if (htmlContent.length > BANNER_CONTENT_MAX_LENGTH) {
+    throw new Error(
+      `Banner content must be ${BANNER_CONTENT_MAX_LENGTH.toLocaleString('en-US')} characters or fewer`,
+    );
   }
   const title = draft.title.trim();
-  if (title.length > 120) {
-    throw new Error('Banner title must be 120 characters or fewer');
+  if (title.length > BANNER_TITLE_MAX_LENGTH) {
+    throw new Error(`Banner title must be ${BANNER_TITLE_MAX_LENGTH} characters or fewer`);
   }
 
   return {
@@ -88,9 +91,10 @@ function authorablePayload(
 }
 
 /**
- * The public feed of active banners, unparsed. It renders on public pages too, so it goes without
- * credentials, and a failure stays out of the session: no logout, no cached copy. A failure
- * rejects with its cause (the HTTP status or the network error) for the caller to log.
+ * The public feed of active banners, unparsed (the banners model's `parseBannerFeed` validates
+ * it). It renders on public pages too, so it goes without credentials, and a failure stays out
+ * of the session: no logout, no cached copy. A failure rejects with its cause (the HTTP status
+ * or the network error) for the caller to log.
  */
 export async function getActiveBanners(): Promise<unknown> {
   let cause = 'Banner feed request failed';

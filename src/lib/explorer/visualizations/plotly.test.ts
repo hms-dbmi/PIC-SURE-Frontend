@@ -4,12 +4,11 @@ vi.mock('#lib/config/config.svelte.ts', () => ({
   config: { settings: { distributionExplorer: { graphColors: ['#111111', '#222222'] } } },
 }));
 
-import {
-  createCategoryPlot,
-  createContinuousPlot,
-  type CategoricalPlotData,
-  type ContinuousPlotData,
-} from '#lib/explorer/visualizations/plotly.ts';
+import { createCategoryPlot, createContinuousPlot } from '#lib/explorer/visualizations/plotly.ts';
+import type {
+  CategoricalPlotData,
+  ContinuousPlotData,
+} from '#lib/api/picsure/visualization.types.ts';
 
 const baseChart = {
   title: 'demographics: race',

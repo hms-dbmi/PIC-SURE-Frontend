@@ -2,10 +2,8 @@
   import CollapsiblePanel from '#lib/ui/CollapsiblePanel.svelte';
   import { scale } from 'svelte/transition';
   import { elasticInOut } from 'svelte/easing';
-  import type { DictionaryFacetResult } from '#lib/api/picsure/dictionary.types.ts';
-  import type { Facet } from '#lib/explorer/types.ts';
-  import { updateFacets, selectedFacets } from '#lib/explorer/Search.ts';
-  import { hiddenFacets, openFacets } from '#lib/explorer/Dictionary.ts';
+  import type { DictionaryFacetResult, Facet } from '#lib/api/picsure/dictionary.types.ts';
+  import { explorerSearch as search } from '#lib/explorer/search.svelte.ts';
   import { log, createLog, getPageContext } from '#lib/telemetry/logger.ts';
 
   import ShowMoreButton from '#lib/ui/ShowMoreButton.svelte';
@@ -24,23 +22,21 @@
   let showMore: boolean = $state(false);
 
   let filteredHiddenFacets = $derived(
-    facets.filter((f) => !($hiddenFacets[facetCategory.name] || []).includes(f.name)),
+    facets.filter((f) => !(search.hiddenFacets[facetCategory.name] || []).includes(f.name)),
   );
   let overShowLimit = $derived(filteredHiddenFacets.length > numFacetsToShow);
 
-  let facetsToDisplay = $derived(
-    (facets || textFilterValue || showMore || $selectedFacets || facetCategory) &&
-      getFacetsToDisplay(),
-  );
+  let facetsToDisplay = $derived.by(getFacetsToDisplay);
   let selectedFacetsChips = $derived(
-    $selectedFacets.filter((facet) => facet?.categoryRef?.name === facetCategory?.name),
+    search.selectedFacets.filter((facet) => facet?.categoryRef?.name === facetCategory?.name),
   );
 
   function isIndeterminate(facet: Facet): boolean {
     const atLeastOneChildSelected =
-      facet.children?.some((child) => $selectedFacets.some((f) => f.name === child.name)) ?? false;
+      facet.children?.some((child) => search.selectedFacets.some((f) => f.name === child.name)) ??
+      false;
     const isEveryChildSelected = facet.children?.length
-      ? facet.children.every((child) => $selectedFacets.some((f) => f.name === child.name))
+      ? facet.children.every((child) => search.selectedFacets.some((f) => f.name === child.name))
       : false;
     return atLeastOneChildSelected && !isEveryChildSelected;
   }
@@ -49,7 +45,8 @@
     const result = facets.some((parent) => {
       if (!parent.children || parent?.children?.length === 0) return false;
       return parent.children.every(
-        (child) => child.name === facetName || $selectedFacets.some((f) => f.name === child.name),
+        (child) =>
+          child.name === facetName || search.selectedFacets.some((f) => f.name === child.name),
       );
     });
     return result;
@@ -58,7 +55,7 @@
   function getFacetsToDisplay() {
     let facetsToDisplay = [...filteredHiddenFacets];
 
-    const selectedFacetsMap = new Map($selectedFacets.map((facet) => [facet.name, facet]));
+    const selectedFacetsMap = new Map(search.selectedFacets.map((facet) => [facet.name, facet]));
     const indeterminateFacets = facetsToDisplay.filter(isIndeterminate);
     const indeterminateMap = new Map(indeterminateFacets.map((facet) => [facet.name, facet]));
 
@@ -78,33 +75,24 @@
     );
 
     // Add selected facets at the top (excluding children of indeterminate parents and fully selected parents)
-    const selectedFacetsForCategory = $selectedFacets.filter(
+    const selectedFacetsForCategory = search.selectedFacets.filter(
       (facet) =>
         facet.category === facetCategory.name &&
         !isChildOfIndeterminate(facet.name) &&
         !isParentFullySelected(facet.name),
     );
-    selectedFacetsForCategory.forEach((facet) => {
-      facet.count = facets.find((f) => f.name === facet.name)?.count || 0;
-    });
 
     //Add parents with all children selected
     const parentsWithAllChildrenSelected = facets.filter(
       (f) =>
         f.children?.length &&
-        f.children.every((child) => $selectedFacets.some((f) => f.name === child.name)),
+        f.children.every((child) => search.selectedFacets.some((f) => f.name === child.name)),
     );
-    parentsWithAllChildrenSelected.forEach((facet) => {
-      facet.count = facets.find((f) => f.name === facet.name)?.count || 0;
-    });
 
     // Add indeterminate facets at the top
     const indeterminateFacetsForCategory = indeterminateFacets.filter(
       (facet) => facet.category === facetCategory.name,
     );
-    indeterminateFacetsForCategory.forEach((facet) => {
-      facet.count = facets.find((f) => f.name === facet.name)?.count || 0;
-    });
 
     facetsToDisplay.unshift(
       ...selectedFacetsForCategory,
@@ -142,7 +130,8 @@
     {facetCategory.display}
   {/snippet}
   <div class="flex flex-col">
-    {#if overShowLimit}
+    <!-- A filter that outlives a refetch stays visible, so it can always be cleared. -->
+    {#if overShowLimit || textFilterValue}
       <input
         type="search"
         placeholder={'Filter ' + facetCategory.display}
@@ -172,9 +161,9 @@
     {/if}
   </div>
 </CollapsiblePanel>
-{#if !$openFacets.includes(facetCategory.name)}
+{#if !search.openFacets.includes(facetCategory.name)}
   <div class="mb-2 flex flex-wrap gap-2" transition:scale={{ easing: elasticInOut }}>
-    {#each selectedFacetsChips as facet}
+    {#each selectedFacetsChips as facet (facet.name)}
       <span
         class="badge z-10 {tones['outlined-surface']} py-2 overflow-hidden"
         data-testid="explorer-facet-badge-{facet.name}"
@@ -185,7 +174,7 @@
         <button
           class="chip-close ml-1 shrink-0"
           aria-label="Remove Facet"
-          onclick={() => updateFacets([facet])}
+          onclick={() => search.toggleFacets([facet])}
         >
           <i class="fa-solid fa-times hover:text-secondary-500"></i>
         </button>

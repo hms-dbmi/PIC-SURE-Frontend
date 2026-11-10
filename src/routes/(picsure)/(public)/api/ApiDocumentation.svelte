@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import type { Attachment } from 'svelte/attachments';
   import type { SwaggerComponent, SwaggerSystem } from 'swagger-ui-dist/swagger-ui-bundle.js';
   import { ApiError } from '#lib/api/errors.ts';
   import { getDocumentedServices, getOpenApiDocument } from '#lib/api/picsure/openapi.ts';
@@ -41,6 +42,13 @@
       }
     }
   }
+
+  // Swagger renders and replaces its headings as the visitor expands sections.
+  const nestHeadings: Attachment<HTMLElement> = (root) => {
+    const observer = new MutationObserver(() => setHeadingLevels(root));
+    observer.observe(root, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  };
 
   async function load(index: boolean) {
     controller?.abort();
@@ -154,12 +162,8 @@
   onMount(() => {
     void load(true);
     const stopTracking = docsLogging.track(host);
-    // Swagger renders and replaces its headings as the visitor expands sections.
-    const headings = new MutationObserver(() => setHeadingLevels(host));
-    headings.observe(host, { childList: true, subtree: true });
     return () => {
       stopTracking();
-      headings.disconnect();
       generation++;
       controller?.abort();
       disposeViewer?.();
@@ -201,7 +205,12 @@
       >
     </div>
   {/if}
-  <div bind:this={host} class="swagger-host" hidden={!hasRendered || !!error}></div>
+  <div
+    bind:this={host}
+    {@attach nestHeadings}
+    class="swagger-host"
+    hidden={!hasRendered || !!error}
+  ></div>
 </div>
 
 <style>

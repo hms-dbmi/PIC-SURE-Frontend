@@ -2,7 +2,6 @@
   import type { Snippet } from 'svelte';
   import { fade } from 'svelte/transition';
   import { StepperState, setStepper } from '#lib/ui/stepper/stepper.svelte.ts';
-  import { log, createLog } from '#lib/telemetry/logger.ts';
   import { tones } from '#lib/ui/surface.ts';
 
   type StepMethod = (step: number, name: string, state: StepperState) => void;
@@ -36,7 +35,6 @@
     if (locked) return;
     const step = stepperState.current + 1;
     const name = stepperState.stepMap[step];
-    log(createLog('EXPORT', 'export.stepper_next', { step, stepName: name }));
     onnext(step, name, stepperState);
 
     stepperState.current = step;
@@ -45,7 +43,6 @@
   function back() {
     const step = stepperState.current === 0 ? 0 : stepperState.current - 1;
     const name = stepperState.stepMap[step];
-    log(createLog('EXPORT', 'export.stepper_back', { step, stepName: name }));
     onback(step, name, stepperState);
     stepperState.current = step;
   }

@@ -94,6 +94,26 @@ test.describe('Open variant credentials', () => {
         );
     });
 
+    test('/discover searches send no consents', async ({ page }) => {
+      const sent = recordRequests(page, '/picsure/dictionary/');
+      await page.goto('/discover?search=age');
+
+      await expect
+        .poll(() => [...new Set(sent.map(({ path }) => path))].sort())
+        .toEqual(DICTIONARY);
+      expect(sent.map(({ consents }) => consents)).toEqual(sent.map(() => undefined));
+    });
+
+    test('/explorer searches send the consents', async ({ page }) => {
+      const sent = recordRequests(page, '/picsure/dictionary/');
+      await page.goto('/explorer?search=age');
+
+      await expect
+        .poll(() => [...new Set(sent.map(({ path }) => path))].sort())
+        .toEqual(DICTIONARY);
+      expect(sent.every(({ consents }) => Array.isArray(consents))).toBe(true);
+    });
+
     test('/discover distributions send the login token', async ({ page }) => {
       const sent = recordRequests(page, '/picsure/visualization/');
       await page.goto('/discover/distributions');

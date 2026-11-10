@@ -9,22 +9,23 @@
   import ConfirmButton from '#lib/ui/ConfirmButton.svelte';
 
   interface Props {
-    /** The table's cell contract: `cell` is the user's uuid. */
-    data: { cell: string; row: { status?: string; email?: string } };
+    uuid: string;
+    email: string;
+    status: string;
   }
 
-  let { data }: Props = $props();
-  const active = $derived(data.row.status === 'Active');
+  let { uuid, email, status }: Props = $props();
+  const active = $derived(status === 'Active');
 
   function edit(event: Event) {
     event.stopPropagation();
-    goto(resolve('/(picsure)/(authorized)/(admin)/admin/users/[uuid]/edit', { uuid: data.cell }));
+    goto(resolve('/(picsure)/(authorized)/(admin)/admin/users/[uuid]/edit', { uuid }));
   }
 
   async function toggleActivate(active: boolean) {
-    const who = `user '${data.row.email}'`;
+    const who = `user '${email}'`;
     try {
-      const stored = await admin.users.get(data.cell);
+      const stored = await admin.users.get(uuid);
       const connection = await admin.connections.get(stored.connection);
       await admin.users.update({
         ...stored,
@@ -48,7 +49,7 @@
   <IconButton
     icon="fa-solid fa-pen-to-square fa-xl"
     label="Edit (e)"
-    data-testid="admin-user-edit-{data.cell}"
+    data-testid="admin-user-edit-{uuid}"
     shortcut="e"
     onclick={edit}
   />
@@ -57,10 +58,10 @@
   icon="fa-solid fa-trash{active ? '' : '-arrow-up'} fa-xl"
   label={active ? 'Deactivate user (d)' : 'Reactivate user (r)'}
   shortcut={active ? 'd' : 'r'}
-  data-testid="admin-user-{active ? 'deactivate' : 'reactivate'}-{data.cell}"
+  data-testid="admin-user-{active ? 'deactivate' : 'reactivate'}-{uuid}"
   title="{active ? 'D' : 'R'}eactivate User?"
   confirmLabel="{active ? 'D' : 'R'}eactivate"
   onconfirm={() => toggleActivate(!active)}
 >
-  Are you sure you want to {active ? 'd' : 'r'}eactivate user '{data.row.email}'?
+  Are you sure you want to {active ? 'd' : 'r'}eactivate user '{email}'?
 </ConfirmButton>

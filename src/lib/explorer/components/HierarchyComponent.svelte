@@ -1,40 +1,35 @@
 <script lang="ts">
-  import type { SearchResult } from '#lib/explorer/types.ts';
+  import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
   import type { TreeNodeInit } from '#lib/ui/tree/treeModel.svelte.ts';
   import {
     type Filter,
     AnyRecordOfFilterError,
     createAnyRecordOfFilter,
   } from '#lib/query/filter.svelte.ts';
-  import { activeRow } from '#lib/explorer/ExpandableRow.ts';
-  import { filterState } from '#lib/query/filters.svelte.ts';
   import TreeView from '#lib/ui/tree/TreeView.svelte';
   import {
     getConceptTree,
     getHierarchyConcepts,
     ENSURE_MAX_DEPTH,
   } from '#lib/explorer/Dictionary.ts';
-  import { panelOpen } from '#lib/explorer/panel.ts';
   import Loading from '#lib/ui/Loading.svelte';
   import { toaster } from '#lib/ui/toaster.ts';
   import AlertDialog from '#lib/ui/dialog/AlertDialog.svelte';
-  import { page } from '$app/state';
+  import { exploreMode } from '#lib/explorer/mode.ts';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import { sortHierarchyDeepestFirst } from '#lib/utils/hierarchy.ts';
   import { log, createLog, getPageContext } from '#lib/telemetry/logger.ts';
   import Button from '#lib/ui/Button.svelte';
   interface Props {
     data?: SearchResult;
-    onclose?: () => void;
+    onadded: (filter: Filter) => void;
   }
-  let { data = {} as SearchResult, onclose = () => {} }: Props = $props();
+  let { data = {} as SearchResult, onadded }: Props = $props();
 
   let modalOpen: boolean = $state(false);
   let selectedNode: string | undefined = $state(undefined);
   let isLoading = $state(false);
-  let disableAddFilter: boolean = $derived(
-    !data?.allowFiltering && page.url.pathname.includes('/discover'),
-  );
+  let disableAddFilter: boolean = $derived(!data?.allowFiltering && exploreMode() === 'discover');
 
   async function getHierarchy(): Promise<TreeNodeInit<string>[]> {
     if (!data?.dataset || !data?.conceptPath) {
@@ -116,8 +111,7 @@
         type: 'AnyRecordOf',
       };
       filter = createAnyRecordOfFilter(searchResult, treeResult);
-      filterState.add(filter);
-      finish();
+      onadded(filter);
     } catch (error: unknown) {
       if (error instanceof AnyRecordOfFilterError) {
         modalOpen = true;
@@ -131,12 +125,6 @@
     } finally {
       isLoading = false;
     }
-  }
-
-  function finish() {
-    $activeRow = '';
-    $panelOpen = true;
-    onclose();
   }
 </script>
 

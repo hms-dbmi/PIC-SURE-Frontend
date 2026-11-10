@@ -17,7 +17,7 @@
   import { Option } from '#lib/query/genomic.ts';
   import { genomicDraft } from '#lib/query/genomicDraft.svelte.ts';
   import { filterState } from '#lib/query/filters.svelte.ts';
-  import { panelOpen } from '#lib/explorer/panel.ts';
+  import { explorerPanel } from '#lib/explorer/panel.svelte.ts';
 
   let edit = page.url.searchParams.get('edit') || '';
   let selectedOption: Option = $state(
@@ -38,7 +38,7 @@
       selectedOption === Option.Genomic ? genomicDraft.toGeneFilter() : genomicDraft.toSnpFilter();
     filterState.add(filter);
     clearFilters();
-    $panelOpen = true;
+    explorerPanel.show();
     goto(resolve('explorer'));
   }
 

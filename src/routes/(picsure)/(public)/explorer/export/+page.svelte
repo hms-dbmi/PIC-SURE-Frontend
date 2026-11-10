@@ -3,15 +3,15 @@
   import { resolve } from '$app/paths';
   import ExportStepper from '#lib/explorer/export/ExportStepper.svelte';
   import { filterState } from '#lib/query/filters.svelte.ts';
-  import { exports } from '#lib/explorer/export/Export.ts';
+  import { exportState } from '#lib/explorer/export/export.svelte.ts';
   import type { ExportRowInterface } from '#lib/explorer/export/ExportRow.ts';
   import Content from '#lib/shell/Content.svelte';
   import { config } from '#lib/config/config.svelte.ts';
-  import { isUserLoggedIn } from '#lib/auth/User.ts';
+  import { session } from '#lib/auth/session.svelte.ts';
   import { goto } from '$app/navigation';
 
   const exportRows: ExportRowInterface[] = $derived(
-    $exports.map((exp) => ({
+    exportState.variables.map((exp) => ({
       ref: exp,
       selected: true,
       variableId: exp.conceptPath,
@@ -47,7 +47,7 @@
 </script>
 
 <Content backUrl="/explorer" backTitle="Back to Explore" title="Export Data for Research Analysis">
-  {#if !isUserLoggedIn()}
+  {#if !session.isLoggedIn}
     <div class="flex flex-col items-center justify-center m-8">
       <p>You are not logged in. To export the data for your selected cohort, please log in.</p>
       <div class="flex gap-4">
@@ -59,7 +59,7 @@
         >
       </div>
     </div>
-  {:else if $exports.length > 0 || filterState.all.length > 0}
+  {:else if exportState.variables.length > 0 || filterState.all.length > 0}
     <section class="flex justify-center items-center w-full h-full mt-8">
       <ExportStepper rows={[patientIdRow, ...systemFieldRows, ...filterRows, ...exportRows]} />
     </section>

@@ -4,11 +4,11 @@
 
   import { goto } from '$app/navigation';
 
-  import type { Indexable } from '#lib/utils/objects.ts';
   import { config } from '#lib/config/config.svelte.ts';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import Content from '#lib/shell/Content.svelte';
-  import Datatable from '#lib/ui/datatable/StaticTable.svelte';
+  import ClientTable from '#lib/ui/datatable/ClientTable.svelte';
+  import type { Column } from '#lib/ui/datatable/types.ts';
   import Actions from '#lib/admin/users/cell/Actions.svelte';
   import Status from '#lib/admin/users/cell/Status.svelte';
 
@@ -50,26 +50,34 @@
     })),
   );
 
-  const columns = [
+  const columns: Column<UserRow>[] = [
     { dataElement: 'email', label: 'Username', sort: true, class: 'w-1/3' },
     { dataElement: 'roles', label: 'Role(s)', sort: true, class: 'normal-case!' },
-    { dataElement: 'status', label: 'Status', sort: true, class: 'w-24 text-center' },
-    { dataElement: 'uuid', label: 'Actions', sort: false, class: 'w-24 text-center' },
+    { dataElement: 'status', label: 'Status', sort: true, class: 'w-24 text-center', cell: status },
+    {
+      dataElement: 'uuid',
+      label: 'Actions',
+      sort: false,
+      class: 'w-24 text-center',
+      cell: actions,
+    },
   ];
-
-  const cellOverides = {
-    status: Status,
-    uuid: Actions,
-  };
 
   const load = () =>
     Promise.all([admin.connections.load(), admin.roles.load(), admin.users.load()]);
 
-  const rowClickHandler = (row: Indexable) => {
-    const uuid = row?.uuid;
+  const rowClickHandler = ({ uuid }: UserRow) => {
     goto(resolve('/(picsure)/(authorized)/(admin)/admin/users/[uuid]/edit', { uuid }));
   };
 </script>
+
+{#snippet status(row: UserRow)}
+  <Status status={row.status} />
+{/snippet}
+
+{#snippet actions(row: UserRow)}
+  <Actions uuid={row.uuid} email={row.email} status={row.status} />
+{/snippet}
 
 <svelte:head>
   <title>{config.branding.applicationName} | Manage Users</title>
@@ -89,13 +97,12 @@
     </div>
     {#each usersByConnection as connection, i (connection.label)}
       <div class="mb-10">
-        <Datatable
+        <ClientTable
           tableName="Users-{connection.label}"
           data-testid="admin-user-table-{i}"
           id="admin-user-table-{i}"
-          data={connection.users}
+          rows={connection.users}
           {columns}
-          {cellOverides}
           title={connection.label}
           {rowClickHandler}
           isClickable

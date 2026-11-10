@@ -52,14 +52,11 @@ describe('SiteBanner', () => {
   it.each([
     ['WARNING', warningMessageClass],
     ['ERROR', tones['tonal-error']],
-  ] satisfies [BannerAppearance, string][])(
-    'renders the %s tonal appearance',
-    (appearance, cssClass) => {
-      render(SiteBanner, { banner: { ...banner, appearance } });
+  ] satisfies [BannerAppearance, string][])('renders the %s appearance', (appearance, cssClass) => {
+    render(SiteBanner, { banner: { ...banner, appearance } });
 
-      expect(screen.getByRole('region', { name: 'Maintenance' })).toHaveClass(cssClass);
-    },
-  );
+    expect(screen.getByRole('region', { name: 'Maintenance' })).toHaveClass(cssClass);
+  });
 
   it('sanitizes immediately before rendering stored HTML', () => {
     const { container } = render(SiteBanner, { banner });

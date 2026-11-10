@@ -6,24 +6,25 @@
   import { log, createLog } from '#lib/telemetry/logger.ts';
 
   interface Props {
-    data?: { cell: string; row: { archived: boolean } };
+    uuid: string;
+    archived: boolean;
   }
 
-  const { data = { cell: '', row: { archived: false } } }: Props = $props();
+  const { uuid, archived }: Props = $props();
   let pending = $state(false);
 
   async function toggleArchive(event: Event) {
     event.stopPropagation();
-    const isArchiving = !data.row.archived;
+    const isArchiving = !archived;
     log(
       createLog('DATASET', isArchiving ? 'dataset.archive' : 'dataset.restore', {
-        datasetId: data.cell,
+        datasetId: uuid,
       }),
     );
 
     pending = true;
     try {
-      await datasets.toggleArchived(data.cell);
+      await datasets.toggleArchived(uuid);
     } catch {
       toaster.error({ title: 'An error occurred when updating dataset.' });
     } finally {
@@ -32,12 +33,12 @@
   }
 </script>
 
-{#if data.row.archived}
+{#if archived}
   <IconButton
     icon="fa-solid fa-trash-arrow-up fa-xl"
     label="Restore (r)"
     disabled={pending}
-    data-testid={`dataset-action-restore-${data.cell}`}
+    data-testid={`dataset-action-restore-${uuid}`}
     shortcut="r"
     onclick={toggleArchive}
   />
@@ -46,7 +47,7 @@
     icon="fa-solid fa-trash fa-xl"
     label="Delete (d)"
     disabled={pending}
-    data-testid={`dataset-action-archive-${data.cell}`}
+    data-testid={`dataset-action-archive-${uuid}`}
     shortcut="d"
     onclick={toggleArchive}
   />

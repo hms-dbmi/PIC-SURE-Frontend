@@ -13,8 +13,8 @@ import {
   facetsResponse,
   searchResults,
   mockConsents,
-  countResultPath,
   picsureUser,
+  countResultPath,
 } from '../../support/mock-data';
 import { userIsLoggedIn } from '../utils';
 import type { Branding } from '../../../src/lib/config/branding';

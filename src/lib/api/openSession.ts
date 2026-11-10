@@ -1,6 +1,6 @@
 import { joinUrl, Psama } from '#lib/api/paths.ts';
-import { log, createLog, getSessionId } from '#lib/telemetry/logger.ts';
 import { CLIENT_TYPE_HEADERS } from '#lib/api/clientType.ts';
+import { log, createLog, getSessionId } from '#lib/telemetry/logger.ts';
 import { decodeJwtPayload } from '#lib/auth/token.ts';
 
 /**

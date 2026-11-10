@@ -8,16 +8,14 @@
 <script lang="ts">
   import Loading from '#lib/ui/Loading.svelte';
 
-  const {
-    messages,
-    size = 'small',
-    color = 'primary',
-  }: {
+  interface Props {
     // afterMs counts from mount or the last messages change, so pass a stable constant array.
     messages: TimedMessage[];
     size?: 'micro' | 'mini' | 'small' | 'medium' | 'large';
     color?: string;
-  } = $props();
+  }
+
+  const { messages, size = 'small', color = 'primary' }: Props = $props();
 
   let elapsedMs = $state(0);
   const text = $derived(messages.filter(({ afterMs }) => afterMs <= elapsedMs).at(-1)?.text ?? '');

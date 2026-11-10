@@ -1,8 +1,7 @@
-<script lang="ts">
-  import { TableHandler } from '@vincjo/datatables';
-  import { TableHandler as RemoteTableHandler } from '@vincjo/datatables/server';
+<script lang="ts" generics="T extends Row">
+  import type { AnyTableHandler, Row } from '../types.ts';
 
-  let { handler }: { handler: TableHandler | RemoteTableHandler } = $props();
+  let { handler }: { handler: AnyTableHandler<T> } = $props();
 
   let { start, end, total } = $derived(handler.rowCount);
 </script>

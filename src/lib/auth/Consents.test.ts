@@ -1,7 +1,6 @@
 // @vitest-environment happy-dom
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { get } from 'svelte/store';
 
 const mockApi = vi.hoisted(() => ({ request: vi.fn() }));
 const mockToaster = vi.hoisted(() => ({ error: vi.fn() }));
@@ -13,18 +12,8 @@ vi.mock('#lib/config/config.svelte.ts', () => ({
 vi.mock('#lib/api/client.ts', () => mockApi);
 vi.mock('#lib/ui/toaster.ts', () => ({ toaster: mockToaster, isToastShowing: () => false }));
 
-import {
-  ACCESS_UNAVAILABLE_MESSAGE,
-  accessUnavailable,
-  ensureConsentsLoaded,
-  getConsents,
-  loadConsents,
-  removeToken,
-  setToken,
-  showAccessUnavailable,
-  user,
-} from '#lib/auth/User.ts';
-import { session } from '#lib/auth/session.svelte.ts';
+import { ACCESS_UNAVAILABLE_MESSAGE, showAccessUnavailable } from '#lib/auth/accessUnavailable.ts';
+import { getConsents, session } from '#lib/auth/session.svelte.ts';
 import { config } from '#lib/config/config.svelte.ts';
 import { addConsents } from '#lib/explorer/Dictionary.ts';
 import { Psama } from '#lib/api/paths.ts';
@@ -49,8 +38,8 @@ beforeEach(() => {
   mockApi.request.mockReset();
   mockToaster.error.mockReset();
   vi.spyOn(console, 'error').mockImplementation(() => {});
-  setToken('token');
-  user.set({ consents: {} });
+  session.setToken('token');
+  session.user = { consents: {} };
   config.features.termsOfService = false;
   config.features.enforceTermsOfService = false;
 });
@@ -113,13 +102,13 @@ describe('getConsents', () => {
 
 describe('loadConsents', () => {
   it('stores the consents and leaves access available', async () => {
-    user.set({});
+    session.user = {};
     mockApi.request.mockResolvedValue({ consents });
 
-    await loadConsents();
+    await session.loadConsents();
 
-    expect(get(user).consents).toEqual(consents);
-    expect(get(accessUnavailable)).toBe(false);
+    expect(session.user.consents).toEqual(consents);
+    expect(session.accessUnavailable).toBe(false);
     expect(mockToaster.error).not.toHaveBeenCalled();
   });
 
@@ -127,13 +116,13 @@ describe('loadConsents', () => {
     vi.useFakeTimers();
     mockApi.request.mockRejectedValue(new Error('500'));
 
-    const pending = loadConsents();
+    const pending = session.loadConsents();
     await runOutRetries();
     await pending;
     vi.useRealTimers();
 
-    expect(get(user).consents).toBeUndefined();
-    expect(get(accessUnavailable)).toBe(true);
+    expect(session.user.consents).toBeUndefined();
+    expect(session.accessUnavailable).toBe(true);
     expect(mockToaster.error).toHaveBeenCalledWith(
       expect.objectContaining({ title: ACCESS_UNAVAILABLE_MESSAGE }),
     );
@@ -145,14 +134,14 @@ describe('loadConsents', () => {
       .mockImplementationOnce(() => new Promise((resolve) => (resolveStale = resolve)))
       .mockResolvedValueOnce({ consents });
 
-    const stale = loadConsents();
-    const fresh = loadConsents();
+    const stale = session.loadConsents();
+    const fresh = session.loadConsents();
     await fresh;
 
     resolveStale({ consents: { '\\_consents\\': ['prior-user-study'] } });
     await stale;
 
-    expect(get(user).consents).toEqual(consents);
+    expect(session.user.consents).toEqual(consents);
   });
 
   it('does not toast when a superseded request exhausts its retries', async () => {
@@ -163,23 +152,23 @@ describe('loadConsents', () => {
       .mockResolvedValueOnce({ consents })
       .mockRejectedValueOnce(new Error('500'));
 
-    const stale = loadConsents();
+    const stale = session.loadConsents();
     // Flush the two immediate attempts so the stale request is parked in its back-off.
     await vi.advanceTimersByTimeAsync(0);
-    const fresh = loadConsents();
+    const fresh = session.loadConsents();
     await fresh;
     await runOutRetries();
     await stale;
     vi.useRealTimers();
 
-    expect(get(user).consents).toEqual(consents);
+    expect(session.user.consents).toEqual(consents);
     expect(mockToaster.error).not.toHaveBeenCalled();
   });
 
   it('neither retries nor toasts after a 401, which has already logged the user out', async () => {
     mockApi.request.mockRejectedValue(new ApiError(401, 'unauthorized', 'expired', 'expired'));
 
-    await loadConsents();
+    await session.loadConsents();
 
     expect(mockApi.request).toHaveBeenCalledOnce();
     expect(mockToaster.error).not.toHaveBeenCalled();
@@ -191,61 +180,61 @@ describe('loadConsents', () => {
       () => new Promise((resolve) => (resolveStale = resolve)),
     );
 
-    const stale = loadConsents();
+    const stale = session.loadConsents();
     session.clear();
     resolveStale({ consents });
     await stale;
 
-    expect(get(user).consents).toBeUndefined();
+    expect(session.user.consents).toBeUndefined();
   });
 });
 
 describe('ensureConsentsLoaded', () => {
   it('returns stored consents without fetching them again', async () => {
-    user.set({ consents });
+    session.user = { consents };
 
-    await expect(ensureConsentsLoaded()).resolves.toEqual(consents);
+    await expect(session.ensureConsentsLoaded()).resolves.toEqual(consents);
     expect(mockApi.request).not.toHaveBeenCalled();
   });
 
   it('fetches consents when they are not set', async () => {
-    user.set({});
+    session.user = {};
     mockApi.request.mockResolvedValue({ consents });
 
-    await expect(ensureConsentsLoaded()).resolves.toEqual(consents);
+    await expect(session.ensureConsentsLoaded()).resolves.toEqual(consents);
     expect(mockApi.request).toHaveBeenCalledWith(Psama.User.Consents);
   });
 });
 
 describe('accessUnavailable', () => {
   it('distinguishes "loaded, no access" from "could not determine access"', () => {
-    user.set({ consents: {} });
-    expect(get(accessUnavailable)).toBe(false);
+    session.user = { consents: {} };
+    expect(session.accessUnavailable).toBe(false);
 
-    user.set({ consents: undefined });
-    expect(get(accessUnavailable)).toBe(true);
+    session.user = { consents: undefined };
+    expect(session.accessUnavailable).toBe(true);
   });
 
   it('is false when logged out, where access is simply not applicable', () => {
-    user.set({ consents: undefined });
-    removeToken();
+    session.user = { consents: undefined };
+    session.removeToken();
 
-    expect(get(accessUnavailable)).toBe(false);
+    expect(session.accessUnavailable).toBe(false);
   });
 
   it('survives the sessionStorage round trip a page reload performs', () => {
     const restored = JSON.parse(JSON.stringify({ privileges: ['QUERY'], consents: undefined }));
 
-    user.set(restored);
+    session.user = restored;
 
     expect('consents' in restored).toBe(false);
-    expect(get(accessUnavailable)).toBe(true);
+    expect(session.accessUnavailable).toBe(true);
   });
 });
 
 describe('addConsents', () => {
   it('populates the request from the user store', async () => {
-    user.set({ consents });
+    session.user = { consents };
 
     await expect(addConsents(blankRequest())).resolves.toEqual({
       facets: [],
@@ -255,20 +244,20 @@ describe('addConsents', () => {
   });
 
   it('sends an empty list when the user genuinely has no access', async () => {
-    user.set({ consents: {} });
+    session.user = { consents: {} };
 
     await expect(addConsents(blankRequest())).resolves.toHaveProperty('consents', []);
   });
 
   it('sends an empty list when the token is gone but the user blob lingers', async () => {
-    user.set({ consents });
-    removeToken();
+    session.user = { consents };
+    session.removeToken();
 
     await expect(addConsents(blankRequest())).resolves.toHaveProperty('consents', []);
   });
 
   it('throws and toasts rather than sending an empty list when access is unknown', async () => {
-    user.set({ consents: undefined });
+    session.user = { consents: undefined };
 
     await expect(addConsents(blankRequest())).rejects.toThrow(ACCESS_UNAVAILABLE_MESSAGE);
     expect(mockToaster.error).toHaveBeenCalledWith(
@@ -279,14 +268,14 @@ describe('addConsents', () => {
   it('throws without toasting while the terms dialog asks the user to accept', async () => {
     config.features.termsOfService = true;
     config.features.enforceTermsOfService = true;
-    user.set({ acceptedTOS: false });
+    session.user = { acceptedTOS: false };
 
     await expect(addConsents(blankRequest())).rejects.toThrow(ACCESS_UNAVAILABLE_MESSAGE);
     expect(mockToaster.error).not.toHaveBeenCalled();
   });
 
   it('toasts for such a user where the app does not ask for the terms', async () => {
-    user.set({ acceptedTOS: false });
+    session.user = { acceptedTOS: false };
 
     await expect(addConsents(blankRequest())).rejects.toThrow(ACCESS_UNAVAILABLE_MESSAGE);
     expect(mockToaster.error).toHaveBeenCalledWith(
@@ -296,7 +285,7 @@ describe('addConsents', () => {
 
   it('stays closed after a reload, where no fetch is in flight to wait on', async () => {
     // Reload keeps privileges, so the layout skips re-hydrating and nothing is in flight.
-    user.set(JSON.parse(JSON.stringify({ privileges: ['QUERY'], consents: undefined })));
+    session.user = JSON.parse(JSON.stringify({ privileges: ['QUERY'], consents: undefined }));
 
     await expect(addConsents(blankRequest())).rejects.toThrow(ACCESS_UNAVAILABLE_MESSAGE);
   });

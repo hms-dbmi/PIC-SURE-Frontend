@@ -1,7 +1,7 @@
 <script lang="ts">
   import Button from '#lib/ui/Button.svelte';
   import { resolve } from '$app/paths';
-  import { appPath } from '#lib/api/paths.ts';
+  import { appPath } from '#lib/utils/appPath.ts';
   import { config } from '#lib/config/config.svelte.ts';
   import { goto } from '$app/navigation';
   import Searchbox from '#lib/ui/Searchbox.svelte';

@@ -1,15 +1,8 @@
 <script lang="ts">
-  import { resolve } from '$app/paths';
-  import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
 
   import { config } from '#lib/config/config.svelte.ts';
-  import {
-    exports,
-    addExports,
-    removeExports,
-    mapSearchResultAsExport,
-  } from '#lib/explorer/export/Export.ts';
+  import { exportState, mapSearchResultAsExport } from '#lib/explorer/export/export.svelte.ts';
   import type { ExportInterface } from '#lib/explorer/export/types.ts';
   import type { ExportRowInterface } from '#lib/explorer/export/ExportRow.ts';
   import { searchDictionary } from '#lib/explorer/Dictionary.ts';
@@ -19,23 +12,21 @@
   import { toaster } from '#lib/ui/toaster.ts';
 
   import Summary from './Summary.svelte';
-  import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
+  import DataLimitWarning from './DataLimitWarning.svelte';
   import Loading from '#lib/ui/Loading.svelte';
-  import Datatable from '#lib/ui/datatable/StaticTable.svelte';
+  import ClientTable from '#lib/ui/datatable/ClientTable.svelte';
+  import type { Column } from '#lib/ui/datatable/types.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
   import type { QueryRequest } from '#lib/api/picsure/query.types.ts';
 
-  export interface PrepareProps {
+  interface Props {
     query: QueryRequest;
     rows: ExportRowInterface[];
-    preparePromise: Promise<void>;
-    dataLimitExceeded: boolean;
-    maxDataPoints: number;
   }
 
-  let { query, rows, dataLimitExceeded, maxDataPoints }: PrepareProps = $props();
+  let { query, rows }: Props = $props();
 
-  const columns = [
+  const columns: Column<ExportRowInterface>[] = [
     { dataElement: 'name', label: 'Variable Name', sort: true },
     { dataElement: 'description', label: 'Variable Description', sort: true },
     { dataElement: 'type', label: 'Type', sort: true, class: 'text-center' },
@@ -43,31 +34,28 @@
 
   let loadingSampleIds = $state(false);
   let sampleIds = $state(false);
-  let sampleIdExports: ExportInterface[] = $state([]);
+  // The sample identifiers the box added, so unticking it removes them.
+  let lastExports: ExportInterface[] = $state.raw([]);
   let checkingSampleIds = $state(false);
 
   onMount(async () => {
-    const exportedSampleIds = $exports.filter((e: ExportInterface) =>
+    const exportedSampleIds = exportState.variables.filter((e: ExportInterface) =>
       e.conceptPath.includes('SAMPLE_ID'),
     );
     if (exportedSampleIds.length === 0) return;
-
     checkingSampleIds = true;
     try {
       const genomicConcepts = await getGenomicConcepts();
-      // Find sample IDs that match genomic concepts
       const matchingSampleIds = exportedSampleIds.filter((sampleId) =>
-        genomicConcepts.some(
-          (concept: { conceptPath: string }) => concept.conceptPath === sampleId.conceptPath,
-        ),
+        genomicConcepts.some((concept) => concept.conceptPath === sampleId.conceptPath),
       );
       sampleIds = genomicConcepts.length > 0 && matchingSampleIds.length === genomicConcepts.length;
-      if (sampleIds) sampleIdExports = matchingSampleIds;
+      if (sampleIds) {
+        lastExports = matchingSampleIds;
+      }
     } catch (error) {
-      console.error('Error checking sample IDs', error);
-      // Match the table, which lists these exports, so unchecking can still remove them
-      sampleIds = true;
-      sampleIdExports = exportedSampleIds;
+      // The box stays unticked; ticking it runs the lookup again and reports a failure.
+      console.error('Error checking the exported sample IDs', error);
     } finally {
       checkingSampleIds = false;
     }
@@ -112,13 +100,15 @@
     try {
       loadingSampleIds = true;
       if (!sampleIds) {
-        removeExports(sampleIdExports);
+        exportState.removeAll(lastExports);
         return;
       }
 
       const genomicConcepts = await getGenomicConcepts();
-      sampleIdExports = genomicConcepts.map(mapSearchResultAsExport);
-      addExports(sampleIdExports);
+
+      const newExports = genomicConcepts.map(mapSearchResultAsExport);
+      exportState.addAll(newExports);
+      lastExports = newExports;
     } catch (error) {
       console.error('Error in toggleSampleIds', error);
       toaster.error({
@@ -135,24 +125,15 @@
 <div id="export-review-step" class="flex flex-col w-full h-full items-center">
   <Summary />
   <section class="w-full">
-    {#if dataLimitExceeded}
-      <ErrorAlert
-        data-testid="export-review-error"
-        title="Warning"
-        color="warning"
-        closeText="Back"
-        onclose={() => goto(resolve('explorer'))}
-      >
-        Warning: Your selected data exceeds {maxDataPoints.toLocaleString('en-US')} estimated data points,
-        which is too large to export. Please reduce the data selection or the number of selected participants.
-      </ErrorAlert>
-    {:else if !loadingSampleIds}
-      <Datatable
+    <!-- The table and the sample-ID box stay, so ticking the box can be undone. -->
+    <DataLimitWarning data-testid="export-review-error" />
+    {#if !loadingSampleIds}
+      <ClientTable
         tableName="ExportSummary"
         data-testid="export-summary-table"
         id="export-summary-table"
         ariaLabel="Export summary"
-        data={rows}
+        {rows}
         {columns}
       />
       {#if config.features.explorer.enableSampleIdCheckbox}

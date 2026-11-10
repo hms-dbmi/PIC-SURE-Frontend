@@ -1,33 +1,25 @@
 <script lang="ts">
-  import { useSortable } from '@dnd-kit-svelte/svelte/sortable';
-  import { CollisionPriority } from '@dnd-kit/abstract';
+  import { CollisionPriority, createDroppable } from '#lib/ui/sortable/sortable.ts';
+  import { getFilterTreeEditor, isInDragOverlay } from './FilterTreeEditor.svelte.ts';
 
   interface Props {
     groupId: string;
-    index?: number;
     label?: string;
-    isGroupDrag?: boolean;
-    isOverlay?: boolean;
     insertAt?: number;
   }
 
-  let {
-    groupId,
-    index = 0,
-    label = 'Drop into subquery',
-    isGroupDrag = false,
-    isOverlay = false,
-    insertAt,
-  }: Props = $props();
+  let { groupId, label = 'Drop into subquery', insertAt }: Props = $props();
+
+  const editor = getFilterTreeEditor();
+  const isOverlay = isInDragOverlay();
 
   // When enabled, High priority ensures it wins over group sortables
-  // Self-drop protection is handled in handleGroupDropZone
+  // filterTreeOps refuses drops of a group into itself
   // Disable in overlay mode to prevent duplicate sortable IDs
-  const { ref } = useSortable({
+  const zone = createDroppable({
     get id() {
       return insertAt !== undefined ? `drop-${groupId}__${insertAt}` : `drop-${groupId}`;
     },
-    index: () => index,
     type: 'drop',
     accept: ['group'],
     collisionPriority: CollisionPriority.High,
@@ -40,7 +32,7 @@
   });
 
   // Only show the zone visually when dragging a group
-  const showZone = $derived(!isOverlay && isGroupDrag);
+  const showZone = $derived(!isOverlay && editor.isGroupDrag);
 </script>
 
 <div
@@ -55,7 +47,7 @@
   class:bg-primary-50={showZone}
   class:border-primary-500={showZone}
   class:py-2={showZone}
-  {@attach ref}
+  {@attach zone.attach}
 >
   <span class="sr-only">{label}</span>
   {#if showZone}

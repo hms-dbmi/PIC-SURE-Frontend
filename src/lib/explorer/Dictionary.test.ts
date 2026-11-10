@@ -1,37 +1,40 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { get } from 'svelte/store';
 
 vi.mock('$app/env', () => ({ browser: true }));
-vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/explorer') } }));
+let mockMode: 'explorer' | 'discover' = 'explorer';
+vi.mock('$app/state', () => ({
+  page: {
+    get data() {
+      return { mode: mockMode };
+    },
+  },
+}));
 
-const mockState = vi.hoisted(() => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { writable } = require('svelte/store') as typeof import('svelte/store');
-  return {
-    requestSpy: vi.fn(),
-    logSpy: vi.fn(),
-    consentsSettledSpy: vi.fn().mockResolvedValue(undefined),
-    showAccessUnavailableSpy: vi.fn(),
-    searchTermStore: writable('age'),
-    selectedFacetsStore: writable<unknown[]>([]),
-    accessUnavailableStore: writable(false),
-    consentedStudiesStore: writable<string[]>([]),
-  };
-});
+const mockState = vi.hoisted(() => ({
+  requestSpy: vi.fn(),
+  logSpy: vi.fn(),
+  consentsSettledSpy: vi.fn().mockResolvedValue(undefined),
+  showAccessUnavailableSpy: vi.fn(),
+  accessUnavailable: false,
+  consentedStudies: [] as string[],
+}));
 
 vi.mock('#lib/api/client.ts', () => ({ request: mockState.requestSpy }));
 
-vi.mock('#lib/explorer/Search.ts', () => ({
-  searchTerm: mockState.searchTermStore,
-  selectedFacets: mockState.selectedFacetsStore,
-}));
-
-vi.mock('#lib/auth/User.ts', () => ({
+vi.mock('#lib/auth/accessUnavailable.ts', () => ({
   ACCESS_UNAVAILABLE_MESSAGE: 'Access unavailable',
-  accessUnavailable: mockState.accessUnavailableStore,
-  consentedStudies: mockState.consentedStudiesStore,
-  consentsSettled: mockState.consentsSettledSpy,
   showAccessUnavailable: mockState.showAccessUnavailableSpy,
+}));
+vi.mock('#lib/auth/session.svelte.ts', () => ({
+  session: {
+    get accessUnavailable() {
+      return mockState.accessUnavailable;
+    },
+    get consentedStudies() {
+      return mockState.consentedStudies;
+    },
+    consentsSettled: mockState.consentsSettledSpy,
+  },
 }));
 
 vi.mock('#lib/telemetry/logger.ts', () => ({
@@ -44,13 +47,7 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
 }));
 
 import type { DictionaryFacetResult } from '#lib/api/picsure/dictionary.types.ts';
-import {
-  updateFacetsFromSearch,
-  searchDictionary,
-  hiddenFacets,
-  openFacets,
-  resetFacetState,
-} from '#lib/explorer/Dictionary.ts';
+import { searchFacets, searchDictionary } from '#lib/explorer/Dictionary.ts';
 
 function facetResponse(categoryName: string, zeroCountFacet = 'empty'): DictionaryFacetResult[] {
   return [
@@ -77,93 +74,38 @@ beforeEach(() => {
   vi.spyOn(console, 'debug').mockImplementation(() => {});
   mockState.requestSpy.mockReset();
   mockState.logSpy.mockClear();
-  hiddenFacets.set({});
-  openFacets.set([]);
-  resetFacetState();
+  mockMode = 'explorer';
+  mockState.consentsSettledSpy.mockClear();
+  mockState.consentedStudies = ['phs000001'];
 });
 afterEach(() => {
   vi.mocked(console.log).mockRestore();
   vi.mocked(console.debug).mockRestore();
 });
 
-describe('updateFacetsFromSearch', () => {
-  it('commits hiddenFacets and openFacets for a current response', async () => {
-    mockState.requestSpy.mockResolvedValueOnce(facetResponse('demographics'));
+describe('searchFacets', () => {
+  it('sends the term and facets and links each facet to its category', async () => {
+    const response = facetResponse('demographics');
+    mockState.requestSpy.mockResolvedValueOnce(response);
 
-    await updateFacetsFromSearch({ isCurrent: () => true });
+    const result = await searchFacets('age', []);
 
-    expect(get(openFacets)).toEqual(['demographics']);
-    expect(get(hiddenFacets)).toEqual({ demographics: ['empty'] });
-  });
-
-  it('commits when no isCurrent guard is supplied', async () => {
-    mockState.requestSpy.mockResolvedValueOnce(facetResponse('demographics'));
-
-    await updateFacetsFromSearch();
-
-    expect(get(openFacets)).toEqual(['demographics']);
-  });
-
-  it('writes neither store when the response has been superseded', async () => {
-    mockState.requestSpy.mockResolvedValueOnce(facetResponse('demographics'));
-
-    const response = await updateFacetsFromSearch({ isCurrent: () => false });
-
-    expect(get(openFacets)).toEqual([]);
-    expect(get(hiddenFacets)).toEqual({});
-    expect(response).toHaveLength(1);
-  });
-
-  it('does not let a superseded response overwrite the current one', async () => {
-    mockState.requestSpy.mockResolvedValueOnce(facetResponse('current'));
-    await updateFacetsFromSearch({ isCurrent: () => true });
-
-    mockState.requestSpy.mockResolvedValueOnce(facetResponse('stale'));
-    await updateFacetsFromSearch({ isCurrent: () => false });
-
-    expect(get(openFacets)).toEqual(['current']);
-  });
-
-  it('leaves the accordion alone when the same categories come back', async () => {
-    mockState.requestSpy.mockResolvedValueOnce(facetResponse('demographics'));
-    await updateFacetsFromSearch({ isCurrent: () => true });
-    expect(get(openFacets)).toEqual(['demographics']);
-
-    openFacets.set([]);
-    mockState.requestSpy.mockResolvedValueOnce(facetResponse('demographics'));
-    await updateFacetsFromSearch({ isCurrent: () => true });
-
-    expect(get(openFacets)).toEqual([]);
-  });
-
-  it('auto-opens again once the set of categories with results changes', async () => {
-    mockState.requestSpy.mockResolvedValueOnce(facetResponse('demographics'));
-    await updateFacetsFromSearch({ isCurrent: () => true });
-    openFacets.set([]);
-
-    mockState.requestSpy.mockResolvedValueOnce(facetResponse('measurements'));
-    await updateFacetsFromSearch({ isCurrent: () => true });
-
-    expect(get(openFacets)).toEqual(['measurements']);
-  });
-
-  it('resetFacetState lets the next response auto-open again', async () => {
-    mockState.requestSpy.mockResolvedValueOnce(facetResponse('demographics'));
-    await updateFacetsFromSearch({ isCurrent: () => true });
-    openFacets.set([]);
-
-    resetFacetState();
-    mockState.requestSpy.mockResolvedValueOnce(facetResponse('demographics'));
-    await updateFacetsFromSearch({ isCurrent: () => true });
-
-    expect(get(openFacets)).toEqual(['demographics']);
+    expect(mockState.requestSpy).toHaveBeenCalledWith(
+      'picsure/dictionary/facets',
+      expect.objectContaining({ body: expect.objectContaining({ search: 'age', facets: [] }) }),
+    );
+    expect(result[0].facets[0].categoryRef).toEqual({
+      name: 'demographics',
+      display: 'demographics',
+      description: '',
+    });
   });
 
   it('forwards the abort signal to the facets request', async () => {
     mockState.requestSpy.mockResolvedValueOnce(facetResponse('demographics'));
     const controller = new AbortController();
 
-    await updateFacetsFromSearch({ signal: controller.signal, isCurrent: () => true });
+    await searchFacets('age', [], { signal: controller.signal });
 
     expect(mockState.requestSpy).toHaveBeenCalledWith(
       'picsure/dictionary/facets',
@@ -176,7 +118,7 @@ describe('updateFacetsFromSearch', () => {
     mockState.requestSpy.mockRejectedValueOnce(abortError);
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    await expect(updateFacetsFromSearch({ isCurrent: () => false })).rejects.toThrow('aborted');
+    await expect(searchFacets('age', [])).rejects.toThrow('aborted');
     expect(consoleError).not.toHaveBeenCalled();
 
     consoleError.mockRestore();
@@ -186,7 +128,7 @@ describe('updateFacetsFromSearch', () => {
     mockState.requestSpy.mockRejectedValueOnce(new Error('boom'));
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    await expect(updateFacetsFromSearch({ isCurrent: () => true })).rejects.toThrow('boom');
+    await expect(searchFacets('age', [])).rejects.toThrow('boom');
     expect(consoleError).toHaveBeenCalled();
 
     consoleError.mockRestore();
@@ -223,5 +165,47 @@ describe('searchDictionary', () => {
       'picsure/dictionary/concepts',
       expect.objectContaining({ signal: undefined }),
     );
+  });
+});
+
+describe('consents follow the explore mode', () => {
+  it('sends the consented studies from explorer', async () => {
+    mockState.requestSpy
+      .mockResolvedValueOnce({ content: [], totalElements: 0 })
+      .mockResolvedValueOnce([]);
+
+    await searchDictionary('age', [], { pageNumber: 0, pageSize: 10 });
+    await searchFacets('age', []);
+
+    expect(mockState.requestSpy.mock.calls.map(([, opts]) => opts.body.consents)).toEqual([
+      ['phs000001'],
+      ['phs000001'],
+    ]);
+  });
+
+  it('never sends consents from discover, even for a signed-in user', async () => {
+    mockMode = 'discover';
+    mockState.requestSpy
+      .mockResolvedValueOnce({ content: [], totalElements: 0 })
+      .mockResolvedValueOnce([]);
+
+    await searchDictionary('age', [], { pageNumber: 0, pageSize: 10 });
+    await searchFacets('age', []);
+
+    expect(mockState.requestSpy).toHaveBeenCalledTimes(2);
+    for (const [, opts] of mockState.requestSpy.mock.calls) {
+      expect(opts.body).not.toHaveProperty('consents');
+    }
+    expect(mockState.consentsSettledSpy).not.toHaveBeenCalled();
+  });
+
+  it('fails closed in explorer when access is unavailable instead of sending no consents', async () => {
+    mockState.accessUnavailable = true;
+    try {
+      await expect(searchFacets('age', [])).rejects.toThrow('Access unavailable');
+      expect(mockState.requestSpy).not.toHaveBeenCalled();
+    } finally {
+      mockState.accessUnavailable = false;
+    }
   });
 });

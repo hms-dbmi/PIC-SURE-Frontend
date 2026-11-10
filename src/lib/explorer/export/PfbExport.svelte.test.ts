@@ -7,7 +7,10 @@ const { getSignedUrl } = vi.hoisted(() => ({ getSignedUrl: vi.fn() }));
 
 vi.mock('$app/env', () => ({ browser: true }));
 vi.mock('#lib/api/picsure/query.ts', () => ({ getSignedUrl, getQueryResult: vi.fn() }));
-vi.mock('#lib/telemetry/logger.ts', () => ({ log: vi.fn(), createLog: vi.fn() }));
+vi.mock('#lib/telemetry/logger.ts', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('#lib/telemetry/logger.ts')>()),
+  log: vi.fn(),
+}));
 vi.mock('#lib/config/config.svelte.ts', () => ({
   config: {
     features: { explorer: { allowDownload: false } },
@@ -20,7 +23,6 @@ vi.mock('#lib/config/config.svelte.ts', () => ({
       },
     },
   },
-  resetConfig: () => {},
 }));
 
 import PfbExport from '#lib/explorer/export/PfbExport.svelte';

@@ -11,8 +11,6 @@ vi.mock('#lib/telemetry/logger.ts', () => ({ log: vi.fn(), createLog: vi.fn() })
 vi.mock('#lib/ui/toaster.ts', () => ({ toaster: { error: vi.fn() } }));
 vi.mock('#lib/datasets/datasets.svelte.ts', () => ({ datasets: { toggleArchived: vi.fn() } }));
 
-const data = { cell: 'ds-1', row: { archived: false } };
-
 describe('dataset row actions', () => {
   beforeEach(() => vi.clearAllMocks());
 
@@ -21,7 +19,7 @@ describe('dataset row actions', () => {
     vi.mocked(datasets.toggleArchived).mockReturnValue(
       new Promise((resolve) => (finish = () => resolve(undefined))),
     );
-    render(Actions, { data });
+    render(Actions, { uuid: 'ds-1', archived: false });
     const button = screen.getByTestId('dataset-action-archive-ds-1');
 
     await fireEvent.click(button);
@@ -33,7 +31,7 @@ describe('dataset row actions', () => {
 
   it('shows an error toast when archiving fails', async () => {
     vi.mocked(datasets.toggleArchived).mockRejectedValue(new Error('500'));
-    render(Actions, { data });
+    render(Actions, { uuid: 'ds-1', archived: false });
 
     await fireEvent.click(screen.getByTestId('dataset-action-archive-ds-1'));
 

@@ -1,101 +1,110 @@
 <script lang="ts">
   import Button from '#lib/ui/Button.svelte';
   import { resolve } from '$app/paths';
-  import { appPath } from '#lib/api/paths.ts';
   import { onMount, onDestroy, tick } from 'svelte';
 
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
 
   import { config } from '#lib/config/config.svelte.ts';
-  import type { Column } from '#lib/ui/datatable/types.ts';
-  import {
-    searchTerm,
-    selectedFacets,
-    tableHandler as handler,
-    initHandler,
-    error,
-    tour,
-    resetSearch,
-    nextSearchSettled,
-    loading as isLoading,
-  } from '#lib/explorer/Search.ts';
+  import { explorerSearch as search } from '#lib/explorer/search.svelte.ts';
   import type { TourDataType } from '#lib/explorer/components/tour/types.ts';
+  import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
+  import type { Filter } from '#lib/query/filter.svelte.ts';
+  import { saveFilter } from '#lib/explorer/saveFilter.ts';
+  import { explorerPanel } from '#lib/explorer/panel.svelte.ts';
 
-  import Actions from '#lib/explorer/components/cell/Actions.svelte';
-  import SearchDatatable from '#lib/ui/datatable/RemoteTable.svelte';
+  import AddFilter from '#lib/explorer/components/AddFilter.svelte';
+  import HierarchyComponent from '#lib/explorer/components/HierarchyComponent.svelte';
+  import ResultInfoComponent from '#lib/explorer/components/ResultInfoComponent.svelte';
+  import ResultsTable from '#lib/explorer/components/ResultsTable.svelte';
   import Searchbox from '#lib/ui/Searchbox.svelte';
   import FacetSideBar from '#lib/explorer/components/facets/FacetSideBar.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import ExplorerTour from '#lib/explorer/components/tour/ExplorerTour.svelte';
   import { log, createLog } from '#lib/telemetry/logger.ts';
+  import { exploreMode } from '#lib/explorer/mode.ts';
 
   let { tourConfig }: { tourConfig: TourDataType } = $props();
 
-  let searchInput = $state(page.url.searchParams.get('search') || $searchTerm || '');
-  const tableName = 'ExplorerTable';
-  // The tour's steps select this table and its rows by id.
-  const tableId = 'explorer-table';
+  const initialSearch = page.url.searchParams.get('search') || search.term;
+  let searchInput = $state(initialSearch);
   const tableColumns = $derived(config.branding.explorePage.columns || []);
-  const columns: Column[] = $derived([
-    ...tableColumns,
-    { dataElement: 'id', label: 'Actions', class: 'w-36 text-center' },
-  ]);
-  const cellOverides = { id: Actions };
   const genomicFeaturesEnabled = $derived(
     config.features.enableGENEQuery || config.features.enableSNPQuery,
   );
-  let isDiscoverPage = $derived(page.url.pathname.includes('/discover'));
-  let path = $derived(isDiscoverPage ? '/discover' : '/explorer');
+  let isDiscoverPage = $derived(exploreMode() === 'discover');
+  let path = $derived(
+    isDiscoverPage
+      ? resolve('/(picsure)/(public)/discover')
+      : resolve('/(picsure)/(public)/explorer'),
+  );
   let allowGenomicFiltering = $derived(genomicFeaturesEnabled && !isDiscoverPage);
+  // ?startTour=true (the export page's "Learn How") opens the tour's instructions. A first search
+  // with criteria hides the tour, so then the tour waits for that search to settle.
+  let tourStart: 'none' | 'pending' | 'autostart' = $state(
+    page.url.searchParams.get('startTour') !== 'true'
+      ? 'none'
+      : initialSearch || search.selectedFacets.length > 0 || !search.tour
+        ? 'pending'
+        : 'autostart',
+  );
 
   function update() {
-    if ($error) error.set('');
-    searchTerm.set(searchInput);
+    search.clearError();
+    search.setTerm(searchInput);
 
-    goto(
-      resolve(appPath(searchInput ? `${path}?search=${encodeURIComponent(searchInput)}` : path)),
-      {
-        replace: true,
-      },
-    );
+    goto(searchInput ? `${path}?search=${encodeURIComponent(searchInput)}` : path, {
+      replace: true,
+    });
   }
 
   function reset() {
-    resetSearch();
+    search.reset();
     searchInput = '';
 
-    goto(resolve(appPath(path)));
+    goto(path);
   }
 
-  function scrollToSearchResults() {
-    document.getElementById(tableId)?.scrollIntoView({ block: 'start' });
+  // An any-record-of filter keeps the labels of the row it was built from.
+  function addAnyRecordOfFilter(filter: Filter) {
+    saveFilter(filter, { enrich: false });
   }
 
   let releaseHandler: (() => void) | undefined;
 
   onMount(async () => {
-    releaseHandler = initHandler();
-    if (searchInput && searchInput !== $searchTerm) {
-      searchTerm.set(searchInput);
+    releaseHandler = search.start();
+    if (searchInput && searchInput !== search.term) {
+      search.setTerm(searchInput);
     } else {
       // reload table and facets
-      handler.invalidate();
+      search.table.invalidate();
     }
-    if (page.url.searchParams.get('startTour') === 'true') {
-      // A load with a search term hides the tour, so let the one started above finish first
-      await nextSearchSettled();
-      tour.set(true);
+    if (tourStart === 'pending') {
+      await search.nextSettled();
+      search.showTour();
+      tourStart = 'autostart';
+    }
+    if (tourStart === 'autostart') {
+      // Only a tour mounted by now opens itself; one remounted after a later reset doesn't.
       await tick();
-      const tourBtn = document.querySelector('#explorer-tour-start');
-      if (tourBtn) {
-        (tourBtn as HTMLElement).click();
-      }
+      tourStart = 'none';
     }
   });
 
   onDestroy(() => releaseHandler?.());
 </script>
+
+{#snippet expandedRow(row: SearchResult)}
+  {#if explorerPanel.activeView === 'filter'}
+    <AddFilter data={row} onadded={(filter) => saveFilter(filter)} />
+  {:else if explorerPanel.activeView === 'hierarchy'}
+    <HierarchyComponent data={row} onadded={addAnyRecordOfFilter} />
+  {:else}
+    <ResultInfoComponent data={row} />
+  {/if}
+{/snippet}
 
 <section id="explorer-main" class="flex gap-9">
   <div id="explorer-facet-sidebar" class="flex-none flex-col items-center w-80">
@@ -111,7 +120,7 @@
           <Button
             variant="tonal"
             data-testid="explorer-genomic-filter-open"
-            href={resolve('explorer/genome-filter')}
+            href={resolve('/(picsure)/(public)/explorer/genome-filter')}
             onclick={() => log(createLog('NAVIGATION', 'explorer.genomic_filter_click'))}
             >Genomic Filtering</Button
           >
@@ -119,36 +128,28 @@
         <Button
           variant="tonal-error"
           aria-label="You are on the reset button"
-          disabled={!searchInput && $selectedFacets.length === 0}
+          disabled={!searchInput && search.selectedFacets.length === 0}
           onclick={reset}
         >
           Reset
         </Button>
       </div>
     </div>
-    {#if $error}
+    {#if search.error}
       <ErrorAlert title="Sorry, we could not retrieve your search results." color="secondary">
-        {$error}
+        {search.error}
       </ErrorAlert>
-    {:else if $searchTerm || $selectedFacets.length > 0}
-      <SearchDatatable
-        isClickable
-        ariaLabel="Search results"
-        {tableName}
-        id={tableId}
-        data-testid="explorer-results-table"
-        {handler}
-        {columns}
-        {cellOverides}
-        isLoading={$isLoading}
-        expandable
-        rowClickLogAction="search_result.row_click"
-        onPageChange={scrollToSearchResults}
+    {:else if search.hasCriteria}
+      <ResultsTable
+        handler={search.table}
+        columns={tableColumns}
+        isLoading={search.loading}
+        {expandedRow}
       />
     {/if}
-    {#if config.features.explorer.enableTour && $tour}
+    {#if config.features.explorer.enableTour && search.tour && tourStart !== 'pending'}
       <div id="explorer-tour" class="text-center mt-4">
-        <ExplorerTour {tourConfig} />
+        <ExplorerTour {tourConfig} autostart={tourStart === 'autostart'} />
       </div>
     {/if}
   </div>

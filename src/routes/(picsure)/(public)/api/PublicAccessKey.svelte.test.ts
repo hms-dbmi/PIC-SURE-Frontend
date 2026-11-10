@@ -120,6 +120,7 @@ describe('PublicAccessKey', () => {
     await waitFor(() => {
       expect(screen.getByTestId('api-public-key-value')).toBeInTheDocument();
     });
+
     await fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
 
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(mockKeyResponse.apiKey);

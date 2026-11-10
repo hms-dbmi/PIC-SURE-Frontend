@@ -12,8 +12,8 @@ import { userIsLoggedIn } from '../utils';
 
 const MAX_FACETS_TO_SHOW = 5;
 
-// Changing a facet refetches facets and re-renders the sidebar accordion, so a category
-// click that lands mid-render is dropped. Retry until the category is in the wanted state.
+// A facet response whose set of non-empty categories changed re-opens them, which can undo
+// a category click made while the refetch was in flight. Retry until the category settles.
 async function setCategoryOpen(control: Locator, open: boolean) {
   await expect(async () => {
     if ((await control.getAttribute('aria-expanded')) !== String(open)) {
@@ -23,8 +23,8 @@ async function setCategoryOpen(control: Locator, open: boolean) {
   }).toPass({ timeout: 15000 });
 }
 
-// Each facet change refetches the facets and rebuilds the sidebar a debounce later, and a
-// click that lands mid-rebuild is lost. Wait for the rebuilt checkbox before the next step.
+// Each facet change refetches the facets a debounce later. Wait for that response, so the
+// next step sees the new counts and accordion state.
 async function checkFacet(page: Page, checkbox: Locator) {
   const refetched = page.waitForResponse(facetResultPath);
   await checkbox.click();

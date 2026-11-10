@@ -4,7 +4,6 @@ import { assertNoSsrWrite } from '#lib/utils/ssrWrite.ts';
 
 import { browser } from '$app/env';
 import { session } from '#lib/auth/session.svelte.ts';
-import { discardingQuery, onQueryDiscarded } from '#lib/auth/discardingQuery.ts';
 import { getConceptDetails } from '#lib/explorer/Dictionary.ts';
 import {
   log,
@@ -97,8 +96,14 @@ export class FilterState {
     return datasets.filter((dataset, index) => dataset && datasets.indexOf(dataset) === index);
   }
 
+  /** Gene filters only; SNP filters don't show the Variant Explorer. */
   get hasGenomicFilter(): boolean {
     return this.#genomic.some((filter) => filter.filterType === 'genomic');
+  }
+
+  /** Gene or SNP filters: what Discover can't query and `removeGenomic()` removes. */
+  get hasGenomicOrSnpFilter(): boolean {
+    return this.#genomic.length > 0;
   }
 
   get hasUnallowedFilter(): boolean {
@@ -307,8 +312,8 @@ export class FilterState {
 }
 
 export const filterState = new FilterState();
-discardingQuery.subscribe((discard) => {
-  if (discard) filterState.discardStored();
+session.onQueryDiscard(() => {
+  filterState.discardStored();
+  return () => filterState.reset();
 });
-onQueryDiscarded(() => filterState.reset());
 registerAssociatedStudies(() => untrack(() => filterState.associatedStudies));

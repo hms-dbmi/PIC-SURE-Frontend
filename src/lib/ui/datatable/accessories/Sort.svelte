@@ -1,6 +1,6 @@
-<script lang="ts">
-  import { TableHandler } from '@vincjo/datatables';
-  import { TableHandler as RemoteTableHandler } from '@vincjo/datatables/server';
+<script lang="ts" generics="T extends Row">
+  import type { Snippet } from 'svelte';
+  import type { AnyTableHandler, Row } from '../types.ts';
 
   let {
     handler,
@@ -8,13 +8,13 @@
     class: className = '',
     children,
   }: {
-    handler: TableHandler | RemoteTableHandler;
-    orderBy: string;
+    handler: AnyTableHandler<T>;
+    orderBy: Extract<keyof T, string>;
     class?: string;
-    children?: import('svelte').Snippet;
+    children?: Snippet;
   } = $props();
 
-  const sort = (() => handler.createSort(orderBy))();
+  const sort = $derived(handler.createSort(orderBy));
 </script>
 
 <th

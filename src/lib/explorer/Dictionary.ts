@@ -1,40 +1,17 @@
-import { get, writable, type Writable } from 'svelte/store';
-
-import { page } from '$app/state';
-
 import * as dictionary from '#lib/api/picsure/dictionary.ts';
 import { isAbortError } from '#lib/api/errors.ts';
-import type { Facet, SearchResult } from '#lib/explorer/types.ts';
 import type {
+  Facet,
+  SearchResult,
   DictionaryConceptResult,
   DictionaryFacetResult,
   DictionarySearchRequest,
 } from '#lib/api/picsure/dictionary.types.ts';
 import type { Pageable } from '#lib/api/picsure/pageable.types.ts';
-import {
-  ACCESS_UNAVAILABLE_MESSAGE,
-  accessUnavailable,
-  consentedStudies,
-  consentsSettled,
-  showAccessUnavailable,
-} from '#lib/auth/User.ts';
-import { searchTerm, selectedFacets } from '#lib/explorer/Search.ts';
+import { ACCESS_UNAVAILABLE_MESSAGE, showAccessUnavailable } from '#lib/auth/accessUnavailable.ts';
+import { session } from '#lib/auth/session.svelte.ts';
+import { exploreMode } from '#lib/explorer/mode.ts';
 import { log, createLog } from '#lib/telemetry/logger.ts';
-
-export type FacetSkeleton = {
-  [facetCategory: string]: string[];
-};
-export const hiddenFacets: Writable<FacetSkeleton> = writable({});
-export const facetsPromise: Writable<Promise<DictionaryFacetResult[]>> = writable(
-  Promise.resolve([]),
-);
-export const openFacets: Writable<string[]> = writable([]);
-
-let lastAutoOpened: string | null = null;
-
-export function resetFacetState() {
-  lastAutoOpened = null;
-}
 
 const dictonaryCacheMap = new Map<string, SearchResult>();
 export const ENSURE_MAX_DEPTH = 100;
@@ -54,62 +31,27 @@ export async function searchDictionary(
   options?: { signal?: AbortSignal },
 ): Promise<DictionaryConceptResult> {
   let request: DictionarySearchRequest = { facets, search: searchTerm };
-  if (!page.url.pathname.includes('/discover')) {
+  if (exploreMode() !== 'discover') {
     request = await addConsents(request);
   }
   return dictionary.searchConcepts(request, pageable, { signal: options?.signal });
 }
 
-function initializeHiddenFacets(response: DictionaryFacetResult[]) {
-  // facets that have a count of zero should never be shown in the UI
-  // this happens because of consent filters
-  const facetsWithZeroConcepts = response
-    .map((cat) => {
-      return {
-        name: cat.name,
-        values: cat.facets.filter((f) => f.count === 0).map((f) => f.name),
-      };
-    })
-    .reduce((prev, cur) => {
-      prev[cur.name] = cur.values;
-      return prev;
-    }, {} as FacetSkeleton);
-  console.debug(
-    'Found the following facets that should be hidden:',
-    JSON.stringify(facetsWithZeroConcepts),
-  );
-
-  hiddenFacets.set(facetsWithZeroConcepts);
-}
-
-export async function updateFacetsFromSearch(options?: {
-  signal?: AbortSignal;
-  isCurrent?: () => boolean;
-}): Promise<DictionaryFacetResult[]> {
-  const search = get(searchTerm);
-  const facets = get(selectedFacets);
-  let request: DictionarySearchRequest = { facets: facets, search: search };
-  if (!page.url.pathname.includes('/discover')) {
+/** Facet categories for a search, each facet linked to its category and parent. */
+export async function searchFacets(
+  search: string,
+  facets: Facet[],
+  options?: { signal?: AbortSignal },
+): Promise<DictionaryFacetResult[]> {
+  let request: DictionarySearchRequest = { facets, search };
+  if (exploreMode() !== 'discover') {
     request = await addConsents(request);
   }
 
   try {
     log(createLog('SEARCH', 'facets.load', { search, facets }));
     const response = await dictionary.searchFacets(request, { signal: options?.signal });
-    if (options?.isCurrent && !options.isCurrent()) {
-      return response;
-    }
-    initializeHiddenFacets(response);
     processFacetResults(response);
-    const nonZero = response
-      .map((category) => (category.facets.some((facet) => facet.count > 0) ? category.name : ''))
-      .filter((c) => c);
-    // Re-applying the same set would reopen categories the user collapsed.
-    const autoOpenKey = JSON.stringify([...nonZero].sort());
-    if (autoOpenKey !== lastAutoOpened) {
-      lastAutoOpened = autoOpenKey;
-      openFacets.set(nonZero);
-    }
     return response;
   } catch (error) {
     if (!isAbortError(error)) {
@@ -177,14 +119,14 @@ export async function getHierarchyConcepts(
  * than emitting an empty `\_consents\`, so a consent-based deployment cannot reach here empty.
  */
 export async function addConsents(request: DictionarySearchRequest) {
-  await consentsSettled();
-  if (get(accessUnavailable)) {
-    // Raised here because Search.ts swallows this error in one path and replaces it with its
-    // own generic text in the other, and a reload has no login-time toast to fall back on.
+  await session.consentsSettled();
+  if (session.accessUnavailable) {
+    // Raised here because ExplorerSearch swallows this error in one path and replaces it with
+    // its own generic text in the other, and a reload has no login-time toast to fall back on.
     showAccessUnavailable();
     throw new Error(ACCESS_UNAVAILABLE_MESSAGE);
   }
-  request.consents = get(consentedStudies);
+  request.consents = session.consentedStudies;
   return request;
 }
 

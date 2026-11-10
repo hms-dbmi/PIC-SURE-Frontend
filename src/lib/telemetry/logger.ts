@@ -54,7 +54,7 @@ export function sanitizeLocation(): { url: string; query_string: string } {
   return { url: url.toString(), query_string: url.search };
 }
 
-// A goto() that only changes the hash is an in-page section jump whose caller logs its
+// A goto that only changes the hash is an in-page section jump whose caller logs its
 // own event (e.g. api.toc_click); page.navigate would only say /api → /api.
 export function isHashOnlyGoto({ from, to, type }: Pick<AfterNavigate, 'from' | 'to' | 'type'>) {
   return (

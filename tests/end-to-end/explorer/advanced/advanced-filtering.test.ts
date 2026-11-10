@@ -204,6 +204,41 @@ test.describe('Advanced Query Builder - Global Combiner', () => {
     await afPage.openModal();
     await afPage.expectBadgeText('OR');
   });
+
+  test('AF-COMBINER-006: Arrow keys switch the top-level AND/OR control and keep focus on it', async ({
+    page,
+  }) => {
+    await afPage.getRootOperatorRadio('AND').focus();
+
+    await page.keyboard.press('ArrowRight');
+    await afPage.expectBadgeText('OR');
+    await expect(afPage.getRootOperatorRadio('OR')).toBeFocused();
+
+    await page.keyboard.press('ArrowLeft');
+    await afPage.expectBadgeText('AND');
+    await expect(afPage.getRootOperatorRadio('AND')).toBeFocused();
+  });
+
+  test('AF-COMBINER-007: Arrow keys on the top-level AND/OR control leave subqueries alone', async ({
+    page,
+  }) => {
+    await afPage.closeModal();
+    await afPage.injectTwoGroups(page);
+    await page.goto('/explorer?search=somedata');
+    await expect(page.locator('#results-panel')).toBeVisible();
+    await afPage.openModal();
+    await afPage.getRootOperatorRadio('AND').focus();
+
+    await page.keyboard.press('ArrowRight');
+    await expect(afPage.getRootOperatorRadio('OR')).toBeFocused();
+    // Past the control's last option: Chromium and Firefox wrap to its first, WebKit stays put
+    await page.keyboard.press('ArrowRight');
+
+    await expect(afPage.rootAndOrSegment.locator(':focus')).toHaveCount(1);
+    // Both subqueries keep AND
+    await expect(afPage.getAllAndRadios().nth(1)).toBeChecked();
+    await expect(afPage.getAllAndRadios().nth(2)).toBeChecked();
+  });
 });
 
 test.describe('Advanced Query Builder - Drag and Drop', () => {
@@ -704,6 +739,14 @@ test.describe('Advanced Query Builder - Unsaved Changes', () => {
     await afPage.expectBadgeText('AND');
   });
 
+  test('AF-UNSAVED-007: Discard Changes follows the link that was clicked', async ({ page }) => {
+    await afPage.selectRootOperator('OR');
+    await page.getByRole('link', { name: 'Help', exact: true }).click();
+    await afPage.expectUnsavedModalVisible();
+    await afPage.clickUnsavedDiscard();
+    await page.waitForURL('**/help');
+  });
+
   test('AF-UNSAVED-004: Apply Changes (modal) applies changes and stays on page', async ({
     page,
   }) => {
@@ -871,5 +914,325 @@ test.describe('Advanced Query Builder - Group Drag and Drop', () => {
     // Filter out the known dnd-kit HierarchyRequestError (from its internal sortable)
     const criticalErrors = errors.filter((e) => !e.includes('HierarchyRequestError'));
     expect(criticalErrors).toHaveLength(0);
+  });
+});
+
+// Every drag interaction Advanced Filtering supports, so a dnd-kit upgrade can be checked against
+// them: pointer, keyboard and touch drags, into and out of subqueries, cancelling, the drag
+// overlay, screen-reader announcements and auto-scroll.
+test.describe('Advanced Query Builder - Drag interactions', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
+  test.describe.configure({ timeout: LONG_RUNNING_TIMEOUT });
+  let afPage: AdvancedFilteringPage;
+  let a: string, b: string, c: string, d: string;
+
+  test.beforeEach(async ({ page }) => {
+    // Tall enough that no drop target sits near the viewport's edge, where dnd-kit auto-scrolls
+    await page.setViewportSize({ width: 1280, height: 1600 });
+    afPage = new AdvancedFilteringPage(page);
+    await afPage.setupAndOpenModal(4);
+    [a, b, c, d] = afPage.filterNames;
+  });
+
+  const handleOf = (name: string) =>
+    afPage.getFilterCard(name).locator('.fa-grip-vertical').first();
+
+  test('AF-DND-008: A filter dragged onto a filter in a subquery joins that subquery and stays there after applying', async () => {
+    await afPage.reopenWithTrailingSubquery();
+    await expect(afPage.logicTreeText).toHaveText(`${a} AND ${b} AND (${c} OR ${d})`);
+
+    const inGroup = afPage.getGroupCards().getByTestId('filter-name');
+    await afPage.dragOnto(handleOf(a), afPage.getFilterCard(c), () =>
+      expect(inGroup).toHaveCount(3, { timeout: 1000 }),
+    );
+    // Where A lands among C and D depends on the last card the pointer crossed, which differs
+    // between browsers
+    await expect(inGroup).toHaveCount(3);
+    expect((await inGroup.allTextContents()).sort()).toEqual([a, c, d].sort());
+    await expect(afPage.listedFilterNames.first()).toHaveText(b);
+    const expected = (await afPage.logicTreeText.textContent())!;
+
+    await afPage.clickApplyChanges();
+    await afPage.expectApplySucceeded();
+    await afPage.closeModal();
+    await afPage.openModal();
+    await expect(afPage.logicTreeText).toHaveText(expected);
+  });
+
+  test('AF-DND-009: A filter dragged out of a subquery onto a top-level filter leaves the subquery', async () => {
+    await afPage.reopenWithTrailingSubquery();
+
+    const inGroup = afPage.getGroupCards().getByTestId('filter-name');
+    await afPage.dragOnto(handleOf(c), afPage.getFilterCard(a), () =>
+      expect(inGroup).toHaveText([d], { timeout: 1000 }),
+    );
+    // As in AF-DND-008, where C lands next to A differs between browsers
+    await expect(inGroup).toHaveText([d]);
+    await expect(afPage.listedFilterNames).toHaveCount(4);
+    await expect(afPage.logicTreeText).toContainText(`AND (${d})`);
+  });
+
+  test('AF-DND-010: A filter dragged onto an empty subquery moves into it', async () => {
+    await afPage.clickAddGroup();
+
+    const group = afPage.getGroupCards();
+    await afPage.dragOnto(handleOf(a), afPage.getEmptyGroupDropZone(), () =>
+      expect(group.getByTestId('filter-name')).toHaveText([a], { timeout: 1000 }),
+    );
+    await expect(group.getByTestId('filter-name')).toHaveText([a]);
+    await expect(afPage.logicTreeText).toHaveText(`${b} AND ${c} AND ${d} AND (${a})`);
+  });
+
+  test('AF-DND-011: A subquery dragged onto another subquery nests in it, and dragged onto the root zone leaves it', async ({
+    page,
+  }) => {
+    await afPage.closeModal();
+    await afPage.injectTwoGroups(page);
+    await page.goto('/explorer?search=somedata');
+    await expect(page.locator('#results-panel')).toBeVisible();
+    await afPage.openModal();
+    const groups = afPage.getGroupCards();
+    await expect(groups).toHaveCount(2);
+
+    const intoFirst = page.locator(
+      '[data-testid="filter-group-drop-zone"][data-group-id="test-group-a"]',
+    );
+    await afPage.dragOnto(afPage.getGroupDragHandle(1), intoFirst);
+    await expect(groups.first().getByTestId('filter-group')).toHaveCount(1);
+    await expect(groups.first().getByTestId('filter-name')).toHaveText([a, b, c, d]);
+
+    const rootZone = page
+      .locator('[data-testid="filter-group-drop-zone"][data-group-id="root"]')
+      .last();
+    await afPage.dragOnto(afPage.getGroupDragHandle(1), rootZone);
+    await expect(groups).toHaveCount(2);
+    await expect(groups.first().getByTestId('filter-group')).toHaveCount(0);
+    await expect(afPage.logicTreeText).toHaveText(`(${a} AND ${b}) AND (${c} AND ${d})`);
+  });
+
+  test('AF-DND-012: A subquery dragged onto a "Move here" zone reorders the subqueries', async ({
+    page,
+  }) => {
+    await afPage.closeModal();
+    await afPage.injectTwoGroups(page);
+    await page.goto('/explorer?search=somedata');
+    await expect(page.locator('#results-panel')).toBeVisible();
+    await afPage.openModal();
+
+    const expected = `(${c} AND ${d}) AND (${a} AND ${b})`;
+    await afPage.dragOnto(afPage.getGroupDragHandle(1), afPage.getMoveHereZones().first(), () =>
+      expect(afPage.logicTreeText).toHaveText(expected, { timeout: 1000 }),
+    );
+    await expect(afPage.logicTreeText).toHaveText(expected);
+    await expect(afPage.getMoveHereZones()).toHaveCount(0);
+  });
+
+  test('AF-DND-023: A subquery dropped onto an empty subquery inside it stays where it was', async ({
+    page,
+  }) => {
+    await afPage.closeModal();
+    await afPage.injectTwoGroups(page);
+    await page.evaluate(() => {
+      const tree = JSON.parse(sessionStorage.getItem('filterTree')!);
+      tree.children[0].children.push({ children: [], operator: 'AND', uuid: 'test-inner' });
+      sessionStorage.setItem('filterTree', JSON.stringify(tree));
+    });
+    await page.goto('/explorer?search=somedata');
+    await expect(page.locator('#results-panel')).toBeVisible();
+    await afPage.openModal();
+    const groups = afPage.getGroupCards();
+    await expect(groups).toHaveCount(3);
+    const before = (await afPage.logicTreeText.textContent())!;
+
+    // The dragged subquery stays in place but invisible, under its overlay copy, so aim at its
+    // inner zone's box rather than at a visible element
+    const innerZone = groups.first().getByText(/^Drop (items )?here$/);
+    const { startX } = await afPage.pickUp(afPage.getGroupDragHandle(0));
+    await page.waitForFunction(() => document.getAnimations().length === 0);
+    const box = (await innerZone.boundingBox())!;
+    const y = box.y + box.height / 2;
+    await page.mouse.move(startX, y, { steps: 10 });
+    await page.mouse.move(startX, y + 2);
+    await page.mouse.move(startX, y);
+    await expect(innerZone).toHaveText('Drop here');
+    await page.mouse.up();
+    await expect(afPage.getDropPreviews()).toHaveCount(0);
+    await expect(groups).toHaveCount(3);
+    await expect(groups.first().getByTestId('filter-name')).toHaveText([a, b]);
+    await expect(afPage.logicTreeText).toHaveText(before);
+  });
+
+  test('AF-DND-022: The keyboard moves a subquery above the one before it', async ({ page }) => {
+    await afPage.closeModal();
+    await afPage.injectTwoGroups(page);
+    await page.goto('/explorer?search=somedata');
+    await expect(page.locator('#results-panel')).toBeVisible();
+    await afPage.openModal();
+
+    const expected = `(${c} AND ${d}) AND (${a} AND ${b})`;
+    await afPage
+      .getGroupCards()
+      .nth(1)
+      .getByRole('button', { name: 'Click and drag to reorder and group filters' })
+      .first()
+      .focus();
+    await page.keyboard.press('Enter');
+    await expect(afPage.getMoveHereZones()).not.toHaveCount(0);
+    // The keyboard sensor picks the next zone by position, so let the zones finish opening
+    await page.waitForFunction(() => document.getAnimations().length === 0);
+    // Which zone comes first depends on the fonts: on Linux the first ArrowUp lands in the upper
+    // subquery's "Drop into subquery" zone, and the next one reaches "Move here"
+    await expect(async () => {
+      await page.keyboard.press('ArrowUp');
+      await expect(afPage.logicTreeText).toHaveText(expected, { timeout: 1000 });
+    }).toPass();
+    await page.keyboard.press('Enter');
+
+    await expect(afPage.getMoveHereZones()).toHaveCount(0);
+    await expect(afPage.logicTreeText).toHaveText(expected);
+  });
+
+  test('AF-DND-013: Escape during a pointer drag puts the filter back', async ({ page }) => {
+    const { startX } = await afPage.pickUp(handleOf(a));
+    await expect(async () => {
+      const box = await afPage.getFilterCard(b).boundingBox();
+      await page.mouse.move(startX, box!.y + box!.height / 2, { steps: 10 });
+      await expect(afPage.listedFilterNames).toHaveText([b, a, c, d], { timeout: 1000 });
+    }).toPass({ timeout: 15_000 });
+
+    await page.keyboard.press('Escape');
+    await expect(afPage.getDropPreviews()).toHaveCount(0);
+    await expect(afPage.listedFilterNames).toHaveText([a, b, c, d]);
+    await page.mouse.up();
+    await expect(afPage.listedFilterNames).toHaveText([a, b, c, d]);
+  });
+
+  test('AF-DND-014: Escape during a keyboard drag puts the filter back', async ({ page }) => {
+    const handle = afPage
+      .getFilterCard(a)
+      .getByRole('button', { name: 'Click and drag to reorder and group filters' });
+    await handle.focus();
+    await page.keyboard.press('Enter');
+    await expect(afPage.getDropPreviews().first()).toBeVisible();
+    await page.keyboard.press('ArrowDown');
+    await expect(afPage.listedFilterNames).toHaveText([b, a, c, d]);
+
+    await page.keyboard.press('Escape');
+    await expect(afPage.getDropPreviews()).toHaveCount(0);
+    await expect(afPage.listedFilterNames).toHaveText([a, b, c, d]);
+  });
+
+  test('AF-DND-015: The keyboard moves a filter into the subquery below it', async ({ page }) => {
+    await afPage.reopenWithTrailingSubquery();
+    const handle = afPage
+      .getFilterCard(b)
+      .getByRole('button', { name: 'Click and drag to reorder and group filters' });
+    await handle.focus();
+    await page.keyboard.press('Enter');
+    await expect(afPage.getDropPreviews().first()).toBeVisible();
+    await page.keyboard.press('ArrowDown');
+    await expect(afPage.logicTreeText).toHaveText(`${a} AND (${b} OR ${c} OR ${d})`);
+    await page.keyboard.press('Enter');
+    await expect(afPage.getDropPreviews()).toHaveCount(0);
+    await expect(afPage.getGroupCards().getByTestId('filter-name')).toHaveText([b, c, d]);
+  });
+
+  test('AF-DND-016: A copy of the dragged filter follows the pointer', async ({ page }) => {
+    const { startX, startY } = await afPage.pickUp(handleOf(a));
+    const overlay = afPage.modal
+      .locator('[data-testid="filter-item"]:not([data-testid="filter-root"] *)')
+      .filter({ hasText: a });
+    await expect(overlay).toHaveCount(1);
+    await expect(afPage.listedFilterNames.filter({ hasText: a })).toHaveCount(1);
+    const start = await overlay.boundingBox();
+    expect(start).not.toBeNull();
+
+    await page.mouse.move(startX + 40, startY + 5, { steps: 5 });
+    await expect(async () => {
+      const box = await overlay.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.x - start!.x).toBeCloseTo(40, 0);
+      expect(box!.y - start!.y).toBeCloseTo(5, 0);
+    }).toPass();
+
+    await afPage.endDrag(startX, startY);
+    await expect(overlay).toHaveCount(0);
+  });
+
+  test('AF-DND-017: A touch drag reorders filters', async () => {
+    await afPage.touchDrag(handleOf(a), afPage.getFilterCard(b));
+    await expect(afPage.listedFilterNames).toHaveText([b, a, c, d]);
+  });
+
+  test('AF-DND-018: Picking up and dropping a filter is announced to screen readers', async ({
+    page,
+  }) => {
+    const handle = afPage
+      .getFilterCard(a)
+      .getByRole('button', { name: 'Click and drag to reorder and group filters' });
+    await expect(handle).toHaveAttribute('aria-describedby', /.+/);
+    await handle.focus();
+    await page.keyboard.press('Enter');
+    await expect(afPage.getAnnouncement()).toContainText(/picked up/i);
+    await page.keyboard.press('ArrowDown');
+    await expect(afPage.listedFilterNames).toHaveText([b, a, c, d]);
+    await page.keyboard.press('Enter');
+    await expect(afPage.getAnnouncement()).toContainText(/dropped/i);
+  });
+
+  test('AF-DND-019: Holding a dragged filter at the bottom edge scrolls the page and still drops it', async ({
+    page,
+    browserName,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    const { startX } = await afPage.pickUp(handleOf(a));
+    const scrolled = () => page.evaluate(() => window.scrollY);
+    const before = await scrolled();
+    await page.mouse.move(startX, page.viewportSize()!.height - 5, { steps: 20 });
+    await expect.poll(scrolled).toBeGreaterThan(before);
+    // Hold until the page can't scroll further, so where the filter lands doesn't depend on timing
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () => window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 1,
+        ),
+      )
+      .toBe(true);
+    await page.mouse.up();
+
+    await expect(afPage.getDropPreviews()).toHaveCount(0);
+    await expect(afPage.listedFilterNames).toHaveCount(4);
+    const names = await afPage.listedFilterNames.allTextContents();
+    expect(names.filter((name) => name === a)).toHaveLength(1);
+    // The scroll carries the filter to the end of the list. In WebKit, where it lands depends on
+    // timing: about one drop in six stays near the top, on dnd-kit 0.2 and 0.5 alike.
+    if (browserName !== 'webkit') expect(names.at(-1)).toBe(a);
+  });
+
+  test('AF-DND-020: Dropping a filter outside the list leaves it where it was', async ({
+    page,
+  }) => {
+    const { startX, startY } = await afPage.pickUp(handleOf(a));
+    await page.mouse.move(startX - 300, startY, { steps: 10 });
+    await page.mouse.up();
+
+    await expect(afPage.getDropPreviews()).toHaveCount(0);
+    await expect(afPage.listedFilterNames).toHaveText([a, b, c, d]);
+  });
+
+  test('AF-DND-021: Dropping outside after passing another filter keeps the order it reached', async ({
+    page,
+  }) => {
+    const { startX } = await afPage.pickUp(handleOf(a));
+    const target = await afPage.getFilterCard(b).boundingBox();
+    expect(target).not.toBeNull();
+    const targetY = target!.y + target!.height / 2;
+    await page.mouse.move(startX, targetY, { steps: 20 });
+    await expect(afPage.listedFilterNames).toHaveText([b, a, c, d]);
+    await page.mouse.move(startX - 300, targetY, { steps: 10 });
+    await page.mouse.up();
+
+    await expect(afPage.getDropPreviews()).toHaveCount(0);
+    await expect(afPage.listedFilterNames).toHaveText([b, a, c, d]);
   });
 });

@@ -27,23 +27,15 @@ vi.mock('#lib/query/filters.svelte.ts', () => ({
 }));
 
 const mockConceptPath = vi.hoisted(() => vi.fn());
-vi.mock('#lib/explorer/Dictionary.ts', async () => {
-  return {
-    getConceptDetails: mockConceptPath,
-    ENSURE_MAX_DEPTH: 100,
-  };
-});
+vi.mock('#lib/explorer/index.ts', () => ({
+  getConceptDetails: mockConceptPath,
+  ENSURE_MAX_DEPTH: 100,
+  exportState: { replace: vi.fn() },
+  mapSearchResultAsExport: vi.fn((searchResult) => ({ conceptPath: searchResult?.conceptPath })),
+}));
 
 const mockConceptTree = vi.hoisted(() => vi.fn());
 vi.mock('#lib/api/picsure/dictionary.ts', () => ({ getConceptTree: mockConceptTree }));
-
-vi.mock('#lib/explorer/export/Export.ts', async () => {
-  const { writable } = await import('svelte/store');
-  return {
-    exports: writable([]),
-    mapSearchResultAsExport: vi.fn((searchResult) => ({ conceptPath: searchResult?.conceptPath })),
-  };
-});
 
 vi.mock('#lib/query/restore.ts', () => ({
   loadQuerySummaryData: vi.fn(),

@@ -2,11 +2,12 @@
   import { parseFieldsFromJSON } from '#lib/auth/model/connection.ts';
   import { tones } from '#lib/ui/surface.ts';
   interface Props {
-    data?: { cell: string };
+    // The connection's required fields, as stored: a JSON array.
+    requiredFields?: string;
   }
 
-  let { data = { cell: '[]' } }: Props = $props();
-  let fields = $derived(parseFieldsFromJSON(data.cell));
+  let { requiredFields = '[]' }: Props = $props();
+  let fields = $derived(parseFieldsFromJSON(requiredFields));
 </script>
 
 {#each fields as field, index (index)}

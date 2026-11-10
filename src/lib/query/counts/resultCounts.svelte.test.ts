@@ -27,7 +27,11 @@ vi.mock('#lib/ui/toaster.ts', () => ({
 }));
 
 vi.mock('#lib/auth/session.svelte.ts', () => ({
-  session: { user: {}, onEnd: (listener: () => void) => mockState.endListeners.push(listener) },
+  session: {
+    user: {},
+    onEnd: (listener: () => void) => mockState.endListeners.push(listener),
+    onQueryDiscard: vi.fn(),
+  },
 }));
 vi.mock('#lib/explorer/Dictionary.ts', () => ({ getConceptDetails: vi.fn() }));
 
@@ -58,7 +62,7 @@ import type { QueryDescriptor } from '#lib/query/descriptor.svelte.ts';
 import { ResultCounts, resultCountsState } from '#lib/query/counts/resultCounts.svelte.ts';
 import { filterState } from '#lib/query/filters.svelte.ts';
 import { createCategoricalFilter } from '#lib/query/filter.svelte.ts';
-import type { SearchResult } from '#lib/explorer/types.ts';
+import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
 
 function changeFilters() {
   filterState.add(createCategoricalFilter({ conceptPath: '\\a\\' } as SearchResult, ['x']));

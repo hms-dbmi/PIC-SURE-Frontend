@@ -9,15 +9,6 @@
   import type { PageProps } from './$types';
 
   let { params }: PageProps = $props();
-
-  async function load(uuid: string) {
-    const [user] = await Promise.all([
-      admin.users.get(uuid),
-      admin.roles.load(),
-      admin.connections.load(),
-    ]);
-    return user;
-  }
 </script>
 
 <svelte:head>
@@ -25,7 +16,7 @@
 </svelte:head>
 
 <Content title="Edit User" backUrl="/admin/users" backTitle="Back to Users">
-  {#await load(params.uuid)}
+  {#await admin.loadUser(params.uuid)}
     <Loading />
   {:then user}
     <section id="admin-user-edit">

@@ -95,6 +95,41 @@ test.describe('Filter warning navigation', () => {
     await expect(page.getByTestId('explorer-filter-warning')).toBeHidden();
   });
 
+  test('warns before moving from Explore to Discover with a SNP filter', async ({ page }) => {
+    await mockApiSuccess(page, '*/**/picsure/hpds/query/sync', 100);
+    await page.addInitScript(() => {
+      sessionStorage.setItem(
+        'genomicFilters',
+        JSON.stringify([
+          {
+            uuid: 'snp-filter',
+            id: 'snp-variant',
+            filterType: 'snp',
+            displayType: 'any',
+            snpValues: [{ search: 'chr1,12345,A,G', constraint: '0/1' }],
+            variableName: 'Variant Filter',
+            description: 'chr1,12345,A,G: Heterozygous',
+            allowFiltering: true,
+            dataset: '',
+          },
+        ]),
+      );
+    });
+
+    await page.goto('/explorer');
+    await page.locator('#app-nav-link-discover').click();
+
+    await expect(page).toHaveURL(/\/explorer$/);
+    const warning = page.getByTestId('explorer-filter-warning');
+    await expect(warning).toBeVisible();
+
+    await page.getByRole('button', { name: 'Remove Invalid Filters' }).click();
+
+    await expect(page).toHaveURL(/\/discover$/);
+    await expect(warning).toBeHidden();
+    expect(await page.evaluate(() => sessionStorage.getItem('genomicFilters'))).toBe('[]');
+  });
+
   [
     { seed: seedDeniedFilter, from: '/discover', to: 'explorer', back: 'Back to Discover' },
     { seed: seedGenomicFilter, from: '/explorer', to: 'discover', back: 'Back to Explore' },
@@ -114,10 +149,46 @@ test.describe('Filter warning navigation', () => {
       await page.getByRole('button', { name: back }).click();
 
       await expect(page.getByTestId('explorer-filter-warning')).toBeHidden();
-      // WebKit doesn't focus links on click, so the dialog has no link to return focus to.
+      // WebKit doesn't focus links on click, so there's no link to return focus to.
       if (browserName !== 'webkit') await expect(link).toBeFocused();
       await page.mouse.move(0, 0);
       await expect(link).toHaveCSS('background-color', unselectedBackground);
+    });
+
+    [
+      { opener: 'keyboard', chooser: 'keyboard', ring: true },
+      { opener: 'mouse', chooser: 'keyboard', ring: true },
+      { opener: 'keyboard', chooser: 'mouse', ring: false },
+    ].forEach(({ opener, chooser, ring }) => {
+      test(`returns focus to the ${to} link ${ring ? 'with' : 'without'} a ring after opening with the ${opener} and choosing ${back} with the ${chooser}`, async ({
+        page,
+        browserName,
+      }) => {
+        // WebKit doesn't focus links on click, so there's no link to return focus to.
+        test.skip(
+          opener === 'mouse' && browserName === 'webkit',
+          'WebKit leaves a clicked link unfocused',
+        );
+        await seed(page);
+
+        await page.goto(from);
+        const link = page.locator(`#app-nav-link-${to}`);
+        const unselectedBackground = await link.evaluate(
+          (el) => getComputedStyle(el).backgroundColor,
+        );
+        if (opener === 'keyboard') await link.press('Enter');
+        else await link.click();
+        const backButton = page.getByRole('button', { name: back });
+        if (chooser === 'keyboard') await backButton.press('Enter');
+        else await backButton.click();
+
+        await expect(page.getByTestId('explorer-filter-warning')).toBeHidden();
+        await expect(page).toHaveURL(new RegExp(`${from}$`));
+        await expect(link).toBeFocused();
+        await page.mouse.move(0, 0);
+        if (ring) await expect(link).not.toHaveCSS('background-color', unselectedBackground);
+        else await expect(link).toHaveCSS('background-color', unselectedBackground);
+      });
     });
   });
 });

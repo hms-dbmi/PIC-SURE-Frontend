@@ -3,14 +3,15 @@
   import Button from '#lib/ui/Button.svelte';
   import { slide } from 'svelte/transition';
   import ConfirmDialog from '#lib/ui/dialog/ConfirmDialog.svelte';
+  import { BANNER_AUDIENCE_LABELS, type ManagementRecord } from '#lib/banners/model/banner.ts';
   import {
-    BANNER_APPEARANCE_DETAILS,
-    BANNER_AUDIENCE_LABELS,
-    type ManagementRecord,
-  } from '#lib/banners/model/banner.ts';
+    BANNER_APPEARANCE_PRESENTATION,
+    BANNER_LIFECYCLE_PRESENTATION,
+  } from '#lib/banners/components/presentation.ts';
   import { truncate } from '#lib/utils/strings.ts';
-  import { useSortable } from '@dnd-kit-svelte/svelte/sortable';
-  import { tones } from '#lib/ui/surface.ts';
+  import { createSortable } from '#lib/ui/sortable/sortable.ts';
+  import SortableHandle from '#lib/ui/sortable/SortableHandle.svelte';
+  import DropPreview from '#lib/ui/sortable/DropPreview.svelte';
 
   interface Props {
     banner: ManagementRecord;
@@ -52,11 +53,13 @@
     archiveDisabled = false,
   }: Props = $props();
 
-  const { ref, handleRef } = useSortable({
+  const sortable = createSortable({
     get id() {
       return banner.uuid;
     },
-    index: () => index,
+    get index() {
+      return index;
+    },
     type: 'banner',
     accept: 'banner',
     group: 'banner-order',
@@ -65,21 +68,7 @@
     },
   });
   const noopAttachment = () => {};
-  const lifecycleLabels = {
-    ACTIVE: 'Active',
-    SCHEDULED: 'Scheduled',
-    SAVED: 'Saved',
-    DISABLED: 'Disabled',
-    EXPIRED: 'Expired',
-  } as const;
-  const lifecycleBadgeClasses = {
-    ACTIVE: tones['tonal-success'],
-    SCHEDULED: 'bg-surface-200',
-    SAVED: tones['tonal-primary'],
-    DISABLED: 'bg-surface-200',
-    EXPIRED: 'bg-surface-200',
-  } as const;
-
+  const lifecycle = $derived(BANNER_LIFECYCLE_PRESENTATION[banner.lifecycle]);
   const panelId = $derived(`banner-${banner.uuid}-details`);
   const editable = $derived(banner.lifecycle === 'SAVED' || banner.status === 'PUBLISHED');
   const disableable = $derived(banner.lifecycle === 'ACTIVE' || banner.lifecycle === 'SCHEDULED');
@@ -120,7 +109,7 @@
   <span class="sr-only">for {actionLabel}</span>
 {/snippet}
 
-<div class="relative min-w-0" {@attach orderable && !isOverlay ? ref : noopAttachment}>
+<div class="relative min-w-0" {@attach orderable && !isOverlay ? sortable.attach : noopAttachment}>
   <article
     class="min-w-0 overflow-hidden rounded-xl border border-surface-300 bg-white dark:bg-surface-950 {activeId ===
       banner.uuid && !isOverlay
@@ -130,16 +119,13 @@
     <div class="flex min-h-24 items-center gap-3 p-3">
       {#if orderable}
         <div class="flex w-20 shrink-0 flex-col items-center gap-1">
-          <button
-            type="button"
-            class="cursor-grab rounded p-2 text-surface-600 active:cursor-grabbing focus-visible:ring-3 focus-visible:ring-primary-500 focus-visible:outline-none"
+          <SortableHandle
+            handle={sortable.attachHandle}
+            class="rounded p-2 text-surface-600 focus-visible:ring-3 focus-visible:ring-primary-500 focus-visible:outline-none"
             aria-label={`Reorder banner: ${actionLabel}`}
             aria-roledescription="sortable"
             title="Drag or use the keyboard to reorder"
-            {@attach handleRef}
-          >
-            <i class="fa-solid fa-grip-vertical text-xl" aria-hidden="true"></i>
-          </button>
+          />
           {#if position !== null}
             <span class="whitespace-nowrap text-xs font-bold">Position {position}</span>
           {/if}
@@ -150,15 +136,11 @@
           {banner.excerpt}
         </p>
         <div class="mt-2 flex flex-wrap items-center gap-2 text-sm text-surface-600">
-          <span
-            class="rounded-full px-2 py-1 font-bold uppercase {lifecycleBadgeClasses[
-              banner.lifecycle
-            ]}"
-          >
-            {lifecycleLabels[banner.lifecycle]}
+          <span class="rounded-full px-2 py-1 font-bold uppercase {lifecycle.badgeClass}">
+            {lifecycle.label}
           </span>
           <span
-            >{BANNER_APPEARANCE_DETAILS[banner.appearance].label} · {banner.dismissible
+            >{BANNER_APPEARANCE_PRESENTATION[banner.appearance].label} · {banner.dismissible
               ? 'Dismissible'
               : 'Permanent'}</span
           >
@@ -240,19 +222,13 @@
       </section>
     {/if}
     <span
-      class="banner-appearance-bar block h-1 w-full {BANNER_APPEARANCE_DETAILS[banner.appearance]
-        .swatchClass}"
+      class="banner-appearance-bar block h-1 w-full {BANNER_APPEARANCE_PRESENTATION[
+        banner.appearance
+      ].swatchClass}"
       aria-hidden="true"
     ></span>
   </article>
   {#if orderable && activeId === banner.uuid && !isOverlay}
-    <div
-      data-testid="banner-drop-preview"
-      class="absolute inset-0 flex items-center justify-center rounded-xl border border-dashed border-primary-500 bg-primary-500/10"
-    >
-      <span class="text-xs font-semibold uppercase tracking-wide text-primary-700">
-        Moving: {banner.excerpt}
-      </span>
-    </div>
+    <DropPreview data-testid="banner-drop-preview" class="rounded-xl" label={banner.excerpt} />
   {/if}
 </div>

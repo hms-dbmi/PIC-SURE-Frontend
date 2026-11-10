@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('$app/env', () => ({ browser: false }));
 vi.mock('#lib/utils/ssrWrite.ts', () => ({ assertNoSsrWrite: vi.fn() }));
 vi.mock('#lib/auth/session.svelte.ts', () => ({
-  session: { user: {}, ensureConsentsLoaded: vi.fn() },
+  session: { user: {}, ensureConsentsLoaded: vi.fn(), onQueryDiscard: vi.fn() },
 }));
 vi.mock('#lib/explorer/Dictionary.ts', () => ({ getConceptDetails: vi.fn() }));
 
@@ -21,7 +21,7 @@ import {
 } from '#lib/query/filter.svelte.ts';
 import { LogicTree } from '#lib/query/logicTree.svelte.ts';
 import { Operator, queryLeaves } from '#lib/query/query.ts';
-import type { SearchResult } from '#lib/explorer/types.ts';
+import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
 import { buildRequest, filterConcepts } from '#lib/query/build.ts';
 
 function searchResult(conceptPath: string, children: SearchResult[] = []): SearchResult {

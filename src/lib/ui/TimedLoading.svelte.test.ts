@@ -63,6 +63,15 @@ describe('TimedLoading', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Still retrying…');
   });
 
+  it('starts again from the first message when earlier messages come back', async () => {
+    const retrying = [{ afterMs: 0, text: 'Retrying…' }];
+    const { rerender } = render(TimedLoading, { messages, size: 'micro' });
+    advance(7000);
+    await rerender({ messages: retrying });
+    await rerender({ messages });
+    expect(screen.getByRole('status')).toHaveTextContent('Generating visualizations…');
+  });
+
   it('clears its timers when unmounted', () => {
     const { unmount } = render(TimedLoading, { messages });
     expect(vi.getTimerCount()).toBe(2);

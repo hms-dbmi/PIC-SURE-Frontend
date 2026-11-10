@@ -1,7 +1,7 @@
 <script lang="ts">
   import Button from '#lib/ui/Button.svelte';
   import { resolve } from '$app/paths';
-  import { appPath } from '#lib/api/paths.ts';
+  import { appPath } from '#lib/utils/appPath.ts';
   import { onMount } from 'svelte';
 
   import { page } from '$app/state';

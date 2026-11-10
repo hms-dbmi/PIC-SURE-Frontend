@@ -163,6 +163,22 @@ test.describe('dataset', () => {
     // Then
     await page.waitForURL(/\/dataset\/.+/);
   });
+  test('Keyboard: ArrowDown from a sort header enters the grid', async ({ page }) => {
+    // Given
+    await mockApiSuccess(page, datasetPath, mockData);
+    await page.goto('/dataset');
+    await userIsLoggedIn(page);
+    const table = page.getByTestId('dataset-active-table');
+    const firstRow = table.locator('tr[id^="dataset-active-table-row-"]').first();
+    await expect(firstRow).toBeVisible();
+
+    // When
+    await table.getByRole('button', { name: 'Created' }).focus();
+    await page.keyboard.press('ArrowDown');
+
+    // Then
+    await expect(firstRow).toBeFocused();
+  });
   test('Keyboard: "d" shortcut archives the focused dataset row', async ({ page }) => {
     // Given
     await mockApiSuccess(page, datasetPath, mockData);

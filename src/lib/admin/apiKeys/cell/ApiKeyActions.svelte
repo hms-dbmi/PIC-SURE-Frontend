@@ -6,34 +6,35 @@
   import { extractApiError } from '#lib/admin/apiKeys/model.ts';
 
   interface Props {
-    /** The table's cell contract: `cell` is the key's uuid. */
-    data: { cell: string; row: { prefix: string; status: string } };
+    uuid: string;
+    prefix: string;
+    status: string;
   }
 
-  const { data }: Props = $props();
+  const { uuid, prefix, status }: Props = $props();
 
   async function revoke() {
     // defense-in-depth beyond the disabled trigger
     if (!session.isTopAdmin) return;
     try {
-      await apiKeys.revoke(data.cell);
+      await apiKeys.revoke(uuid);
       toaster.success({
-        title: `Successfully revoked API key '${data.row.prefix}'`,
+        title: `Successfully revoked API key '${prefix}'`,
       });
     } catch (error) {
       toaster.error({
-        title: `Failed to revoke API key '${data.row.prefix}'`,
+        title: `Failed to revoke API key '${prefix}'`,
         description: extractApiError(error),
       });
     }
   }
 </script>
 
-{#if data.row.status === 'Active'}
+{#if status === 'Active'}
   <ConfirmButton
     label="Revoke"
     variant="tonal-error"
-    data-testid="admin-api-key-revoke-{data.cell}"
+    data-testid="admin-api-key-revoke-{uuid}"
     title="Revoke API Key?"
     confirmLabel="Revoke"
     tone="danger"
@@ -41,8 +42,8 @@
     onconfirm={revoke}
   >
     <p>
-      Are you sure you want to revoke API key '{data.row.prefix}'? Revocation is permanent and
-      cannot be undone.
+      Are you sure you want to revoke API key '{prefix}'? Revocation is permanent and cannot be
+      undone.
     </p>
   </ConfirmButton>
 {/if}

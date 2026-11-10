@@ -15,6 +15,7 @@ import {
   detailResponseCat,
   detailResponseCatSameDataset,
   tourSearchResults,
+  mockBanner,
 } from '../support/mock-data';
 import { clickNthFilterIcon, getOption } from '../end-to-end/utils';
 
@@ -76,6 +77,12 @@ const datasetPath = '*/**/picsure/operations/dataset/named';
 
 const shots: Shot[] = [
   { name: 'login', path: '/login' },
+  {
+    name: 'login-warning-banner',
+    path: '/login',
+    mock: (page) => mockApiSuccess(page, '**/picsure/operations/banners/active', [mockBanner]),
+    ready: (page) => expect(page.getByTestId('banner-item')).toBeVisible(),
+  },
   {
     name: 'terms',
     path: '/login',

@@ -7,10 +7,10 @@ import {
   mockToken,
 } from '../../support/mock-data';
 import { expectAnimationsFinished, expectSectionAligned, userIsLoggedIn } from '../utils';
-import { Internal } from '../../../src/lib/api/paths';
 import type { Branding } from '../../../src/lib/config/branding';
 import brandingJson from '../../../src/lib/assets/configuration.json' with { type: 'json' };
 import { tones } from '#lib/ui/surface.ts';
+import { Internal } from '#lib/api/paths.ts';
 const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
 
 const capabilities = branding?.apiPage?.capabilities || [];

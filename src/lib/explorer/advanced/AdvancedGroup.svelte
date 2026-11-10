@@ -2,53 +2,35 @@
   import Button from '#lib/ui/Button.svelte';
   import OperatorBadge from '#lib/ui/OperatorBadge.svelte';
   import { css } from '#lib/ui/style.ts';
-  import { useSortable } from '@dnd-kit-svelte/svelte/sortable';
-  import {
-    isFilterGroup,
-    type FilterGroupInterface,
-    type FilterInterface,
-  } from '#lib/query/filter.svelte.ts';
+  import { CollisionPriority, createSortable } from '#lib/ui/sortable/sortable.ts';
+  import SortableHandle from '#lib/ui/sortable/SortableHandle.svelte';
+  import DropPreview from '#lib/ui/sortable/DropPreview.svelte';
+  import { isFilterGroup, type FilterGroupInterface } from '#lib/query/filter.svelte.ts';
   import AdvancedItem from './AdvancedItem.svelte';
   import AdvancedGroup from './AdvancedGroup.svelte';
   import EmptyDropZone from './EmptyDropZone.svelte';
   import GroupDropZone from './GroupDropZone.svelte';
   import { Operator, type OperatorType } from '#lib/query/query.ts';
+  import { getFilterTreeEditor, isInDragOverlay } from './FilterTreeEditor.svelte.ts';
+  import { ROOT_ID } from './filterTreeOps.ts';
   import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
-  import { CollisionPriority } from '@dnd-kit/abstract';
   import Switch from '#lib/ui/Switch.svelte';
   import { cardClass } from '#lib/ui/surface.ts';
 
   interface Props {
     group: FilterGroupInterface;
-    onRemove: (group: FilterGroupInterface) => void;
-    onRemoveChild: (child: FilterInterface) => void;
-    onOperatorChange?: (group: FilterGroupInterface, operator: OperatorType) => void;
-    onAddGroup?: () => void;
-    activeId?: string | null;
-    isGroupDrag?: boolean;
     index?: number;
-    isOverlay?: boolean;
-    id?: string;
-    parentId?: string;
     depth?: number;
   }
 
-  let {
-    group,
-    activeId = null,
-    isGroupDrag = false,
-    index = 0,
-    isOverlay = false,
-    id = group.uuid,
-    parentId,
-    onRemove = () => {},
-    onRemoveChild = () => {},
-    onOperatorChange = (g, op) => {
-      g.setOperator(op);
-    },
-    depth = 0,
-    onAddGroup = () => {},
-  }: Props = $props();
+  let { group, index = 0, depth = 0 }: Props = $props();
+
+  const editor = getFilterTreeEditor();
+  const isOverlay = isInDragOverlay();
+  const id = $derived(editor.idOf(group));
+  const parentId = $derived(editor.containerOf(group));
+  const activeId = $derived(editor.activeId);
+  const isGroupDrag = $derived(editor.isGroupDrag);
 
   const groupBg = $derived(`background-color: rgba(var(--depth-overlay), ${depth * 0.06})`);
   const groupBorder = $derived(`border-color: rgba(var(--depth-overlay), ${0.2 + depth * 0.08})`);
@@ -56,7 +38,8 @@
   const operatorValue = $derived(group.operator || Operator.AND);
   let not = $state(false);
   const hasSubqueryChildren = $derived(group.children.some((child) => isFilterGroup(child)));
-  const isDraggable = $derived(id !== 'root');
+  const isRoot = $derived(id === ROOT_ID);
+  const isDraggable = $derived(!isRoot);
 
   // Derive the actual index from parent's children array (reactive to array changes)
   const actualIndex = $derived(
@@ -70,11 +53,13 @@
   const showLeadingOperator = $derived(actualIndex > 0 && leadingOperator !== undefined);
 
   // Disable in overlay mode to prevent duplicate sortable IDs
-  const { ref, handleRef } = useSortable({
+  const sortable = createSortable({
     get id() {
       return id;
     },
-    index: () => index,
+    get index() {
+      return index;
+    },
     get group() {
       return parentId;
     },
@@ -91,10 +76,9 @@
       return isOverlay;
     },
   });
-  // Use our controlled activeId rather than dnd-kit's isDragging.current for the
+  // Use the editor's activeId rather than dnd-kit's isDragging.current for the
   // drop preview. isDragging.current can get stuck when tree nodes are replaced
-  // (e.g. restoreSnapshot in handleDragEnd), but activeId is always properly
-  // cleared in clearDragState().
+  // (the editor restores its snapshot on drop), but activeId is always cleared.
   const showDropPreview = $derived(!isOverlay && activeId === id && isDraggable);
 
   const operatorOptions = [
@@ -103,7 +87,7 @@
   ];
 </script>
 
-<div class="relative" {@attach ref}>
+<div class="relative" {@attach sortable.attach}>
   {#if showLeadingOperator && leadingOperator}
     <div class="flex justify-center py-2 {activeId === id && !isOverlay ? 'invisible' : ''}">
       <OperatorBadge operator={leadingOperator} />
@@ -111,24 +95,20 @@
   {/if}
 
   <div
-    data-testid={id === 'root' ? 'filter-root' : 'filter-group'}
-    class="{cardClass} py-1 px-2 {id === 'root'
+    data-testid={isRoot ? 'filter-root' : 'filter-group'}
+    class="{cardClass} py-1 px-2 {isRoot
       ? 'bg-surface-50 shadow-none border-none'
       : activeId === id && !isOverlay
         ? 'invisible'
         : 'border'}"
-    {@attach css(
-      id !== 'root' && !(activeId === id && !isOverlay) ? `${groupBg}; ${groupBorder}` : '',
-    )}
+    {@attach css(!isRoot && !(activeId === id && !isOverlay) ? `${groupBg}; ${groupBorder}` : '')}
   >
     <div class="flex flex-row items-center gap-2 mb-1 w-full">
-      <div
-        class="cursor-grab active:cursor-grabbing mr-2 {isDraggable ? 'block' : 'hidden'}"
+      <SortableHandle
+        handle={sortable.attachHandle}
+        class="mr-2 px-1 {isDraggable ? 'block' : 'hidden'}"
         title="Click and drag to reorder and group filters"
-        {@attach handleRef}
-      >
-        <i class="fa-solid fa-grip-vertical text-xl mx-1"></i>
-      </div>
+      />
       <div class="flex items-center justify-start gap-2 w-full">
         <div>Between {hasSubqueryChildren ? 'subqueries' : 'filters'}:</div>
         <div title="Choose logic for the query">
@@ -137,15 +117,15 @@
             value={operatorValue}
             options={operatorOptions}
             tone={operatorValue === Operator.OR ? 'secondary' : 'primary'}
-            onchange={(value) => onOperatorChange(group, value as OperatorType)}
+            onchange={(value) => editor.setOperator(group, value as OperatorType)}
           />
         </div>
-        {#if id === 'root'}
+        {#if isRoot}
           <Button
             variant="soft"
             class="leading-(--text-lg--line-height) disabled:opacity-75 ml-auto mb-1"
             title="Add subquery to create a group of filters"
-            onclick={onAddGroup}
+            onclick={editor.addGroup}
           >
             Add Subquery
           </Button>
@@ -164,7 +144,7 @@
             type="button"
             title="Remove Subquery"
             class="hover:text-primary-600"
-            onclick={() => onRemove(group)}
+            onclick={() => editor.remove(group)}
           >
             <i class="fa-solid fa-times-circle"></i>
             <span class="sr-only">Remove Subquery</span>
@@ -175,61 +155,34 @@
 
     <div class="flex flex-col min-h-[50px] w-full">
       {#each group.children as child, i (child.uuid)}
-        {#if id === 'root' && isGroupDrag && child.uuid !== activeId && (i === 0 || group.children[i - 1]?.uuid !== activeId)}
-          <GroupDropZone groupId="root" {isGroupDrag} insertAt={i} {isOverlay} label="Move here" />
+        {#if isRoot && isGroupDrag && child.uuid !== activeId && (i === 0 || group.children[i - 1]?.uuid !== activeId)}
+          <GroupDropZone groupId={ROOT_ID} insertAt={i} label="Move here" />
         {/if}
         {#if isFilterGroup(child)}
-          <AdvancedGroup
-            group={child}
-            index={i}
-            parentId={id}
-            depth={depth + 1}
-            {onRemove}
-            {onRemoveChild}
-            {isOverlay}
-            {activeId}
-            {isGroupDrag}
-            {onOperatorChange}
-          />
+          <AdvancedGroup group={child} index={i} depth={depth + 1} />
         {:else}
-          <AdvancedItem
-            filter={child}
-            index={i}
-            parentId={id}
-            {isOverlay}
-            {activeId}
-            onRemove={onRemoveChild}
-          />
+          <AdvancedItem filter={child} index={i} />
         {/if}
       {/each}
       {#if group.children.length === 0}
         <EmptyDropZone groupId={id} />
-      {:else if id === 'root' && isGroupDrag && group.children[group.children.length - 1]?.uuid !== activeId}
+      {:else if isRoot && isGroupDrag && group.children[group.children.length - 1]?.uuid !== activeId}
         <!-- Reorder zone at end of root; skip if dragged group is already last -->
-        <GroupDropZone
-          groupId="root"
-          {isGroupDrag}
-          insertAt={group.children.length}
-          {isOverlay}
-          label="Move here"
-        />
-      {:else if id !== 'root' && !(isGroupDrag && group.children.some((c) => c.uuid === activeId))}
+        <GroupDropZone groupId={ROOT_ID} insertAt={group.children.length} label="Move here" />
+      {:else if !isRoot && !(isGroupDrag && group.children.some((c) => c.uuid === activeId))}
         <!-- GroupDropZone for dropping groups into this group; hidden when dragging a group that's already in this group -->
-        <GroupDropZone groupId={id} {isGroupDrag} index={group.children.length} {isOverlay} />
+        <GroupDropZone groupId={id} />
       {/if}
     </div>
   </div>
 
   {#if showDropPreview}
-    <div
+    <DropPreview
       data-testid="filter-drop-preview"
       id={`filter-drop-preview-${id}`}
-      class="max-md:hidden absolute inset-0 bg-primary-500/10 border border-dashed border-primary-500 rounded-lg flex items-center justify-center mt-1"
-    >
-      <span class="text-primary-600 text-xs font-semibold uppercase tracking-wide">
-        Moving: Subquery
-      </span>
-    </div>
+      class="max-md:hidden mt-1 rounded-lg"
+      label="Subquery"
+    />
   {/if}
 </div>
 

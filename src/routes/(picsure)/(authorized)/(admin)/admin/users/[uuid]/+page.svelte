@@ -11,11 +11,7 @@
   let { params }: PageProps = $props();
 
   async function load(uuid: string) {
-    const [user] = await Promise.all([
-      admin.users.get(uuid),
-      admin.connections.load(),
-      admin.roles.load(),
-    ]);
+    const user = await admin.loadUser(uuid);
     return {
       user,
       connection: await admin.connections.get(user.connection),

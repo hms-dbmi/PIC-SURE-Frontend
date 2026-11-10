@@ -1,24 +1,20 @@
-<script lang="ts">
-  import { TableHandler } from '@vincjo/datatables';
-  import { TableHandler as RemoteTableHandler } from '@vincjo/datatables/server';
-  import { log, createLog } from '#lib/telemetry/logger.ts';
+<script lang="ts" generics="T extends Row">
+  import type { AnyTableHandler, Row } from '../types.ts';
+  import { getTableEvents, hasTableEvents } from '../context.ts';
 
   interface Props {
-    handler: TableHandler | RemoteTableHandler;
+    handler: AnyTableHandler<T>;
     onPageChange?: () => void;
   }
 
   let { handler, onPageChange = () => {} }: Props = $props();
+  const events = hasTableEvents() ? getTableEvents() : undefined;
 
   const setPage = (value: 'previous' | 'next' | 'last' | number) => {
     const previousPage = handler.currentPage;
     handler.setPage(value);
     if (handler.currentPage !== previousPage) onPageChange();
-    log(
-      createLog('ACTION', 'search_result.page_change', {
-        pageNumber: typeof value === 'number' ? value : handler.currentPage,
-      }),
-    );
+    events?.pageChange(typeof value === 'number' ? value : handler.currentPage);
   };
 </script>
 

@@ -9,9 +9,9 @@ import {
 import { userIsLoggedIn } from '../utils';
 
 // The ordering rules themselves (superseded responses, spinner, totals, facets vs
-// pagination, teardown) are covered in src/lib/explorer/Search.test.ts. These check that the real
-// page wires them up: a newer search wins, leaving the page cancels its search, and the
-// outgoing page's teardown leaves the incoming page's search alone.
+// pagination, teardown) are covered in src/lib/explorer/search.svelte.test.ts. These check that
+// the real page wires them up: a newer search wins, leaving the page cancels its search, and
+// the outgoing page's teardown leaves the incoming page's search alone.
 
 // branding.explorePage.columns is empty in the test config, so no cell text
 // renders - responses are told apart by row count.

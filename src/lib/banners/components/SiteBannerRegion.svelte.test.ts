@@ -10,7 +10,6 @@ const navigation = vi.hoisted(() => ({
 }));
 const authentication = vi.hoisted(() => ({
   setHasValidToken: undefined as unknown as (value: boolean) => void,
-  setTokenStatus: undefined as unknown as (value: boolean) => void,
 }));
 
 vi.mock('$app/navigation', () => ({
@@ -27,14 +26,10 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
   getSessionId: () => 'session-1',
 }));
 
-// Keep token presence separate from validity to cover expired sessions on public routes.
-vi.mock('#lib/auth/User.ts', async () => {
-  const { writable } = await import('svelte/store');
-  const hasValidToken = writable(false);
-  const tokenStatus = writable(false);
-  authentication.setHasValidToken = (value) => hasValidToken.set(value);
-  authentication.setTokenStatus = (value) => tokenStatus.set(value);
-  return { hasValidToken, tokenStatus };
+vi.mock('#lib/auth/session.svelte.ts', () => {
+  const session = $state({ hasValidToken: false });
+  authentication.setHasValidToken = (value) => (session.hasValidToken = value);
+  return { session };
 });
 
 import SiteBannerRegion from '#lib/banners/components/SiteBannerRegion.svelte';
@@ -71,13 +66,35 @@ beforeEach(() => {
   vi.mocked(log).mockClear();
   vi.mocked(createLog).mockClear();
   authentication.setHasValidToken(false);
-  authentication.setTokenStatus(false);
   sessionStorage.clear();
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.restoreAllMocks();
 });
+
+/**
+ * Runs `action`, then steps fake time 1 ms at a time for 100 ms (past the announcer's 30 ms repeat
+ * gap) and returns each new text the live region showed. happy-dom's MutationObserver can't be
+ * used here: it holds its callback only through a WeakRef, so after a garbage collection it
+ * silently stops reporting.
+ */
+async function statusChanges(status: HTMLElement, action: () => unknown): Promise<string[]> {
+  const changes: string[] = [];
+  let last = status.textContent ?? '';
+  const sample = () => {
+    const text = status.textContent ?? '';
+    if (text !== last) changes.push((last = text));
+  };
+  await action();
+  sample();
+  for (let ms = 0; ms < 100; ms++) {
+    await vi.advanceTimersByTimeAsync(1);
+    sample();
+  }
+  return changes;
+}
 
 describe('SiteBannerRegion', () => {
   it('fetches on initial navigation and each following SvelteKit navigation', async () => {
@@ -400,7 +417,6 @@ describe('SiteBannerRegion', () => {
 
   it('shows a changed hash only when its signed-in audience and parameterized page also match', async () => {
     authentication.setHasValidToken(true);
-    authentication.setTokenStatus(true);
     const targeted = {
       ...banner,
       audience: 'SIGNED_IN',
@@ -537,7 +553,6 @@ describe('SiteBannerRegion audience targeting', () => {
     'renders %s when signed in is %s: %s',
     async (audience, signedIn, rendered) => {
       authentication.setHasValidToken(signedIn);
-      authentication.setTokenStatus(signedIn);
       fetchMock.mockResolvedValue(
         new Response(JSON.stringify([{ ...banner, audience }]), { status: 200 }),
       );
@@ -675,7 +690,6 @@ describe('SiteBannerRegion audience targeting', () => {
 
   it('keeps filtering the same records after a later navigation', async () => {
     authentication.setHasValidToken(true);
-    authentication.setTokenStatus(true);
     fetchMock.mockResolvedValue(
       new Response(JSON.stringify([{ ...banner, audience: 'SIGNED_OUT' }]), { status: 200 }),
     );
@@ -692,7 +706,6 @@ describe('SiteBannerRegion audience targeting', () => {
 
   it('re-evaluates the rendered records when the session ends without refetching', async () => {
     authentication.setHasValidToken(true);
-    authentication.setTokenStatus(true);
     fetchMock.mockResolvedValue(
       new Response(
         JSON.stringify([
@@ -713,7 +726,6 @@ describe('SiteBannerRegion audience targeting', () => {
     expect(screen.getByRole('region', { name: 'For signed-in users' })).toBeInTheDocument();
 
     authentication.setHasValidToken(false);
-    authentication.setTokenStatus(false);
 
     await waitFor(() =>
       expect(screen.getByRole('region', { name: 'For signed-out visitors' })).toBeInTheDocument(),
@@ -723,7 +735,6 @@ describe('SiteBannerRegion audience targeting', () => {
   });
 
   it('treats a present but expired token as signed out', async () => {
-    authentication.setTokenStatus(true);
     authentication.setHasValidToken(false);
     fetchMock.mockResolvedValue(
       new Response(
@@ -895,24 +906,15 @@ describe('public banner accessibility', () => {
   it('announces only banners that arrive after the page load', async () => {
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify([banner])));
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify([banner, secondBanner])));
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     render(SiteBannerRegion);
     const status = screen.getByRole('status');
-    const announcements: string[] = [];
-    const observer = new MutationObserver(() => announcements.push(status.textContent ?? ''));
-    observer.observe(status, { childList: true, characterData: true, subtree: true });
 
-    await navigation.callback?.({ type: 'enter' });
+    expect(await statusChanges(status, () => navigation.callback?.({ type: 'enter' }))).toEqual([]);
     expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
-    await navigation.callback?.({ type: 'link' });
-    await waitFor(() =>
-      expect(status).toHaveTextContent(
-        '1 new or updated site announcement. Service update. Scheduled maintenance details',
-      ),
-    );
-    expect(announcements.filter(Boolean)).toEqual([
+    expect(await statusChanges(status, () => navigation.callback?.({ type: 'link' }))).toEqual([
       '1 new or updated site announcement. Service update. Scheduled maintenance details',
     ]);
-    observer.disconnect();
   });
 
   it('counts the banners left out of a long announcement', async () => {
@@ -929,57 +931,61 @@ describe('public banner accessibility', () => {
     );
   });
 
+  it('announces the full message of a long banner', async () => {
+    const message = 'Scheduled maintenance will interrupt every service. '.repeat(4).trim();
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify([{ ...banner, htmlContent: `<p>${message}</p>` }])),
+    );
+    render(SiteBannerRegion);
+    await navigation.callback?.();
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent(
+        `1 new or updated site announcement. Maintenance. ${message}`,
+      ),
+    );
+  });
+
   it('announces new and changed visible banners without repeating an unchanged navigation or dismissal', async () => {
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify([banner])));
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify([banner])));
     fetchMock.mockResolvedValueOnce(
       new Response(JSON.stringify([{ ...banner, presentationHash: 'changed' }, secondBanner])),
     );
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     render(SiteBannerRegion);
     const status = screen.getByRole('status');
     expect(status.textContent).toBe('');
-    await navigation.callback?.();
-    await waitFor(() =>
-      expect(status).toHaveTextContent(
-        '1 new or updated site announcement. Maintenance. Scheduled maintenance details',
-      ),
-    );
-    const changes = vi.fn();
-    const observer = new MutationObserver(changes);
-    observer.observe(status, { childList: true, characterData: true, subtree: true });
+    expect(await statusChanges(status, () => navigation.callback?.())).toEqual([
+      '1 new or updated site announcement. Maintenance. Scheduled maintenance details',
+    ]);
 
-    await navigation.callback?.();
-    expect(changes).not.toHaveBeenCalled();
-    await navigation.callback?.();
-    await waitFor(() =>
-      expect(status).toHaveTextContent(
-        '2 new or updated site announcements. Maintenance. Scheduled maintenance details. Service update. Scheduled maintenance details',
+    expect(await statusChanges(status, () => navigation.callback?.())).toEqual([]);
+    expect(await statusChanges(status, () => navigation.callback?.())).toEqual([
+      '2 new or updated site announcements. Maintenance. Scheduled maintenance details. Service update. Scheduled maintenance details',
+    ]);
+    expect(
+      await statusChanges(status, () =>
+        fireEvent.click(screen.getByRole('button', { name: 'Dismiss Maintenance' })),
       ),
-    );
-    changes.mockClear();
-    await fireEvent.click(screen.getByRole('button', { name: 'Dismiss Maintenance' }));
-    expect(changes).not.toHaveBeenCalled();
-    observer.disconnect();
+    ).toEqual([]);
   });
 
   it('remembers announcements across route hide and return, while announcing a changed version', async () => {
     const targeted = { ...banner, pageTargets: [{ kind: 'EXACT', path: '/help' }] };
     fetchMock.mockImplementation(async () => new Response(JSON.stringify([targeted])));
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     render(SiteBannerRegion);
     const navigate = (path: string) =>
       navigation.callback?.({ to: { url: new URL(`https://example.org${path}`) } });
-    await navigate('/help');
     const status = screen.getByRole('status');
-    await waitFor(() => expect(status).toHaveTextContent('Maintenance'));
-    const changes = vi.fn();
-    const observer = new MutationObserver(changes);
-    observer.observe(status, { childList: true, characterData: true, subtree: true });
+    expect(await statusChanges(status, () => navigate('/help'))).toEqual([
+      '1 new or updated site announcement. Maintenance. Scheduled maintenance details',
+    ]);
 
-    await navigate('/elsewhere');
+    expect(await statusChanges(status, () => navigate('/elsewhere'))).toEqual([]);
     expect(screen.queryByRole('region')).not.toBeInTheDocument();
-    await navigate('/help');
+    expect(await statusChanges(status, () => navigate('/help'))).toEqual([]);
     expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
-    expect(changes).not.toHaveBeenCalled();
 
     fetchMock.mockImplementation(
       async () =>
@@ -989,10 +995,9 @@ describe('public banner accessibility', () => {
           ]),
         ),
     );
-    await navigate('/help');
-    await waitFor(() => expect(status).toHaveTextContent('Revised maintenance'));
-    expect(changes).toHaveBeenCalled();
-    observer.disconnect();
+    expect(await statusChanges(status, () => navigate('/help'))).toEqual([
+      '1 new or updated site announcement. Revised maintenance. Scheduled maintenance details',
+    ]);
   });
 
   it('leaves the persistent fallback empty on pages without banners', async () => {

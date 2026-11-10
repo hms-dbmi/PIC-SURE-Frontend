@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { toConceptNodes } from '#lib/explorer/export/conceptTree.ts';
-import type { SearchResult } from '#lib/explorer/types.ts';
+import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
 
 function concept(conceptPath: string, children?: SearchResult[]): SearchResult {
   const name = conceptPath.split('\\').filter(Boolean).pop() ?? '';

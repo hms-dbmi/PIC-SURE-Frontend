@@ -1,6 +1,5 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { get } from 'svelte/store';
 
 const mockApi = vi.hoisted(() => ({ request: vi.fn() }));
 
@@ -22,7 +21,7 @@ vi.mock('#lib/config/config.svelte.ts', () => ({
   },
 }));
 
-import { getUser, setToken, user } from '#lib/auth/User.ts';
+import { session } from '#lib/auth/session.svelte.ts';
 import { routesFor } from '#lib/auth/nav.ts';
 import { config } from '#lib/config/config.svelte.ts';
 
@@ -40,12 +39,12 @@ const AUTHENTICATED_PRIVILEGES = [
 // receives AUTHORIZED_ACCESS. This is the only permanent population that must not get the routes.
 const OPEN_ACCESS_PRIVILEGES = ['MANAGED_PRIV_OPEN_ACCESS', 'MANAGED_PRIV_DICTIONARY'];
 
-const navPaths = () => routesFor(get(user), config.features).map((r) => r.path);
+const navPaths = () => routesFor(session.user, config.features).map((r) => r.path);
 
 beforeEach(() => {
   mockApi.request.mockReset();
-  setToken('fake-token');
-  user.set({});
+  session.setToken('fake-token');
+  session.user = {};
 });
 
 describe('AUTHORIZED_ACCESS comes from PSAMA, not from the client', () => {
@@ -55,7 +54,7 @@ describe('AUTHORIZED_ACCESS comes from PSAMA, not from the client', () => {
       token: 'fake-token',
     });
 
-    await getUser(true);
+    await session.loadUser(true);
 
     expect(navPaths()).toContain('/explorer');
     expect(navPaths()).toContain('/api');
@@ -67,7 +66,7 @@ describe('AUTHORIZED_ACCESS comes from PSAMA, not from the client', () => {
       token: 'fake-token',
     });
 
-    await getUser(true);
+    await session.loadUser(true);
 
     expect(navPaths()).not.toContain('/explorer');
     expect(navPaths()).not.toContain('/dataset');
@@ -80,9 +79,9 @@ describe('AUTHORIZED_ACCESS comes from PSAMA, not from the client', () => {
       token: 'fake-token',
     });
 
-    await getUser(true);
+    await session.loadUser(true);
 
-    expect(get(user).privileges).not.toContain('AUTHORIZED_ACCESS');
+    expect(session.user.privileges).not.toContain('AUTHORIZED_ACCESS');
     expect(navPaths()).toContain('/explorer');
     expect(navPaths()).toContain('/api');
     expect(navPaths()).toContain('/dataset');
@@ -95,9 +94,9 @@ describe('AUTHORIZED_ACCESS comes from PSAMA, not from the client', () => {
       token: 'fake-token',
     });
 
-    await getUser(true);
+    await session.loadUser(true);
 
-    expect(get(user).privileges).not.toContain('AUTHORIZED_ACCESS');
+    expect(session.user.privileges).not.toContain('AUTHORIZED_ACCESS');
     expect(navPaths()).not.toContain('/explorer');
   });
 });
