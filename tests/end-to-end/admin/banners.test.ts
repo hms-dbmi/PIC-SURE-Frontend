@@ -588,6 +588,49 @@ test.describe('Admins create, edit, and publish banners', () => {
     );
   });
 
+  test('moves focus out of the content editor with Tab and Shift+Tab', async ({ page }) => {
+    await page.goto('/admin/configuration?tab=banners');
+    await page.getByRole('button', { name: '+ Create banner' }).click();
+    const bannerForm = page.getByTestId('banner-editor-form');
+    const editor = bannerForm.getByRole('textbox', { name: 'Banner content' });
+    // macOS WebKit tabs only between text fields by default, so the neighboring control varies by
+    // browser (Shift+Tab can even land on the body there); what matters is that focus leaves the
+    // editor in the pressed direction.
+    const focusLeftEditor = () =>
+      editor.evaluate((element) => {
+        const active = document.activeElement;
+        if (!active || element.contains(active)) return 'inside';
+        return element.compareDocumentPosition(active) & Node.DOCUMENT_POSITION_FOLLOWING
+          ? 'forward'
+          : 'backward';
+      });
+    const pressFromEditor = async (key: string, direction: 'forward' | 'backward') => {
+      await editor.press(key);
+      await expect.poll(focusLeftEditor).toBe(direction);
+    };
+
+    await editor.fill('Maintenance tonight');
+    await editor.press('End');
+    await pressFromEditor('Tab', 'forward');
+    await editor.focus();
+    await pressFromEditor('Shift+Tab', 'backward');
+
+    await editor.click();
+    await editor.press('End');
+    await editor.press('Enter');
+    await bannerForm.locator('button.ql-list[value="bullet"]').click();
+    await pressFromEditor('Tab', 'forward');
+    await editor.focus();
+    await pressFromEditor('Shift+Tab', 'backward');
+
+    await editor.selectText();
+    await pressFromEditor('Tab', 'forward');
+
+    await expect(editor.locator('li')).toHaveCount(1);
+    await expect(editor.locator('li')).not.toHaveClass(/ql-indent/);
+    expect(await editor.textContent()).toBe('Maintenance tonight');
+  });
+
   test('keeps a bullet list stable while adding items', async ({ page }) => {
     await page.goto('/admin/configuration?tab=banners');
     await page.getByRole('button', { name: '+ Create banner' }).click();

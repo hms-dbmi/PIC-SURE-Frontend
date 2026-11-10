@@ -5,6 +5,8 @@
   import 'quill/dist/quill.snow.css';
   import '../../styles/editor.css';
 
+  import type Keyboard from 'quill/modules/keyboard';
+
   import { sanitizeHTML } from '#lib/utils/html.ts';
 
   let {
@@ -121,6 +123,13 @@
 
   onMount(async () => {
     const { default: Quill } = await import('quill');
+    const keyboardDefaults = (Quill.import('modules/keyboard') as typeof Keyboard).DEFAULTS;
+    // Quill's default Tab bindings indent or insert a tab, trapping keyboard focus (WCAG 2.1.2).
+    const withoutTabBindings = Object.fromEntries(
+      Object.entries(keyboardDefaults.bindings)
+        .filter(([, binding]) => typeof binding === 'object' && binding.key === 'Tab')
+        .map(([name]) => [name, null]),
+    );
     if (container) {
       // Quill reads initial markup only from its container during construction.
       // eslint-disable-next-line svelte/no-dom-manipulating
@@ -129,6 +138,7 @@
         theme: 'snow',
         modules: {
           toolbar: toolbarOptions,
+          keyboard: { bindings: withoutTabBindings },
         },
       });
       quill.root.setAttribute('role', 'textbox');
