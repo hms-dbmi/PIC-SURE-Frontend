@@ -1,15 +1,15 @@
 <script lang="ts">
   import { onMount } from 'svelte';
 
-  import { ExportType, type VariantResult } from '$lib/models/Variant';
-  import { getCountResource } from '$lib/stores/Resources';
-  import { getVariantCount, getVariantData } from '$lib/utilities/Variants';
-  import { getQueryRequestV3 } from '$lib/utilities/QueryBuilder';
-  import { config } from '$lib/configuration.svelte';
+  import { ExportType, type VariantResult } from '#lib/models/Variant.ts';
+  import { getCountResource } from '#lib/stores/Resources.ts';
+  import { getVariantCount, getVariantData } from '#lib/utilities/Variants.ts';
+  import { getQueryRequestV3 } from '#lib/utilities/QueryBuilder.ts';
+  import { config } from '#lib/configuration.svelte.ts';
 
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import Loading from '$lib/components/Loading.svelte';
-  import VariantData from '$lib/components/explorer/variant/VariantData.svelte';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
+  import Loading from '#lib/components/Loading.svelte';
+  import VariantData from '#lib/components/explorer/variant/VariantData.svelte';
 
   let variantResults: VariantResult[] = $state([]);
   let loading: Promise<void> = $state(Promise.resolve());

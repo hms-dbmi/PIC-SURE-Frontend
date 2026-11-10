@@ -1,9 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { SwaggerComponent, SwaggerSystem } from 'swagger-ui-dist/swagger-ui-bundle.js';
-  import { createLog, log } from '$lib/logger';
-  import { createDocsLogging } from '$lib/apiDocsLogging';
-  import { CLIENT_TYPE_HEADERS } from '$lib/clientType';
+  import { createLog, log } from '#lib/logger.ts';
+  import { createDocsLogging } from '#lib/apiDocsLogging.ts';
+  import { CLIENT_TYPE_HEADERS } from '#lib/clientType.ts';
 
   // The first listed service is shown on load: the dictionary, which every visitor can use.
   const services = [

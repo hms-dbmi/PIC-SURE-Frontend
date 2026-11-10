@@ -95,8 +95,7 @@
     onselect?.(id);
     // eslint-disable-next-line svelte/no-navigation-without-resolve -- URL preserves the current resolved path and query
     await goto(`${page.url.pathname}${page.url.search}#${encodeURIComponent(id)}`, {
-      noScroll: true,
-      keepFocus: true,
+      reset: false,
     });
     visit(id);
   }

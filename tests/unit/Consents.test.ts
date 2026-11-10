@@ -4,16 +4,18 @@ import { get } from 'svelte/store';
 const mockApi = vi.hoisted(() => ({ get: vi.fn() }));
 const mockToaster = vi.hoisted(() => ({ error: vi.fn() }));
 
-vi.mock('$app/environment', () => ({ browser: false }));
+vi.mock('$app/env', () => ({ browser: false }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost') } }));
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
-vi.mock('$app/paths', () => ({ resolve: (path: string) => path }));
-vi.mock('$lib/configuration.svelte', () => ({
+vi.mock('$app/paths', () => ({
+  resolve: (path: string) => (path.startsWith('/') ? path : `/${path}`),
+}));
+vi.mock('#lib/configuration.svelte.ts', () => ({
   config: { features: { explorer: { open: false }, login: { open: false } } },
   routes: [],
 }));
-vi.mock('$lib/api', () => mockApi);
-vi.mock('$lib/toaster', () => ({ toaster: mockToaster, isToastShowing: () => false }));
+vi.mock('#lib/api.ts', () => mockApi);
+vi.mock('#lib/toaster.ts', () => ({ toaster: mockToaster, isToastShowing: () => false }));
 
 import {
   ACCESS_UNAVAILABLE_MESSAGE,
@@ -24,9 +26,9 @@ import {
   loadConsents,
   user,
   tokenStatus,
-} from '$lib/stores/User';
-import { addConsents } from '$lib/stores/Dictionary';
-import { Psama } from '$lib/paths';
+} from '#lib/stores/User.ts';
+import { addConsents } from '#lib/stores/Dictionary.ts';
+import { Psama } from '#lib/paths.ts';
 
 const consents = {
   '\\_consents\\': ['phs001', 'phs002'],

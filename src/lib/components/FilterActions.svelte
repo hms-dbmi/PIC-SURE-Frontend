@@ -1,13 +1,13 @@
 <script lang="ts">
-  import type { Filter } from '$lib/models/Filter.svelte';
-  import { populateFromGeneFilter } from '$lib/stores/GeneFilter';
-  import { populateFromSNPFilter } from '$lib/stores/SNPFilter';
-  import { activeFilter, activeSearch, removeFilter } from '$lib/stores/Filter';
+  import type { Filter } from '#lib/models/Filter.svelte.ts';
+  import { populateFromGeneFilter } from '#lib/stores/GeneFilter.ts';
+  import { populateFromSNPFilter } from '#lib/stores/SNPFilter.ts';
+  import { activeFilter, activeSearch, removeFilter } from '#lib/stores/Filter.ts';
   import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
-  import { Option } from '$lib/models/GenomeFilter';
-  import Modal from '$lib/components/Modal.svelte';
-  import AddFilter from '$lib/components/explorer/AddFilter.svelte';
+  import { Option } from '#lib/models/GenomeFilter.ts';
+  import Modal from '#lib/components/Modal.svelte';
+  import AddFilter from '#lib/components/explorer/AddFilter.svelte';
 
   let { filter }: { filter: Filter } = $props();
 
@@ -18,10 +18,10 @@
   function editFilter() {
     if (filter.filterType === 'genomic') {
       populateFromGeneFilter(filter);
-      goto(resolve(`/explorer/genome-filter?edit=${Option.Genomic}`));
+      goto(resolve(`explorer/genome-filter?edit=${Option.Genomic}`));
     } else if (filter.filterType === 'snp') {
       populateFromSNPFilter(filter);
-      goto(resolve(`/explorer/genome-filter?edit=${Option.SNP}`));
+      goto(resolve(`explorer/genome-filter?edit=${Option.SNP}`));
     } else {
       $activeFilter = filter;
       $activeSearch = filter.searchResult;

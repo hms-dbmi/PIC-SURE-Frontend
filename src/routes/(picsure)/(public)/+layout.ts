@@ -1,4 +1,4 @@
-import { config } from '$lib/configuration.svelte';
+import { config } from '#lib/configuration.svelte.ts';
 import { redirect } from '@sveltejs/kit';
 import type { LayoutLoad } from '../../$types';
 

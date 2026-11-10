@@ -1,8 +1,8 @@
 import { get, writable, type Writable } from 'svelte/store';
-import type { Connection } from '$lib/models/Connection';
+import type { Connection } from '#lib/models/Connection.ts';
 
-import * as api from '$lib/api';
-import { Psama } from '$lib/paths';
+import * as api from '#lib/api.ts';
+import { Psama } from '#lib/paths.ts';
 
 const loaded = writable(false);
 export const connections: Writable<Connection[]> = writable([]);

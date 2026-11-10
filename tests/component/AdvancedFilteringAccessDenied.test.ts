@@ -3,24 +3,24 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 import { get } from 'svelte/store';
 
-vi.mock('$app/environment', () => ({ browser: true }));
-vi.mock('$lib/stores/User', () => ({
+vi.mock('$app/env', () => ({ browser: true }));
+vi.mock('#lib/stores/User.ts', () => ({
   user: { subscribe: (run: (user: object) => void) => (run({}), () => {}) },
   ensureConsentsLoaded: vi.fn(),
 }));
-vi.mock('$lib/stores/Dictionary', () => ({ getConceptDetails: vi.fn() }));
-vi.mock('$lib/logger', () => ({
+vi.mock('#lib/stores/Dictionary.ts', () => ({ getConceptDetails: vi.fn() }));
+vi.mock('#lib/logger.ts', () => ({
   log: vi.fn(),
   createLog: vi.fn(),
   registerAssociatedStudies: vi.fn(),
   getPageContext: vi.fn(),
 }));
 
-import AdvancedFiltering from '$lib/components/explorer/advanced/AdvancedFiltering.svelte';
-import { discardingQuery } from '$lib/discardingQuery';
-import { addFilter, clearFilters, filterTree } from '$lib/stores/Filter';
-import { createCategoricalFilter } from '$lib/models/Filter.svelte';
-import type { SearchResult } from '$lib/models/Search';
+import AdvancedFiltering from '#lib/components/explorer/advanced/AdvancedFiltering.svelte';
+import { discardingQuery } from '#lib/discardingQuery.ts';
+import { addFilter, clearFilters, filterTree } from '#lib/stores/Filter.ts';
+import { createCategoricalFilter } from '#lib/models/Filter.svelte.ts';
+import type { SearchResult } from '#lib/models/Search.ts';
 
 function deniedFilter(variable: string) {
   return createCategoricalFilter(

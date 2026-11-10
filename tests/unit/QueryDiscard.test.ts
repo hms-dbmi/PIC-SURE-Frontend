@@ -3,26 +3,26 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { get } from 'svelte/store';
 
 const mockLog = vi.fn();
-vi.mock('$app/environment', () => ({ browser: true }));
-vi.mock('$lib/stores/Dictionary', () => ({
+vi.mock('$app/env', () => ({ browser: true }));
+vi.mock('#lib/stores/Dictionary.ts', () => ({
   searchDictionary: vi.fn(),
   updateFacetsFromSearch: vi.fn(),
   facetsPromise: { set: vi.fn() },
   resetFacetState: vi.fn(),
 }));
-vi.mock('$lib/api', () => ({ isAbortError: () => false }));
-vi.mock('$lib/logger', () => ({
+vi.mock('#lib/api.ts', () => ({ isAbortError: () => false }));
+vi.mock('#lib/logger.ts', () => ({
   log: (...args: unknown[]) => mockLog(...args),
   createLog: (...args: unknown[]) => args,
   getPageContext: vi.fn(),
 }));
 
-import { discardingQuery } from '$lib/discardingQuery';
-import { exports } from '$lib/stores/Export';
-import { searchTerm, selectedFacets } from '$lib/stores/Search';
-import { expandedNestedFacets } from '$lib/stores/NestedFacets';
-import type { ExportInterface } from '$lib/models/Export';
-import type { Facet } from '$lib/models/Search';
+import { discardingQuery } from '#lib/discardingQuery.ts';
+import { exports } from '#lib/stores/Export.ts';
+import { searchTerm, selectedFacets } from '#lib/stores/Search.ts';
+import { expandedNestedFacets } from '#lib/stores/NestedFacets.ts';
+import type { ExportInterface } from '#lib/models/Export.ts';
+import type { Facet } from '#lib/models/Search.ts';
 
 describe('export selections and search after a logout that discards the query', () => {
   beforeEach(() => {

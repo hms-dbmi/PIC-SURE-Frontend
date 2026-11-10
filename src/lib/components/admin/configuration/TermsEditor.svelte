@@ -1,12 +1,12 @@
 <script lang="ts">
-  import * as api from '$lib/api';
-  import { Psama } from '$lib/paths';
-  import { toaster } from '$lib/toaster';
+  import * as api from '#lib/api.ts';
+  import { Psama } from '#lib/paths.ts';
+  import { toaster } from '#lib/toaster.ts';
 
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import Loading from '$lib/components/Loading.svelte';
-  import Editor from '$lib/components/editor/Editor.svelte';
-  import Modal from '$lib/components/Modal.svelte';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
+  import Loading from '#lib/components/Loading.svelte';
+  import Editor from '#lib/components/editor/Editor.svelte';
+  import Modal from '#lib/components/Modal.svelte';
 
   let terms: string = $state('');
   let original: string = $state('');

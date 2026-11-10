@@ -5,11 +5,11 @@ import { render, screen, waitFor } from '@testing-library/svelte';
 
 const { SwaggerUI } = vi.hoisted(() => ({ SwaggerUI: vi.fn() }));
 
-vi.mock('$lib/logger', () => ({ log: vi.fn(), createLog: vi.fn() }));
+vi.mock('#lib/logger.ts', () => ({ log: vi.fn(), createLog: vi.fn() }));
 vi.mock('swagger-ui-dist/swagger-ui-bundle.js', () => ({ default: SwaggerUI }));
 vi.mock('swagger-ui-dist/swagger-ui.css', () => ({}));
 
-import ApiDocumentation from '$lib/components/ApiDocumentation.svelte';
+import ApiDocumentation from '#lib/components/ApiDocumentation.svelte';
 
 const document31 = { openapi: '3.1.0', info: { title: 'Docs', version: '1' }, paths: {} };
 

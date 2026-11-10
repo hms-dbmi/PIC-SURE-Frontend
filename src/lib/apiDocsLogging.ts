@@ -1,4 +1,4 @@
-import { createLog, log } from '$lib/logger';
+import { createLog, log } from '#lib/logger.ts';
 
 // Logs what visitors do inside the embedded Swagger viewer on the API page. Expand and collapse
 // go through Swagger's layout.show action; tabs, copy buttons, links and selects are local

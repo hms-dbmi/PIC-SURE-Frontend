@@ -1,10 +1,11 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
+  import { appPath } from '#lib/paths.ts';
   import type { Snippet } from 'svelte';
   import { beforeNavigate, goto } from '$app/navigation';
-  import { clearSession, isTokenExpired } from '$lib/stores/User';
-  import { loginRedirectPath } from '$lib/utilities/LoginRedirect';
-  import { log, createLog } from '$lib/logger';
+  import { clearSession, isTokenExpired } from '#lib/stores/User.ts';
+  import { loginRedirectPath } from '#lib/utilities/LoginRedirect.ts';
+  import { log, createLog } from '#lib/logger.ts';
 
   let { children }: { children?: Snippet } = $props();
 
@@ -18,7 +19,7 @@
       cancel();
       log(createLog('AUTH', 'auth.redirect_token_expired', { targetUrl: to?.url.pathname }));
       clearSession();
-      goto(resolve(loginRedirectPath(to?.url ?? { pathname: '/', search: '' }) as '/'));
+      goto(resolve(appPath(loginRedirectPath(to?.url ?? { pathname: '/', search: '' }))));
     }
   });
 </script>

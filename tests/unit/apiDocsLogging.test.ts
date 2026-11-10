@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/logger', () => ({
+vi.mock('#lib/logger.ts', () => ({
   log: vi.fn(),
   createLog: vi.fn((event_type: string, action: string, metadata: unknown) => ({
     event_type,
@@ -11,8 +11,8 @@ vi.mock('$lib/logger', () => ({
   })),
 }));
 
-import { log } from '$lib/logger';
-import { createDocsLogging, type LayoutSystem } from '$lib/apiDocsLogging';
+import { log } from '#lib/logger.ts';
+import { createDocsLogging, type LayoutSystem } from '#lib/apiDocsLogging.ts';
 
 // Stands in for the Immutable.js maps Swagger keeps its operations in.
 function immutable(value: Record<string, unknown>) {

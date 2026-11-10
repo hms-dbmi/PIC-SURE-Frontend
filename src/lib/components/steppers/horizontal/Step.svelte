@@ -3,8 +3,8 @@
   import { fade } from 'svelte/transition';
   import type { Writable } from 'svelte/store';
 
-  import type { StepperState } from '$lib/models/Stepper';
-  import AngleButton from '$lib/components/buttons/AngleButton.svelte';
+  import type { StepperState } from '#lib/models/Stepper.ts';
+  import AngleButton from '#lib/components/buttons/AngleButton.svelte';
 
   interface Props {
     name: string;

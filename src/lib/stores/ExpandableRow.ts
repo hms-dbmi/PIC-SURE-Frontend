@@ -1,9 +1,9 @@
 import type { Component } from 'svelte';
 import { get, writable, type Writable } from 'svelte/store';
 
-import AddFilterComponent from '$lib/components/explorer/AddFilter.svelte';
-import ResultInfoComponent from '$lib/components/explorer/ResultInfoComponent.svelte';
-import HierarchyComponent from '$lib/components/explorer/HierarchyComponent.svelte';
+import AddFilterComponent from '#lib/components/explorer/AddFilter.svelte';
+import ResultInfoComponent from '#lib/components/explorer/ResultInfoComponent.svelte';
+import HierarchyComponent from '#lib/components/explorer/HierarchyComponent.svelte';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ComponentObject = Component<any, any, string>;

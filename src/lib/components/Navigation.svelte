@@ -1,22 +1,23 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
+  import { appPath } from '#lib/paths.ts';
   import { onMount } from 'svelte';
   import { AppBar, Avatar } from '@skeletonlabs/skeleton-svelte';
 
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
-  import { browser } from '$app/environment';
+  import { browser } from '$app/env';
 
-  import { createInstance } from '$lib/AuthProviderRegistry.ts';
-  import { user, userRoutes, isUserLoggedIn, logout } from '$lib/stores/User';
-  import { loginRedirectPath } from '$lib/utilities/LoginRedirect';
-  import type { Route } from '$lib/models/Route';
-  import type AuthData from '$lib/models/AuthProvider.ts';
-  import type AuthProvider from '$lib/models/AuthProvider.ts';
-  import { log, createLog } from '$lib/logger';
+  import { createInstance } from '#lib/AuthProviderRegistry.ts';
+  import { user, userRoutes, isUserLoggedIn, logout } from '#lib/stores/User.ts';
+  import { loginRedirectPath } from '#lib/utilities/LoginRedirect.ts';
+  import type { Route } from '#lib/models/Route.ts';
+  import type AuthData from '#lib/models/AuthProvider.ts';
+  import type AuthProvider from '#lib/models/AuthProvider.ts';
+  import { log, createLog } from '#lib/logger.ts';
 
-  import Logo from '$lib/components/Logo.svelte';
-  import Popover from '$lib/components/Popover.svelte';
+  import Logo from '#lib/components/Logo.svelte';
+  import Popover from '#lib/components/Popover.svelte';
 
   let providerData: AuthData;
   let providerInstance: AuthProvider | undefined = $state(undefined);
@@ -27,7 +28,7 @@
 
   function handleLogin(e: Event) {
     e.stopImmediatePropagation();
-    goto(resolve(loginRedirectPath(page.url) as '/'));
+    goto(resolve(appPath(loginRedirectPath(page.url))));
   }
 
   const isActivePath = $derived((path: string) => {
@@ -60,7 +61,7 @@
 <AppBar padding="py-0 pl-2 pr-5" background="bg-surface-50-950" toolbarClasses="flex-none z-10">
   {#snippet lead()}
     <a
-      href={resolve('/')}
+      href={resolve('')}
       aria-current="page"
       data-testid="logo-home-link"
       class="content-center"
@@ -76,7 +77,7 @@
           <a
             class="nav-link"
             id={getId(route)}
-            href={resolve(route.path as '/')}
+            href={resolve(appPath(route.path))}
             aria-current={currentPage(route)}
             >{route.text}
           </a>

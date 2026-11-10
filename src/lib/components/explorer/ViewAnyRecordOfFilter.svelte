@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Filter, AnyRecordOfFilterInterface } from '$lib/models/Filter.svelte';
+  import type { Filter, AnyRecordOfFilterInterface } from '#lib/models/Filter.svelte.ts';
 
   let { filter }: { filter: Filter } = $props();
 </script>

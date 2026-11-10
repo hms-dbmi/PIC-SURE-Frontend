@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { selectedFrequency } from '$lib/stores/GeneFilter';
-  import { log, createLog } from '$lib/logger';
+  import { selectedFrequency } from '#lib/stores/GeneFilter.ts';
+  import { log, createLog } from '#lib/logger.ts';
 
   function onFrequencyChange(frequency: string) {
     log(createLog('ACTION', 'genomic.frequency_select', { frequency }));

@@ -1,17 +1,18 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
+  import { appPath } from '#lib/paths.ts';
   import { page } from '$app/state';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { config } from '$lib/configuration.svelte';
-  import type AuthProvider from '$lib/models/AuthProvider';
-  import { createInstance } from '$lib/AuthProviderRegistry';
-  import { browser } from '$app/environment';
-  import { panelOpen } from '$lib/stores/SidePanel';
-  import Loading from '$lib/components/Loading.svelte';
-  import type { User } from '$lib/models/User';
-  import { login, setToken } from '$lib/stores/User';
-  import { log, createLog } from '$lib/logger';
+  import { config } from '#lib/configuration.svelte.ts';
+  import type AuthProvider from '#lib/models/AuthProvider.ts';
+  import { createInstance } from '#lib/AuthProviderRegistry.ts';
+  import { browser } from '$app/env';
+  import { panelOpen } from '#lib/stores/SidePanel.ts';
+  import Loading from '#lib/components/Loading.svelte';
+  import type { User } from '#lib/models/User.ts';
+  import { login, setToken } from '#lib/stores/User.ts';
+  import { log, createLog } from '#lib/logger.ts';
 
   async function attemptUserLogin() {
     let redirectTo = '/';
@@ -72,11 +73,15 @@
         const queryStart = redirectTo.indexOf('?');
         const pathname = queryStart === -1 ? redirectTo : redirectTo.slice(0, queryStart);
         const search = queryStart === -1 ? '' : redirectTo.slice(queryStart);
+        // goto rejects paths that match no route (e.g. a stale redirectTo), so fall back home.
         // The path portion IS resolved; the rule can't model an appended query string.
         // eslint-disable-next-line svelte/no-navigation-without-resolve
-        goto(`${resolve(pathname as '/')}${search}`);
+        goto(`${resolve(appPath(pathname))}${search}`).catch(() => {
+          log(createLog('LOGIN', 'login.redirect_dropped', { path: pathname }));
+          return goto(resolve(''));
+        });
       } else {
-        goto(resolve('/'));
+        goto(resolve(''));
       }
     });
   }
@@ -86,7 +91,7 @@
     attemptUserLogin().catch((error) => {
       log(createLog('LOGIN', 'login.failure', { error: String(error) }, { status: 401 }));
       console.error('Login Error: ', error);
-      goto(resolve('/login/error'));
+      goto(resolve('login/error'));
       return;
     });
   });

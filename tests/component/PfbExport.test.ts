@@ -5,10 +5,10 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 
 const { get } = vi.hoisted(() => ({ get: vi.fn() }));
 
-vi.mock('$app/environment', () => ({ browser: true }));
-vi.mock('$lib/api', () => ({ get, consentDeniedMessage: () => null }));
-vi.mock('$lib/logger', () => ({ log: vi.fn(), createLog: vi.fn() }));
-vi.mock('$lib/configuration.svelte', () => ({
+vi.mock('$app/env', () => ({ browser: true }));
+vi.mock('#lib/api.ts', () => ({ get, consentDeniedMessage: () => null }));
+vi.mock('#lib/logger.ts', () => ({ log: vi.fn(), createLog: vi.fn() }));
+vi.mock('#lib/configuration.svelte.ts', () => ({
   config: {
     features: { explorer: { allowDownload: false } },
     branding: {
@@ -23,7 +23,7 @@ vi.mock('$lib/configuration.svelte', () => ({
   resetConfig: () => {},
 }));
 
-import PfbExport from '$lib/components/explorer/export/PfbExport.svelte';
+import PfbExport from '#lib/components/explorer/export/PfbExport.svelte';
 
 const platforms = [
   { clicked: 'Terra', other: 'Seven Bridges' },

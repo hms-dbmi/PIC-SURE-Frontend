@@ -4,17 +4,21 @@
 
   import type { TableProps } from './types';
 
-  import { activeTable, activeRow, closeActiveRow } from '$lib/stores/ExpandableRow';
-  import { isFormField, isTextEntryField, tableIdPrefix } from '$lib/components/datatable/keyboard';
-  import { log, createLog } from '$lib/logger';
-  import ExpandableRow from '$lib/components/datatable/Row.svelte';
-  import ThFilter from '$lib/components/datatable/accessories/Filter.svelte';
-  import ThSort from '$lib/components/datatable/accessories/Sort.svelte';
-  import RowsPerPage from '$lib/components/datatable/accessories/Rows.svelte';
-  import RowCount from '$lib/components/datatable/accessories/Count.svelte';
-  import Pagination from '$lib/components/datatable/accessories/Pagination.svelte';
-  import Search from '$lib/components/datatable/accessories/Search.svelte';
-  import Loading from '$lib/components/Loading.svelte';
+  import { activeTable, activeRow, closeActiveRow } from '#lib/stores/ExpandableRow.ts';
+  import {
+    isFormField,
+    isTextEntryField,
+    tableIdPrefix,
+  } from '#lib/components/datatable/keyboard.ts';
+  import { log, createLog } from '#lib/logger.ts';
+  import ExpandableRow from '#lib/components/datatable/Row.svelte';
+  import ThFilter from '#lib/components/datatable/accessories/Filter.svelte';
+  import ThSort from '#lib/components/datatable/accessories/Sort.svelte';
+  import RowsPerPage from '#lib/components/datatable/accessories/Rows.svelte';
+  import RowCount from '#lib/components/datatable/accessories/Count.svelte';
+  import Pagination from '#lib/components/datatable/accessories/Pagination.svelte';
+  import Search from '#lib/components/datatable/accessories/Search.svelte';
+  import Loading from '#lib/components/Loading.svelte';
 
   interface Props extends TableProps {
     handler: TableHandler | RemoteTableHandler;

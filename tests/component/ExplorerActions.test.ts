@@ -4,28 +4,28 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 import { get } from 'svelte/store';
 
-vi.mock('$lib/logger', () => ({
+vi.mock('#lib/logger.ts', () => ({
   log: vi.fn(),
   createLog: vi.fn(),
   getPageContext: vi.fn(),
 }));
 
-vi.mock('$lib/configuration.svelte', () => ({
+vi.mock('#lib/configuration.svelte.ts', () => ({
   config: { features: { explorer: { enableHierarchy: true, exportsEnableExport: true } } },
 }));
 
-vi.mock('$lib/AccessState', () => ({
+vi.mock('#lib/AccessState.ts', () => ({
   isOpenAccess: vi.fn(() => false),
 }));
 
 // The real store eagerly imports explorer components that touch localStorage at module load.
-vi.mock('$lib/stores/ExpandableRow', () => ({ setActiveRow: vi.fn() }));
+vi.mock('#lib/stores/ExpandableRow.ts', () => ({ setActiveRow: vi.fn() }));
 
-import Actions from '$lib/components/explorer/cell/Actions.svelte';
-import type { SearchResult } from '$lib/models/Search';
-import { setActiveRow } from '$lib/stores/ExpandableRow';
-import { exports, clearExports } from '$lib/stores/Export';
-import { panelOpen } from '$lib/stores/SidePanel';
+import Actions from '#lib/components/explorer/cell/Actions.svelte';
+import type { SearchResult } from '#lib/models/Search.ts';
+import { setActiveRow } from '#lib/stores/ExpandableRow.ts';
+import { exports, clearExports } from '#lib/stores/Export.ts';
+import { panelOpen } from '#lib/stores/SidePanel.ts';
 
 const row = {
   conceptPath: '\\demographic\\AGE\\',

@@ -1,3 +1,6 @@
+// @vitest-environment happy-dom
+// Mirrors the browser run: kit's client redirect() reads window.location.origin.
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Redirect } from '@sveltejs/kit';
 
@@ -27,7 +30,7 @@ async function captureRedirect(fn: () => unknown): Promise<Redirect | null> {
 }
 
 function mockUserModule(overrides: Record<string, unknown> = {}) {
-  vi.doMock('$lib/stores/User', () => ({
+  vi.doMock('#lib/stores/User.ts', () => ({
     isTokenExpired: (token: string) => {
       try {
         const exp = JSON.parse(atob(token.split('.')[1])).exp * 1000;
@@ -49,8 +52,8 @@ function mockUserModule(overrides: Record<string, unknown> = {}) {
 }
 
 function mockOtherModules() {
-  vi.doMock('$app/environment', () => ({ browser: true }));
-  vi.doMock('$lib/logger', () => ({ log: vi.fn(), createLog: vi.fn(() => ({})) }));
+  vi.doMock('$app/env', () => ({ browser: true }));
+  vi.doMock('#lib/logger.ts', () => ({ log: vi.fn(), createLog: vi.fn(() => ({})) }));
 }
 
 describe('authorized layout load — check order', () => {

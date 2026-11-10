@@ -1,17 +1,17 @@
-import * as api from '$lib/api';
-import { config } from '$lib/configuration.svelte';
-import { Picsure } from '$lib/paths';
+import * as api from '#lib/api.ts';
+import { config } from '#lib/configuration.svelte.ts';
+import { Picsure } from '#lib/paths.ts';
 
 import type {
   ExpectedResultType,
   QueryV3,
   PhenotypicFilterInterface,
-} from '$lib/models/query/Query';
+} from '#lib/models/query/Query.ts';
 import type {
   DictionaryConceptResult,
   DictionaryFacetResult,
   DictionarySearchRequest,
-} from '$lib/models/api/Dictionary';
+} from '#lib/models/api/Dictionary.ts';
 import type {
   StatConfig,
   StatResult,
@@ -20,16 +20,16 @@ import type {
   PatientCount,
   PatientCountMap,
   RequestMapOptions,
-} from '$lib/models/Stat';
+} from '#lib/models/Stat.ts';
 
-import { isUserLoggedIn } from '$lib/stores/User';
-import { addConsents } from '$lib/stores/Dictionary';
-import { getCountResource } from '$lib/stores/Resources';
-import { getQueryRequestV3, getBlankQueryRequestV3 } from '$lib/utilities/QueryBuilder';
-import { countResult } from '$lib/services/counts/countFormat';
-import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
-import { log, createLog } from '$lib/logger';
-import { useOpenAccess } from '$lib/AccessState';
+import { isUserLoggedIn } from '#lib/stores/User.ts';
+import { addConsents } from '#lib/stores/Dictionary.ts';
+import { getCountResource } from '#lib/stores/Resources.ts';
+import { getQueryRequestV3, getBlankQueryRequestV3 } from '#lib/utilities/QueryBuilder.ts';
+import { countResult } from '#lib/services/counts/countFormat.ts';
+import type { QueryRequestInterfaceV3 } from '#lib/models/api/Request.ts';
+import { log, createLog } from '#lib/logger.ts';
+import { useOpenAccess } from '#lib/AccessState.ts';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function rejectIfQueryError(result: any) {

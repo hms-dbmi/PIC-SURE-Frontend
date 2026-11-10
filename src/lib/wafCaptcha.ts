@@ -1,7 +1,8 @@
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
-import { log, createLog } from '$lib/logger';
-import { isOpenAccess } from '$lib/AccessState';
+import { appPath } from '#lib/paths.ts';
+import { log, createLog } from '#lib/logger.ts';
+import { isOpenAccess } from '#lib/AccessState.ts';
 
 const PENDING_KEY = 'waf-captcha-pending';
 const GUARD_KEY = 'waf-captcha-guard';
@@ -54,7 +55,7 @@ export function resumeAfterWafCaptcha(): void {
     // The reload normally lands back on the same URL; goto only fires when boot
     // logic redirected elsewhere in the meantime.
     if (route && route !== window.location.pathname + window.location.search) {
-      goto(resolve(route as '/'));
+      goto(resolve(appPath(route)));
     }
   } catch {
     return;

@@ -1,4 +1,4 @@
-import { Psama } from '$lib/paths';
+import { Psama } from '#lib/paths.ts';
 import OktaBaseProvider, { type OktaBaseData as OktaData } from './OktaBaseProvider';
 
 const STATE_NAME = 'oauthState';

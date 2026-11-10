@@ -3,20 +3,20 @@
   import 'driver.js/dist/driver.css';
   import '../../../styles/tour.css';
 
-  import { config } from '$lib/configuration.svelte';
-  import { flatIndex } from '$lib/utilities/Objects';
+  import { config } from '#lib/configuration.svelte.ts';
+  import { flatIndex } from '#lib/utilities/Objects.ts';
 
-  import { searchTerm, selectedFacets, nextSearchSettled } from '$lib/stores/Search';
-  import { expandedNestedFacets } from '$lib/stores/NestedFacets';
-  import { isToastShowing, toaster } from '$lib/toaster';
-  import { clearFilters } from '$lib/stores/Filter';
-  import { clearExports } from '$lib/stores/Export';
-  import { sanitizeHTML } from '$lib/utilities/HTML';
-  import type { TourDataType } from '$lib/models/Tour';
-  import { log, createLog, getPageContext } from '$lib/logger';
+  import { searchTerm, selectedFacets, nextSearchSettled } from '#lib/stores/Search.ts';
+  import { expandedNestedFacets } from '#lib/stores/NestedFacets.ts';
+  import { isToastShowing, toaster } from '#lib/toaster.ts';
+  import { clearFilters } from '#lib/stores/Filter.ts';
+  import { clearExports } from '#lib/stores/Export.ts';
+  import { sanitizeHTML } from '#lib/utilities/HTML.ts';
+  import type { TourDataType } from '#lib/models/Tour.ts';
+  import { log, createLog, getPageContext } from '#lib/logger.ts';
 
-  import Modal from '$lib/components/Modal.svelte';
-  import Loading from '$lib/components/Loading.svelte';
+  import Modal from '#lib/components/Modal.svelte';
+  import Loading from '#lib/components/Loading.svelte';
 
   let { tourConfig }: { tourConfig: TourDataType } = $props();
 

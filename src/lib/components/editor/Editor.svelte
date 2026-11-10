@@ -7,7 +7,7 @@
 
   import type Keyboard from 'quill/modules/keyboard';
 
-  import { sanitizeHTML } from '$lib/utilities/HTML';
+  import { sanitizeHTML } from '#lib/utilities/HTML.ts';
 
   let {
     content = $bindable(),

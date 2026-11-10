@@ -5,9 +5,9 @@ const auth0Calls = vi.hoisted(() => ({
   authorize: vi.fn(),
 }));
 
-vi.mock('$app/environment', () => ({ browser: true }));
-vi.mock('$lib/api', () => ({ post: vi.fn() }));
-vi.mock('$lib/configuration.svelte', () => ({ auth: { auth0Tenant: 'existing-tenant' } }));
+vi.mock('$app/env', () => ({ browser: true }));
+vi.mock('#lib/api.ts', () => ({ post: vi.fn() }));
+vi.mock('#lib/configuration.svelte.ts', () => ({ auth: { auth0Tenant: 'existing-tenant' } }));
 vi.mock('auth0-js', () => ({
   default: {
     WebAuth: class {
@@ -22,7 +22,7 @@ vi.mock('auth0-js', () => ({
   },
 }));
 
-import Auth0 from '$lib/auth/AUTH0';
+import Auth0 from '#lib/auth/AUTH0.ts';
 
 const provider = {
   name: 'AUTH0',

@@ -1,13 +1,13 @@
 <script lang="ts">
-  import { config } from '$lib/configuration.svelte';
+  import { config } from '#lib/configuration.svelte.ts';
 
-  import { ExportType } from '$lib/models/Variant';
-  import type { VariantData } from '$lib/models/Variant';
+  import { ExportType } from '#lib/models/Variant.ts';
+  import type { VariantData } from '#lib/models/Variant.ts';
 
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import Loading from '$lib/components/Loading.svelte';
-  import Datatable from '$lib/components/datatable/StaticTable.svelte';
-  import { log, createLog } from '$lib/logger';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
+  import Loading from '#lib/components/Loading.svelte';
+  import Datatable from '#lib/components/datatable/StaticTable.svelte';
+  import { log, createLog } from '#lib/logger.ts';
 
   let {
     count,

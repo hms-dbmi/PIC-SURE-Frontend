@@ -1,6 +1,6 @@
-import type { PatientCount } from '$lib/models/Stat';
-import { countResult, isObfuscatedBelowThreshold } from '$lib/services/counts/countFormat';
-import type { CountValue } from '$lib/services/counts/providers';
+import type { PatientCount } from '#lib/models/Stat.ts';
+import { countResult, isObfuscatedBelowThreshold } from '#lib/services/counts/countFormat.ts';
+import type { CountValue } from '#lib/services/counts/providers.ts';
 
 export interface ResultCountSummary {
   total: PatientCount;

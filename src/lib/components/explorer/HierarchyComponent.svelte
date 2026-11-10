@@ -1,20 +1,24 @@
 <script lang="ts">
-  import type { SearchResult } from '$lib/models/Search';
-  import type { NodeInterface } from '$lib/components/tree/types';
-  import { type Filter, createAnyRecordOfFilter } from '$lib/models/Filter.svelte';
-  import { activeRow } from '$lib/stores/ExpandableRow';
-  import { addFilter } from '$lib/stores/Filter';
-  import RadioTree from '$lib/components/tree/RadioTree.svelte';
-  import { getConceptTree, getHierarchyConcepts, ENSURE_MAX_DEPTH } from '$lib/stores/Dictionary';
-  import { panelOpen } from '$lib/stores/SidePanel';
-  import Loading from '$lib/components/Loading.svelte';
-  import { toaster } from '$lib/toaster';
-  import { AnyRecordOfFilterError } from '$lib/types';
-  import Modal from '$lib/components/Modal.svelte';
+  import type { SearchResult } from '#lib/models/Search.ts';
+  import type { NodeInterface } from '#lib/components/tree/types.ts';
+  import { type Filter, createAnyRecordOfFilter } from '#lib/models/Filter.svelte.ts';
+  import { activeRow } from '#lib/stores/ExpandableRow.ts';
+  import { addFilter } from '#lib/stores/Filter.ts';
+  import RadioTree from '#lib/components/tree/RadioTree.svelte';
+  import {
+    getConceptTree,
+    getHierarchyConcepts,
+    ENSURE_MAX_DEPTH,
+  } from '#lib/stores/Dictionary.ts';
+  import { panelOpen } from '#lib/stores/SidePanel.ts';
+  import Loading from '#lib/components/Loading.svelte';
+  import { toaster } from '#lib/toaster.ts';
+  import { AnyRecordOfFilterError } from '#lib/types.ts';
+  import Modal from '#lib/components/Modal.svelte';
   import { page } from '$app/state';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import { sortHierarchyDeepestFirst } from '$lib/utilities/Hierarchy';
-  import { log, createLog, getPageContext } from '$lib/logger';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
+  import { sortHierarchyDeepestFirst } from '#lib/utilities/Hierarchy.ts';
+  import { log, createLog, getPageContext } from '#lib/logger.ts';
   interface Props {
     data?: SearchResult;
     onclose?: () => void;

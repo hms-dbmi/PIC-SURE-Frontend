@@ -8,7 +8,7 @@ import {
   extractApiError,
   type ApiKeyMetadata,
   type ApiKeyType,
-} from '$lib/models/ApiKey';
+} from '#lib/models/ApiKey.ts';
 
 const baseKey: ApiKeyMetadata = {
   uuid: 'uuid-1',

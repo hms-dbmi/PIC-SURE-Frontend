@@ -3,7 +3,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/svelte';
 import { flushSync } from 'svelte';
-import TimedLoading from '$lib/components/TimedLoading.svelte';
+import TimedLoading from '#lib/components/TimedLoading.svelte';
 
 const messages = [
   { afterMs: 0, text: 'Generating visualizations…' },

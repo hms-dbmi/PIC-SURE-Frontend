@@ -1,6 +1,6 @@
 <script lang="ts">
-  import Popover from '$lib/components/Popover.svelte';
-  import { sanitizeHTML } from '$lib/utilities/HTML';
+  import Popover from '#lib/components/Popover.svelte';
+  import { sanitizeHTML } from '#lib/utilities/HTML.ts';
   import type { Snippet } from 'svelte';
 
   interface Props {

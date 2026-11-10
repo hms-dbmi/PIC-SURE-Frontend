@@ -1,6 +1,6 @@
 <script lang="ts">
   import { tick } from 'svelte';
-  import type { BannerPageTarget } from '$lib/models/Banner';
+  import type { BannerPageTarget } from '#lib/models/Banner.ts';
 
   type TargetedPage = Exclude<BannerPageTarget, { kind: 'ALL' }>;
 

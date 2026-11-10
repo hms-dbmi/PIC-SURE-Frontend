@@ -1,8 +1,8 @@
 import { get, derived, writable, type Writable } from 'svelte/store';
-import { type Application } from '$lib/models/Applications';
+import { type Application } from '#lib/models/Applications.ts';
 
-import * as api from '$lib/api';
-import { Psama } from '$lib/paths';
+import * as api from '#lib/api.ts';
+import { Psama } from '#lib/paths.ts';
 
 const loaded = writable(false);
 export const applications: Writable<Application[]> = writable([]);

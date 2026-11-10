@@ -1,14 +1,14 @@
 import { writable, type Writable } from 'svelte/store';
 
-import * as api from '$lib/api';
-import { Picsure } from '$lib/paths';
-import type { Column } from '$lib/components/datatable/types';
+import * as api from '#lib/api.ts';
+import { Picsure } from '#lib/paths.ts';
+import type { Column } from '#lib/components/datatable/types.ts';
 import {
   accessUnavailable,
   consentedStudies,
   consentsSettled,
   showAccessUnavailable,
-} from '$lib/stores/User';
+} from '#lib/stores/User.ts';
 import { get } from 'svelte/store';
 export const columns: Writable<Column[]> = writable([]);
 

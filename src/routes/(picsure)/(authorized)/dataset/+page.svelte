@@ -2,22 +2,22 @@
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
 
-  import type { Indexable } from '$lib/types';
-  import { config } from '$lib/configuration.svelte';
+  import type { Indexable } from '#lib/types.ts';
+  import { config } from '#lib/configuration.svelte.ts';
   import {
     active,
     archived,
     loadDatasets,
     getShowArchived,
     toggleShowArchived,
-  } from '$lib/stores/Dataset.svelte';
+  } from '#lib/stores/Dataset.svelte.ts';
 
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import Content from '$lib/components/Content.svelte';
-  import Datatable from '$lib/components/datatable/StaticTable.svelte';
-  import CopyButtonCell from '$lib/components/dataset/cell/CopyButtonCell.svelte';
-  import Actions from '$lib/components/dataset/cell/Actions.svelte';
-  import Loading from '$lib/components/Loading.svelte';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
+  import Content from '#lib/components/Content.svelte';
+  import Datatable from '#lib/components/datatable/StaticTable.svelte';
+  import CopyButtonCell from '#lib/components/dataset/cell/CopyButtonCell.svelte';
+  import Actions from '#lib/components/dataset/cell/Actions.svelte';
+  import Loading from '#lib/components/Loading.svelte';
 
   const columns = [
     { dataElement: 'name', label: 'Dataset ID Name' },
@@ -33,7 +33,7 @@
 
   const rowClickHandler = (row: Indexable) => {
     const uuid = row?.uuid;
-    goto(resolve(`/dataset/${uuid}`));
+    goto(resolve(`dataset/${uuid}`));
   };
 </script>
 

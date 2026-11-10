@@ -13,7 +13,7 @@ const { log, goto, mockPage } = vi.hoisted(() => ({
 vi.mock('$app/navigation', () => ({ goto, afterNavigate: vi.fn() }));
 vi.mock('$app/state', () => ({ page: mockPage }));
 vi.mock('$app/paths', () => ({ resolve: (path: string) => path }));
-vi.mock('$lib/logger', () => ({
+vi.mock('#lib/logger.ts', () => ({
   log,
   createLog: (eventType: string, action?: string, metadata?: Record<string, unknown>) => ({
     event_type: eventType,
@@ -21,15 +21,15 @@ vi.mock('$lib/logger', () => ({
     metadata,
   }),
 }));
-vi.mock('$lib/stores/User', async () => {
+vi.mock('#lib/stores/User.ts', async () => {
   const { writable } = await import('svelte/store');
   return { tokenStatus: writable(false) };
 });
-vi.mock('$lib/stores/Resources', () => ({
+vi.mock('#lib/stores/Resources.ts', () => ({
   getApiConnectionResource: () => ({ requiresAuth: false, usesDistinctOpenResource: true }),
 }));
-vi.mock('$lib/api', () => ({ post: vi.fn() }));
-vi.mock('$lib/components/ApiDocumentation.svelte', async () => ({
+vi.mock('#lib/api.ts', () => ({ post: vi.fn() }));
+vi.mock('#lib/components/ApiDocumentation.svelte', async () => ({
   default: (await import('./fixtures/StubComponent.svelte')).default,
 }));
 
@@ -107,7 +107,7 @@ describe('API page logging', () => {
     expect(actions('api.workflow_docs_click').map((event) => event.metadata)).toEqual([
       { workflow: 'http', target: 'api-access' },
     ]);
-    expect(goto).toHaveBeenCalledWith('/api#api-access', { noScroll: true, keepFocus: true });
+    expect(goto).toHaveBeenCalledWith('api#api-access', { reset: false });
     expect(actions('api.login_click').map((event) => event.metadata)).toEqual([
       { location: 'capabilities' },
       { location: 'public_notice' },

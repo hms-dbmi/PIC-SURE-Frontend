@@ -1,6 +1,6 @@
-import { browser } from '$app/environment';
-import type { Indexable } from '$lib/types';
-import type { User, OktaUser } from '$lib/models/User';
+import { browser } from '$app/env';
+import type { Indexable } from '#lib/types.ts';
+import type { User, OktaUser } from '#lib/models/User.ts';
 
 export interface AuthData extends Indexable {
   name: string;
@@ -71,8 +71,9 @@ export default class AuthProvider implements AuthData {
 
   protected getResponseMap(hashParts: string[] = []): Map<string, string> {
     return hashParts.reduce((map, part) => {
-      const [key, value] = part.split('=');
-      map.set(key, value);
+      // Split on the first '=' only: values such as base64 tokens can end in '=' padding
+      const [key, ...value] = part.split('=');
+      map.set(key, value.join('='));
       return map;
     }, new Map<string, string>());
   }

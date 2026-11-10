@@ -1,7 +1,7 @@
-import { type SearchResult } from '$lib/models/Search';
-import type { Pageable } from '$lib/models/api/Pageable';
-import type { Sort } from '$lib/models/api/Sort';
-import type { Facet } from '$lib/models/Search';
+import { type SearchResult } from '#lib/models/Search.ts';
+import type { Pageable } from '#lib/models/api/Pageable.ts';
+import type { Sort } from '#lib/models/api/Sort.ts';
+import type { Facet } from '#lib/models/Search.ts';
 
 export interface DictionaryConceptResult {
   content: SearchResult[];

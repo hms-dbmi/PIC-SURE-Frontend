@@ -1,11 +1,14 @@
+// @vitest-environment happy-dom
+// Mirrors the browser run: kit's client redirect() reads window.location.origin.
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Redirect } from '@sveltejs/kit';
-import { PicsurePrivileges } from '$lib/models/Privilege';
+import { PicsurePrivileges } from '#lib/models/Privilege.ts';
 
 const store = vi.hoisted(() => ({ value: {} as { privileges?: string[] }, topAdmin: false }));
 
-vi.mock('$app/environment', () => ({ browser: true }));
-vi.mock('$lib/stores/User', () => ({
+vi.mock('$app/env', () => ({ browser: true }));
+vi.mock('#lib/stores/User.ts', () => ({
   user: {
     subscribe: (fn: (v: unknown) => void) => {
       fn(store.value);

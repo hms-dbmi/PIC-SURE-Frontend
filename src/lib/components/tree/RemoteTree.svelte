@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { HierarchyNodeInterface } from '$lib/components/tree/types';
-  import type { SearchResult } from '$lib/models/Search';
-  import RemoteTreeNodeComponent from '$lib/components/tree/RemoteTreeNode.svelte';
+  import type { HierarchyNodeInterface } from '#lib/components/tree/types.ts';
+  import type { SearchResult } from '#lib/models/Search.ts';
+  import RemoteTreeNodeComponent from '#lib/components/tree/RemoteTreeNode.svelte';
   import { onMount } from 'svelte';
 
   let {

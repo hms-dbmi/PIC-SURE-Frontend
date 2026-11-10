@@ -3,14 +3,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 
-import UserToken from '$lib/components/UserToken.svelte';
+import UserToken from '#lib/components/UserToken.svelte';
 
 const { token, expires } = vi.hoisted(() => ({
   token: 'header.payload.signature',
   expires: new Date('2099-01-01T00:00:00Z'),
 }));
 
-vi.mock('$lib/stores/User', async () => {
+vi.mock('#lib/stores/User.ts', async () => {
   const { writable } = await import('svelte/store');
   return {
     user: writable({ email: 'researcher@example.org', token }),
@@ -20,7 +20,7 @@ vi.mock('$lib/stores/User', async () => {
     refreshLongTermToken: vi.fn(),
   };
 });
-vi.mock('$lib/logger', () => ({ log: vi.fn(), createLog: vi.fn() }));
+vi.mock('#lib/logger.ts', () => ({ log: vi.fn(), createLog: vi.fn() }));
 
 describe('UserToken', () => {
   beforeEach(() => {

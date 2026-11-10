@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Genotype, type SNP } from '$lib/models/GenomeFilter';
+  import { Genotype, type SNP } from '#lib/models/GenomeFilter.ts';
 
   let { snp, onsave = () => {} }: { snp: SNP; onsave: (snp: SNP) => void } = $props();
 

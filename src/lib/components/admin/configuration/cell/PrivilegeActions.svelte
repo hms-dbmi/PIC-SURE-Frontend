@@ -2,16 +2,16 @@
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
 
-  import { isTopAdmin } from '$lib/stores/User';
-  import { toaster } from '$lib/toaster';
-  import { deletePrivilege } from '$lib/stores/Privileges';
-  import Modal from '$lib/components/Modal.svelte';
+  import { isTopAdmin } from '#lib/stores/User.ts';
+  import { toaster } from '#lib/toaster.ts';
+  import { deletePrivilege } from '#lib/stores/Privileges.ts';
+  import Modal from '#lib/components/Modal.svelte';
 
   const { data = { cell: '', row: { name: '' } } } = $props();
 
   function editPrivilege(event: Event) {
     event.stopPropagation();
-    goto(resolve(`/admin/configuration/privilege/${data.cell}/edit`));
+    goto(resolve(`admin/configuration/privilege/${data.cell}/edit`));
   }
 
   async function deleteRow() {

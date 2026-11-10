@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { exports } from '$lib/stores/Export';
-  import ResultsPanel from '$lib/components/explorer/results/ResultsPanel.svelte';
+  import { exports } from '#lib/stores/Export.ts';
+  import ResultsPanel from '#lib/components/explorer/results/ResultsPanel.svelte';
   import { onDestroy, onMount } from 'svelte';
   import { type Unsubscriber } from 'svelte/store';
-  import { filters } from '$lib/stores/Filter';
-  import { panelOpen } from '$lib/stores/SidePanel';
-  import { log, createLog } from '$lib/logger';
+  import { filters } from '#lib/stores/Filter.ts';
+  import { panelOpen } from '#lib/stores/SidePanel.ts';
+  import { log, createLog } from '#lib/logger.ts';
 
   let unsubFilterStore: Unsubscriber;
   let unsubExportStore: Unsubscriber;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { truncate, visibleLength } from '$lib/utilities/Strings';
+import { truncate, visibleLength } from '#lib/utilities/Strings.ts';
 
 describe('truncate', () => {
   it.each([0, -1, -10])('returns empty text for a nonpositive limit of %s', (limit) => {

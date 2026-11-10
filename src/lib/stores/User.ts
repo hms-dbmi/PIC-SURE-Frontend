@@ -1,19 +1,19 @@
 import { resolve } from '$app/paths';
 import { get, writable, derived, type Writable, type Readable } from 'svelte/store';
-import { browser } from '$app/environment';
-import * as api from '$lib/api';
-import type { Route } from '$lib/models/Route';
-import type { ConsentsMap, User } from '$lib/models/User';
-import { PicsurePrivileges } from '$lib/models/Privilege';
-import { routes, config } from '$lib/configuration.svelte';
-import { Psama } from '$lib/paths';
+import { browser } from '$app/env';
+import * as api from '#lib/api.ts';
+import type { Route } from '#lib/models/Route.ts';
+import type { ConsentsMap, User } from '#lib/models/User.ts';
+import { PicsurePrivileges } from '#lib/models/Privilege.ts';
+import { routes, config } from '#lib/configuration.svelte.ts';
+import { Psama, appPath } from '#lib/paths.ts';
 import { goto } from '$app/navigation';
-import type AuthProvider from '$lib/models/AuthProvider.ts';
+import type AuthProvider from '#lib/models/AuthProvider.ts';
 import { page } from '$app/state';
-import { loginRedirectPath } from '$lib/utilities/LoginRedirect';
-import { log, createLog } from '$lib/logger';
-import { isToastShowing, toaster } from '$lib/toaster';
-import { discardingQuery } from '$lib/discardingQuery';
+import { loginRedirectPath } from '#lib/utilities/LoginRedirect.ts';
+import { log, createLog } from '#lib/logger.ts';
+import { isToastShowing, toaster } from '#lib/toaster.ts';
+import { discardingQuery } from '#lib/discardingQuery.ts';
 
 const tokenRevision = writable(0);
 
@@ -302,27 +302,40 @@ export async function login(token: string) {
   }
 }
 
+// A 401 or 403 from PSAMA's logout call makes api.ts start another logout, which would
+// navigate to /login a second time, so later calls share the logout already running.
+let pendingLogout: Promise<void> | undefined;
+
 /**
  * Pass `discardQuery` for logouts the user chose: the query is dropped once the logout has navigated.
  * A session timeout keeps it so the user can log back in and carry on.
  */
-export async function logout(
+export function logout(
   authProvider?: AuthProvider,
   redirect = false,
   { discardQuery = false } = {},
-) {
+): Promise<void> {
   if (discardQuery) discardingQuery.set(true);
+  pendingLogout ??= endSession(authProvider, redirect).finally(() => {
+    pendingLogout = undefined;
+  });
+  return pendingLogout;
+}
+
+async function endSession(authProvider: AuthProvider | undefined, redirect: boolean) {
   discardPendingConsents();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function handleErrors(error: any) {
-    console.error('Error logging out: ' + error);
+  const logError = (error: unknown) => console.error('Error logging out: ' + error);
+  const handleErrors = (error: unknown) => {
+    logError(error);
     handleLogout(redirect);
-  }
+  };
 
   if (browser) {
     const token = localStorage.getItem('token');
     if (token) {
-      await api.get(Psama.User.Logout).catch(handleErrors);
+      // Log only: the provider/redirect handling below always finishes the logout, so
+      // handling this failure too would navigate to /login twice.
+      await api.get(Psama.User.Logout).catch(logError);
       removeToken();
     }
   }
@@ -355,9 +368,9 @@ async function handleLogout(redirect: boolean) {
   log(createLog('AUTH', 'logout.success'));
   try {
     if (redirect) {
-      await goto(resolve(loginRedirectPath(page.url) as '/'));
+      await goto(resolve(appPath(loginRedirectPath(page.url))));
     } else {
-      await goto(resolve('/login'));
+      await goto(resolve('login'));
     }
   } finally {
     // If a later logout superseded this navigation, the page being left is still mounted, so leave it to that one

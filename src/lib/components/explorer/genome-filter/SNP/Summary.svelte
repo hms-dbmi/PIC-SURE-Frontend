@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { GenotypeMap, type SNP } from '$lib/models/GenomeFilter';
-  import { selectedSNPs } from '$lib/stores/SNPFilter';
+  import { GenotypeMap, type SNP } from '#lib/models/GenomeFilter.ts';
+  import { selectedSNPs } from '#lib/stores/SNPFilter.ts';
 
   const {
     onedit = () => {},

@@ -3,34 +3,34 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 
-import AddFilter from '$lib/components/explorer/AddFilter.svelte';
-import { getConceptDetails } from '$lib/stores/Dictionary';
-import { addFilter, enrichFilterDetails } from '$lib/stores/Filter';
-import type { SearchResult } from '$lib/models/Search';
+import AddFilter from '#lib/components/explorer/AddFilter.svelte';
+import { getConceptDetails } from '#lib/stores/Dictionary.ts';
+import { addFilter, enrichFilterDetails } from '#lib/stores/Filter.ts';
+import type { SearchResult } from '#lib/models/Search.ts';
 import { optionsIn } from './helpers';
 
-vi.mock('$app/environment', () => ({ browser: false }));
+vi.mock('$app/env', () => ({ browser: false }));
 
-vi.mock('$lib/stores/Dictionary', () => ({
+vi.mock('#lib/stores/Dictionary.ts', () => ({
   getConceptDetails: vi.fn(),
 }));
 
-vi.mock('$lib/stores/Filter', () => ({
+vi.mock('#lib/stores/Filter.ts', () => ({
   addFilter: vi.fn(),
   updateFilter: vi.fn(),
   enrichFilterDetails: vi.fn(),
 }));
 
-vi.mock('$lib/toaster', () => ({
+vi.mock('#lib/toaster.ts', () => ({
   toaster: { error: vi.fn() },
 }));
 
-vi.mock('$lib/stores/ExpandableRow', async () => {
+vi.mock('#lib/stores/ExpandableRow.ts', async () => {
   const { writable } = await import('svelte/store');
   return { activeRow: writable('') };
 });
 
-vi.mock('$lib/stores/SidePanel', async () => {
+vi.mock('#lib/stores/SidePanel.ts', async () => {
   const { writable } = await import('svelte/store');
   return { panelOpen: writable(true) };
 });

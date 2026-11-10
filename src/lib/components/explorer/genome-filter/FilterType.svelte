@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { config } from '$lib/configuration.svelte';
-  import { Option } from '$lib/models/GenomeFilter';
-  import CardButton from '$lib/components/buttons/CardButton.svelte';
+  import { config } from '#lib/configuration.svelte.ts';
+  import { Option } from '#lib/models/GenomeFilter.ts';
+  import CardButton from '#lib/components/buttons/CardButton.svelte';
 
   interface Props {
     active?: Option;

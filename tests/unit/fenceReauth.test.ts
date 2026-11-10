@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('$app/environment', () => ({ browser: true }));
+vi.mock('$app/env', () => ({ browser: true }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost') } }));
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
-vi.mock('$lib/api', () => ({ post: vi.fn() }));
+vi.mock('#lib/api.ts', () => ({ post: vi.fn() }));
 vi.mock('$app/paths', () => ({ resolve: (path: string) => path }));
 
-import Fence from '$lib/auth/FENCE';
+import Fence from '#lib/auth/FENCE.ts';
 
 const store = new Map<string, string>();
 

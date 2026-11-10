@@ -1,11 +1,11 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { config } from '$lib/configuration.svelte';
-  import Content from '$lib/components/Content.svelte';
-  import Modal from '$lib/components/Modal.svelte';
-  import AdvancedFiltering from '$lib/components/explorer/advanced/AdvancedFiltering.svelte';
-  import { panelOpen } from '$lib/stores/SidePanel';
-  import { createUnsavedGuard } from '$lib/utilities/UnsavedGuard.svelte';
+  import { config } from '#lib/configuration.svelte.ts';
+  import Content from '#lib/components/Content.svelte';
+  import Modal from '#lib/components/Modal.svelte';
+  import AdvancedFiltering from '#lib/components/explorer/advanced/AdvancedFiltering.svelte';
+  import { panelOpen } from '#lib/stores/SidePanel.ts';
+  import { createUnsavedGuard } from '#lib/utilities/UnsavedGuard.svelte.ts';
 
   interface Props {
     backUrl: string;

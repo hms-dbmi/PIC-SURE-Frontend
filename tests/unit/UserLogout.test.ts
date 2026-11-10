@@ -7,18 +7,18 @@ const navigations = vi.hoisted(
 );
 const mockApiGet = vi.hoisted(() => vi.fn());
 
-vi.mock('$app/environment', () => ({ browser: true }));
+vi.mock('$app/env', () => ({ browser: true }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/explorer') } }));
 vi.mock('$app/navigation', () => ({
   goto: () => new Promise<void>((resolve, reject) => navigations.push({ resolve, reject })),
 }));
-vi.mock('$lib/api', () => ({ get: (...args: unknown[]) => mockApiGet(...args) }));
-vi.mock('$lib/logger', () => ({ createLog: vi.fn(), log: vi.fn() }));
+vi.mock('#lib/api.ts', () => ({ get: (...args: unknown[]) => mockApiGet(...args) }));
+vi.mock('#lib/logger.ts', () => ({ createLog: vi.fn(), log: vi.fn() }));
 
-import { discardingQuery } from '$lib/discardingQuery';
-import { createLog } from '$lib/logger';
-import { logout } from '$lib/stores/User';
-import type AuthProvider from '$lib/models/AuthProvider';
+import { discardingQuery } from '#lib/discardingQuery.ts';
+import { createLog } from '#lib/logger.ts';
+import { logout } from '#lib/stores/User.ts';
+import type AuthProvider from '#lib/models/AuthProvider.ts';
 
 async function settle() {
   await new Promise((resolve) => setTimeout(resolve));
@@ -66,9 +66,12 @@ describe('logout while the query is being discarded', () => {
     expect(get(discardingQuery)).toBe(false);
   });
 
-  it('waits for the navigation that supersedes the first', async () => {
-    mockApiGet.mockRejectedValue(new Error('psama unavailable'));
+  it('waits for the navigation of a later logout that supersedes the first', async () => {
+    mockApiGet.mockResolvedValue({});
 
+    logout(undefined, false);
+    await settle();
+    expect(navigations).toHaveLength(1);
     logout(undefined, false);
     await settle();
     expect(navigations).toHaveLength(2);

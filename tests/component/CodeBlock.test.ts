@@ -3,10 +3,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 
-import CodeBlock from '$lib/components/CodeBlock.svelte';
+import CodeBlock from '#lib/components/CodeBlock.svelte';
 
 const { log } = vi.hoisted(() => ({ log: vi.fn() }));
-vi.mock('$lib/logger', () => ({
+vi.mock('#lib/logger.ts', () => ({
   log,
   createLog: (eventType: string, action?: string, metadata?: Record<string, unknown>) => ({
     event_type: eventType,

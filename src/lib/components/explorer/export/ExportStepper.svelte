@@ -2,21 +2,21 @@
   import { resolve } from '$app/paths';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import * as api from '$lib/api';
-  import { config } from '$lib/configuration.svelte';
-  import { Picsure } from '$lib/paths';
-  import type { ExportRowInterface } from '$lib/models/ExportRow';
-  import type { DataSet } from '$lib/models/Dataset';
-  import { exports } from '$lib/stores/Export';
-  import { filters } from '$lib/stores/Filter';
-  import { resultCountsState } from '$lib/state/resultCounts.svelte';
-  import { createDatasetName } from '$lib/services/datasets';
-  import { withBackoff } from '$lib/utilities/backoff';
-  import Stepper from '$lib/components/steppers/horizontal/Stepper.svelte';
-  import Step from '$lib/components/steppers/horizontal/Step.svelte';
-  import UserToken from '$lib/components/UserToken.svelte';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import Loading from '$lib/components/Loading.svelte';
+  import * as api from '#lib/api.ts';
+  import { config } from '#lib/configuration.svelte.ts';
+  import { Picsure } from '#lib/paths.ts';
+  import type { ExportRowInterface } from '#lib/models/ExportRow.ts';
+  import type { DataSet } from '#lib/models/Dataset.ts';
+  import { exports } from '#lib/stores/Export.ts';
+  import { filters } from '#lib/stores/Filter.ts';
+  import { resultCountsState } from '#lib/state/resultCounts.svelte.ts';
+  import { createDatasetName } from '#lib/services/datasets.ts';
+  import { withBackoff } from '#lib/utilities/backoff.ts';
+  import Stepper from '#lib/components/steppers/horizontal/Stepper.svelte';
+  import Step from '#lib/components/steppers/horizontal/Step.svelte';
+  import UserToken from '#lib/components/UserToken.svelte';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
+  import Loading from '#lib/components/Loading.svelte';
   // Steps
   import ReviewStep from './ReviewStep.svelte';
   import TreeStep from './TreeStep.svelte';
@@ -36,10 +36,10 @@
     setQueryRequest,
     getQueryRequest,
     resetExportStepperState,
-  } from '$lib/ExportStepperManager.svelte';
-  import { log, createLog } from '$lib/logger';
-  import { getQueryRequestV3, getFilterConcepts } from '$lib/utilities/QueryBuilder';
-  import { QueryV3 } from '$lib/models/query/Query';
+  } from '#lib/ExportStepperManager.svelte.ts';
+  import { log, createLog } from '#lib/logger.ts';
+  import { getQueryRequestV3, getFilterConcepts } from '#lib/utilities/QueryBuilder.ts';
+  import { QueryV3 } from '#lib/models/query/Query.ts';
 
   const { rows = [] }: { rows?: ExportRowInterface[] } = $props();
 
@@ -135,7 +135,7 @@
       }),
     );
     resetExportStepperState();
-    goto(resolve('/explorer'));
+    goto(resolve('explorer'));
   }
 
   const MAX_DATA_POINTS_FOR_EXPORT = $derived(config.settings.maxDataPointsForExport || 1000000);

@@ -1,12 +1,26 @@
+import adapter from '@sveltejs/adapter-node';
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig, type PluginOption } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
+import { csp } from './csp.config.js';
 import type { ViteUserConfig } from 'vitest/config';
 
 const isProd = process.env.NODE_ENV === 'production';
 
 export default defineConfig(async ({ mode }) => {
-  const plugins: PluginOption[] = [tailwindcss(), sveltekit()];
+  const plugins: PluginOption[] = [
+    tailwindcss(),
+    sveltekit({
+      extensions: ['.svelte'],
+      preprocess: [vitePreprocess()],
+      compilerOptions: { runes: true },
+      inspector: true,
+      adapter: adapter(),
+      csp,
+    }),
+  ];
+
   if (!isProd) {
     const { svelteTesting } = await import('@testing-library/svelte/vite');
     plugins.push(svelteTesting());

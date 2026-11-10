@@ -2,16 +2,16 @@
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
 
-  import { isTopAdmin } from '$lib/stores/User';
-  import { toaster } from '$lib/toaster';
-  import { deleteRole } from '$lib/stores/Roles';
-  import Modal from '$lib/components/Modal.svelte';
+  import { isTopAdmin } from '#lib/stores/User.ts';
+  import { toaster } from '#lib/toaster.ts';
+  import { deleteRole } from '#lib/stores/Roles.ts';
+  import Modal from '#lib/components/Modal.svelte';
 
   const { data = { cell: '', row: { name: '' } } } = $props();
 
   function editRole(event: Event) {
     event.stopPropagation();
-    goto(resolve(`/admin/configuration/role/${data.cell}/edit`));
+    goto(resolve(`admin/configuration/role/${data.cell}/edit`));
   }
 
   async function deleteRow() {

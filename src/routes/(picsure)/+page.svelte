@@ -1,20 +1,21 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
-  import { config } from '$lib/configuration.svelte';
+  import { appPath } from '#lib/paths.ts';
+  import { config } from '#lib/configuration.svelte.ts';
   import { goto } from '$app/navigation';
-  import Searchbox from '$lib/components/Searchbox.svelte';
-  import Stats from '$lib/components/landing/Stats.svelte';
-  import { isUserLoggedIn } from '$lib/stores/User';
-  import { log, createLog } from '$lib/logger';
+  import Searchbox from '#lib/components/Searchbox.svelte';
+  import Stats from '#lib/components/landing/Stats.svelte';
+  import { isUserLoggedIn } from '#lib/stores/User.ts';
+  import { log, createLog } from '#lib/logger.ts';
 
   let searchTerm = $state('');
 
   function search() {
     log(createLog('SEARCH', 'landing.search', { term: searchTerm }));
     if (config.features.login.open && config.features.discover && !isUserLoggedIn()) {
-      goto(resolve(`/discover?search=${encodeURIComponent(searchTerm)}`));
+      goto(resolve(`discover?search=${encodeURIComponent(searchTerm)}`));
     } else {
-      goto(resolve(`/explorer?search=${encodeURIComponent(searchTerm)}`));
+      goto(resolve(`explorer?search=${encodeURIComponent(searchTerm)}`));
     }
   }
 
@@ -49,7 +50,7 @@
         {#if url.startsWith('/')}
           <a
             data-testid="landing-action-{title}-btn"
-            href={resolve(url as '/')}
+            href={resolve(appPath(url))}
             class="btn preset-filled-primary-500"
             onclick={() => log(createLog('NAVIGATION', 'landing.action_click', { title, url }))}
             >{btnText}</a

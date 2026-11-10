@@ -1,6 +1,7 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
-  import AngleButton from '$lib/components/buttons/AngleButton.svelte';
+  import { appPath } from '#lib/paths.ts';
+  import AngleButton from '#lib/components/buttons/AngleButton.svelte';
 
   import { goto } from '$app/navigation';
   import { fly } from 'svelte/transition';
@@ -31,7 +32,7 @@
 
   function onBack() {
     backAction();
-    goto(resolve(backUrl as '/'));
+    goto(resolve(appPath(backUrl)));
   }
 </script>
 

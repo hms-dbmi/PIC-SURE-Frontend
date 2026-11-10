@@ -1,17 +1,17 @@
 <script lang="ts">
   import { page } from '$app/state';
 
-  import * as api from '$lib/api';
-  import { config } from '$lib/configuration.svelte';
+  import * as api from '#lib/api.ts';
+  import { config } from '#lib/configuration.svelte.ts';
 
-  import { QueryVersion, type DataSet } from '$lib/models/Dataset';
-  import { getDataset } from '$lib/stores/Dataset.svelte';
+  import { QueryVersion, type DataSet } from '#lib/models/Dataset.ts';
+  import { getDataset } from '#lib/stores/Dataset.svelte.ts';
 
-  import Content from '$lib/components/Content.svelte';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import QuerySummary from '$lib/components/query/QuerySummary.svelte';
-  import Loading from '$lib/components/Loading.svelte';
-  import CopyButton from '$lib/components/buttons/CopyButton.svelte';
+  import Content from '#lib/components/Content.svelte';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
+  import QuerySummary from '#lib/components/query/QuerySummary.svelte';
+  import Loading from '#lib/components/Loading.svelte';
+  import CopyButton from '#lib/components/buttons/CopyButton.svelte';
 
   let dataset: DataSet | undefined = $state({
     version: QueryVersion.UNKNOWN,

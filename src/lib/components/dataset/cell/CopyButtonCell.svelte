@@ -1,5 +1,5 @@
 <script lang="ts">
-  import CopyButton from '$lib/components/buttons/CopyButton.svelte';
+  import CopyButton from '#lib/components/buttons/CopyButton.svelte';
 
   let { data = { cell: '', row: {} } } = $props();
 </script>

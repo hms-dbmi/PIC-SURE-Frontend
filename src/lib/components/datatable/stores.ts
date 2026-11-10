@@ -1,5 +1,5 @@
 import { get, writable, type Writable } from 'svelte/store';
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 
 const SETTING_NAME = 'datatableSettings';
 export const DEFAULT_ROW_NUMBER = 10;

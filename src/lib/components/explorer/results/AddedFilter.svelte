@@ -5,21 +5,21 @@
   import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
 
-  import { Option } from '$lib/models/GenomeFilter';
+  import { Option } from '#lib/models/GenomeFilter.ts';
   import {
     type Filter,
     type AnyRecordOfFilterInterface,
     derivedFilterDescription,
     derivedStudyDescription,
-  } from '$lib/models/Filter.svelte';
-  import { removeFilter, activeFilter, activeSearch } from '$lib/stores/Filter';
-  import { populateFromGeneFilter } from '$lib/stores/GeneFilter';
-  import { populateFromSNPFilter } from '$lib/stores/SNPFilter';
-  import { log, createLog } from '$lib/logger';
+  } from '#lib/models/Filter.svelte.ts';
+  import { removeFilter, activeFilter, activeSearch } from '#lib/stores/Filter.ts';
+  import { populateFromGeneFilter } from '#lib/stores/GeneFilter.ts';
+  import { populateFromSNPFilter } from '#lib/stores/SNPFilter.ts';
+  import { log, createLog } from '#lib/logger.ts';
 
-  import Modal from '$lib/components/Modal.svelte';
-  import AddFilter from '$lib/components/explorer/AddFilter.svelte';
-  import ViewAnyRecordOfFilter from '$lib/components/explorer/ViewAnyRecordOfFilter.svelte';
+  import Modal from '#lib/components/Modal.svelte';
+  import AddFilter from '#lib/components/explorer/AddFilter.svelte';
+  import ViewAnyRecordOfFilter from '#lib/components/explorer/ViewAnyRecordOfFilter.svelte';
 
   let { filter }: { filter: Filter } = $props();
   let open = $state(false);
@@ -37,10 +37,10 @@
     logEditClick();
     if (filter.filterType === 'genomic') {
       populateFromGeneFilter(filter);
-      goto(resolve(`/explorer/genome-filter?edit=${Option.Genomic}`));
+      goto(resolve(`explorer/genome-filter?edit=${Option.Genomic}`));
     } else if (filter.filterType === 'snp') {
       populateFromSNPFilter(filter);
-      goto(resolve(`/explorer/genome-filter?edit=${Option.SNP}`));
+      goto(resolve(`explorer/genome-filter?edit=${Option.SNP}`));
     } else {
       $activeFilter = filter;
       $activeSearch = filter.searchResult;

@@ -3,10 +3,10 @@ import {
   type BannerLifecycle,
   type ManagedBanner,
   type ManagementRecord,
-} from '$lib/models/Banner';
-import { bannerPlainText } from '$lib/utilities/BannerHTML';
-import { isAllPagesBannerTarget } from '$lib/utilities/BannerPageTargets';
-import { truncate } from '$lib/utilities/Strings';
+} from '#lib/models/Banner.ts';
+import { bannerPlainText } from '#lib/utilities/BannerHTML.ts';
+import { isAllPagesBannerTarget } from '#lib/utilities/BannerPageTargets.ts';
+import { truncate } from '#lib/utilities/Strings.ts';
 
 export type LifecycleTab = 'orderable' | 'saved' | 'expired';
 

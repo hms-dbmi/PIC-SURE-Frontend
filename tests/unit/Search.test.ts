@@ -3,7 +3,7 @@ import { get } from 'svelte/store';
 
 const console_def = console;
 
-vi.mock('$app/environment', () => ({ browser: true }));
+vi.mock('$app/env', () => ({ browser: true }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/explorer') } }));
 
 type FacetCallOptions = { signal: AbortSignal; isCurrent: () => boolean };
@@ -23,18 +23,18 @@ const mockState = vi.hoisted(() => {
   };
 });
 
-vi.mock('$lib/stores/Dictionary', () => ({
+vi.mock('#lib/stores/Dictionary.ts', () => ({
   searchDictionary: mockState.searchDictionarySpy,
   updateFacetsFromSearch: mockState.updateFacetsSpy,
   facetsPromise: mockState.facetsPromiseStore,
   resetFacetState: mockState.resetFacetStateSpy,
 }));
 
-vi.mock('$lib/components/datatable/stores', () => ({
+vi.mock('#lib/components/datatable/stores.ts', () => ({
   getDefaultRows: () => 10,
 }));
 
-vi.mock('$lib/logger', () => ({
+vi.mock('#lib/logger.ts', () => ({
   log: mockState.logSpy,
   createLog: vi.fn((category: string, event: string, data?: unknown) => ({
     category,
@@ -44,12 +44,12 @@ vi.mock('$lib/logger', () => ({
   getPageContext: () => 'explorer',
 }));
 
-vi.mock('$lib/api', () => ({
+vi.mock('#lib/api.ts', () => ({
   isAbortError: (e: unknown) => (e as Error | undefined)?.name === 'AbortError',
 }));
 
 import type { State } from '@vincjo/datatables/server';
-import type { Facet, SearchResult } from '$lib/models/Search';
+import type { Facet, SearchResult } from '#lib/models/Search.ts';
 import {
   initHandler,
   tableHandler,
@@ -59,7 +59,7 @@ import {
   loading,
   nextSearchSettled,
   updateFacets,
-} from '$lib/stores/Search';
+} from '#lib/stores/Search.ts';
 
 type LoadCallback = (state: State) => Promise<SearchResult[] | undefined>;
 

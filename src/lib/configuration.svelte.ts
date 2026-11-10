@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 
 import type { ConfigCache } from './models/Configuration';
 import { mapFeatures, mapSettings, mapBranding } from './models/Configuration';

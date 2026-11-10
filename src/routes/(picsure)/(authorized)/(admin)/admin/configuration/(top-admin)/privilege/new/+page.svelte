@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { config } from '$lib/configuration.svelte';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import Content from '$lib/components/Content.svelte';
-  import PrivilegeForm from '$lib/components/admin/configuration/PrivilegeForm.svelte';
+  import { config } from '#lib/configuration.svelte.ts';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
+  import Content from '#lib/components/Content.svelte';
+  import PrivilegeForm from '#lib/components/admin/configuration/PrivilegeForm.svelte';
 
-  import ApplicationStore from '$lib/stores/Application';
-  import Loading from '$lib/components/Loading.svelte';
+  import ApplicationStore from '#lib/stores/Application.ts';
+  import Loading from '#lib/components/Loading.svelte';
 
   const { applicationList, loadApplications } = ApplicationStore;
 </script>

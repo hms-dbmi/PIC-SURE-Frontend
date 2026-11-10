@@ -1,6 +1,6 @@
 <script lang="ts">
   import FacetPlaceholder from './FacetPlaceholder.svelte';
-  import type { PreviousCategoriesForPlaceholder } from '$lib/models/Search';
+  import type { PreviousCategoriesForPlaceholder } from '#lib/models/Search.ts';
 
   let {
     fadeEffect = false,
