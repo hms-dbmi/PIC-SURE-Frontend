@@ -17,11 +17,18 @@ vi.mock('$lib/stores/Dataset.svelte', () => ({ replaceDataset, cachedDataset }))
 
 import { mapDataset, QueryVersion, type DataSet, type LinkedQuery } from '$lib/models/Dataset';
 import { QueryV3, type ExpectedResultType, type PhenotypicClause } from '$lib/models/query/Query';
-import { exportResultType, linkQuery, requestVariant } from '$lib/services/datasets';
+import {
+  createDatasetName,
+  exportResultType,
+  linkQuery,
+  requestVariant,
+} from '$lib/services/datasets';
+import { SAMPLE_SAVE_REFUSED_MESSAGE } from '$lib/services/exportStatus';
 import { buildQueryRequestV3FromDescriptor } from '$lib/utilities/QueryBuilder';
 
 const QUERY_PATH = 'picsure/hpds/auth/query';
 const DATASET_PATH = 'picsure/operations/dataset/named/dataset-uuid';
+const NAMED_DATASET_PATH = 'picsure/operations/dataset/named';
 
 function storedQuery(expectedResultType: ExpectedResultType, sample = false): QueryV3 {
   return new QueryV3({
@@ -255,6 +262,60 @@ function keysAtAnyDepth(value: unknown): string[] {
   }
   return [];
 }
+
+describe('createDatasetName', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('sends no request and throws the sample message for a sample query', async () => {
+    await expect(
+      createDatasetName('sample-csv', 'My cohort', storedQuery('DATAFRAME', true)),
+    ).rejects.toBe('A sample query cannot be saved as a dataset. Save the full query instead.');
+
+    expect(SAMPLE_SAVE_REFUSED_MESSAGE).toBe(
+      'A sample query cannot be saved as a dataset. Save the full query instead.',
+    );
+    expect(post).not.toHaveBeenCalled();
+    expect(put).not.toHaveBeenCalled();
+  });
+
+  it('refuses a sample query before it checks the name', async () => {
+    await expect(createDatasetName('sample-csv', '', { sample: true })).rejects.toBe(
+      SAMPLE_SAVE_REFUSED_MESSAGE,
+    );
+
+    expect(post).not.toHaveBeenCalled();
+  });
+
+  it('posts the query id and name for a query that is not a sample', async () => {
+    const saved = makeDataset();
+    post.mockResolvedValueOnce(saved);
+
+    await expect(
+      createDatasetName('full-csv', 'My cohort', storedQuery('DATAFRAME')),
+    ).resolves.toBe(saved);
+
+    expect(post).toHaveBeenCalledTimes(1);
+    expect(post).toHaveBeenCalledWith(NAMED_DATASET_PATH, {
+      queryId: 'full-csv',
+      name: 'My cohort',
+    });
+  });
+
+  it('posts the query id and name when no query is given', async () => {
+    const saved = makeDataset();
+    post.mockResolvedValueOnce(saved);
+
+    await expect(createDatasetName('full-csv', 'My cohort')).resolves.toBe(saved);
+
+    expect(post).toHaveBeenCalledTimes(1);
+    expect(post).toHaveBeenCalledWith(NAMED_DATASET_PATH, {
+      queryId: 'full-csv',
+      name: 'My cohort',
+    });
+  });
+});
 
 describe('exportResultType', () => {
   it.each(['DATAFRAME', 'DATAFRAME_PFB', 'DATAFRAME_TIMESERIES'] as const)(

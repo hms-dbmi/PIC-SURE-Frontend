@@ -12,6 +12,7 @@
   import {
     EXPORT_NOT_READY_MESSAGE,
     EXPORT_PREPARE_FAILED_MESSAGE,
+    SAMPLE_SAVE_REFUSED_MESSAGE,
     isExportFailure,
     isSessionEnded,
     statusWaitFailureMessage,
@@ -88,6 +89,7 @@
         saveDatasetPromise = createDatasetName(
           getDatasetId() ?? '',
           getDatasetNameInput() ?? '',
+          getQueryRequest().query,
         ).then((data: DataSet) => {
           statusPromise = checkExportStatus(getDatasetId());
           return data;
@@ -216,14 +218,18 @@
         {/await}
       {:catch e}
         <div class="flex justify-center">
-          <ErrorAlert
-            title="An error occurred while saving your dataset. Please try again. If this problem persists, please
+          {#if e === SAMPLE_SAVE_REFUSED_MESSAGE}
+            <ErrorAlert title={SAMPLE_SAVE_REFUSED_MESSAGE} />
+          {:else}
+            <ErrorAlert
+              title="An error occurred while saving your dataset. Please try again. If this problem persists, please
           contact an administrator."
-          >
-            {#if e.includes('Export not ready')}
-              <p>{e}</p>
-            {/if}
-          </ErrorAlert>
+            >
+              {#if e.includes('Export not ready')}
+                <p>{e}</p>
+              {/if}
+            </ErrorAlert>
+          {/if}
           <div class="hidden">{e}</div>
         </div>
       {/await}
