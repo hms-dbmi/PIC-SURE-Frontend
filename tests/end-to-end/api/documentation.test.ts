@@ -294,7 +294,28 @@ test.describe('API documentation for public visitors', () => {
     const viewer = page.getByTestId('api-documentation');
     await expect(viewer.getByRole('heading', { name: 'Open access documentation' })).toBeVisible();
     await expect(serviceTab(page, 'Open Queries')).toHaveAttribute('aria-selected', 'true');
-    await expect(page.getByRole('tabpanel', { name: 'Open Queries' })).toBeInViewport();
+  });
+
+  test('keeps the shown service in the address through On this page and Back', async ({ page }) => {
+    await page.goto('/api#api-access');
+    const viewer = page.getByTestId('api-documentation');
+    await expect(viewer.getByRole('heading', { name: 'Dictionary documentation' })).toBeVisible();
+    const toc = page.getByRole('navigation', { name: 'On this page' });
+
+    await serviceTab(page, 'Open Queries').click();
+    await expect(page).toHaveURL(/\/api\?service=hpds-open-access#api-access$/);
+    await toc.getByRole('link', { name: 'Authentication' }).click();
+    await expect(page).toHaveURL(/\/api\?service=hpds-open-access#authentication$/);
+    await serviceTab(page, 'Dictionary').click();
+    await expect(page).toHaveURL(/\/api\?service=dictionary#api-access$/);
+
+    // Back reaches an entry from before the Dictionary tab. (Swagger's bundled smooth scroll can
+    // add a second entry for the same On this page click; both name Open Queries.)
+    await page.goBack();
+
+    await expect(page).toHaveURL(/\/api\?service=hpds-open-access#/);
+    await expect(serviceTab(page, 'Open Queries')).toHaveAttribute('aria-selected', 'true');
+    await expect(viewer.getByRole('heading', { name: 'Open access documentation' })).toBeVisible();
   });
 
   test('opens on the dictionary from a link to the authorized queries', async ({ page }) => {
@@ -342,10 +363,12 @@ test.describe('API documentation for public visitors', () => {
     await page.getByTestId('api-public-notice').getByRole('link').click();
     await expect(page.getByTestId('api-documentation')).toHaveCount(0);
     await page.goBack();
+    // The address the visitor left names the service they were reading.
+    await expect(page).toHaveURL(/\/api\?service=hpds-open-access#api-access$/);
     await expect(
       page
         .getByTestId('api-documentation')
-        .getByRole('heading', { name: 'Dictionary documentation' }),
+        .getByRole('heading', { name: 'Open access documentation' }),
     ).toBeVisible();
     expect(errors).toEqual([]);
   });

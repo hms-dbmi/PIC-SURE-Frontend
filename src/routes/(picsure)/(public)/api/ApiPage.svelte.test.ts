@@ -104,7 +104,7 @@ describe('API page logging', () => {
     expect(actions('api.workflow_docs_click').map((event) => event.metadata)).toEqual([
       { workflow: 'http', target: 'api-access' },
     ]);
-    expect(goto).toHaveBeenCalledWith('api#api-access', { reset: false });
+    expect(goto).toHaveBeenCalledWith('#api-access', { reset: false });
     expect(actions('api.login_click').map((event) => event.metadata)).toEqual([
       { location: 'capabilities' },
       { location: 'public_notice' },

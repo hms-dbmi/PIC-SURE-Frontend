@@ -6,7 +6,7 @@ import { flushSync } from 'svelte';
 
 const { SwaggerUI, mockPage } = vi.hoisted(() => ({
   SwaggerUI: vi.fn(),
-  mockPage: { url: new URL('https://picsure.test/api'), state: {} },
+  mockPage: { url: new URL('http://localhost:3000/api'), state: {} },
 }));
 
 vi.mock('#lib/telemetry/logger.ts', () => ({
@@ -24,11 +24,11 @@ vi.mock('#lib/auth/session.svelte.ts', () => {
   return { session: new MockSession() };
 });
 vi.mock('$app/state', () => ({ page: mockPage }));
-vi.mock('$app/navigation', () => ({ replaceState: vi.fn() }));
+vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('swagger-ui-dist/swagger-ui-bundle.js', () => ({ default: SwaggerUI }));
 vi.mock('swagger-ui-dist/swagger-ui.css', () => ({}));
 
-import { replaceState } from '$app/navigation';
+import { goto } from '$app/navigation';
 import { session } from '#lib/auth/session.svelte.ts';
 import { log } from '#lib/telemetry/logger.ts';
 import ApiDocumentation from './ApiDocumentation.svelte';
@@ -117,7 +117,18 @@ function serviceSelections() {
 }
 
 function writtenUrls() {
-  return vi.mocked(replaceState).mock.calls.map(([url]) => String(url));
+  return vi.mocked(goto).mock.calls.map(([url]) => String(url));
+}
+
+function visit(url: string) {
+  window.history.replaceState({}, '', url);
+  mockPage.url = new URL(url);
+}
+
+// Back or Forward to another address.
+function goBackTo(url: string) {
+  window.history.replaceState({}, '', url);
+  window.dispatchEvent(new PopStateEvent('popstate'));
 }
 
 function announcement() {
@@ -132,7 +143,7 @@ describe('ApiDocumentation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockSession.isLoggedIn = true;
-    mockPage.url = new URL('https://picsure.test/api');
+    visit('http://localhost:3000/api');
     SwaggerUI.mockReset();
     drawSwagger();
     observers.clear();
@@ -189,14 +200,16 @@ describe('ApiDocumentation', () => {
       'true',
     );
     expect(screen.getByRole('tabpanel', { name: 'Open Queries' })).toBeTruthy();
-    expect(writtenUrls()).toEqual(['https://picsure.test/api?service=hpds-open-access#api-access']);
+    expect(writtenUrls()).toEqual([
+      'http://localhost:3000/api?service=hpds-open-access#api-access',
+    ]);
     expect(serviceSelections()).toEqual([
       { from: 'dictionary', to: 'hpds-open-access', source: 'tab' },
     ]);
   });
 
   it('opens on the service a link names', async () => {
-    mockPage.url = new URL('https://picsure.test/api?service=hpds-open-access#api-access');
+    visit('http://localhost:3000/api?service=hpds-open-access#api-access');
     const fetchMock = serve(allServices);
     render(ApiDocumentation);
 
@@ -215,12 +228,12 @@ describe('ApiDocumentation', () => {
   ]) {
     it(`opens on the dictionary and drops a link to ${why}`, async () => {
       mockSession.isLoggedIn = false;
-      mockPage.url = new URL(`https://picsure.test/api?q=1&service=${service}#api-access`);
+      visit(`http://localhost:3000/api?q=1&service=${service}#api-access`);
       const fetchMock = serve(allServices.filter((name) => name !== 'hpds-open-access'));
       render(ApiDocumentation);
 
       await waitFor(() => expect(fetchedDocuments(fetchMock)).toEqual(['dictionary']));
-      expect(writtenUrls()).toEqual(['https://picsure.test/api?q=1#api-access']);
+      expect(writtenUrls()).toEqual(['http://localhost:3000/api?q=1#api-access']);
       expect(serviceSelections()).toEqual([]);
     });
   }
@@ -262,6 +275,95 @@ describe('ApiDocumentation', () => {
     });
     // Swagger's host stays put, so the viewer keeps drawing into it.
     expect(document.querySelector('.swagger-host')).toBe(host);
+  });
+
+  it('writes the tab into the current address, keeping its other parameters', async () => {
+    serve(allServices);
+    render(ApiDocumentation);
+    await waitFor(() => expect(SwaggerUI).toHaveBeenCalled());
+    visit('http://localhost:3000/api?q=1#authentication');
+
+    await fireEvent.click(screen.getByRole('tab', { name: 'Open Queries' }));
+
+    expect(writtenUrls()).toEqual([
+      'http://localhost:3000/api?q=1&service=hpds-open-access#api-access',
+    ]);
+  });
+
+  it('follows Back to an address naming another service', async () => {
+    const fetchMock = serve(allServices);
+    render(ApiDocumentation);
+    await waitFor(() => expect(SwaggerUI).toHaveBeenCalled());
+
+    goBackTo('http://localhost:3000/api?service=hpds-open-access#api-access');
+
+    await waitFor(() => expect(announcement()).toBe('Showing the Open Queries API documentation.'));
+    expect(fetchedDocuments(fetchMock)).toEqual(['dictionary', 'hpds-open-access']);
+    expect(serviceSelections()).toEqual([
+      { from: 'dictionary', to: 'hpds-open-access', source: 'url' },
+    ]);
+
+    // An address naming the service already shown, or none, changes nothing.
+    goBackTo('http://localhost:3000/api?service=hpds-open-access#authentication');
+    goBackTo('http://localhost:3000/api#api-access');
+    expect(fetchedDocuments(fetchMock)).toEqual(['dictionary', 'hpds-open-access']);
+  });
+
+  it('announces documentation that is unavailable to this visitor', async () => {
+    mockSession.isLoggedIn = false;
+    serve(['hpds-query-service']);
+    render(ApiDocumentation);
+
+    await waitFor(() =>
+      expect(announcement()).toBe('API documentation is unavailable on this deployment.'),
+    );
+  });
+
+  it('announces the document a retry recovers', async () => {
+    let fail = true;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (path: string) =>
+        path === '/picsure/openapi'
+          ? new Response(JSON.stringify([{ name: 'dictionary' }]), { status: 200 })
+          : fail
+            ? new Response('', { status: 502 })
+            : new Response(JSON.stringify(document31), { status: 200 }),
+      ),
+    );
+    render(ApiDocumentation);
+    await waitFor(() =>
+      expect(announcement()).toBe('Unable to load API documentation. Please try again.'),
+    );
+
+    fail = false;
+    await fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+
+    await waitFor(() => expect(announcement()).toBe('Showing the Dictionary API documentation.'));
+  });
+
+  it('announces the document shown once a retry recovers the service list', async () => {
+    let fail = true;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (path: string) =>
+        fail
+          ? new Response('', { status: 503 })
+          : new Response(
+              JSON.stringify(path === '/picsure/openapi' ? [{ name: 'dictionary' }] : document31),
+              { status: 200 },
+            ),
+      ),
+    );
+    render(ApiDocumentation);
+    await waitFor(() =>
+      expect(announcement()).toBe('Unable to load API documentation. Please try again.'),
+    );
+
+    fail = false;
+    await fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+
+    await waitFor(() => expect(announcement()).toBe('Showing the Dictionary API documentation.'));
   });
 
   it('announces a document that fails to load', async () => {

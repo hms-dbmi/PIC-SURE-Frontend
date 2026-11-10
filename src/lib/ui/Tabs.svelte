@@ -24,7 +24,7 @@
     'data-testid'?: string;
     /** Tab content; defaults to the label. The tab's accessible name comes from this. */
     tab?: Snippet<[Tab<T>]>;
-    /** Rendered once per tab; hidden panels stay mounted. */
+    /** Rendered once per tab, and hidden panels stay mounted; with `shared`, once in all. */
     panel: Snippet<[T]>;
     /**
      * Renders `panel` once, for the selected tab, in one panel that every tab controls, for content
@@ -52,14 +52,14 @@
   const buttons: HTMLButtonElement[] = $state([]);
   const selectedIndex = $derived(tabs.findIndex((tab) => tab.value === value));
   const showList = $derived(!shared || tabs.length > 1);
-  // Without the list the panel is plain content, so the attributes come and go without
-  // remounting it.
+  // Spread, not two branches: losing the list must not remount what the panel holds.
   const sharedPanelRole = $derived(
     showList
       ? { role: 'tabpanel', 'aria-labelledby': `${id}-tab-${selectedIndex}`, tabindex: 0 }
       : {},
   );
-  const panelId = (index: number) => (shared ? `${id}-panel` : `${id}-panel-${index}`);
+  const panelId = (index: number) => `${id}-panel-${index}`;
+  const sharedPanelId = `${id}-panel`;
 
   const styles = {
     page: {
@@ -118,7 +118,7 @@
           role="tab"
           id="{id}-tab-{index}"
           aria-selected={selected}
-          aria-controls={panelId(index)}
+          aria-controls={shared ? sharedPanelId : panelId(index)}
           tabindex={selected ? 0 : -1}
           class="{style.tab} {selected ? style.active : style.inactive}"
           data-testid="{testid}-control"
@@ -137,7 +137,7 @@
     </div>
   {/if}
   {#if shared}
-    <div id={panelId(selectedIndex)} data-testid="{testid}-panel" {...sharedPanelRole}>
+    <div id={sharedPanelId} data-testid="{testid}-panel" {...sharedPanelRole}>
       {@render panel(value)}
     </div>
   {:else}

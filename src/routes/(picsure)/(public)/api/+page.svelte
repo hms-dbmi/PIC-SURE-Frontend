@@ -180,7 +180,9 @@
     )
       return;
     event.preventDefault();
-    await goto(resolve(`api#${id}`), { reset: false });
+    // A bare fragment keeps the address's query, such as the documentation's ?service=.
+    // eslint-disable-next-line svelte/no-navigation-without-resolve -- same page, fragment only
+    await goto(`#${id}`, { reset: false });
     document.getElementById(id)?.scrollIntoView();
   }
 

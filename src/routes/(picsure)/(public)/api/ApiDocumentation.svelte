@@ -2,7 +2,7 @@
   import { onMount, untrack } from 'svelte';
   import type { Attachment } from 'svelte/attachments';
   import { SvelteURL } from 'svelte/reactivity';
-  import { replaceState } from '$app/navigation';
+  import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import type { SwaggerComponent, SwaggerSystem } from 'swagger-ui-dist/swagger-ui-bundle.js';
   import { ApiError } from '#lib/api/errors.ts';
@@ -16,13 +16,11 @@
   import { createDocsLogging } from './apiDocsLogging.ts';
 
   // The first visible service is shown on load: the dictionary, which every visitor can use.
-  // Authorized queries need a signed-in user, so visitors who aren't signed in don't see them.
   const services = [
     { name: 'dictionary', title: 'Dictionary', signedInOnly: false },
     { name: 'hpds-query-service', title: 'Authorized Queries', signedInOnly: true },
     { name: 'hpds-open-access', title: 'Open Queries', signedInOnly: false },
   ];
-  // `?service=<name>` picks the service to show; tab clicks write it, with the section's anchor.
   const SERVICE_PARAM = 'service';
   const UNAVAILABLE = 'API documentation is unavailable on this deployment.';
   type SelectSource = 'tab' | 'url' | 'session';
@@ -45,8 +43,9 @@
   let viewer: SwaggerSystem | undefined;
   let disposeViewer: (() => void) | undefined;
   let shownService = '';
-  // Set by a change of service, so the document that arrives is announced; the first isn't.
-  let announceNext = '';
+  // Set by a change of service or a retry, so the document that arrives is announced; the first
+  // load's isn't.
+  let announceNext = false;
   const docsLogging = createDocsLogging(() => shownService);
   const announcer = createAnnouncer({ repeat: true });
 
@@ -92,7 +91,7 @@
         documented = names;
         selected = serviceFromUrl() ?? visible[0]?.name ?? '';
         if (!selected) {
-          error = UNAVAILABLE;
+          fail(UNAVAILABLE);
           return;
         }
       }
@@ -168,34 +167,45 @@
           ),
         );
       }
-      error = unavailable ? UNAVAILABLE : 'Unable to load API documentation. Please try again.';
-      announceNext = '';
-      void announcer.announce(error);
+      fail(unavailable ? UNAVAILABLE : 'Unable to load API documentation. Please try again.');
     } finally {
       if (request === generation) loading = false;
     }
   }
 
+  function fail(message: string) {
+    error = message;
+    announceNext = false;
+    void announcer.announce(message);
+  }
+
+  function retry() {
+    announceNext = true;
+    void load(documented.length === 0 || !selected);
+  }
+
   function announceShown() {
-    if (announceNext !== selected) return;
-    announceNext = '';
+    if (!announceNext) return;
+    announceNext = false;
     void announcer.announce(`Showing the ${titleOf(selected)} API documentation.`);
   }
 
-  // The service a `?service=` link asks for, when this visitor can see it. Any other value is
-  // dropped from the address, and the default service is shown.
+  function visibleService(name: string | null): string | undefined {
+    return visible.find((service) => service.name === name)?.name;
+  }
+
+  // On load, a link's service replaces the default; a value this visitor can't see is dropped
+  // from the address.
   function serviceFromUrl(): string | undefined {
-    const requested = page.url.searchParams.get(SERVICE_PARAM);
-    if (requested === null) return undefined;
-    const linked = visible.find((service) => service.name === requested)?.name;
-    if (!linked) {
-      setServiceParam(undefined);
-    } else if (linked !== visible[0]?.name) {
-      logSelect(linked, 'url');
-    }
+    const linked = visibleService(page.url.searchParams.get(SERVICE_PARAM));
+    if (!linked && page.url.searchParams.has(SERVICE_PARAM)) setServiceParam(undefined);
+    if (linked && linked !== visible[0]?.name) logSelect(linked, 'url');
     return linked;
   }
 
+  // A navigation, not shallow routing: page.url and SvelteKit's own idea of the address stay
+  // current, so links within the page and Back keep the parameter. It replaces the entry, adds
+  // no history, and leaves scroll and focus alone.
   function setServiceParam(name: string | undefined) {
     const url = new SvelteURL(page.url.href);
     if (name) {
@@ -204,7 +214,7 @@
     } else {
       url.searchParams.delete(SERVICE_PARAM);
     }
-    replaceState(url, page.state);
+    void goto(url, { replace: true, reset: false, state: page.state });
   }
 
   function logSelect(to: string, source: SelectSource) {
@@ -220,7 +230,7 @@
   function showService(name: string, source: SelectSource) {
     logSelect(name, source);
     selected = name;
-    announceNext = name;
+    announceNext = true;
     void load(false);
   }
 
@@ -242,9 +252,16 @@
       controller?.abort();
       selected = '';
       loading = false;
-      error = UNAVAILABLE;
+      fail(UNAVAILABLE);
     });
   });
+
+  // Back or Forward to an address naming another service. Read from the address bar, since not
+  // every entry is SvelteKit's: Swagger's bundled smooth scroll pushes its own for #anchor links.
+  function followHistory() {
+    const linked = visibleService(new URLSearchParams(location.search).get(SERVICE_PARAM));
+    if (linked && linked !== selected) showService(linked, 'url');
+  }
 
   onMount(() => {
     void load(true);
@@ -260,10 +277,10 @@
   });
 </script>
 
+<svelte:window onpopstate={followHistory} />
+
 <div class="api-documentation mt-6" data-testid="api-documentation">
   <LiveRegion message={announcer.message} data-testid="api-docs-announcement" />
-  <!-- With one service there's nothing to choose, and Tabs shows its panel alone. The panel's
-       element never changes, so Swagger's host stays put as tabs come and go. -->
   <Tabs
     {tabs}
     value={selected}
@@ -281,11 +298,7 @@
       {:else if error}
         <div class="border border-surface-200 rounded p-4 mt-4">
           <p class="mx-0">{error}</p>
-          <Button
-            variant="outlined-static"
-            class="mt-2"
-            onclick={() => void load(documented.length === 0 || !selected)}>Retry</Button
-          >
+          <Button variant="outlined-static" class="mt-2" onclick={retry}>Retry</Button>
         </div>
       {/if}
       <div
