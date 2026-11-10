@@ -275,16 +275,22 @@
 
       <details class="rounded border border-surface-300 p-4">
         <summary class="font-bold">Advanced options</summary>
-        <div class="mt-4 grid gap-4 sm:grid-cols-2">
-          <label class="grid gap-1">
-            <span class="font-bold">Title</span>
-            <input
-              class="input"
-              type="text"
-              maxlength={BANNER_TITLE_MAX_LENGTH}
-              bind:value={form.title}
-            />
-          </label>
+        <div class="mt-4 grid items-start gap-4 sm:grid-cols-2">
+          <div class="grid gap-1">
+            <label class="grid gap-1">
+              <span class="font-bold">Title</span>
+              <input
+                class="input"
+                type="text"
+                maxlength={BANNER_TITLE_MAX_LENGTH}
+                aria-describedby="banner-title-help"
+                bind:value={form.title}
+              />
+            </label>
+            <p id="banner-title-help" class="mt-0 text-sm text-surface-600">
+              {form.title.length}/{BANNER_TITLE_MAX_LENGTH} characters.
+            </p>
+          </div>
           <label class="grid gap-1">
             <span class="font-bold">Icon</span>
             <select class="select" bind:value={form.icon}>

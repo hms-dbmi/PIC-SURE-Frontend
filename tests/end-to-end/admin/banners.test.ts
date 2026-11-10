@@ -631,6 +631,21 @@ test.describe('Admins create, edit, and publish banners', () => {
     expect(await editor.textContent()).toBe('Maintenance tonight');
   });
 
+  test('stops title input at the 120-character limit shown by its counter', async ({ page }) => {
+    await page.goto('/admin/configuration?tab=banners');
+    await page.getByRole('button', { name: '+ Create banner' }).click();
+    await page.getByText('Advanced options').click();
+    const title = page.getByRole('textbox', { name: 'Title' });
+    const counter = page.locator('#banner-title-help');
+
+    await expect(counter).toHaveText('0/120 characters.');
+    await title.fill('x'.repeat(119));
+    await title.pressSequentially('yz');
+
+    await expect(title).toHaveValue(`${'x'.repeat(119)}y`);
+    await expect(counter).toHaveText('120/120 characters.');
+  });
+
   test('keeps a bullet list stable while adding items', async ({ page }) => {
     await page.goto('/admin/configuration?tab=banners');
     await page.getByRole('button', { name: '+ Create banner' }).click();
