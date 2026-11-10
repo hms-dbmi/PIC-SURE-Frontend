@@ -1,10 +1,8 @@
 import type { ExpectedResultType } from '#lib/query/query.ts';
-import type { QueryRequestInterfaceV3 } from '#lib/api/picsure/query.types.ts';
-import { QueryV3 } from '#lib/query/query.ts';
+import type { QueryRequest } from '#lib/api/picsure/query.types.ts';
+import { buildRequest } from '#lib/query/build.ts';
 
-let queryRequest: QueryRequestInterfaceV3 = $state({
-  query: new QueryV3(),
-});
+let queryRequest: QueryRequest = $state(buildRequest(null));
 
 let activeType: ExpectedResultType | undefined = $state(undefined);
 let datasetId: string | undefined = $state(undefined);
@@ -48,7 +46,7 @@ export function getQueryRequest() {
   return queryRequest;
 }
 
-export function setQueryRequest(q: QueryRequestInterfaceV3) {
+export function setQueryRequest(q: QueryRequest) {
   queryRequest = q;
 }
 
@@ -66,7 +64,5 @@ export function resetExportStepperState() {
   setDatasetNameInput(undefined);
   setLockDownload(true);
   setSaveable(false);
-  setQueryRequest({
-    query: new QueryV3(),
-  });
+  setQueryRequest(buildRequest(null));
 }

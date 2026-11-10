@@ -24,36 +24,36 @@ describe('getCountResource', () => {
     mockFeatures.login.open = false;
   });
 
-  it('returns the auth resource (empty uuid) when isOpenAccess is false', () => {
-    expect(getCountResource(false)).toEqual({ name: 'hpds', uuid: '' });
+  it('returns the auth resource when isOpenAccess is false', () => {
+    expect(getCountResource(false)).toEqual({ name: 'hpds' });
   });
 
   it('returns the auth resource by default (no argument)', () => {
-    expect(getCountResource()).toEqual({ name: 'hpds', uuid: '' });
+    expect(getCountResource()).toEqual({ name: 'hpds' });
   });
 
   it('returns the open resource when isOpenAccess is true and explore-without-login is disabled', () => {
-    expect(getCountResource(true)).toEqual({ name: 'hpdsOpen', uuid: '' });
+    expect(getCountResource(true)).toEqual({ name: 'hpdsOpen' });
   });
 
   it('returns the auth resource when isOpenAccess is true but explore-without-login is enabled', () => {
     mockFeatures.explorer.open = true;
     mockFeatures.login.open = true;
 
-    expect(getCountResource(true)).toEqual({ name: 'hpds', uuid: '' });
+    expect(getCountResource(true)).toEqual({ name: 'hpds' });
   });
 
   it('returns the open resource when isOpenAccess is true and only explorer.open is true', () => {
     mockFeatures.explorer.open = true;
 
-    expect(getCountResource(true)).toEqual({ name: 'hpdsOpen', uuid: '' });
+    expect(getCountResource(true)).toEqual({ name: 'hpdsOpen' });
   });
 
   it('returns the open resource when isOpenAccess is true and only login.open is true', () => {
     mockFeatures.explorer.open = false;
     mockFeatures.login.open = true;
 
-    expect(getCountResource(true)).toEqual({ name: 'hpdsOpen', uuid: '' });
+    expect(getCountResource(true)).toEqual({ name: 'hpdsOpen' });
   });
 });
 
@@ -66,7 +66,6 @@ describe('getApiConnectionResource', () => {
   it('uses the authorized resource for authenticated users', () => {
     expect(getApiConnectionResource(true)).toEqual({
       name: 'hpds',
-      uuid: '',
       requiresAuth: true,
       usesDistinctOpenResource: false,
     });
@@ -75,7 +74,6 @@ describe('getApiConnectionResource', () => {
   it('uses the distinct open resource for anonymous users', () => {
     expect(getApiConnectionResource(false)).toEqual({
       name: 'hpdsOpen',
-      uuid: '',
       requiresAuth: false,
       usesDistinctOpenResource: true,
     });
@@ -87,7 +85,6 @@ describe('getApiConnectionResource', () => {
 
     expect(getApiConnectionResource(false)).toEqual({
       name: 'hpds',
-      uuid: '',
       requiresAuth: false,
       usesDistinctOpenResource: false,
     });

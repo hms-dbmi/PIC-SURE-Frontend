@@ -4,13 +4,7 @@
 
   import type { Indexable } from '#lib/utils/objects.ts';
   import { config } from '#lib/config/config.svelte.ts';
-  import {
-    active,
-    archived,
-    loadDatasets,
-    getShowArchived,
-    toggleShowArchived,
-  } from '#lib/datasets/datasets.svelte.ts';
+  import { datasets } from '#lib/datasets/datasets.svelte.ts';
 
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import Content from '#lib/shell/Content.svelte';
@@ -43,7 +37,7 @@
 </svelte:head>
 
 <Content title="Manage Datasets">
-  {#await loadDatasets()}
+  {#await datasets.load()}
     <Loading />
   {:then}
     <Datatable
@@ -53,13 +47,13 @@
       data-testid="dataset-active-table"
       id="dataset-active-table"
       title="Active Datasets"
-      data={$active}
+      data={datasets.active}
       {rowClickHandler}
       rowClickKeys={['v']}
       {columns}
       {cellOverides}
     />
-    {#if getShowArchived()}
+    {#if datasets.showArchived}
       <Datatable
         isClickable
         searchable
@@ -67,7 +61,7 @@
         data-testid="dataset-archived-table"
         id="dataset-archived-table"
         title="Deleted Datasets"
-        data={$archived}
+        data={datasets.archived}
         {rowClickHandler}
         rowClickKeys={['v']}
         {columns}
@@ -77,8 +71,8 @@
     <Button
       data-testid="dataset-toggle-archive"
       variant="filled-secondary"
-      onclick={() => toggleShowArchived()}
-      >{getShowArchived() ? 'Hide' : 'Show'} deleted datasets</Button
+      onclick={datasets.toggleShowArchived}
+      >{datasets.showArchived ? 'Hide' : 'Show'} deleted datasets</Button
     >
   {:catch}
     <ErrorAlert title="API Error">Something went wrong when sending your request.</ErrorAlert>

@@ -6,6 +6,7 @@
   import Dialog from '#lib/ui/dialog/Dialog.svelte';
   import AdvancedFiltering from '#lib/explorer/advanced/AdvancedFiltering.svelte';
   import { panelOpen } from '#lib/explorer/panel.ts';
+  import { filterState } from '#lib/query/filters.svelte.ts';
   import { createUnsavedGuard } from '#lib/ui/unsavedGuard.svelte.ts';
 
   interface Props {
@@ -28,6 +29,7 @@
 
   function applyChanges() {
     advancedFilteringRef?.applyChanges();
+    if (filterState.phenotypic.length !== 0) $panelOpen = true;
   }
 
   function handleCancel() {

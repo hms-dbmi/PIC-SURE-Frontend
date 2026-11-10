@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { toaster } from '#lib/ui/toaster.ts';
   import { searchGenes } from '#lib/api/picsure/dictionary.ts';
-  import { selectedGenes } from '#lib/query/GeneFilter.ts';
+  import { genomicDraft } from '#lib/query/genomicDraft.svelte.ts';
 
   import OptionsSelectionList from '#lib/ui/OptionsSelectionList.svelte';
   import { log, createLog } from '#lib/telemetry/logger.ts';
@@ -11,7 +11,7 @@
   let genesFromSavedFilter: string[] = $state([]);
   let unselectedGenes = $derived(
     [...new Set([...genesFromSavedFilter, ...allGenes])].filter(
-      (gene) => !$selectedGenes.includes(gene),
+      (gene) => !genomicDraft.genes.includes(gene),
     ),
   );
 
@@ -51,13 +51,13 @@
   }
 
   onMount(async () => {
-    previousGeneCount = $selectedGenes.length;
-    genesFromSavedFilter = [...$selectedGenes];
+    previousGeneCount = genomicDraft.genes.length;
+    genesFromSavedFilter = [...genomicDraft.genes];
     await getGeneValues();
   });
 
   $effect(() => {
-    const current = $selectedGenes;
+    const current = genomicDraft.genes;
     if (current.length > previousGeneCount) {
       const added = current[current.length - 1];
       log(createLog('ACTION', 'genomic.gene_add', { gene: added }));
@@ -71,7 +71,7 @@
     showSelectAll={false}
     showClearAll={false}
     bind:unselectedOptions={unselectedGenes}
-    bind:selectedOptions={$selectedGenes}
+    bind:selectedOptions={genomicDraft.genes}
     bind:currentlyLoading={loading}
     {allOptionsLoaded}
     onscroll={getGeneValues}

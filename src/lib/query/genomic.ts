@@ -6,6 +6,18 @@ export enum Option {
   SNP = 'snp',
 }
 
+/** Variant-info keys a gene filter can set, in the order requests list them. */
+export const GENE_FILTER_KEYS = [
+  'Gene_with_variant',
+  'Variant_consequence_calculated',
+  'Variant_frequency_as_text',
+] as const;
+export type GeneFilterKey = (typeof GENE_FILTER_KEYS)[number];
+export type GeneFilterValues = { [K in GeneFilterKey]?: string[] };
+
+/** The genomic filter key a gene filter's min/max range is sent under. */
+export const GENOMIC_RANGE_KEY = 'genomic_range';
+
 export type SNP = { search: string; constraint: string };
 
 export enum Genotype {

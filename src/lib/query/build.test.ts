@@ -1,14 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('$app/env', () => ({ browser: false }));
-vi.mock('#lib/auth/User.ts', async () => {
-  const { writable } = await import('svelte/store');
-  return { user: writable({}), ensureConsentsLoaded: vi.fn(), isUserLoggedIn: vi.fn(() => false) };
-});
+vi.mock('#lib/utils/ssrWrite.ts', () => ({ assertNoSsrWrite: vi.fn() }));
+vi.mock('#lib/auth/session.svelte.ts', () => ({
+  session: { user: {}, ensureConsentsLoaded: vi.fn() },
+}));
 vi.mock('#lib/explorer/Dictionary.ts', () => ({ getConceptDetails: vi.fn() }));
 
-import { createGroup, filterTree, genomicFilters } from '#lib/query/filters.ts';
+import { filterState } from '#lib/query/filters.svelte.ts';
 import {
+  createFilterGroup as createGroup,
   createAnyRecordOfFilter,
   createCategoricalFilter,
   createGenomicFilter,
@@ -19,9 +20,9 @@ import {
   type FilterInterface,
 } from '#lib/query/filter.svelte.ts';
 import { LogicTree } from '#lib/query/logicTree.svelte.ts';
-import { Operator } from '#lib/query/query.ts';
+import { Operator, queryLeaves } from '#lib/query/query.ts';
 import type { SearchResult } from '#lib/explorer/types.ts';
-import { getBlankQueryRequestV3, getFilterConcepts, getQueryRequestV3 } from '#lib/query/build.ts';
+import { buildRequest, filterConcepts } from '#lib/query/build.ts';
 
 function searchResult(conceptPath: string, children: SearchResult[] = []): SearchResult {
   return {
@@ -35,18 +36,17 @@ function searchResult(conceptPath: string, children: SearchResult[] = []): Searc
   } as unknown as SearchResult;
 }
 
-// The only place that knows filters live in stores; the expectations below are the
+// The only place that knows where the filters live; the expectations below are the
 // request JSON the backend receives.
 function setFilters(nodes: FilterInterface[], genomic: Filter[] = []) {
   const tree = new LogicTree<FilterInterface>(createGroup);
   tree.add(...nodes);
-  filterTree.set(tree);
-  genomicFilters.set(genomic);
+  filterState.restore(tree, genomic);
 }
 
 function requestFor(nodes: FilterInterface[], genomic: Filter[] = []) {
   setFilters(nodes, genomic);
-  return getQueryRequestV3();
+  return buildRequest(filterState.queryFilters);
 }
 
 // Every phenotypic tree is wrapped in the root AND group, even a single filter.
@@ -60,7 +60,7 @@ beforeEach(() => setFilters([]));
 
 describe('QueryBuilder request JSON', () => {
   it('sends an empty COUNT query when there are no filters', () => {
-    expect(getQueryRequestV3()).toEqual({
+    expect(buildRequest(filterState.queryFilters)).toEqual({
       query: {
         select: [],
         authorizationFilters: [],
@@ -249,13 +249,67 @@ describe('QueryBuilder request JSON', () => {
     expect(request.query.genomicFilters).toEqual(genomic);
   });
 
+  // toEqual ignores key order; this pins the bytes the backend receives.
+  it('sends the request keys in a fixed order', () => {
+    const request = requestFor(
+      [
+        createGroup(
+          [
+            createNumericFilter(searchResult('\\n\\'), '1', '2'),
+            createCategoricalFilter(searchResult('\\a\\'), ['x']),
+          ],
+          Operator.OR,
+        ),
+      ],
+      [createGenomicFilter({ min: '1', max: '2' })],
+    );
+
+    expect(JSON.stringify(request)).toBe(
+      JSON.stringify({
+        query: {
+          select: [],
+          authorizationFilters: [],
+          phenotypicClause: {
+            operator: 'AND',
+            phenotypicClauses: [
+              {
+                operator: 'OR',
+                phenotypicClauses: [
+                  {
+                    phenotypicFilterType: 'FILTER',
+                    conceptPath: '\\n\\',
+                    not: false,
+                    min: 1,
+                    max: 2,
+                  },
+                  {
+                    phenotypicFilterType: 'FILTER',
+                    conceptPath: '\\a\\',
+                    not: false,
+                    values: ['x'],
+                  },
+                ],
+                not: false,
+              },
+            ],
+            not: false,
+          },
+          genomicFilters: [{ key: 'genomic_range', min: 1, max: 2 }],
+          expectedResultType: 'COUNT',
+          picsureId: null,
+          id: null,
+        },
+      }),
+    );
+  });
+
   it('applies the result type and mutator after the filters are added', () => {
     const request = requestFor(
       [createRequiredFilter(searchResult('\\a\\'))],
       [createGenomicFilter({ Gene_with_variant: ['BRCA1'] })],
     );
-    const mutated = getQueryRequestV3('CROSS_COUNT', (query) => {
-      query.select = query.leaves.map((leaf) => leaf.conceptPath);
+    const mutated = buildRequest(filterState.queryFilters, 'CROSS_COUNT', (query) => {
+      query.select = queryLeaves(query).map((leaf) => leaf.conceptPath);
       return query;
     });
 
@@ -272,7 +326,7 @@ describe('QueryBuilder request JSON', () => {
       [createGenomicFilter({ Gene_with_variant: ['BRCA1'] })],
     );
 
-    const request = getBlankQueryRequestV3('DATAFRAME', (query) => {
+    const request = buildRequest(null, 'DATAFRAME', (query) => {
       query.select = ['\\s\\'];
       return query;
     });
@@ -295,9 +349,9 @@ describe('QueryBuilder request JSON', () => {
       createGroup([anyRecord, createNumericFilter(searchResult('\\b\\'), '1')], Operator.OR),
     ]);
 
-    // getFilterConcepts needs the unserialised query, so it runs in the mutator, as in the export step.
-    const request = getQueryRequestV3('DATAFRAME', (query) => {
-      query.select = getFilterConcepts(query);
+    // filterConcepts needs the unserialised query, so it runs in the mutator, as in the export step.
+    const request = buildRequest(filterState.queryFilters, 'DATAFRAME', (query) => {
+      query.select = filterConcepts(query, filterState.phenotypic);
       return query;
     });
     expect(request.query.select).toEqual(['\\a\\', '\\p\\c1\\', '\\p\\c1\\g\\', '\\b\\']);

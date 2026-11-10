@@ -4,10 +4,10 @@ vi.mock('#lib/api/client.ts', () => ({ request: vi.fn() }));
 
 import { request } from '#lib/api/client.ts';
 import { getDistributions } from '#lib/api/picsure/visualization.ts';
-import type { QueryInterfaceV3 } from '#lib/query/query.ts';
+import type { QueryJson } from '#lib/query/query.ts';
 
 const respond = vi.mocked(request);
-const query = { expectedResultType: 'COUNT' } as QueryInterfaceV3;
+const query = { expectedResultType: 'COUNT' } as QueryJson;
 
 beforeEach(() => respond.mockReset());
 

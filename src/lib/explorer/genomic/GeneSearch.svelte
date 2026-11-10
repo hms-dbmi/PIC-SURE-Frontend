@@ -9,14 +9,21 @@
   import Consequence from '#lib/explorer/genomic/gene/Consequence.svelte';
   import Summary from '#lib/explorer/genomic/gene/Summary.svelte';
 
-  import { selectedGenes, clearGeneFilters } from '#lib/query/GeneFilter.ts';
+  import { genomicDraft } from '#lib/query/genomicDraft.svelte.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
 
   let { class: className = '' }: { class: string } = $props();
 
   function clearSelectedGenes() {
     log(createLog('ACTION', 'genomic.clear_genes'));
-    selectedGenes.set([]);
+    genomicDraft.genes = [];
+  }
+
+  // The consequence tree reads the draft only when it's built, so clearing rebuilds it.
+  let clears = $state(0);
+  function clearFilters() {
+    genomicDraft.clearGenes();
+    clears++;
   }
 
   const helpText = $derived(config.branding.help.popups.genomicFilter);
@@ -53,7 +60,9 @@
           log(createLog('ACTION', 'genomic.help_click', { section: 'consequence' }))}
       />
     {/snippet}
-    <Consequence />
+    {#key clears}
+      <Consequence />
+    {/key}
   </Panel>
   <Panel data-testid="genomic-frequency-panel" title="Select Variant Frequency">
     {#snippet help()}
@@ -73,7 +82,7 @@
         variant="outlined-surface"
         size="xs"
         data-testid="genomic-gene-clear-filters"
-        onclick={clearGeneFilters}>Clear</Button
+        onclick={clearFilters}>Clear</Button
       >
     {/snippet}
     <Summary />

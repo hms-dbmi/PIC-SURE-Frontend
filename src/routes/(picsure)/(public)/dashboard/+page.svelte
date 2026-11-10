@@ -1,54 +1,32 @@
 <script lang="ts">
-  import { onDestroy, onMount } from 'svelte';
-  import type { Unsubscriber } from 'svelte/store';
-
   import { config } from '#lib/config/config.svelte.ts';
   import Content from '#lib/shell/Content.svelte';
   import Datatable from '#lib/ui/datatable/StaticTable.svelte';
   import DashboardLink from './DashboardLink.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
 
-  import { columns, loadDashboardData, rows } from './dashboard.ts';
-
-  import type { Column } from '#lib/ui/datatable/types.ts';
-  import { type DashboardRow, activeRow } from './dashboard.ts';
+  import { Dashboard, type DashboardRow } from './dashboard.svelte.ts';
   import Drawer from '#lib/ui/dialog/Drawer.svelte';
   import DashboardDrawer from './DashboardDrawer.svelte';
   import Loading from '#lib/ui/Loading.svelte';
 
-  import { subscribeOnChange } from '#lib/utils/subscribers.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
 
   const tableName = 'ExplorerTable';
-
-  let unsubColumns: Unsubscriber;
-  let unsubRows: Unsubscriber;
-
-  let currentColumns: Column[] = $state([]);
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-  let currentRows: DashboardRow[] = $state([]);
 
   const cellOverides = {
     additional_info_link: DashboardLink,
   };
 
-  const dataLoadPromise = loadDashboardData();
+  const dashboard = new Dashboard();
+  const dataLoadPromise = dashboard.load();
 
   let drawerOpen = $state(false);
-
-  onMount(() => {
-    unsubColumns = subscribeOnChange(columns, (newCols) => (currentColumns = newCols));
-    unsubRows = subscribeOnChange(rows, (newRows) => (currentRows = newRows));
-  });
-
-  onDestroy(() => {
-    unsubColumns && unsubColumns();
-    unsubRows && unsubRows();
-  });
+  let activeRow: DashboardRow = $state.raw({});
 
   function rowClickHandler(row: DashboardRow) {
     log(createLog('ACTION', 'dashboard.row_click', { dataset: row.dataset_id, name: row.name }));
-    $activeRow = row;
+    activeRow = row;
     drawerOpen = true;
   }
 </script>
@@ -66,8 +44,8 @@
         data-testid="dashboard-table"
         id="dashboard-table"
         ariaLabel="Data dashboard"
-        data={currentRows}
-        columns={currentColumns}
+        data={dashboard.rows}
+        columns={dashboard.columns}
         {cellOverides}
         showPagination={false}
         searchable={false}
@@ -83,5 +61,5 @@
   </section>
 </Content>
 <Drawer bind:open={drawerOpen} size="half" aria-label="Dataset details">
-  <DashboardDrawer />
+  <DashboardDrawer row={activeRow} />
 </Drawer>

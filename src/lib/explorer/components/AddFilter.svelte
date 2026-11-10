@@ -3,13 +3,14 @@
 
   import { toaster } from '#lib/ui/toaster.ts';
   import type { SearchResult } from '#lib/explorer/types.ts';
-  import { addFilter, updateFilter, enrichFilterDetails } from '#lib/query/filters.ts';
+  import { filterState } from '#lib/query/filters.svelte.ts';
   import { activeRow } from '#lib/explorer/ExpandableRow.ts';
   import {
     type Filter,
     createCategoricalFilter,
     createNumericFilter,
     createRequiredFilter,
+    studyLabel,
   } from '#lib/query/filter.svelte.ts';
   import { getConceptDetails } from '#lib/explorer/Dictionary.ts';
   import { panelOpen } from '#lib/explorer/panel.ts';
@@ -44,10 +45,7 @@
     if (existingFilter) {
       display = data?.display || '';
       description = data?.description || '';
-      studyDisplay =
-        data.studyAcronym && data.dataset
-          ? `${data.studyAcronym} (${data.dataset})`
-          : data.studyAcronym || data.dataset || '';
+      studyDisplay = studyLabel(data);
       if (existingFilter.filterType === 'Categorical') {
         if (existingFilter.categoryValues.length === 0) {
           selectedOptions = data?.values || [];
@@ -105,11 +103,11 @@
     }
     if (!filter) return; //todo errors
     if (existingFilter) {
-      updateFilter(existingFilter.uuid, filter);
+      filterState.update(existingFilter.uuid, filter);
     } else {
-      addFilter(filter);
+      filterState.add(filter);
     }
-    enrichFilterDetails(filter, data.conceptPath, data.dataset);
+    filterState.enrich(filter, data.conceptPath, data.dataset);
     finish();
   }
 

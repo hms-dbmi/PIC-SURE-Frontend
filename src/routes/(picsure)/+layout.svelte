@@ -5,12 +5,7 @@
 
   import Toaster from '#lib/ui/Toaster.svelte';
 
-  import {
-    hasInvalidFilter,
-    hasGenomicFilter,
-    hasUnallowedFilter,
-    filterWarning,
-  } from '#lib/query/filters.ts';
+  import { filterState } from '#lib/query/filters.svelte.ts';
 
   import Shell from '#lib/shell/Shell.svelte';
   import Navigation from '#lib/shell/Navigation.svelte';
@@ -36,13 +31,14 @@
     const notAuthorized =
       !page.url.pathname.includes('/explorer') &&
       to?.url.pathname.includes('/explorer') &&
-      $hasInvalidFilter;
+      filterState.hasInvalidFilter;
     const stigmatizing =
-      to?.url.pathname.includes('/discover') && ($hasGenomicFilter || $hasUnallowedFilter);
+      to?.url.pathname.includes('/discover') &&
+      (filterState.hasGenomicFilter || filterState.hasUnallowedFilter);
 
     if (stigmatizing || notAuthorized) {
-      if (stigmatizing) $filterWarning = 'stigmatizing';
-      else if (notAuthorized) $filterWarning = 'notAuthorized';
+      if (stigmatizing) filterState.warning = 'stigmatizing';
+      else if (notAuthorized) filterState.warning = 'notAuthorized';
 
       cancel();
       filterWarningModal = true;

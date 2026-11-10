@@ -6,16 +6,17 @@
 
   import {
     loadQuerySummaryData,
-    estimateV3,
+    estimateQuery,
     type QuerySummaryData,
     type QueryEstimate,
-  } from '../../query/restore';
+  } from '#lib/query/restore.ts';
 
-  import { QueryV3 } from '#lib/query/query.ts';
-  import { QueryVersion } from '#lib/datasets/dataset.ts';
-  import { queryV2ToV3, type QueryV2 } from '#lib/query/v2.ts';
+  import type { Query } from '#lib/query/query.ts';
+  import { QueryVersion } from '#lib/api/picsure/datasets.ts';
+  import { ENSURE_MAX_DEPTH, getConceptDetails } from '#lib/explorer/Dictionary.ts';
+  import { getConceptTree } from '#lib/api/picsure/dictionary.ts';
 
-  import { genomicFilters, allFilters, setFilterTree } from '#lib/query/filters.ts';
+  import { filterState } from '#lib/query/filters.svelte.ts';
   import { exports } from '#lib/explorer/export/Export.ts';
 
   import FiltersSummary from '#lib/datasets/components/FiltersSummary.svelte';
@@ -28,23 +29,25 @@
   import Button from '#lib/ui/Button.svelte';
   import { buttonSizes } from '#lib/ui/button.ts';
 
-  let {
-    query,
-    version,
-    name,
-  }: {
-    query: QueryV2 | QueryV3;
-    version: string;
+  interface Props {
+    query: Query;
+    sourceVersion: QueryVersion;
     name?: string;
-  } = $props();
+  }
+
+  let { query, sourceVersion, name }: Props = $props();
 
   let modal = $state(false);
-  let hasExistingFilters = $derived($allFilters.length > 0);
-  let queryV3: QueryV3 = $derived(
-    new QueryV3(version === QueryVersion.V2 ? queryV2ToV3(query as QueryV2) : (query as QueryV3)),
+  let hasExistingFilters = $derived(filterState.all.length > 0);
+  let estimate: QueryEstimate = $derived(estimateQuery(query));
+  let queryData: QuerySummaryData = $derived(
+    loadQuerySummaryData(query, {
+      getConceptDetails,
+      getConceptTree: (dataset, conceptPath) =>
+        getConceptTree(dataset, ENSURE_MAX_DEPTH, conceptPath),
+      bypassConceptLookup: config.settings.dataset.bypassConceptLookup,
+    }),
   );
-  let estimate: QueryEstimate = $derived(estimateV3(queryV3));
-  let queryData: QuerySummaryData = $derived(loadQuerySummaryData(queryV3));
 
   async function setFilters() {
     modal = false;
@@ -54,17 +57,18 @@
       queryData.genomicFilters,
     ]);
     exports.set(exportdata);
-    setFilterTree(filterdata);
-    genomicFilters.set(genomicData);
+    filterState.restore(filterdata, genomicData);
+    // Success toasts hide after two seconds; raised before the navigation, it can expire while
+    // the explorer renders.
+    await goto(resolve('explorer'));
     toaster.success({
       description: `Filters restored for ${name ? name + ' dataset' : 'dataset'}.`,
     });
-    goto(resolve('explorer'));
   }
 
   let restoreQueryButton = $derived(
-    version === QueryVersion.V3 ||
-      (version === QueryVersion.V2 && config.features.restoreV2queries),
+    sourceVersion === QueryVersion.V3 ||
+      (sourceVersion === QueryVersion.V2 && config.features.restoreV2queries),
   );
 </script>
 
@@ -125,7 +129,7 @@
   {/if}
 {/await}
 
-<section data-testid="dataset-filters-container" class={`my-4 query-version-${version}`}>
+<section data-testid="dataset-filters-container" class={`my-4 query-version-${sourceVersion}`}>
   <h2 class="text-left h4 mb-2 mt-6">Filters Applied</h2>
   {#await Promise.all([queryData.filterTree, queryData.genomicFilters])}
     <FilterCardPlaceholder numCards={estimate.filters} />

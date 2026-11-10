@@ -1,19 +1,18 @@
 <script lang="ts">
-  import { selectedConsequence } from '#lib/query/GeneFilter.ts';
-  import { addConsquence, removeConsequence } from '#lib/query/GeneFilter.ts';
-  import variantData from '#lib/explorer/genomic/variant-data.json';
+  import { genomicDraft } from '#lib/query/genomicDraft.svelte.ts';
+  import variantData from '#lib/query/variant-data.json';
   import TreeView from '#lib/ui/tree/TreeView.svelte';
   import type { TreeNodeInit } from '#lib/ui/tree/treeModel.svelte.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
 
   function loggedAddConsequence(value: string) {
     log(createLog('ACTION', 'genomic.consequence_select', { consequence: value }));
-    addConsquence(value);
+    genomicDraft.addConsequence(value);
   }
 
   function loggedRemoveConsequence(value: string) {
     log(createLog('ACTION', 'genomic.consequence_select', { consequence: value }));
-    removeConsequence(value);
+    genomicDraft.removeConsequence(value);
   }
 
   // The tree owns the selection once built, so it reads the stored consequences only here.
@@ -23,7 +22,7 @@
       value: child,
       label: child,
       payload: child,
-      selected: $selectedConsequence.includes(child),
+      selected: genomicDraft.consequenceSelection.includes(child),
     }));
     return {
       name: 'severity',

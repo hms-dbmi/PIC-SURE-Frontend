@@ -364,7 +364,7 @@ export class AdvancedFilteringPage {
   async expectApplySucceeded() {
     // User should still be on the advanced-filtering page
     expect(this.page.url()).toContain('/advanced-filtering');
-    // The sidebar should have opened (panelOpen auto-opens on filter change)
+    // Applying opens the sidebar
     await expect(this.page.locator('#results-side-panel')).toBeVisible();
   }
 

@@ -7,7 +7,7 @@ vi.mock('$app/paths', () => ({
   resolve: (path: string) => (path.startsWith('/') ? path : `/${path}`),
 }));
 
-import { resultProviders, type CountProvider } from '#lib/query/counts/providers.ts';
+import { resultProviders, type QueryCountProvider } from '#lib/query/counts/providers.ts';
 import type { QueryDescriptor } from '#lib/query/descriptor.svelte.ts';
 
 const descriptor: QueryDescriptor = {
@@ -17,7 +17,7 @@ const descriptor: QueryDescriptor = {
 };
 
 describe('query:patientCount provider', () => {
-  const provider: CountProvider = resultProviders['query:patientCount'];
+  const provider: QueryCountProvider = resultProviders['query:patientCount'];
 
   it('builds a COUNT request for the auth (non-open) path', () => {
     const req = provider.buildRequest(descriptor);

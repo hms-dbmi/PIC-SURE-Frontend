@@ -2,7 +2,7 @@
   import IconButton from '#lib/ui/IconButton.svelte';
   import { toaster } from '#lib/ui/toaster.ts';
 
-  import { toggleArchived } from '#lib/datasets/datasets.svelte.ts';
+  import { datasets } from '#lib/datasets/datasets.svelte.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
 
   interface Props {
@@ -23,7 +23,7 @@
 
     pending = true;
     try {
-      await toggleArchived(data.cell);
+      await datasets.toggleArchived(data.cell);
     } catch {
       toaster.error({ title: 'An error occurred when updating dataset.' });
     } finally {

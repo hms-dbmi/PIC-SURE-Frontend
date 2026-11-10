@@ -2,10 +2,15 @@
   import Button from '#lib/ui/Button.svelte';
   import { Genotype, type SNP } from '#lib/query/genomic.ts';
 
-  let { snp, onsave = () => {} }: { snp: SNP; onsave: (snp: SNP) => void } = $props();
+  interface Props {
+    snp: SNP;
+    onsave?: (snp: SNP) => void;
+  }
 
-  // svelte-ignore state_referenced_locally
-  let constraint: string = $state(snp.constraint);
+  let { snp, onsave = () => {} }: Props = $props();
+
+  // Edited locally, and reset whenever another SNP is opened.
+  let constraint: string = $derived(snp.constraint);
 </script>
 
 <span class="mr-4">{snp.search}</span>

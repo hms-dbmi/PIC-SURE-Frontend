@@ -1,7 +1,7 @@
 <script lang="ts">
   import ExportStore from '#lib/explorer/export/Export.ts';
   import { onMount } from 'svelte';
-  import { allFilters } from '#lib/query/filters.ts';
+  import { filterState } from '#lib/query/filters.svelte.ts';
   import { resultCountsState } from '#lib/query/counts/resultCounts.svelte.ts';
   import type { AnyRecordOfFilterInterface } from '#lib/query/filter.svelte.ts';
 
@@ -9,7 +9,7 @@
 
   let participantsCount = $derived(resultCountsState.total);
   let anyRecordsOfCount = $derived.by(() => {
-    const anyRecordsOfFilters = $allFilters.filter(
+    const anyRecordsOfFilters = filterState.all.filter(
       (filter) => filter.filterType === 'AnyRecordOf',
     ) as AnyRecordOfFilterInterface[];
     return (
@@ -17,7 +17,7 @@
       anyRecordsOfFilters.length
     );
   });
-  let variablesCount = $derived($allFilters.length + $exports.length + anyRecordsOfCount);
+  let variablesCount = $derived(filterState.all.length + $exports.length + anyRecordsOfCount);
   let dataPoints = $derived(
     typeof participantsCount === 'number' ? participantsCount * variablesCount : 0,
   );

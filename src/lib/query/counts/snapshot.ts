@@ -1,6 +1,9 @@
-import type { PatientCount } from '#lib/query/counts/Stat.ts';
-import { countResult, isObfuscatedBelowThreshold } from '#lib/query/counts/format.ts';
-import type { CountValue } from '#lib/query/counts/providers.ts';
+import {
+  countResult,
+  isObfuscatedBelowThreshold,
+  type CountValue,
+  type PatientCount,
+} from '#lib/query/counts/format.ts';
 
 export interface ResultCountSummary {
   total: PatientCount;

@@ -1,48 +1,50 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-import { QueryV3, type GenomicFilterInterfacev3 } from '#lib/query/query.ts';
+import {
+  Operator,
+  createQuery,
+  parseQuery,
+  toQueryJson,
+  type GenomicClause,
+  type Query,
+} from '#lib/query/query.ts';
 import type { SearchResult } from '#lib/explorer/types.ts';
-import type {
-  FilterGroupInterface,
-  AnyRecordOfFilterInterface,
-  GenomicFilterInterface,
+import {
+  createAnyRecordOfFilter,
+  createCategoricalFilter,
+  createFilterGroup,
+  createGenomicFilter,
+  createNumericFilter,
+  createRequiredFilter,
+  createSnpsFilter,
+  type AnyRecordOfFilterInterface,
+  type FilterGroupInterface,
+  type FilterInterface,
+  type GenomicFilterInterface,
 } from '#lib/query/filter.svelte.ts';
-import { getConceptDetails, getConceptTree } from '#lib/explorer/Dictionary.ts';
-import { config } from '#lib/config/config.svelte.ts';
+import { LogicTree } from '#lib/query/logicTree.svelte.ts';
+import { genomicToClauses, treeToClause } from '#lib/query/build.ts';
 
 import {
-  genomicV3ToFilter,
+  genomicClausesToFilter,
+  genomicClausesToFilters,
+  estimateQuery,
   pathToSearchResult,
   queryToFilterTree,
   loadQuerySummaryData,
+  type ConceptLookup,
 } from '#lib/query/restore.ts';
 
 // Silence console errors logs
 vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
-// Mock modules with SvelteKit / store dependencies
-vi.mock('#lib/explorer/Dictionary.ts', () => ({
-  getConceptDetails: vi.fn(),
-  getConceptTree: vi.fn(),
-  ENSURE_MAX_DEPTH: 100,
-}));
-
-vi.mock('#lib/config/config.svelte.ts', () => ({
-  config: {
-    settings: { dataset: { bypassConceptLookup: [] as string[] } },
-  },
-}));
-
-vi.mock('#lib/query/filters.ts', () => ({
-  createGroup: (nodes: unknown[], operator: string) => ({
-    children: nodes,
-    operator,
-    parent: undefined,
-  }),
-}));
-
-const mockGetConceptDetails = vi.mocked(getConceptDetails);
-const mockGetConceptTree = vi.mocked(getConceptTree);
+const mockGetConceptDetails = vi.fn<ConceptLookup['getConceptDetails']>();
+const mockGetConceptTree = vi.fn<ConceptLookup['getConceptTree']>();
+const lookup = {
+  getConceptDetails: mockGetConceptDetails,
+  getConceptTree: mockGetConceptTree,
+  bypassConceptLookup: [] as string[],
+};
 
 function makeSearchResult(overrides: Partial<SearchResult> = {}): SearchResult {
   return {
@@ -58,8 +60,8 @@ function makeSearchResult(overrides: Partial<SearchResult> = {}): SearchResult {
   };
 }
 
-function makeV3Query(overrides: Partial<ConstructorParameters<typeof QueryV3>[0]> = {}): QueryV3 {
-  return new QueryV3({
+function makeQuery(overrides: Partial<Query> = {}): Query {
+  return createQuery({
     phenotypicClause: null,
     select: [],
     authorizationFilters: [],
@@ -71,10 +73,10 @@ function makeV3Query(overrides: Partial<ConstructorParameters<typeof QueryV3>[0]
   });
 }
 
-describe('genomicV3ToFilter', () => {
+describe('genomicClausesToFilter', () => {
   it('maps Gene_with_variant values', () => {
     // Given / When
-    const filter = genomicV3ToFilter([
+    const filter = genomicClausesToFilter([
       { key: 'Gene_with_variant', values: ['BRCA1', 'TP53'] },
     ]) as GenomicFilterInterface;
 
@@ -86,7 +88,7 @@ describe('genomicV3ToFilter', () => {
 
   it('maps Variant_consequence_calculated values', () => {
     // Given / When
-    const filter = genomicV3ToFilter([
+    const filter = genomicClausesToFilter([
       { key: 'Variant_consequence_calculated', values: ['stop_gained', 'missense_variant'] },
     ]) as GenomicFilterInterface;
 
@@ -97,7 +99,7 @@ describe('genomicV3ToFilter', () => {
 
   it('maps Variant_frequency_as_text values', () => {
     // Given / WhenGenomicFilterInterface
-    const filter = genomicV3ToFilter([
+    const filter = genomicClausesToFilter([
       { key: 'Variant_frequency_as_text', values: ['Rare'] },
     ]) as GenomicFilterInterface;
 
@@ -107,7 +109,7 @@ describe('genomicV3ToFilter', () => {
 
   it('merges all keys from multiple entries into one filter', () => {
     // Given / When
-    const filter = genomicV3ToFilter([
+    const filter = genomicClausesToFilter([
       { key: 'Gene_with_variant', values: ['BRCA1'] },
       { key: 'Variant_consequence_calculated', values: ['missense_variant'] },
       { key: 'Variant_frequency_as_text', values: ['Rare'] },
@@ -122,7 +124,7 @@ describe('genomicV3ToFilter', () => {
 
   it('converts min and max to strings', () => {
     // Given / When
-    const filter = genomicV3ToFilter([
+    const filter = genomicClausesToFilter([
       { key: 'Gene_with_variant', min: 0.001, max: 0.05 },
     ]) as GenomicFilterInterface;
 
@@ -133,7 +135,7 @@ describe('genomicV3ToFilter', () => {
 
   it('omits min/max when not present', () => {
     // Given / When
-    const filter = genomicV3ToFilter([
+    const filter = genomicClausesToFilter([
       { key: 'Gene_with_variant', values: ['BRCA1'] },
     ]) as GenomicFilterInterface;
 
@@ -144,9 +146,9 @@ describe('genomicV3ToFilter', () => {
 
   it('omits min/max when the saved query carries them as null', () => {
     // Given / When
-    const filter = genomicV3ToFilter([
+    const filter = genomicClausesToFilter([
       { key: 'Gene_with_variant', values: ['HTR6'], min: null, max: null },
-    ] as unknown as GenomicFilterInterfacev3[]) as GenomicFilterInterface;
+    ] as unknown as GenomicClause[]) as GenomicFilterInterface;
 
     // Then
     expect(filter.Gene_with_variant).toEqual(['HTR6']);
@@ -156,7 +158,7 @@ describe('genomicV3ToFilter', () => {
 
   it('does not crash on an unknown key', () => {
     // Given / When
-    const filter = genomicV3ToFilter([
+    const filter = genomicClausesToFilter([
       { key: 'Unknown_key', values: ['x'] },
     ]) as GenomicFilterInterface;
 
@@ -169,7 +171,7 @@ describe('genomicV3ToFilter', () => {
 describe('pathToSearchResult', () => {
   beforeEach(() => {
     mockGetConceptDetails.mockResolvedValue(makeSearchResult());
-    config.settings.dataset.bypassConceptLookup = [];
+    lookup.bypassConceptLookup = [];
   });
 
   it('extracts dataset from the first path segment', async () => {
@@ -180,7 +182,7 @@ describe('pathToSearchResult', () => {
     );
 
     // When
-    const result = await pathToSearchResult(path);
+    const result = await pathToSearchResult(lookup, path);
 
     // Then
     expect(result.dataset).toBe('open_access-1000Genomes');
@@ -200,7 +202,7 @@ describe('pathToSearchResult', () => {
     );
 
     // When
-    const result = await pathToSearchResult('\\\\dataset\\\\variable\\\\');
+    const result = await pathToSearchResult(lookup, '\\\\dataset\\\\variable\\\\');
 
     // Then
     expect(result.name).toBe('API Name');
@@ -215,7 +217,7 @@ describe('pathToSearchResult', () => {
     mockGetConceptDetails.mockResolvedValueOnce(makeSearchResult({ type: 'Continuous' }));
 
     // When
-    const result = await pathToSearchResult('\\\\dataset\\\\variable\\\\', 'Continuous');
+    const result = await pathToSearchResult(lookup, '\\\\dataset\\\\variable\\\\', 'Continuous');
 
     // Then
     expect(result.type).toBe('Continuous');
@@ -223,7 +225,7 @@ describe('pathToSearchResult', () => {
 
   it('defaults type to Categorical', async () => {
     // When
-    const result = await pathToSearchResult('\\\\dataset\\\\variable\\\\');
+    const result = await pathToSearchResult(lookup, '\\\\dataset\\\\variable\\\\');
 
     // Then
     expect(result.type).toBe('Categorical');
@@ -232,10 +234,10 @@ describe('pathToSearchResult', () => {
   it('skips the dictionary lookup for a concept path in the bypass list', async () => {
     // Given
     const path = '\\\\_Topmed Study Accession with Subject ID\\\\';
-    config.settings.dataset.bypassConceptLookup = [path];
+    lookup.bypassConceptLookup = [path];
 
     // When
-    const result = await pathToSearchResult(path);
+    const result = await pathToSearchResult(lookup, path);
 
     // Then
     expect(mockGetConceptDetails).not.toHaveBeenCalledWith(path, expect.anything());
@@ -249,13 +251,11 @@ describe('pathToSearchResult', () => {
 
   it('still looks up concept details for paths not in the bypass list', async () => {
     // Given
-    config.settings.dataset.bypassConceptLookup = [
-      '\\\\_Topmed Study Accession with Subject ID\\\\',
-    ];
+    lookup.bypassConceptLookup = ['\\\\_Topmed Study Accession with Subject ID\\\\'];
     const path = '\\\\dataset\\\\variable\\\\';
 
     // When
-    await pathToSearchResult(path);
+    await pathToSearchResult(lookup, path);
 
     // Then
     expect(mockGetConceptDetails).toHaveBeenCalledWith(path, 'dataset');
@@ -277,11 +277,11 @@ describe('queryToFilterTree', () => {
 
   it('returns an empty tree when phenotypicClause is null', async () => {
     // Given
-    const query = makeV3Query({ phenotypicClause: null });
+    const query = makeQuery({ phenotypicClause: null });
     const errors: string[] = [];
 
     // When
-    const tree = await queryToFilterTree(query, errors);
+    const tree = await queryToFilterTree(lookup, query, errors);
 
     // Then
     expect(errors).toHaveLength(0);
@@ -290,7 +290,7 @@ describe('queryToFilterTree', () => {
 
   it('keeps a saved categorical filter categorical when the API sends null bounds', async () => {
     // Given
-    const query = QueryV3.fromSerialized({
+    const query = parseQuery({
       phenotypicClause: {
         not: false,
         operator: 'AND',
@@ -309,7 +309,7 @@ describe('queryToFilterTree', () => {
     const errors: string[] = [];
 
     // When
-    const tree = await queryToFilterTree(query, errors);
+    const tree = await queryToFilterTree(lookup, query, errors);
 
     // Then
     expect(errors).toHaveLength(0);
@@ -321,7 +321,7 @@ describe('queryToFilterTree', () => {
 
   it('handles a single top-level PhenotypicFilter', async () => {
     // Given
-    const query = makeV3Query({
+    const query = makeQuery({
       phenotypicClause: {
         type: 'PhenotypicFilter',
         phenotypicFilterType: 'FILTER',
@@ -333,7 +333,7 @@ describe('queryToFilterTree', () => {
     const errors: string[] = [];
 
     // When
-    const tree = await queryToFilterTree(query, errors);
+    const tree = await queryToFilterTree(lookup, query, errors);
 
     // Then
     expect(errors).toHaveLength(0);
@@ -343,7 +343,7 @@ describe('queryToFilterTree', () => {
 
   it('flattens a top-level AND subquery into root children', async () => {
     // Given
-    const query = makeV3Query({
+    const query = makeQuery({
       phenotypicClause: {
         type: 'PhenotypicSubquery',
         operator: 'AND',
@@ -369,7 +369,7 @@ describe('queryToFilterTree', () => {
     const errors: string[] = [];
 
     // When
-    const tree = await queryToFilterTree(query, errors);
+    const tree = await queryToFilterTree(lookup, query, errors);
 
     // Then — both filters are direct children of root, no extra wrapping group
     expect(errors).toHaveLength(0);
@@ -377,9 +377,39 @@ describe('queryToFilterTree', () => {
     expect(tree.leafNodes).toHaveLength(2);
   });
 
+  it('restores top-level filters that can be removed from the tree', async () => {
+    // Given
+    const filter = (conceptPath: string) => ({
+      type: 'PhenotypicFilter' as const,
+      phenotypicFilterType: 'FILTER' as const,
+      conceptPath,
+      not: false,
+      values: ['x'],
+    });
+    const query = makeQuery({
+      phenotypicClause: {
+        type: 'PhenotypicSubquery',
+        operator: 'OR',
+        not: false,
+        phenotypicClauses: [
+          filter('\\\\dataset\\\\apples\\\\'),
+          filter('\\\\dataset\\\\banana\\\\'),
+        ],
+      },
+    });
+    const tree = await queryToFilterTree(lookup, query, []);
+
+    // When
+    tree.remove(tree.root.children[0]);
+
+    // Then
+    expect(tree.root.children).toHaveLength(1);
+    expect(tree.root.operator).toBe('OR');
+  });
+
   it('OR root group is retained', async () => {
     // Given
-    const query = makeV3Query({
+    const query = makeQuery({
       phenotypicClause: {
         type: 'PhenotypicSubquery',
         operator: 'OR',
@@ -405,7 +435,7 @@ describe('queryToFilterTree', () => {
     const errors: string[] = [];
 
     // When
-    const tree = await queryToFilterTree(query, errors);
+    const tree = await queryToFilterTree(lookup, query, errors);
 
     // Then — root has one OR group child containing both filters
     expect(errors).toHaveLength(0);
@@ -416,7 +446,7 @@ describe('queryToFilterTree', () => {
 
   it('creates a required filter for REQUIRED phenotypicFilterType', async () => {
     // Given
-    const query = makeV3Query({
+    const query = makeQuery({
       phenotypicClause: {
         type: 'PhenotypicFilter',
         phenotypicFilterType: 'REQUIRED',
@@ -427,7 +457,7 @@ describe('queryToFilterTree', () => {
     const errors: string[] = [];
 
     // When
-    const tree = await queryToFilterTree(query, errors);
+    const tree = await queryToFilterTree(lookup, query, errors);
 
     // Then
     expect(errors).toHaveLength(0);
@@ -438,7 +468,7 @@ describe('queryToFilterTree', () => {
 
   it('creates an AnyRecordOf filter using concept tree children', async () => {
     // Given — tree returns two children
-    const query = makeV3Query({
+    const query = makeQuery({
       phenotypicClause: {
         type: 'PhenotypicFilter',
         phenotypicFilterType: 'ANY_RECORD_OF',
@@ -449,7 +479,7 @@ describe('queryToFilterTree', () => {
     const errors: string[] = [];
 
     // When
-    const tree = await queryToFilterTree(query, errors);
+    const tree = await queryToFilterTree(lookup, query, errors);
 
     // Then — concepts come from the tree children, not just the root path
     expect(errors).toHaveLength(0);
@@ -461,10 +491,10 @@ describe('queryToFilterTree', () => {
     ]);
   });
 
-  it('calls getConceptTree with ENSURE_MAX_DEPTH and the concept path for ANY_RECORD_OF', async () => {
+  it('asks the lookup for the concept tree of an ANY_RECORD_OF concept', async () => {
     // Given
     const conceptPath = '\\\\dataset\\\\variable\\\\';
-    const query = makeV3Query({
+    const query = makeQuery({
       phenotypicClause: {
         type: 'PhenotypicFilter',
         phenotypicFilterType: 'ANY_RECORD_OF',
@@ -474,16 +504,16 @@ describe('queryToFilterTree', () => {
     });
 
     // When
-    await queryToFilterTree(query, []);
+    await queryToFilterTree(lookup, query, []);
 
     // Then
-    expect(mockGetConceptTree).toHaveBeenCalledWith('dataset', 100, conceptPath);
+    expect(mockGetConceptTree).toHaveBeenCalledWith('dataset', conceptPath);
   });
 
   it('falls back to root path and records error when getConceptTree fails for ANY_RECORD_OF', async () => {
     // Given — concept details succeed but tree fetch fails
     mockGetConceptTree.mockRejectedValueOnce(new Error('tree API unavailable'));
-    const query = makeV3Query({
+    const query = makeQuery({
       phenotypicClause: {
         type: 'PhenotypicFilter',
         phenotypicFilterType: 'ANY_RECORD_OF',
@@ -494,7 +524,7 @@ describe('queryToFilterTree', () => {
     const errors: string[] = [];
 
     // When
-    const tree = await queryToFilterTree(query, errors);
+    const tree = await queryToFilterTree(lookup, query, errors);
 
     // Then — filter is still created (degraded mode), error path is recorded
     expect(tree.leafNodes).toHaveLength(1);
@@ -506,7 +536,7 @@ describe('queryToFilterTree', () => {
     // Given — both API calls fail
     mockGetConceptDetails.mockRejectedValueOnce(new Error('detail API unavailable'));
     mockGetConceptTree.mockRejectedValueOnce(new Error('tree API unavailable'));
-    const query = makeV3Query({
+    const query = makeQuery({
       phenotypicClause: {
         type: 'PhenotypicFilter',
         phenotypicFilterType: 'ANY_RECORD_OF',
@@ -517,7 +547,7 @@ describe('queryToFilterTree', () => {
     const errors: string[] = [];
 
     // When
-    const tree = await queryToFilterTree(query, errors);
+    const tree = await queryToFilterTree(lookup, query, errors);
 
     // Then — filter is still created (fully degraded), path appears in errors
     expect(tree.leafNodes).toHaveLength(1);
@@ -529,7 +559,7 @@ describe('queryToFilterTree', () => {
     // Given
     const failingPath = '\\\\dataset\\\\sex\\\\';
     mockGetConceptDetails.mockRejectedValueOnce(new Error('detail API unavailable'));
-    const query = makeV3Query({
+    const query = makeQuery({
       phenotypicClause: {
         type: 'PhenotypicFilter',
         phenotypicFilterType: 'FILTER',
@@ -541,7 +571,7 @@ describe('queryToFilterTree', () => {
     const errors: string[] = [];
 
     // When
-    const tree = await queryToFilterTree(query, errors);
+    const tree = await queryToFilterTree(lookup, query, errors);
 
     // Then — filter still created with fallback, path in errors
     expect(errors).toEqual([failingPath]);
@@ -553,7 +583,7 @@ describe('queryToFilterTree', () => {
     // Given
     const failingPath = '\\\\dataset\\\\variable\\\\';
     mockGetConceptDetails.mockRejectedValueOnce(new Error('detail API unavailable'));
-    const query = makeV3Query({
+    const query = makeQuery({
       phenotypicClause: {
         type: 'PhenotypicFilter',
         phenotypicFilterType: 'REQUIRED',
@@ -564,7 +594,7 @@ describe('queryToFilterTree', () => {
     const errors: string[] = [];
 
     // When
-    const tree = await queryToFilterTree(query, errors);
+    const tree = await queryToFilterTree(lookup, query, errors);
 
     // Then — required filter still created with fallback, path in errors
     expect(errors).toEqual([failingPath]);
@@ -576,7 +606,7 @@ describe('queryToFilterTree', () => {
     // Given
     const failingPath = '\\\\dataset\\\\age\\\\';
     mockGetConceptDetails.mockRejectedValueOnce(new Error('detail API unavailable'));
-    const query = makeV3Query({
+    const query = makeQuery({
       phenotypicClause: {
         type: 'PhenotypicFilter',
         phenotypicFilterType: 'FILTER',
@@ -589,7 +619,7 @@ describe('queryToFilterTree', () => {
     const errors: string[] = [];
 
     // When
-    const tree = await queryToFilterTree(query, errors);
+    const tree = await queryToFilterTree(lookup, query, errors);
 
     // Then — numeric filter still created with fallback, path in errors
     expect(errors).toEqual([failingPath]);
@@ -604,7 +634,7 @@ describe('queryToFilterTree', () => {
     mockGetConceptDetails
       .mockRejectedValueOnce(new Error('detail API unavailable'))
       .mockRejectedValueOnce(new Error('detail API unavailable'));
-    const query = makeV3Query({
+    const query = makeQuery({
       phenotypicClause: {
         type: 'PhenotypicSubquery',
         operator: 'AND',
@@ -630,7 +660,7 @@ describe('queryToFilterTree', () => {
     const errors: string[] = [];
 
     // When
-    const tree = await queryToFilterTree(query, errors);
+    const tree = await queryToFilterTree(lookup, query, errors);
 
     // Then — both filters still created (degraded), both paths in errors
     expect(errors).toEqual(expect.arrayContaining([path1, path2]));
@@ -640,7 +670,7 @@ describe('queryToFilterTree', () => {
 
   it('creates a numeric filter when min or max is set', async () => {
     // Given
-    const query = makeV3Query({
+    const query = makeQuery({
       phenotypicClause: {
         type: 'PhenotypicFilter',
         phenotypicFilterType: 'FILTER',
@@ -653,7 +683,7 @@ describe('queryToFilterTree', () => {
     const errors: string[] = [];
 
     // When
-    const tree = await queryToFilterTree(query, errors);
+    const tree = await queryToFilterTree(lookup, query, errors);
 
     // Then
     expect(errors).toHaveLength(0);
@@ -661,8 +691,8 @@ describe('queryToFilterTree', () => {
   });
 });
 
-async function allLoadQuerySummaryData(query: QueryV3) {
-  const data = loadQuerySummaryData(query);
+async function allLoadQuerySummaryData(query: Query) {
+  const data = loadQuerySummaryData(query, lookup);
   return {
     exports: await data.exports,
     filterTree: await data.filterTree,
@@ -681,7 +711,7 @@ describe('loadQuerySummaryData', () => {
 
   it('V3: returns select paths as fields and maps genomicFilters', async () => {
     // Given
-    const query = makeV3Query({
+    const query = makeQuery({
       select: ['\\\\dataset\\\\variable1\\\\', '\\\\dataset\\\\variable2\\\\'],
       genomicFilters: [{ key: 'Gene_with_variant', values: ['BRCA1'] }],
     });
@@ -697,9 +727,43 @@ describe('loadQuerySummaryData', () => {
     expect(data.filterTree.leafNodes).toHaveLength(0);
   });
 
+  it('restores a saved SNP filter', async () => {
+    // Given
+    const query = makeQuery({
+      genomicFilters: [{ key: 'chr17,35269878,GT,A', values: ['1/1', '0/1'] }],
+    });
+
+    // When
+    const data = await allLoadQuerySummaryData(query);
+
+    // Then
+    expect(data.genomicFilters).toHaveLength(1);
+    expect(data.genomicFilters[0]).toMatchObject({
+      filterType: 'snp',
+      snpValues: [{ search: 'chr17,35269878,GT,A', constraint: '1/1,0/1' }],
+    });
+  });
+
+  it('restores gene and SNP clauses of one query as two filters', async () => {
+    // Given
+    const query = makeQuery({
+      genomicFilters: [
+        { key: 'Gene_with_variant', values: ['BRCA1'] },
+        { key: 'chr17,35269878,GT,A', values: ['0/1'] },
+      ],
+    });
+
+    // When
+    const data = await allLoadQuerySummaryData(query);
+
+    // Then
+    expect(data.genomicFilters.map((filter) => filter.filterType)).toEqual(['genomic', 'snp']);
+    expect(genomicToClauses(data.genomicFilters)).toEqual(query.genomicFilters);
+  });
+
   it('V3: builds filterTree from phenotypicClause', async () => {
     // Given
-    const query = makeV3Query({
+    const query = makeQuery({
       phenotypicClause: {
         type: 'PhenotypicFilter',
         phenotypicFilterType: 'FILTER',
@@ -714,5 +778,114 @@ describe('loadQuerySummaryData', () => {
 
     // Then
     expect(data.filterTree.leafNodes).toHaveLength(1);
+  });
+});
+
+const snpFilter = createSnpsFilter([
+  { search: 'chr17,35269878,GT,A', constraint: '1/1,0/1' },
+  { search: 'chr1,12345,A,G', constraint: '0/1' },
+]);
+const geneFilter = createGenomicFilter({ Gene_with_variant: ['BRCA1'] });
+
+describe('estimateQuery', () => {
+  it('counts a placeholder card per restored filter', () => {
+    const query = makeQuery({
+      phenotypicClause: {
+        type: 'PhenotypicFilter',
+        phenotypicFilterType: 'REQUIRED',
+        conceptPath: '\\\\dataset\\\\age\\\\',
+        not: false,
+      },
+      select: ['\\\\dataset\\\\age\\\\'],
+      genomicFilters: genomicToClauses([geneFilter, snpFilter]),
+    });
+
+    expect(estimateQuery(query)).toEqual({ filters: 3, exports: 1 });
+  });
+});
+
+describe('round trip: tree → clause → tree', () => {
+  const concept = (conceptPath: string, children: SearchResult[] = []) =>
+    makeSearchResult({ conceptPath, dataset: 'dataset', children });
+
+  beforeEach(() => {
+    mockGetConceptDetails.mockImplementation((conceptPath) =>
+      Promise.resolve(concept(conceptPath)),
+    );
+    mockGetConceptTree.mockImplementation((_dataset, conceptPath) =>
+      Promise.resolve(concept(conceptPath, [concept(`${conceptPath}a\\`)])),
+    );
+  });
+
+  it('restores a filter tree that builds the same clause', async () => {
+    const tree = new LogicTree<FilterInterface>(createFilterGroup);
+    tree.add(
+      createCategoricalFilter(concept('\\dataset\\sex\\'), ['Male', 'Female']),
+      createFilterGroup(
+        [
+          createNumericFilter(concept('\\dataset\\age\\'), '1000', '2000.5'),
+          createRequiredFilter(concept('\\dataset\\bmi\\')),
+          createFilterGroup(
+            [
+              createNumericFilter(concept('\\dataset\\height\\'), undefined, '-3'),
+              createAnyRecordOfFilter(
+                concept('\\dataset\\visits\\'),
+                concept('\\dataset\\visits\\', [concept('\\dataset\\visits\\a\\')]),
+              ),
+            ],
+            Operator.AND,
+          ),
+        ],
+        Operator.OR,
+      ),
+    );
+    const clause = treeToClause(tree);
+    const errors: string[] = [];
+
+    const restored = await queryToFilterTree(
+      lookup,
+      createQuery({ phenotypicClause: clause }),
+      errors,
+    );
+
+    expect(errors).toEqual([]);
+    expect(treeToClause(restored)).toEqual(clause);
+    expect(restored.leafNodes.map((filter) => [filter.id, filter.filterType])).toEqual(
+      tree.leafNodes.map((filter) => [filter.id, filter.filterType]),
+    );
+  });
+
+  it('restores a single filter the same way, through the wire form', async () => {
+    const tree = new LogicTree<FilterInterface>(createFilterGroup);
+    tree.add(createCategoricalFilter(concept('\\dataset\\sex\\'), ['Male']));
+    const query = createQuery({ phenotypicClause: treeToClause(tree) });
+
+    const restored = await queryToFilterTree(lookup, parseQuery(toQueryJson(query)), []);
+
+    expect(toQueryJson(createQuery({ phenotypicClause: treeToClause(restored) }))).toEqual(
+      toQueryJson(query),
+    );
+  });
+
+  it.each([
+    {
+      name: 'gene values',
+      filter: { Gene_with_variant: ['BRCA1'], Variant_frequency_as_text: ['Rare'] },
+    },
+    { name: 'a range', filter: { min: '0.1', max: '5' } },
+  ])('restores a gene filter with $name to the same genomic clauses', ({ filter }) => {
+    const clauses = genomicToClauses([createGenomicFilter(filter)]);
+
+    expect(genomicToClauses([genomicClausesToFilter(clauses)])).toEqual(clauses);
+  });
+
+  it.each([
+    { name: 'a SNP filter', filters: () => [snpFilter] },
+    { name: 'a SNP filter before a gene filter', filters: () => [snpFilter, geneFilter] },
+    { name: 'a gene filter before a SNP filter', filters: () => [geneFilter, snpFilter] },
+  ])('restores $name to the same genomic clauses', ({ filters }) => {
+    const clauses = genomicToClauses(filters());
+
+    expect(genomicToClauses(genomicClausesToFilters(clauses))).toEqual(clauses);
   });
 });

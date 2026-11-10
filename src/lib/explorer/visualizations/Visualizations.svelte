@@ -10,7 +10,7 @@
     createContinuousPlot,
     createCategoryPlot,
   } from '#lib/explorer/visualizations/plotly.ts';
-  import { getQueryRequestV3 } from '#lib/query/build.ts';
+  import { buildRequest } from '#lib/query/build.ts';
   import {
     categoricalHasData,
     continuousHasData,
@@ -23,9 +23,8 @@
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import { isOpenAccess, useOpenAccess } from '#lib/explorer/mode.ts';
   import LogicTreeSummary from '#lib/explorer/advanced/LogicTreeSummary.svelte';
-  import { filters, filterTree, genomicFilters } from '#lib/query/filters.ts';
+  import { filterState } from '#lib/query/filters.svelte.ts';
   import { type Filter, type FilterGroupInterface } from '#lib/query/filter.svelte.ts';
-  import { get } from 'svelte/store';
 
   const LOADING_MESSAGES: TimedMessage[] = [
     { afterMs: 0, text: 'Generating visualizations…' },
@@ -56,7 +55,7 @@
   }
 
   async function loadPlotData() {
-    const plotFilters = get(filters);
+    const plotFilters = filterState.phenotypic;
     const visualizationFilters = plotFilters.filter(isVisualizationFilter);
     const subtitleByConceptPath = getSubtitleByConceptPath(plotFilters);
     const minimumCount = 1;
@@ -70,7 +69,7 @@
       subtitle: getSubtitle(data.conceptPath),
     });
 
-    const query = getQueryRequestV3();
+    const query = buildRequest(filterState.queryFilters);
 
     const openAccess = isOpenAccess();
     await getDistributions(query.query, { openEndpoint: useOpenAccess(openAccess), openAccess })
@@ -121,8 +120,8 @@
   All visualizations display the distributions of each variable filter for the specified cohort.
 </p>
 <LogicTreeSummary
-  root={$filterTree.root as FilterGroupInterface}
-  genomicFilters={$genomicFilters}
+  root={filterState.tree.root as FilterGroupInterface}
+  genomicFilters={filterState.genomic}
   widthClass="w-3/4"
 />
 {#if excludedVariables.length}

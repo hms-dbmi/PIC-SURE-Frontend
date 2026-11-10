@@ -10,7 +10,7 @@
   import { searchTerm, selectedFacets, nextSearchSettled } from '#lib/explorer/Search.ts';
   import { expandedNestedFacets } from '#lib/explorer/NestedFacets.ts';
   import { isToastShowing, toaster } from '#lib/ui/toaster.ts';
-  import { clearFilters } from '#lib/query/filters.ts';
+  import { filterState } from '#lib/query/filters.svelte.ts';
   import { clearExports } from '#lib/explorer/export/Export.ts';
   import { sanitizeHTML } from '#lib/utils/html.ts';
   import type { TourDataType } from '#lib/explorer/components/tour/types.ts';
@@ -51,7 +51,7 @@
   function resetSearch() {
     searchTerm.set('');
     expandedNestedFacets.set([]);
-    clearFilters();
+    filterState.clear();
     clearExports();
   }
 

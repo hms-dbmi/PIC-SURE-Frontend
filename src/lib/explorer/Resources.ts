@@ -2,11 +2,10 @@ import { isExploreWithoutLogin, useOpenAccess } from '#lib/explorer/mode.ts';
 
 interface QueryResource {
   name: string;
-  uuid: string;
 }
 
 export function getCountResource(isOpenAccess: boolean = false): QueryResource {
-  return { name: useOpenAccess(isOpenAccess) ? 'hpdsOpen' : 'hpds', uuid: '' };
+  return { name: useOpenAccess(isOpenAccess) ? 'hpdsOpen' : 'hpds' };
 }
 
 export interface ApiConnectionResource extends QueryResource {

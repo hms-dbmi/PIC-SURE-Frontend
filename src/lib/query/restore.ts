@@ -1,10 +1,9 @@
-import { config } from '#lib/config/config.svelte.ts';
 import {
-  QueryV3,
-  type QueryInterfaceV3,
-  type PhenotypicFilterInterface,
+  queryLeaves,
+  type Query,
+  type PhenotypicFilter,
   type PhenotypicClause,
-  type GenomicFilterInterfacev3,
+  type GenomicClause,
 } from '#lib/query/query.ts';
 import {
   type Filter,
@@ -12,16 +11,31 @@ import {
   createCategoricalFilter,
   createNumericFilter,
   createGenomicFilter,
+  createSnpsFilter,
   createFilterGroup,
   createRequiredFilter,
   createAnyRecordOfFilter,
 } from '#lib/query/filter.svelte.ts';
+import {
+  GENE_FILTER_KEYS,
+  GENOMIC_RANGE_KEY,
+  type GeneFilterKey,
+  type GeneFilterValues,
+  type SNP,
+} from '#lib/query/genomic.ts';
 import type { SearchResult } from '#lib/explorer/types.ts';
-import { getConceptDetails, getConceptTree, ENSURE_MAX_DEPTH } from '#lib/explorer/Dictionary.ts';
 import { LogicTree } from '#lib/query/logicTree.svelte.ts';
-import { createGroup } from '#lib/query/filters.ts';
 import { mapSearchResultAsExport } from '#lib/explorer/export/Export.ts';
 import type { ExportInterface } from '#lib/explorer/export/types.ts';
+
+/** The dictionary lookups a restore needs, injected so restoring does no I/O of its own. */
+export interface ConceptLookup {
+  getConceptDetails(conceptPath: string, dataset: string): Promise<SearchResult>;
+  /** The concept with all its descendants. */
+  getConceptTree(dataset: string, conceptPath: string): Promise<SearchResult>;
+  /** Concept paths to restore without a dictionary lookup (`settings.dataset.bypassConceptLookup`). */
+  bypassConceptLookup: readonly string[];
+}
 
 const defaultSearchResult = (conceptPath: string, type: string = 'Categorical') => {
   const paths: string[] = conceptPath.split('\\').filter(Boolean);
@@ -39,17 +53,18 @@ const defaultSearchResult = (conceptPath: string, type: string = 'Categorical') 
 };
 
 export async function pathToSearchResult(
+  lookup: ConceptLookup,
   conceptPath: string,
   type: SearchResult['type'] = 'Categorical',
 ): Promise<SearchResult> {
   const dataset = conceptPath.split('\\').filter(Boolean)[0] || conceptPath;
   const defaultData = defaultSearchResult(conceptPath, type);
 
-  return config.settings.dataset.bypassConceptLookup.includes(conceptPath)
+  return lookup.bypassConceptLookup.includes(conceptPath)
     ? defaultData
     : {
         ...defaultData,
-        ...(await getConceptDetails(conceptPath, dataset)),
+        ...(await lookup.getConceptDetails(conceptPath, dataset)),
       };
 }
 
@@ -58,17 +73,16 @@ export interface QueryEstimate {
   exports: number;
 }
 
-// -------------------------------- V3 Query -------------------------------- //
-
-export function estimateV3(query: QueryV3): QueryEstimate {
+export function estimateQuery(query: Query): QueryEstimate {
   return {
-    filters: query.leaves.length + (query.genomicFilters.length > 1 ? 1 : 0),
+    filters: queryLeaves(query).length + genomicClausesToFilters(query.genomicFilters).length,
     exports: query.select.length,
   };
 }
 
 async function phenotypicFilterToFilter(
-  pf: PhenotypicFilterInterface,
+  lookup: ConceptLookup,
+  pf: PhenotypicFilter,
   errors: string[],
 ): Promise<Filter> {
   let searchResult: SearchResult;
@@ -81,7 +95,7 @@ async function phenotypicFilterToFilter(
         : 'Categorical';
 
   try {
-    searchResult = await pathToSearchResult(pf.conceptPath, type);
+    searchResult = await pathToSearchResult(lookup, pf.conceptPath, type);
   } catch (err) {
     console.error(`Failed to restore phenotypic filter: ${pf.conceptPath}`, err);
     searchResult = defaultSearchResult(pf.conceptPath, type);
@@ -95,7 +109,7 @@ async function phenotypicFilterToFilter(
     // it here would produce a filter with only the root concept path instead of
     // all the paths the user originally selected.
     try {
-      treeResult = await getConceptTree(searchResult.dataset, ENSURE_MAX_DEPTH, pf.conceptPath);
+      treeResult = await lookup.getConceptTree(searchResult.dataset, pf.conceptPath);
     } catch (err) {
       console.error(`Failed to restore AnyRecordOf filter tree: ${pf.conceptPath}`, err);
       errors.push(pf.conceptPath);
@@ -111,10 +125,14 @@ async function phenotypicFilterToFilter(
   return createCategoricalFilter(searchResult, pf.values);
 }
 
-async function clauseToFilterNode(clause: PhenotypicClause, errors: string[]): Promise<Filter> {
+async function clauseToFilterNode(
+  lookup: ConceptLookup,
+  clause: PhenotypicClause,
+  errors: string[],
+): Promise<Filter> {
   if (clause.type === 'PhenotypicSubquery') {
     const children = await Promise.all(
-      clause.phenotypicClauses.map((clause) => clauseToFilterNode(clause, errors)),
+      clause.phenotypicClauses.map((clause) => clauseToFilterNode(lookup, clause, errors)),
     );
     return createFilterGroup(
       children.filter((child) => child !== null),
@@ -122,48 +140,60 @@ async function clauseToFilterNode(clause: PhenotypicClause, errors: string[]): P
     );
   }
   if (clause.type === 'PhenotypicFilter') {
-    return phenotypicFilterToFilter(clause, errors);
+    return phenotypicFilterToFilter(lookup, clause, errors);
   }
   return Promise.reject('invalid clause type ' + JSON.stringify(clause));
 }
 
 export async function queryToFilterTree(
-  query: QueryInterfaceV3,
+  lookup: ConceptLookup,
+  query: Query,
   errors: string[],
 ): Promise<LogicTree<FilterInterface>> {
-  const tree = new LogicTree<FilterInterface>(createGroup);
+  const tree = new LogicTree<FilterInterface>(createFilterGroup);
 
   if (!query.phenotypicClause) return tree;
 
   const clause = query.phenotypicClause;
   if (clause.type === 'PhenotypicFilter') {
-    tree.add(await phenotypicFilterToFilter(clause, errors));
+    tree.add(await phenotypicFilterToFilter(lookup, clause, errors));
   } else {
     const nodes = await Promise.all(
-      clause.phenotypicClauses.map((clause) => clauseToFilterNode(clause, errors)),
+      clause.phenotypicClauses.map((clause) => clauseToFilterNode(lookup, clause, errors)),
     );
-    tree.root.children = nodes;
+    tree.add(...nodes);
     tree.root.operator = clause.operator;
   }
   return tree;
 }
 
-export function genomicV3ToFilter(gfs: GenomicFilterInterfacev3[]): Filter {
-  const geneFilter: {
-    Gene_with_variant?: string[];
-    Variant_consequence_calculated?: string[];
-    Variant_frequency_as_text?: string[];
-    min?: string;
-    max?: string;
-  } = {};
+const isGeneFilterKey = (key: string): key is GeneFilterKey =>
+  (GENE_FILTER_KEYS as readonly string[]).includes(key);
+
+// A SNP clause is keyed by the variant itself (`chr17,35269878,GT,A`), so any other key with
+// values is one; the gene keys and the range key make up the gene filter.
+const isSnpClause = ({ key, values }: GenomicClause) =>
+  !isGeneFilterKey(key) && key !== GENOMIC_RANGE_KEY && values !== undefined;
+
+/** The genomic filters a saved query's clauses came from: a gene filter, a SNP filter, or both. */
+export function genomicClausesToFilters(gfs: GenomicClause[]): Filter[] {
+  const snps: SNP[] = gfs
+    .filter(isSnpClause)
+    .map(({ key, values = [] }) => ({ search: key, constraint: values.join(',') }));
+  const geneClauses = gfs.filter((clause) => !isSnpClause(clause));
+  const filters = [
+    ...(geneClauses.length ? [genomicClausesToFilter(geneClauses)] : []),
+    ...(snps.length ? [createSnpsFilter(snps)] : []),
+  ];
+  // Each filter's clauses are saved together, so the first clause says which filter came first.
+  return gfs.length && isSnpClause(gfs[0]) ? filters.reverse() : filters;
+}
+
+export function genomicClausesToFilter(gfs: GenomicClause[]): Filter {
+  const geneFilter: GeneFilterValues & { min?: string; max?: string } = {};
 
   gfs.forEach(({ key, values, min, max }) => {
-    if (values) {
-      if (key === 'Gene_with_variant') geneFilter.Gene_with_variant = values;
-      else if (key === 'Variant_consequence_calculated')
-        geneFilter.Variant_consequence_calculated = values;
-      else if (key === 'Variant_frequency_as_text') geneFilter.Variant_frequency_as_text = values;
-    }
+    if (values && isGeneFilterKey(key)) geneFilter[key] = values;
     if (min !== undefined && min !== null) geneFilter.min = min.toString();
     if (max !== undefined && max !== null) geneFilter.max = max.toString();
   });
@@ -173,12 +203,16 @@ export function genomicV3ToFilter(gfs: GenomicFilterInterfacev3[]): Filter {
 
 // ----------------------------- Unified loader ----------------------------- //
 
-function getExports(query: QueryV3, errors: string[]): Promise<ExportInterface[]> {
+function getExports(
+  lookup: ConceptLookup,
+  query: Query,
+  errors: string[],
+): Promise<ExportInterface[]> {
   return Promise.all(
     query.select.map(async (conceptPath) => {
       let searchResult: SearchResult;
       try {
-        searchResult = await pathToSearchResult(conceptPath);
+        searchResult = await pathToSearchResult(lookup, conceptPath);
       } catch (err) {
         console.error(`Failed to retrieve results for: ${conceptPath}`, err);
         searchResult = defaultSearchResult(conceptPath);
@@ -197,13 +231,11 @@ export type QuerySummaryData = {
   errors: Promise<string[]>;
 };
 
-export function loadQuerySummaryData(query: QueryV3): QuerySummaryData {
+export function loadQuerySummaryData(query: Query, lookup: ConceptLookup): QuerySummaryData {
   const errorsList: string[] = [];
-  const filterTree = queryToFilterTree(query, errorsList);
-  const genomicFilters = Promise.resolve(
-    query.genomicFilters.length ? [genomicV3ToFilter(query.genomicFilters)] : [],
-  );
-  const exports = getExports(query, errorsList);
+  const filterTree = queryToFilterTree(lookup, query, errorsList);
+  const genomicFilters = Promise.resolve(genomicClausesToFilters(query.genomicFilters));
+  const exports = getExports(lookup, query, errorsList);
   const errors = Promise.all([filterTree, exports]).then(() => errorsList);
 
   return {

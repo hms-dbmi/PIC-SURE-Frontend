@@ -1,7 +1,7 @@
 <script lang="ts">
   import Button from '#lib/ui/Button.svelte';
   import type { SNP } from '#lib/query/genomic.ts';
-  import { getSNPCounts } from '#lib/query/SNPFilter.ts';
+  import { getSNPCounts } from '#lib/query/genomicDraft.svelte.ts';
   import { config } from '#lib/config/config.svelte.ts';
 
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';

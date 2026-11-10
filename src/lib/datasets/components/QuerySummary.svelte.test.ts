@@ -1,14 +1,15 @@
 // @vitest-environment happy-dom
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/svelte';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
+import { goto } from '$app/navigation';
+import { toaster } from '#lib/ui/toaster.ts';
 
 import QuerySummary from '#lib/datasets/components/QuerySummary.svelte';
 import { loadQuerySummaryData } from '#lib/query/restore.ts';
-import { QueryVersion } from '#lib/datasets/dataset.ts';
+import { QueryVersion } from '#lib/api/picsure/datasets.ts';
 import { LogicTree } from '#lib/query/logicTree.svelte.ts';
-import { QueryV3 } from '#lib/query/query.ts';
-import type { QueryV2 } from '#lib/query/v2.ts';
+import { createQuery } from '#lib/query/query.ts';
 import type { FilterInterface, FilterGroupInterface } from '#lib/query/filter.svelte.ts';
 
 const mockBypassPath = 'some_path';
@@ -21,23 +22,20 @@ const mockConfig = vi.hoisted(() => ({
 }));
 vi.mock('#lib/config/config.svelte.ts', () => ({ config: mockConfig }));
 
-vi.mock('#lib/query/filters.ts', async () => {
-  const { writable } = await import('svelte/store');
-  const { createFilterGroup } = await import('#lib/query/filter.svelte.ts');
-  return {
-    allFilters: writable([]),
-    genomicFilters: writable([]),
-    setFilterTree: vi.fn(),
-    createGroup: createFilterGroup,
-  };
-});
+vi.mock('#lib/query/filters.svelte.ts', () => ({
+  filterState: { all: [], restore: vi.fn() },
+}));
 
 const mockConceptPath = vi.hoisted(() => vi.fn());
 vi.mock('#lib/explorer/Dictionary.ts', async () => {
   return {
     getConceptDetails: mockConceptPath,
+    ENSURE_MAX_DEPTH: 100,
   };
 });
+
+const mockConceptTree = vi.hoisted(() => vi.fn());
+vi.mock('#lib/api/picsure/dictionary.ts', () => ({ getConceptTree: mockConceptTree }));
 
 vi.mock('#lib/explorer/export/Export.ts', async () => {
   const { writable } = await import('svelte/store');
@@ -50,7 +48,7 @@ vi.mock('#lib/explorer/export/Export.ts', async () => {
 vi.mock('#lib/query/restore.ts', () => ({
   loadQuerySummaryData: vi.fn(),
   pathToSearchResult: vi.fn(),
-  estimateV3: vi.fn().mockReturnValue({ filters: 3, exports: 3 }),
+  estimateQuery: vi.fn().mockReturnValue({ filters: 3, exports: 3 }),
 }));
 
 const mockLoadQuerySummaryData = vi.mocked(loadQuerySummaryData);
@@ -79,18 +77,7 @@ const baseData = {
   errors: Promise.resolve([]),
 };
 
-const baseProps = { query: new QueryV3(), version: QueryVersion.V3 };
-const queryV2: QueryV2 = {
-  fields: [],
-  categoryFilters: {},
-  numericFilters: {},
-  requiredFields: [],
-  anyRecordOf: [],
-  anyRecordOfMulti: [],
-  crossCountFields: [],
-  variantInfoFilters: [],
-  expectedResultType: 'COUNT',
-};
+const baseProps = { query: createQuery(), sourceVersion: QueryVersion.V3 };
 
 describe('QuerySummary', () => {
   beforeEach(() => {
@@ -109,8 +96,31 @@ describe('QuerySummary', () => {
     expect(screen.queryByTestId('ui-error-alert')).not.toBeInTheDocument();
   });
 
+  it('shows the restored toast only once the explorer is reached', async () => {
+    let arrive!: () => void;
+    vi.mocked(goto).mockReturnValue(new Promise<void>((resolve) => (arrive = resolve)));
+    mockLoadQuerySummaryData.mockReturnValue(baseData);
+    render(QuerySummary, { ...baseProps, name: 'cohort' });
+
+    await fireEvent.click(await screen.findByTestId('dataset-restore-filters-trigger'));
+    await fireEvent.click(
+      within(screen.getByTestId('dataset-restore-filters')).getByRole('button', {
+        name: 'Restore Filters',
+      }),
+    );
+    await waitFor(() => expect(goto).toHaveBeenCalled());
+    expect(toaster.success).not.toHaveBeenCalled();
+
+    arrive();
+    await waitFor(() =>
+      expect(toaster.success).toHaveBeenCalledWith({
+        description: 'Filters restored for cohort dataset.',
+      }),
+    );
+  });
+
   it('passes a V3 summary through to loadQuerySummaryData without filtering system fields', async () => {
-    const query = new QueryV3({
+    const query = createQuery({
       select: ['\\dataset\\age\\', '\\_consents\\'],
       authorizationFilters: [],
       phenotypicClause: null,
@@ -121,18 +131,19 @@ describe('QuerySummary', () => {
     });
     mockLoadQuerySummaryData.mockReturnValue(baseData);
 
-    render(QuerySummary, { query, version: QueryVersion.V3 });
+    render(QuerySummary, { query, sourceVersion: QueryVersion.V3 });
     await screen.findByTestId('dataset-filters-container');
 
     expect(mockLoadQuerySummaryData).toHaveBeenCalledWith(
       expect.objectContaining({ select: ['\\dataset\\age\\', '\\_consents\\'] }),
+      expect.anything(),
     );
     expect(query.select).toEqual(['\\dataset\\age\\', '\\_consents\\']);
   });
 
   it('passes a V3 summary through to loadQuerySummaryData not reaching out to bypassed fields', async () => {
     const select = ['\\dataset\\age\\', '\\_consents\\', `\\${mockBypassPath}\\`];
-    const query = new QueryV3({
+    const query = createQuery({
       select,
       authorizationFilters: [],
       phenotypicClause: null,
@@ -145,12 +156,34 @@ describe('QuerySummary', () => {
       await vi.importActual<typeof import('#lib/query/restore.ts')>('#lib/query/restore.ts');
     mockLoadQuerySummaryData.mockImplementation(actual.loadQuerySummaryData);
 
-    render(QuerySummary, { query, version: QueryVersion.V3 });
+    render(QuerySummary, { query, sourceVersion: QueryVersion.V3 });
     await screen.findByTestId('dataset-filters-container');
 
     expect(mockConceptPath).toHaveBeenCalledWith(select[0], 'dataset');
     expect(mockConceptPath).toHaveBeenCalledWith(select[1], '_consents');
     expect(mockConceptPath).not.toHaveBeenCalledWith(select[2], mockBypassPath);
+  });
+
+  it('restores an any-record-of filter from its full concept tree', async () => {
+    const conceptPath = '\\dataset\\visits\\';
+    const child = { conceptPath: `${conceptPath}first\\`, dataset: 'dataset', children: [] };
+    mockConceptTree.mockResolvedValue({ conceptPath, dataset: 'dataset', children: [child] });
+    const query = createQuery({
+      phenotypicClause: {
+        type: 'PhenotypicFilter',
+        phenotypicFilterType: 'ANY_RECORD_OF',
+        conceptPath,
+        not: false,
+      },
+    });
+    const actual =
+      await vi.importActual<typeof import('#lib/query/restore.ts')>('#lib/query/restore.ts');
+    mockLoadQuerySummaryData.mockImplementation(actual.loadQuerySummaryData);
+
+    render(QuerySummary, { query, sourceVersion: QueryVersion.V3 });
+    await screen.findByTestId('dataset-filters-container');
+
+    expect(mockConceptTree).toHaveBeenCalledWith('dataset', 100, conceptPath);
   });
 
   it('disables the Restore Filters button and shows an error alert when data.errors is non-empty', async () => {
@@ -174,7 +207,7 @@ describe('QuerySummary', () => {
 
   it('keeps restoring a saved V2 query disabled when the compatibility flag is off', async () => {
     mockLoadQuerySummaryData.mockReturnValue(baseData);
-    render(QuerySummary, { query: queryV2, version: QueryVersion.V2 });
+    render(QuerySummary, { query: createQuery(), sourceVersion: QueryVersion.V2 });
 
     await screen.findByTestId('dataset-filters-container');
 
@@ -188,7 +221,7 @@ describe('QuerySummary', () => {
   it('enables restoring a saved V2 query when the compatibility flag is on', async () => {
     mockConfig.features.restoreV2queries = true;
     mockLoadQuerySummaryData.mockReturnValue(baseData);
-    render(QuerySummary, { query: queryV2, version: QueryVersion.V2 });
+    render(QuerySummary, { query: createQuery(), sourceVersion: QueryVersion.V2 });
 
     await screen.findByTestId('dataset-filters-container');
 
@@ -198,7 +231,7 @@ describe('QuerySummary', () => {
   it('hides the Restore Filters button for V2 queries when restoreV2queries is false', async () => {
     mockConfig.features.restoreV2queries = false;
     mockLoadQuerySummaryData.mockReturnValue(baseData);
-    render(QuerySummary, { query: queryV2, version: QueryVersion.V2 });
+    render(QuerySummary, { query: createQuery(), sourceVersion: QueryVersion.V2 });
 
     await screen.findByTestId('dataset-filters-container');
 
@@ -211,7 +244,7 @@ describe('QuerySummary', () => {
   it('shows the enabled Restore Filters button for V2 queries when restoreV2queries is true', async () => {
     mockConfig.features.restoreV2queries = true;
     mockLoadQuerySummaryData.mockReturnValue(baseData);
-    render(QuerySummary, { query: queryV2, version: QueryVersion.V2 });
+    render(QuerySummary, { query: createQuery(), sourceVersion: QueryVersion.V2 });
 
     await screen.findByTestId('dataset-filters-container');
 

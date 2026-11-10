@@ -1,6 +1,6 @@
 import { request } from '#lib/api/client.ts';
 import { Picsure } from '#lib/api/paths.ts';
-import type { QueryInterfaceV3 } from '#lib/query/query.ts';
+import type { QueryJson } from '#lib/query/query.ts';
 import type {
   CategoricalPlotData,
   ContinuousPlotData,
@@ -16,7 +16,7 @@ export interface Distributions {
  * obfuscated distributions; `openAccess` is `RequestOptions.openAccess`.
  */
 export async function getDistributions(
-  query: QueryInterfaceV3,
+  query: QueryJson,
   { openEndpoint, openAccess }: { openEndpoint: boolean; openAccess?: boolean },
 ): Promise<Distributions> {
   const response = await request<unknown>(

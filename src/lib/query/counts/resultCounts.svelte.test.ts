@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-vi.mock('$app/env', () => ({ browser: false }));
+vi.mock('$app/env', () => ({ browser: true }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost') } }));
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$app/paths', () => ({
@@ -8,21 +8,15 @@ vi.mock('$app/paths', () => ({
 }));
 
 const mockState = vi.hoisted(() => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { writable } = require('svelte/store') as typeof import('svelte/store');
   return {
     toasterErrorSpy: vi.fn(),
     isToastShowingSpy: vi.fn().mockReturnValue(false),
-    getCountResourceSpy: vi.fn().mockReturnValue({ name: 'hpds', uuid: 'r1' }),
     logSpy: vi.fn(),
-    buildDescriptorSpy: vi.fn((inputs: { isOpenAccess: boolean }) => ({
-      isOpenAccess: inputs.isOpenAccess,
+    buildDescriptorSpy: vi.fn((isOpenAccess: boolean) => ({
+      isOpenAccess,
       phenotypicClause: null,
       genomicFilters: [],
     })),
-    allFiltersStore: writable<unknown[]>([]),
-    filterTreeStore: writable<unknown>({ root: { children: [] } }),
-    genomicFiltersStore: writable<unknown[]>([]),
   };
 });
 
@@ -31,19 +25,14 @@ vi.mock('#lib/ui/toaster.ts', () => ({
   isToastShowing: mockState.isToastShowingSpy,
 }));
 
-vi.mock('#lib/query/filters.ts', () => ({
-  allFilters: mockState.allFiltersStore,
-  filterTree: mockState.filterTreeStore,
-  genomicFilters: mockState.genomicFiltersStore,
-}));
-
-vi.mock('#lib/explorer/Resources.ts', () => ({
-  getCountResource: mockState.getCountResourceSpy,
-}));
+vi.mock('#lib/auth/session.svelte.ts', () => ({ session: { user: {} } }));
+vi.mock('#lib/explorer/Dictionary.ts', () => ({ getConceptDetails: vi.fn() }));
 
 vi.mock('#lib/telemetry/logger.ts', () => ({
   log: mockState.logSpy,
   registerSignedInUser: vi.fn(),
+  registerAssociatedStudies: vi.fn(),
+  getPageContext: vi.fn(),
   createLog: vi.fn((category: string, event: string, data?: unknown) => ({
     category,
     event,
@@ -64,6 +53,13 @@ import type { ResultCountSnapshot } from '#lib/query/counts/snapshot.ts';
 import type { QueryCountService } from '#lib/query/counts/service.ts';
 import type { QueryDescriptor } from '#lib/query/descriptor.svelte.ts';
 import { ResultCounts } from '#lib/query/counts/resultCounts.svelte.ts';
+import { filterState } from '#lib/query/filters.svelte.ts';
+import { createCategoricalFilter } from '#lib/query/filter.svelte.ts';
+import type { SearchResult } from '#lib/explorer/types.ts';
+
+function changeFilters() {
+  filterState.add(createCategoricalFilter({ conceptPath: '\\a\\' } as SearchResult, ['x']));
+}
 
 const descriptor: QueryDescriptor = {
   isOpenAccess: false,
@@ -113,11 +109,12 @@ describe('ResultCounts', () => {
     state = new ResultCounts(mockService);
     mockState.toasterErrorSpy.mockClear();
     mockState.isToastShowingSpy.mockClear().mockReturnValue(false);
-    mockState.getCountResourceSpy.mockClear().mockReturnValue({ name: 'hpds', uuid: 'r1' });
     mockState.logSpy.mockClear();
     mockState.buildDescriptorSpy.mockClear();
-    mockState.allFiltersStore.set([]);
+    filterState.clear();
   });
+
+  afterEach(() => state.stop());
 
   it('starts in the idle status with an empty snapshot', () => {
     expect(state.status).toBe('idle');
@@ -130,7 +127,7 @@ describe('ResultCounts', () => {
     const d = deferred<ResultCountSnapshot>();
     mockService.getCount.mockReturnValueOnce(d.promise);
 
-    const loadPromise = state.load(descriptor, false);
+    const loadPromise = state.load(descriptor);
     expect(state.status).toBe('loading');
 
     d.resolve(snapshot(1234));
@@ -142,32 +139,32 @@ describe('ResultCounts', () => {
   it('returns { kind: "committed", snapshot } on success', async () => {
     const s = snapshot(42);
     mockService.getCount.mockResolvedValueOnce(s);
-    const result = await state.load(descriptor, false);
+    const result = await state.load(descriptor);
     expect(result).toEqual({ kind: 'committed', snapshot: s });
   });
 
   it('transitions to "error" when the service returns a hasError snapshot', async () => {
     const s = snapshot(0, true);
     mockService.getCount.mockResolvedValueOnce(s);
-    const result = await state.load(descriptor, false);
+    const result = await state.load(descriptor);
     expect(state.status).toBe('error');
     expect(result).toEqual({ kind: 'error', snapshot: s });
   });
 
   it('transitions to "error" when the service rejects', async () => {
     mockService.getCount.mockRejectedValueOnce(new Error('boom'));
-    const result = await state.load(descriptor, false);
+    const result = await state.load(descriptor);
     expect(state.status).toBe('error');
     expect(result.kind).toBe('error');
   });
 
   it('publishes an error snapshot when the service rejects, replacing any previous count', async () => {
     mockService.getCount.mockResolvedValueOnce(snapshot(42));
-    await state.load(descriptor, false);
+    await state.load(descriptor);
     expect(state.snapshot.summary.total).toBe(42);
 
     mockService.getCount.mockRejectedValueOnce(new Error('boom'));
-    await state.load(descriptor, false);
+    await state.load(descriptor);
     expect(state.snapshot.summary.hasError).toBe(true);
     expect(state.snapshot.summary.total).toBe(0);
     expect(state.snapshot.descriptorKey).toBe('k');
@@ -175,11 +172,11 @@ describe('ResultCounts', () => {
 
   it('recovers from error to loaded on a subsequent successful load', async () => {
     mockService.getCount.mockRejectedValueOnce(new Error('boom'));
-    await state.load(descriptor, false);
+    await state.load(descriptor);
     expect(state.status).toBe('error');
 
     mockService.getCount.mockResolvedValueOnce(snapshot(7));
-    await state.load(descriptor, false);
+    await state.load(descriptor);
     expect(state.status).toBe('loaded');
     expect(state.snapshot.summary.total).toBe(7);
   });
@@ -189,8 +186,8 @@ describe('ResultCounts', () => {
     const dB = deferred<ResultCountSnapshot>();
     mockService.getCount.mockReturnValueOnce(dA.promise).mockReturnValueOnce(dB.promise);
 
-    const promiseA = state.load(descriptor, false);
-    const promiseB = state.load(descriptor, false);
+    const promiseA = state.load(descriptor);
+    const promiseB = state.load(descriptor);
 
     dB.resolve(snapshot(2222));
     const resultB = await promiseB;
@@ -208,8 +205,8 @@ describe('ResultCounts', () => {
     const dB = deferred<ResultCountSnapshot>();
     mockService.getCount.mockReturnValueOnce(dA.promise).mockReturnValueOnce(dB.promise);
 
-    const promiseA = state.load(descriptor, false);
-    const promiseB = state.load(descriptor, false);
+    const promiseA = state.load(descriptor);
+    const promiseB = state.load(descriptor);
 
     dA.resolve(snapshot(1111));
     await promiseA;
@@ -225,8 +222,8 @@ describe('ResultCounts', () => {
     const dB = deferred<ResultCountSnapshot>();
     mockService.getCount.mockReturnValueOnce(dA.promise).mockReturnValueOnce(dB.promise);
 
-    const promiseA = state.load(descriptor, false);
-    const promiseB = state.load(descriptor, false);
+    const promiseA = state.load(descriptor);
+    const promiseB = state.load(descriptor);
 
     dB.resolve(snapshot(2222));
     await promiseB;
@@ -238,19 +235,17 @@ describe('ResultCounts', () => {
     expect(state.snapshot.summary.total).toBe(2222);
   });
 
-  it('queries the single count resource resolved by getCountResource', async () => {
+  it('asks the service for the patient count of the descriptor', async () => {
     mockService.getCount.mockResolvedValueOnce(snapshot(42));
-    await state.load(descriptor, true);
-    expect(mockState.getCountResourceSpy).toHaveBeenCalledWith(true);
-    expect(mockService.getCount).toHaveBeenCalledWith(descriptor, expect.anything(), {
-      name: 'hpds',
-      uuid: 'r1',
+    await state.load(descriptor);
+    expect(mockService.getCount).toHaveBeenCalledWith(descriptor, {
+      id: 'query:patientCount',
     });
   });
 
   it('logs query.count_returned when a snapshot commits', async () => {
     mockService.getCount.mockResolvedValueOnce(snapshot(42));
-    await state.load(descriptor, false);
+    await state.load(descriptor);
     expect(mockState.logSpy).toHaveBeenCalledWith({
       category: 'QUERY',
       event: 'query.count_returned',
@@ -260,7 +255,7 @@ describe('ResultCounts', () => {
 
   it('does not log query.count_returned when the snapshot has an error', async () => {
     mockService.getCount.mockResolvedValueOnce(snapshot(0, true));
-    await state.load(descriptor, false);
+    await state.load(descriptor);
     expect(mockState.logSpy).not.toHaveBeenCalled();
   });
 
@@ -269,8 +264,8 @@ describe('ResultCounts', () => {
     const dB = deferred<ResultCountSnapshot>();
     mockService.getCount.mockReturnValueOnce(dA.promise).mockReturnValueOnce(dB.promise);
 
-    const promiseA = state.load(descriptor, false);
-    const promiseB = state.load(descriptor, false);
+    const promiseA = state.load(descriptor);
+    const promiseB = state.load(descriptor);
 
     dB.resolve(snapshot(2222));
     await promiseB;
@@ -294,7 +289,7 @@ describe('ResultCounts', () => {
     const d = deferred<ResultCountSnapshot>();
     mockService.getCount.mockReturnValueOnce(d.promise);
 
-    const loadPromise = state.load(descriptor, false);
+    const loadPromise = state.load(descriptor);
     expect(state.status).toBe('loading');
 
     state.clear();
@@ -310,7 +305,7 @@ describe('ResultCounts', () => {
 
   it('exposes convenience getters that proxy snapshot.summary', async () => {
     mockService.getCount.mockResolvedValueOnce(snapshot(42));
-    await state.load(descriptor, false);
+    await state.load(descriptor);
     expect(state.total).toBe(42);
     expect(state.hasNonZero).toBe(true);
     expect(state.loading).toBe(false);
@@ -319,7 +314,7 @@ describe('ResultCounts', () => {
   it('loading getter is true while a fetch is in flight', () => {
     const d = deferred<ResultCountSnapshot>();
     mockService.getCount.mockReturnValueOnce(d.promise);
-    void state.load(descriptor, false);
+    void state.load(descriptor);
     expect(state.loading).toBe(true);
   });
 
@@ -342,7 +337,7 @@ describe('ResultCounts', () => {
       await flushMicrotasks();
       await flushMicrotasks();
       expect(mockService.getCount).toHaveBeenCalledTimes(1);
-      mockState.allFiltersStore.set([{} as unknown]);
+      changeFilters();
       await flushMicrotasks();
       await flushMicrotasks();
       expect(mockService.getCount).toHaveBeenCalledTimes(2);
@@ -354,7 +349,7 @@ describe('ResultCounts', () => {
       await flushMicrotasks();
       await flushMicrotasks();
       state.stop();
-      mockState.allFiltersStore.set([{} as unknown]);
+      changeFilters();
       await flushMicrotasks();
       expect(mockService.getCount).toHaveBeenCalledTimes(1);
     });
@@ -365,16 +360,12 @@ describe('ResultCounts', () => {
       state.start(() => !auth);
       await flushMicrotasks();
       await flushMicrotasks();
-      expect(mockState.buildDescriptorSpy).toHaveBeenLastCalledWith(
-        expect.objectContaining({ isOpenAccess: false }),
-      );
+      expect(mockState.buildDescriptorSpy).toHaveBeenLastCalledWith(false, expect.anything());
       auth = false;
-      mockState.allFiltersStore.set([{} as unknown]);
+      changeFilters();
       await flushMicrotasks();
       await flushMicrotasks();
-      expect(mockState.buildDescriptorSpy).toHaveBeenLastCalledWith(
-        expect.objectContaining({ isOpenAccess: true }),
-      );
+      expect(mockState.buildDescriptorSpy).toHaveBeenLastCalledWith(true, expect.anything());
     });
 
     it('calling start() twice without stop() does not double-subscribe', async () => {
@@ -383,11 +374,11 @@ describe('ResultCounts', () => {
       state.start(() => true);
       await flushMicrotasks();
       await flushMicrotasks();
-      mockState.allFiltersStore.set([{} as unknown]);
+      changeFilters();
       await flushMicrotasks();
       await flushMicrotasks();
-      // 2 initial fires (one per start) + 1 filter-change fire = 3
-      expect(mockService.getCount).toHaveBeenCalledTimes(3);
+      // The first start's watcher is gone before it runs: 1 initial fire + 1 filter-change fire
+      expect(mockService.getCount).toHaveBeenCalledTimes(2);
     });
 
     it('stop() called between start() and snapshot resolution does not commit or fire a toast', async () => {
@@ -415,7 +406,7 @@ describe('ResultCounts', () => {
       expect(mockState.toasterErrorSpy).toHaveBeenCalledTimes(1);
 
       mockState.isToastShowingSpy.mockReturnValue(true);
-      mockState.allFiltersStore.set([{} as unknown]);
+      changeFilters();
       await flushMicrotasks();
       await flushMicrotasks();
       await flushMicrotasks();
@@ -443,7 +434,7 @@ describe('ResultCounts', () => {
       mockService.getCount.mockResolvedValue(snapshot(42));
       await state.triggerLoad(() => true);
       expect(mockService.getCount).toHaveBeenCalledTimes(1);
-      mockState.allFiltersStore.set([{} as unknown]);
+      changeFilters();
       await flushMicrotasks();
       await flushMicrotasks();
       expect(mockService.getCount).toHaveBeenCalledTimes(1);
@@ -452,9 +443,7 @@ describe('ResultCounts', () => {
     it('respects the passed getIsOpenAccess on the build', async () => {
       mockService.getCount.mockResolvedValue(snapshot(42));
       await state.triggerLoad(() => true);
-      expect(mockState.buildDescriptorSpy).toHaveBeenLastCalledWith(
-        expect.objectContaining({ isOpenAccess: true }),
-      );
+      expect(mockState.buildDescriptorSpy).toHaveBeenLastCalledWith(true, expect.anything());
     });
   });
 

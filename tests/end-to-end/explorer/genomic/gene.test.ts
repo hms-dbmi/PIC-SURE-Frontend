@@ -372,11 +372,11 @@ test.describe('Summary panel', () => {
     // Wait for gene panel to fully load before interacting
     await expect(page.locator('#genomic-gene-search')).toBeVisible({ timeout: 10000 });
     await page.getByTestId('genomic-frequency-panel').getByLabel('Rare').click();
-    await page
+    const highSeverity = page
       .getByTestId('genomic-consequence-panel')
       .getByRole('treeitem', { name: 'High Severity' })
-      .getByRole('checkbox')
-      .click();
+      .getByRole('checkbox');
+    await highSeverity.click();
     await page.getByTestId('genomic-gene-panel').getByLabel(geneValues.results[0]).click();
 
     const summaryPanel = page.getByTestId('genomic-summary-panel');
@@ -392,6 +392,7 @@ test.describe('Summary panel', () => {
     await expect(summaryPanel.locator('#genomic-summary-variant')).not.toContainText(
       geneValues.results[0],
     );
+    await expect(highSeverity).not.toBeChecked();
   });
 });
 test('Apply Filters button enables once a selection is made', async ({ page }) => {

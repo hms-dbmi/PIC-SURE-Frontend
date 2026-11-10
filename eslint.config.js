@@ -36,25 +36,37 @@ const cardInClassList = String.raw`(^|\s)${cardClass}\s|\s${cardClass}$`;
 // `folder` (under src/lib/) may import only from `allowed` folders and packages: no `#lib/` or
 // `$lib/` specifier outside them, and no relative path that climbs out of `folder` (one config per
 // nesting depth, so `../` is allowed exactly as deep as the file sits). Stylesheets are exempt.
-function importBoundary(folder, allowed) {
+// `pending` maps a file (under src/lib/) to the `#lib/` modules outside `allowed` it still imports
+// until the PR named beside it removes them; nothing new gets added.
+function importBoundary(folder, allowed, pending = {}) {
   const message = `${folder}/ may import only ${allowed.map((f) => `${f}/`).join(', ')} and packages.`;
-  return [1, 2, 3, 4, 5, 6].map((depth) => ({
-    files: [`src/lib/${folder}/${'*/'.repeat(depth - 1)}*.{ts,svelte}`],
-    ignores: ['**/*.test.ts', ...boundaryExceptions],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            { regex: `^[#$]lib/(?!(${allowed.join('|')})(/|$))`, message },
-            { regex: `^(\\.\\./){${depth - 1}}\\.\\.(/|$)(?!.*\\.css$)`, message },
-            // A later config's rule replaces an earlier one's, so repeat the Skeleton rule here.
-            ...(folder === 'ui' ? [] : [skeletonOnlyInUi]),
-          ],
-        },
-      ],
-    },
-  }));
+  const rules = (depth, exempt = []) => ({
+    'no-restricted-imports': [
+      'error',
+      {
+        patterns: [
+          {
+            regex: `^[#$]lib/(?!(${allowed.join('|')})(/|$)${exempt.map((path) => `|${path.replace(/[.]/g, '\\.')}$`).join('')})`,
+            message,
+          },
+          { regex: `^(\\.\\./){${depth - 1}}\\.\\.(/|$)(?!.*\\.css$)`, message },
+          // A later config's rule replaces an earlier one's, so repeat the Skeleton rule here.
+          ...(folder === 'ui' ? [] : [skeletonOnlyInUi]),
+        ],
+      },
+    ],
+  });
+  return [
+    ...[1, 2, 3, 4, 5, 6].map((depth) => ({
+      files: [`src/lib/${folder}/${'*/'.repeat(depth - 1)}*.{ts,svelte}`],
+      ignores: ['**/*.test.ts', ...boundaryExceptions],
+      rules: rules(depth),
+    })),
+    ...Object.entries(pending).map(([file, exempt]) => ({
+      files: [`src/lib/${file}`],
+      rules: rules(file.split('/').length - 1, exempt),
+    })),
+  ];
 }
 
 export default [
@@ -183,6 +195,30 @@ export default [
   ...importBoundary('utils', ['utils']),
   ...importBoundary('config', ['config', 'api', 'assets', 'ui', 'utils']),
   ...importBoundary('auth', ['auth', 'api', 'config', 'telemetry', 'ui', 'utils']),
+  // PR 20 (explorer) removes the pending imports: SearchResult moves to the dictionary types,
+  // mode.ts reads layout data, and the dictionary and export state get a public surface.
+  ...importBoundary('query', ['query', 'api', 'auth', 'config', 'telemetry', 'ui', 'utils'], {
+    'query/restore.ts': [
+      'explorer/types.ts',
+      'explorer/export/Export.ts',
+      'explorer/export/types.ts',
+    ],
+    'query/filter.svelte.ts': ['explorer/types.ts'],
+    'query/filters.svelte.ts': ['explorer/Dictionary.ts'],
+    'query/counts/providers.ts': ['explorer/mode.ts'],
+    'query/counts/statProviders.ts': ['explorer/Dictionary.ts', 'explorer/mode.ts'],
+  }),
+  ...importBoundary(
+    'datasets',
+    ['datasets', 'query', 'api', 'auth', 'config', 'telemetry', 'ui', 'utils'],
+    {
+      'datasets/components/QuerySummary.svelte': [
+        'explorer/Dictionary.ts',
+        'explorer/export/Export.ts',
+      ],
+      'datasets/components/SelectedVariablesSummary.svelte': ['explorer/export/types.ts'],
+    },
+  ),
   ...svelte.configs['flat/prettier'],
   {
     files: ['**/*.svelte.js', '**/*.svelte.ts'],

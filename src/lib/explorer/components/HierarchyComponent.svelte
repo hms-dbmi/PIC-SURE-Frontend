@@ -7,7 +7,7 @@
     createAnyRecordOfFilter,
   } from '#lib/query/filter.svelte.ts';
   import { activeRow } from '#lib/explorer/ExpandableRow.ts';
-  import { addFilter } from '#lib/query/filters.ts';
+  import { filterState } from '#lib/query/filters.svelte.ts';
   import TreeView from '#lib/ui/tree/TreeView.svelte';
   import {
     getConceptTree,
@@ -116,7 +116,7 @@
         type: 'AnyRecordOf',
       };
       filter = createAnyRecordOfFilter(searchResult, treeResult);
-      addFilter(filter);
+      filterState.add(filter);
       finish();
     } catch (error: unknown) {
       if (error instanceof AnyRecordOfFilterError) {

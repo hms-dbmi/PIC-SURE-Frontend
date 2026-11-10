@@ -2,20 +2,20 @@ import { countVariants, getVariantExcerpt } from '#lib/api/picsure/query.ts';
 import { config } from '#lib/config/config.svelte.ts';
 import type { Indexable } from '#lib/utils/objects.ts';
 
-import type { QueryRequestInterfaceV3 } from '#lib/api/picsure/query.types.ts';
+import type { QueryRequest } from '#lib/api/picsure/query.types.ts';
 import { ExportType } from '#lib/config/index.ts';
 import type { VariantData } from '#lib/explorer/variant/Variant.ts';
 
 import type { Column } from '#lib/ui/datatable/types.ts';
 
-export function getVariantCount(request: QueryRequestInterfaceV3): Promise<number> {
+export function getVariantCount(request: QueryRequest): Promise<number> {
   request.query.expectedResultType = 'VARIANT_COUNT_FOR_QUERY';
   return countVariants(request);
 }
 
 export function getVariantData(
   exportType: ExportType,
-  request: QueryRequestInterfaceV3,
+  request: QueryRequest,
 ): Promise<VariantData> {
   request.query.expectedResultType =
     exportType === ExportType.Aggregate ? 'AGGREGATE_VCF_EXCERPT' : 'VCF_EXCERPT';

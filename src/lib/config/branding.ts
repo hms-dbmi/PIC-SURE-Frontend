@@ -24,7 +24,7 @@ interface CodeBlockConfig {
 export interface StatConfig {
   key: string;
   label: string;
-  // A fixed count shown instead of querying for one; same shape as query/counts' StatValue.
+  // A fixed count shown instead of querying for one; same shape as query/counts' CountValue.
   value?: string | number | { [key: string]: string | number | undefined };
   auth?: boolean;
 }

@@ -1,16 +1,22 @@
 <script lang="ts">
   import Button from '#lib/ui/Button.svelte';
   import { getDatasetDetails } from '#lib/api/picsure/dictionary.ts';
-  import { activeRow } from './dashboard.ts';
+  import type { DashboardRow } from './dashboard.svelte.ts';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
-  import Loading from '../../../../lib/ui/Loading.svelte';
+  import Loading from '#lib/ui/Loading.svelte';
   import { log, createLog } from '#lib/telemetry/logger.ts';
 
-  const datasetId = ($activeRow?.dataset_id as string) || '';
-  const title = ($activeRow?.name as string) || '';
-  const link = ($activeRow?.additional_info_link as string) || '';
+  interface Props {
+    row: DashboardRow;
+  }
 
-  async function getDataset() {
+  let { row }: Props = $props();
+
+  const datasetId = $derived((row.dataset_id as string) || '');
+  const title = $derived((row.name as string) || '');
+  const link = $derived((row.additional_info_link as string) || '');
+
+  async function getDataset(datasetId: string) {
     const details = await getDatasetDetails(datasetId);
     if (!details || Object.keys(details).length === 0) throw new Error('No details found');
     if (details.datasetId) {
@@ -27,7 +33,7 @@
   <h2 data-testid="dashboard-drawer-title" class="font-bold ml-4">{title}</h2>
 {/if}
 <hr />
-{#await getDataset()}
+{#await getDataset(datasetId)}
   <Loading ring size="medium" />
 {:then details}
   <ul data-testid="dashboard-drawer-details" class="m-4 p-4">

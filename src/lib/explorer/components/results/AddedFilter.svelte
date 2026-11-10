@@ -9,12 +9,11 @@
   import {
     type Filter,
     type AnyRecordOfFilterInterface,
-    derivedFilterDescription,
-    derivedStudyDescription,
+    describeFilter,
+    studyLabel,
   } from '#lib/query/filter.svelte.ts';
-  import { removeFilter, activeFilter, activeSearch } from '#lib/query/filters.ts';
-  import { populateFromGeneFilter } from '#lib/query/GeneFilter.ts';
-  import { populateFromSNPFilter } from '#lib/query/SNPFilter.ts';
+  import { filterState } from '#lib/query/filters.svelte.ts';
+  import { genomicDraft } from '#lib/query/genomicDraft.svelte.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
 
   import Dialog from '#lib/ui/dialog/Dialog.svelte';
@@ -37,14 +36,11 @@
   function editFilter() {
     logEditClick();
     if (filter.filterType === 'genomic') {
-      populateFromGeneFilter(filter);
+      genomicDraft.loadGeneFilter(filter);
       goto(resolve(`explorer/genome-filter?edit=${Option.Genomic}`));
     } else if (filter.filterType === 'snp') {
-      populateFromSNPFilter(filter);
+      genomicDraft.loadSnpFilter(filter);
       goto(resolve(`explorer/genome-filter?edit=${Option.SNP}`));
-    } else {
-      $activeFilter = filter;
-      $activeSearch = filter.searchResult;
     }
   }
 
@@ -57,7 +53,7 @@
   };
 
   const deleteFilter = function () {
-    return removeFilter(filter.uuid);
+    return filterState.remove(filter.uuid);
   };
 </script>
 
@@ -149,8 +145,8 @@
   </header>
   {#if open}
     <section class="p-1 whitespace-pre-wrap" transition:slide={{ axis: 'y' }}>
-      {derivedFilterDescription(filter)}
-      {derivedStudyDescription(filter)}
+      {describeFilter(filter)}
+      {studyLabel(filter.searchResult)}
       {#if filter.filterType === 'Categorical' && filter.displayType !== 'any' && filter.displayType !== 'anyRecordOf'}
         <div>Values: {filter.categoryValues.join(', ')}</div>
       {/if}
