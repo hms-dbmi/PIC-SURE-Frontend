@@ -11,8 +11,10 @@ import {
   LOGOUT_REASON_KEY,
   OKTA_ID_TOKEN_KEY,
   USER_KEY,
+  announceQueryDiscard,
   clearToken,
   isTokenExpired,
+  onQueryDiscardAnnounced,
   onTokenChange,
   readToken,
   tokenSubject,
@@ -30,6 +32,11 @@ export interface SessionShell {
    * navigation has, or never when it falls back to loading the page.
    */
   navigate(path: string): Promise<void>;
+  /**
+   * Runs the loads of the page on screen again, so its guards see who is signed in now. Settles
+   * once they have, and once any redirect they throw has navigated.
+   */
+  rerunGuards(): Promise<void>;
   /** The page on screen, so a user whose session timed out can come back to it. */
   currentUrl(): { pathname: string; search: string };
   /** Tells the user that the studies they may see could not be loaded. */
@@ -38,6 +45,7 @@ export interface SessionShell {
 
 const disconnected: SessionShell = {
   navigate: async () => {},
+  rerunGuards: async () => {},
   currentUrl: () => ({ pathname: '/', search: '' }),
   showAccessUnavailable: () => {},
 };
@@ -109,9 +117,12 @@ export class Session {
   #pendingLogout: Promise<void> | undefined;
   #endListeners: (() => void)[] = [];
   #discardListeners: (() => (() => void) | void)[] = [];
-  // From a logout that discards the query until it has navigated: what the listeners returned.
+  // From a logout that discards the query, here or in another tab, until this tab has navigated:
+  // what the listeners returned.
   #discard: (() => void)[] | undefined;
+  // Logout navigations and guard runs started, and whether the latest has yet to settle.
   #navigations = 0;
+  #navigating = false;
 
   constructor() {
     if (!browser) return;
@@ -126,15 +137,24 @@ export class Session {
       this.user = restoreUser();
     }
     onTokenChange((stored) => {
-      // Another tab signed out, or signed in as someone else: this tab's profile isn't theirs.
-      // A refresh keeps the subject, and the profile.
-      if (!stored || tokenSubject(stored) !== tokenSubject(this.#token)) {
+      // Another tab signed out, or signed in as someone else: this tab's profile isn't theirs, and
+      // its page may not be for them, so the guards decide again, as for a fresh visit. A refresh
+      // keeps the subject, the profile and the page.
+      const userChanged = !stored || tokenSubject(stored) !== tokenSubject(this.#token);
+      if (userChanged) {
         this.#forgetPendingRequests();
         this.user = {};
       }
       this.#token = stored;
       if (stored) this.bootstrap();
+      // After the bootstrap has started, so the guards that check privileges wait for it.
+      if (userChanged) {
+        this.#liftDiscardAfter(() => this.#shell.rerunGuards()).catch((error: unknown) => {
+          console.error('Error running the guards again: ' + error);
+        });
+      }
     });
+    onQueryDiscardAnnounced(() => this.#followQueryDiscard());
   }
 
   /**
@@ -155,8 +175,9 @@ export class Session {
    * forbidden request for anything but open-access data: restored at the next login, the query
    * would be refused again. A session timeout keeps it. A listener added before that logout has
    * navigated runs at once. The function the listener returns runs once the logout has navigated,
-   * or failed to, so the page being left can't rerun its requests without a token. Returns the
-   * unsubscribe.
+   * or failed to, so the page being left can't rerun its requests without a token. Such a logout
+   * in another tab discards this tab's query too: the function then runs once this tab has
+   * followed the sign-out (its guards have run again). Returns the unsubscribe.
    */
   onQueryDiscard(listener: () => (() => void) | void): () => void {
     this.#discardListeners.push(listener);
@@ -177,6 +198,14 @@ export class Session {
   #notifyDiscard(listener: () => (() => void) | void) {
     const lift = listener();
     if (lift) this.#discard?.push(lift);
+  }
+
+  // Another tab's logout discarded its query. Its token removal reaches this tab too, before or
+  // after this, and the guard run that starts lifts the discard, as does a logout or guard run
+  // of this tab's already under way. A signed-out tab with neither has nothing left to follow.
+  #followQueryDiscard() {
+    this.#discardQuery();
+    if (!this.#token && !this.#pendingLogout && !this.#navigating) this.#liftDiscard();
   }
 
   connect(shell: SessionShell) {
@@ -430,7 +459,11 @@ export class Session {
     redirect = false,
     { discardQuery = false } = {},
   ): Promise<void> {
-    if (discardQuery) this.#discardQuery();
+    if (discardQuery) {
+      this.#discardQuery();
+      // Before #endSession removes the token, which the other tabs follow.
+      announceQueryDiscard();
+    }
     this.#pendingLogout ??= untrack(() => this.#endSession(authProvider, redirect)).finally(() => {
       this.#pendingLogout = undefined;
     });
@@ -470,17 +503,22 @@ export class Session {
   #leave(redirect: boolean) {
     this.user = {};
     log(createLog('AUTH', 'logout.success'));
-    void this.#navigateAway(redirect ? loginRedirectPath(this.#shell.currentUrl()) : '/login');
+    const path = redirect ? loginRedirectPath(this.#shell.currentUrl()) : '/login';
+    void this.#liftDiscardAfter(() => this.#shell.navigate(path));
   }
 
-  async #navigateAway(path: string) {
+  async #liftDiscardAfter(navigate: () => Promise<void>) {
     const navigation = ++this.#navigations;
+    this.#navigating = true;
     try {
-      await this.#shell.navigate(path);
+      await navigate();
     } finally {
-      // A later logout superseded this navigation, so the page being left is still mounted:
+      // A later navigation superseded this one, so the page being left is still mounted:
       // leave lifting the discard to that one.
-      if (navigation === this.#navigations) this.#liftDiscard();
+      if (navigation === this.#navigations) {
+        this.#navigating = false;
+        this.#liftDiscard();
+      }
     }
   }
 

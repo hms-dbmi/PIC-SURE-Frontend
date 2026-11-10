@@ -3,11 +3,12 @@ import type { NavigationEvent } from '@sveltejs/kit';
 
 const logger = vi.hoisted(() => ({ log: vi.fn(), createLog: vi.fn() }));
 vi.mock('#lib/telemetry/logger.ts', () => logger);
-const { goto, session } = vi.hoisted(() => ({
+const { goto, invalidateAll, session } = vi.hoisted(() => ({
   goto: vi.fn(),
+  invalidateAll: vi.fn(),
   session: { connect: vi.fn() },
 }));
-vi.mock('$app/navigation', () => ({ goto }));
+vi.mock('$app/navigation', () => ({ goto, invalidateAll }));
 vi.mock('$app/paths', () => ({ resolve: (path: string) => `/base/${path}` }));
 vi.mock('$app/state', () => ({ page: { url: new URL('https://picsure.test/explorer?q=1') } }));
 vi.mock('#lib/auth/session.svelte.ts', () => ({ session }));
@@ -73,5 +74,14 @@ describe('client init', () => {
 
     expect(goto).toHaveBeenCalledWith('/base/login?redirectTo=%2Fexplorer');
     expect(shell.currentUrl()).toMatchObject({ pathname: '/explorer', search: '?q=1' });
+  });
+
+  it('lets the session run the guards of the page on screen again', async () => {
+    await init();
+    const shell: SessionShell = session.connect.mock.calls[0][0];
+
+    await shell.rerunGuards();
+
+    expect(invalidateAll).toHaveBeenCalledOnce();
   });
 });

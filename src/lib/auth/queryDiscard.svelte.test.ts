@@ -15,9 +15,13 @@ import { request } from '#lib/api/client.ts';
 import { session } from '#lib/auth/session.svelte.ts';
 import { config } from '#lib/config/config.svelte.ts';
 
-const navigations: Array<{ resolve: () => void; reject: (error: Error) => void }> = [];
+type Pending = { resolve: () => void; reject: (error: Error) => void };
+const navigations: Pending[] = [];
+// Guard re-runs after another tab signs out, which navigate when a guard redirects.
+const reruns: Pending[] = [];
 session.connect({
   navigate: () => new Promise<void>((resolve, reject) => navigations.push({ resolve, reject })),
+  rerunGuards: () => new Promise<void>((resolve, reject) => reruns.push({ resolve, reject })),
   currentUrl: () => new URL('http://localhost/explorer'),
   showAccessUnavailable: vi.fn(),
 });
@@ -60,10 +64,11 @@ beforeEach(() => {
   session.setToken('token');
   events.length = 0;
   navigations.length = 0;
+  reruns.length = 0;
 });
 
 afterEach(async () => {
-  navigations.forEach((navigation) => navigation.resolve());
+  [...navigations, ...reruns].forEach((navigation) => navigation.resolve());
   await settle();
   session.clear();
   config.features.termsOfService = false;
@@ -311,5 +316,118 @@ describe('logout and the query', () => {
     navigations[0].resolve();
     await settle();
     expect(events).toEqual(['discarded', 'lifted']);
+  });
+});
+
+describe('a logout in another tab', () => {
+  // The other tab writes these; the storage events reach every tab but that one.
+  const announceDiscard = () => {
+    window.dispatchEvent(
+      new StorageEvent('storage', { key: 'discard-query', oldValue: null, newValue: '1' }),
+    );
+    window.dispatchEvent(
+      new StorageEvent('storage', { key: 'discard-query', oldValue: '1', newValue: null }),
+    );
+  };
+  const removeToken = () => {
+    localStorage.removeItem('token');
+    window.dispatchEvent(new StorageEvent('storage', { key: 'token' }));
+  };
+
+  it('discards the query here too, and lifts the discard once this tab has followed the sign-out', async () => {
+    announceDiscard();
+    expect(events).toEqual(['discarded']);
+
+    removeToken();
+    expect(reruns).toHaveLength(1);
+    await settle();
+    expect(events).toEqual(['discarded']);
+
+    reruns[0].resolve();
+    await settle();
+    expect(events).toEqual(['discarded', 'lifted']);
+  });
+
+  it('lifts the discard once the guards have run again when the sign-out arrives first', async () => {
+    removeToken();
+    announceDiscard();
+    expect(events).toEqual(['discarded']);
+
+    reruns[0].resolve();
+    await settle();
+    expect(events).toEqual(['discarded', 'lifted']);
+  });
+
+  it('lifts the discard at once when this tab has already followed the sign-out', async () => {
+    removeToken();
+    reruns[0].resolve();
+    await settle();
+
+    announceDiscard();
+
+    expect(events).toEqual(['discarded', 'lifted']);
+  });
+
+  it('lifts the discard when running the guards again fails', async () => {
+    announceDiscard();
+    removeToken();
+    reruns[0].reject(new Error('load failed'));
+    await settle();
+
+    expect(events).toEqual(['discarded', 'lifted']);
+  });
+
+  it('keeps the query when the other tab’s session timed out', async () => {
+    removeToken();
+    reruns[0].resolve();
+    await settle();
+
+    expect(events).toEqual([]);
+  });
+});
+
+describe('a logout in this tab', () => {
+  /** Records this tab's localStorage writes, in order. */
+  function recordStorageWrites(): string[] {
+    const writes: string[] = [];
+    const storage = localStorage;
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.getItem(key),
+      setItem: (key: string, value: string) => {
+        writes.push(`set ${key}`);
+        storage.setItem(key, value);
+      },
+      removeItem: (key: string) => {
+        writes.push(`remove ${key}`);
+        storage.removeItem(key);
+      },
+    });
+    return writes;
+  }
+
+  beforeEach(() => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(new Response('{}'))),
+    );
+  });
+
+  it('tells the other tabs to discard the query before it removes the token', async () => {
+    const writes = recordStorageWrites();
+
+    await session.logout(undefined, false, { discardQuery: true });
+
+    expect(writes).toContain('set discard-query');
+    expect(writes.indexOf('set discard-query')).toBeLessThan(writes.indexOf('remove token'));
+    expect(localStorage.getItem('discard-query')).toBeNull();
+  });
+
+  it('tells the other tabs nothing when the session times out', async () => {
+    const writes = recordStorageWrites();
+
+    await session.logout(undefined, true);
+
+    expect(writes).toContain('remove token');
+    expect(writes).not.toContain('set discard-query');
   });
 });

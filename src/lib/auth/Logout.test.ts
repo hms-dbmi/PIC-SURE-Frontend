@@ -30,6 +30,7 @@ function jwt(sub: string): string {
 const navigate = vi.fn();
 session.connect({
   navigate,
+  rerunGuards: vi.fn(),
   currentUrl: () => new URL('http://localhost/explorer'),
   showAccessUnavailable: vi.fn(),
 });

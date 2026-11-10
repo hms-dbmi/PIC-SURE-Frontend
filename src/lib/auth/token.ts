@@ -17,6 +17,11 @@ export const LOGOUT_REASON_KEY = 'logout-reason';
 export const LOGIN_STATE_KEY = 'loginState';
 /** localStorage: set by a FENCE logout so the next FENCE login asks for the account again. */
 export const FENCE_REAUTH_KEY = 'fence-reauth';
+/**
+ * localStorage, for an instant: a logout here is discarding the query, so other tabs discard
+ * theirs. Removed as soon as it is written; the other tabs act on the storage event.
+ */
+const QUERY_DISCARD_KEY = 'discard-query';
 
 /** The stored session token, or `''` when there is none (always on the server). */
 export function readToken(): string {
@@ -39,6 +44,22 @@ export function onTokenChange(listener: (token: string) => void): () => void {
   const onStorage = (event: StorageEvent) => {
     // a null key means the other tab cleared all of localStorage
     if (event.key === TOKEN_KEY || event.key === null) listener(readToken());
+  };
+  window.addEventListener('storage', onStorage);
+  return () => window.removeEventListener('storage', onStorage);
+}
+
+/** Tells the other tabs that a logout here discards the query. Call it before removing the token. */
+export function announceQueryDiscard(): void {
+  if (!browser) return;
+  localStorage.setItem(QUERY_DISCARD_KEY, '1');
+  localStorage.removeItem(QUERY_DISCARD_KEY);
+}
+
+/** Calls `listener` whenever a logout in another tab announces that it discards the query. */
+export function onQueryDiscardAnnounced(listener: () => void): () => void {
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === QUERY_DISCARD_KEY && event.newValue !== null) listener();
   };
   window.addEventListener('storage', onStorage);
   return () => window.removeEventListener('storage', onStorage);
