@@ -258,6 +258,7 @@
         description={scheduleDescription}
         startMissingError={form.startMissingError}
         restoreStartNotFuture={form.restoreStartNotFuture}
+        endNotFuture={form.endNotFuture}
       />
 
       <fieldset>

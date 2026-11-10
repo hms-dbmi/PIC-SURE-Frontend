@@ -128,4 +128,25 @@ describe('BannerDraftForm', () => {
     expect(await form.publish()).toBeUndefined();
     expect(restoreBanner).not.toHaveBeenCalled();
   });
+
+  it('blocks saving and publishing an End the admin set in the past', async () => {
+    const form = new BannerDraftForm(null, undefined, 'UTC');
+    form.htmlContent = '<p>Maintenance tonight</p>';
+    form.endLocal = '2020-01-01T00:00';
+
+    expect(form.endNotFuture).toBe(true);
+    expect(form.canSave).toBe(false);
+    expect(form.canPublish).toBe(false);
+    expect(await form.save()).toBeUndefined();
+    expect(saveBanner).not.toHaveBeenCalled();
+  });
+
+  it('lets a saved draft keep its past End for content fixes but not publish it', () => {
+    const form = new BannerDraftForm({ ...saved, endAt: '2020-01-01T00:00:00Z' }, 'edit', 'UTC');
+    form.title = 'Corrected title';
+
+    expect(form.endNotFuture).toBe(true);
+    expect(form.canSave).toBe(true);
+    expect(form.canPublish).toBe(false);
+  });
 });

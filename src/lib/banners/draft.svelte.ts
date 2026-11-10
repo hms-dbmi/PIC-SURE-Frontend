@@ -96,6 +96,7 @@ export class BannerDraftForm {
   readonly #initialEndLocal: string;
   readonly #initialStartChoice: string;
   readonly #initialEndChoice: string;
+  readonly #storedEnd: string | null;
 
   htmlContent: string = $state('');
   title: string = $state('');
@@ -130,6 +131,7 @@ export class BannerDraftForm {
       : '';
     this.#initialStartChoice = schedule?.startAt ? canonicalInstant(schedule.startAt) : '';
     this.#initialEndChoice = schedule?.endAt ? canonicalInstant(schedule.endAt) : '';
+    this.#storedEnd = schedule?.endAt ?? null;
 
     this.htmlContent =
       mode === 'restore'
@@ -198,16 +200,20 @@ export class BannerDraftForm {
       this.endLocal,
       this.#initialEndLocal,
       this.#initialEndChoice,
-      this.mode === 'restore' ? null : (this.banner?.endAt ?? null),
+      this.#storedEnd,
     ),
   );
-  // When the restore start was last checked against the clock: whenever it changes, and again on
-  // submit (publish() overrides it), so a start that has since passed is caught.
-  #restoreCheckedAt = $derived.by(() => {
+  // When the schedule was last checked against the clock: whenever Start or End changes, and again
+  // on submit (#scheduleLapsedBeforeSubmit overrides it), so a time that has since passed is caught.
+  #scheduleCheckedAt = $derived.by(() => {
     void this.resolvedStart;
+    void this.resolvedEnd;
     return Date.now();
   });
-  readonly restoreStartNotFuture = $derived(this.#restoreStartIsNotFuture(this.#restoreCheckedAt));
+  readonly restoreStartNotFuture = $derived(this.#restoreStartIsNotFuture(this.#scheduleCheckedAt));
+  /** A past End that blocks the submit button (publish, schedule, update or restore). */
+  readonly endNotFuture = $derived(this.#pastEndBlocks('publish', this.#scheduleCheckedAt));
+  readonly #endBlocksSave = $derived(this.#pastEndBlocks('save', this.#scheduleCheckedAt));
   readonly scheduleInvalid = $derived(
     (this.startMissingError && this.resolvedStart === null) ||
       (this.startLocal !== '' && this.resolvedStart === null) ||
@@ -241,9 +247,9 @@ export class BannerDraftForm {
       !this.scheduleInvalid &&
       !this.pageTargetsInvalid,
   );
-  readonly canSave = $derived(this.#submittable && this.dirty);
+  readonly canSave = $derived(this.#submittable && !this.#endBlocksSave && this.dirty);
   readonly canPublish = $derived.by(
-    () => this.#submittable && !(this.#editingPublished && !this.dirty),
+    () => this.#submittable && !this.endNotFuture && !(this.#editingPublished && !this.dirty),
   );
 
   draft(): BannerDraft {
@@ -260,9 +266,12 @@ export class BannerDraftForm {
     };
   }
 
-  /** Saves without publishing. Resolves the saved banner, or undefined after showing the error. */
+  /**
+   * Saves without publishing. Resolves the saved banner, or undefined after showing the error or
+   * an End that has passed.
+   */
   async save(): Promise<ManagedBanner | undefined> {
-    if (this.working) return;
+    if (this.working || this.#scheduleLapsedBeforeSubmit('save')) return;
     this.working = 'save';
     const { banner } = this;
     try {
@@ -285,15 +294,10 @@ export class BannerDraftForm {
 
   /**
    * Publishes, schedules, updates or restores, whichever the form is for. Resolves the
-   * resulting banner, or undefined after showing the error or a restore start that has passed.
+   * resulting banner, or undefined after showing the error or a schedule time that has passed.
    */
   async publish(): Promise<ManagedBanner | undefined> {
-    if (this.working) return;
-    const submitNow = Date.now();
-    if (this.#restoreStartIsNotFuture(submitNow)) {
-      this.#restoreCheckedAt = submitNow;
-      return;
-    }
+    if (this.working || this.#scheduleLapsedBeforeSubmit('publish')) return;
     this.working = 'publish';
     const { banner } = this;
     const copy = this.publishCopy;
@@ -353,6 +357,27 @@ export class BannerDraftForm {
       this.resolvedStart !== null &&
       Date.parse(this.resolvedStart) <= now
     );
+  }
+
+  /**
+   * Mirrors the server: a past End blocks saving only when the admin entered or changed it, so a
+   * stale draft or a published banner can still get content fixes. Publishing a saved draft
+   * checks its whole schedule.
+   */
+  #pastEndBlocks(action: 'save' | 'publish', now: number) {
+    const end = this.resolvedEnd;
+    if (this.scheduleDisabled || end === null || Date.parse(end) > now) return false;
+    const endChanged = this.#storedEnd === null || Date.parse(end) !== Date.parse(this.#storedEnd);
+    return endChanged || (action === 'publish' && this.banner?.status === 'SAVED');
+  }
+
+  #scheduleLapsedBeforeSubmit(action: 'save' | 'publish') {
+    const now = Date.now();
+    const lapsed =
+      (action === 'publish' && this.#restoreStartIsNotFuture(now)) ||
+      this.#pastEndBlocks(action, now);
+    if (lapsed) this.#scheduleCheckedAt = now;
+    return lapsed;
   }
 
   #snapshot() {
