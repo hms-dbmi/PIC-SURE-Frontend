@@ -179,6 +179,7 @@ export class ExplorerSearch {
   };
 
   reset = () => {
+    assertNoSsrWrite('explorerSearch');
     log(createLog('SEARCH', 'search.reset', { pageContext: getPageContext() }));
     this.discard();
   };
