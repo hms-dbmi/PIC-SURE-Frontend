@@ -40,6 +40,7 @@ describe('consentDeniedMessage', () => {
     registerSessionHooks({
       getToken: () => 'my-token',
       onUnauthorized: vi.fn(),
+      onTermsRefusal: vi.fn(),
       onForbidden,
       onTokenRefreshed: vi.fn(),
     });

@@ -1,9 +1,9 @@
 <script lang="ts">
   import { page } from '$app/state';
   import { config } from '#lib/config/config.svelte.ts';
-  import { user, isUserLoggedIn } from '#lib/auth/User.ts';
-  import Terms from '#lib/shell/Terms.svelte';
-  import Dialog from '#lib/ui/dialog/Dialog.svelte';
+  import { showsLink } from '#lib/auth/nav.ts';
+  import { session } from '#lib/auth/session.svelte.ts';
+  import { termsOfService } from '#lib/shell/termsOfService.svelte.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
 
   let { showSitemap: showSitemapProp }: { showSitemap?: boolean } = $props();
@@ -14,55 +14,52 @@
       config.branding.footer.excludeSitemapOn.find((hide) => page.url.pathname.includes(hide)),
   );
 
-  let sitemap = $derived(
-    config.branding.sitemap.map((section) => ({
-      ...section,
-      show:
-        (!section.privilege ||
-          ($user.privileges && $user.privileges.includes(section.privilege))) &&
-        (!section.feature || config.features[section.feature]),
-    })),
-  );
+  let signedInUser = $derived(session.signedInUser);
 
-  let modalOpen: boolean = $state(
-    config.features.enforceTermsOfService && isUserLoggedIn() && !$user.acceptedTOS,
-  );
-  let modalClosable: boolean = $derived(
-    !config.features.enforceTermsOfService ||
-      !isUserLoggedIn() ||
-      (isUserLoggedIn() && !!$user?.acceptedTOS),
+  let sitemap = $derived(
+    config.branding.sitemap
+      .filter(
+        (section) =>
+          (!section.privilege || signedInUser?.privileges?.includes(section.privilege)) &&
+          (!section.feature || config.features[section.feature]),
+      )
+      .map((section) => ({
+        section,
+        links: section.links.filter(
+          (link) =>
+            (!link.feature || config.features[link.feature]) &&
+            showsLink(link.url, signedInUser, config.features),
+        ),
+      }))
+      .filter(({ links }) => links.length > 0),
   );
 </script>
 
-{#if !hideSitemap && config.branding.sitemap.length > 0}
+{#if !hideSitemap && sitemap.length > 0}
   <div id="app-footer-sitemap">
     <div class="flex flex-wrap place-content-center">
-      {#each sitemap as section}
-        {#if section.show}
-          <ul class="basis-1/8">
-            <li class="font-bold text-center">{section.category}</li>
-            {#each section.links as link}
-              {#if !link.feature || config.features[link.feature]}
-                <li class="text-center">
-                  <a
-                    target={link.newTab ? '_blank' : '_self'}
-                    rel="external"
-                    href={link.url}
-                    class="hover:underline"
-                    onclick={() =>
-                      log(
-                        createLog('NAVIGATION', 'sitemap.link_click', {
-                          title: link.title,
-                          url: link.url,
-                          category: section.category,
-                        }),
-                      )}>{link.title}</a
-                  >
-                </li>
-              {/if}
-            {/each}
-          </ul>
-        {/if}
+      {#each sitemap as { section, links } (section)}
+        <ul class="basis-1/8">
+          <li class="font-bold text-center">{section.category}</li>
+          {#each links as link (link)}
+            <li class="text-center">
+              <a
+                target={link.newTab ? '_blank' : '_self'}
+                rel="external"
+                href={link.url}
+                class="hover:underline"
+                onclick={() =>
+                  log(
+                    createLog('NAVIGATION', 'sitemap.link_click', {
+                      title: link.title,
+                      url: link.url,
+                      category: section.category,
+                    }),
+                  )}>{link.title}</a
+              >
+            </li>
+          {/each}
+        </ul>
       {/each}
     </div>
   </div>
@@ -71,18 +68,15 @@
   <ul>
     {#if config.features.termsOfService}
       <li>
-        <Dialog
-          bind:open={modalOpen}
-          data-testid="app-footer-terms"
-          aria-label="Terms of Service"
-          size="page"
-          triggerClass="hover:underline text-[0.74rem]"
-          ontrigger={() => log(createLog('NAVIGATION', 'footer.tos_click'))}
-          closeable={modalClosable}
+        <button
+          type="button"
+          data-testid="app-footer-terms-trigger"
+          class="hover:underline text-[0.74rem]"
+          onclick={() => {
+            log(createLog('NAVIGATION', 'footer.tos_click'));
+            termsOfService.dialogOpen = true;
+          }}>Terms of Service</button
         >
-          {#snippet trigger()}Terms of Service{/snippet}
-          <Terms bind:modalOpen />
-        </Dialog>
       </li>
     {/if}
     {#each config.branding.footer.links as link}

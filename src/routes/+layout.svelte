@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, type Snippet } from 'svelte';
-  import { afterNavigate } from '$app/navigation';
+  import { afterNavigate, beforeNavigate } from '$app/navigation';
   import { asset } from '$app/paths';
   import type { AssetPath } from '$app/types';
   import '@fortawesome/fontawesome-free/css/all.min.css';
@@ -8,6 +8,8 @@
   import { config } from '#lib/config/config.svelte.ts';
   import GoogleTracking from '#lib/shell/GoogleTracking.svelte';
   import ExternalLinkWarning from '#lib/shell/ExternalLinkWarning.svelte';
+  import TermsDialog from '#lib/shell/TermsDialog.svelte';
+  import { handleAccessReason } from '#lib/auth/accessReason.ts';
   import { log, createLog, isHashOnlyGoto } from '#lib/telemetry/logger.ts';
   import { resumeAfterWafCaptcha } from '#lib/api/wafCaptcha.ts';
 
@@ -35,6 +37,14 @@
     document.documentElement.dataset.theme = theme;
   });
 
+  // Where the current navigation set out for. SvelteKit doesn't run beforeNavigate for a guard's
+  // redirect, so a Back or Forward that lands somewhere else was redirected by a guard, and its
+  // reason is new; one that lands where it set out is a history step onto a URL handled before.
+  let requested: string | undefined;
+  beforeNavigate(({ to }) => {
+    requested = to?.url.href;
+  });
+
   afterNavigate(({ from, to, type }) => {
     if (isHashOnlyGoto({ from, to, type })) return;
     log(
@@ -44,6 +54,7 @@
         type,
       }),
     );
+    if (to && (type !== 'popstate' || to.url.href !== requested)) handleAccessReason(to.url);
   });
 </script>
 
@@ -53,6 +64,7 @@
 
 <main class="w-full h-full" data-theme={theme}>
   {@render children?.()}
+  <TermsDialog />
   <GoogleTracking />
   {#if config.features.confirmExternalNavigation}
     <ExternalLinkWarning />

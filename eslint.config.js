@@ -16,9 +16,7 @@ const boundaryExceptions = [
   'src/lib/ui/datatable/accessories/Rows.svelte',
   'src/lib/ui/datatable/accessories/Search.svelte',
   'src/lib/ui/stepper/Stepper.svelte',
-  'src/lib/ui/tree/RemoteTree.svelte',
   'src/lib/ui/unsavedGuard.svelte.ts',
-  'src/lib/utils/hierarchy.ts',
 ];
 
 const skeletonOnlyInUi = {
@@ -184,6 +182,7 @@ export default [
   ...importBoundary('ui', ['ui', 'utils']),
   ...importBoundary('utils', ['utils']),
   ...importBoundary('config', ['config', 'api', 'assets', 'ui', 'utils']),
+  ...importBoundary('auth', ['auth', 'api', 'config', 'telemetry', 'ui', 'utils']),
   ...svelte.configs['flat/prettier'],
   {
     files: ['**/*.svelte.js', '**/*.svelte.ts'],

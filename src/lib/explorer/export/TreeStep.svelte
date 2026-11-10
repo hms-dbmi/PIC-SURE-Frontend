@@ -4,10 +4,12 @@
   import { exports } from '#lib/explorer/export/Export.ts';
   import { addExport, removeExport, mapSearchResultAsExport } from '#lib/explorer/export/Export.ts';
   import Loading from '#lib/ui/Loading.svelte';
-  import RemoteTree from '#lib/ui/tree/RemoteTree.svelte';
+  import TreeView from '#lib/ui/tree/TreeView.svelte';
+  import { toConceptNodes } from '#lib/explorer/export/conceptTree.ts';
   import Summary from '#lib/explorer/export/Summary.svelte';
   import { getQueryRequest } from '#lib/explorer/export/ExportStepperManager.svelte.ts';
   import { cardClass } from '#lib/ui/surface.ts';
+  import { untrack } from 'svelte';
 
   let disabledConcepts: string[] = $derived(getQueryRequest().query.select);
   let selectedConcepts: string[] = $derived([
@@ -52,13 +54,21 @@
     return parent?.children;
   }
 
-  const onselect = (searchResult?: SearchResult) => {
-    if (!searchResult) return;
+  async function loadChildren(concept: SearchResult) {
+    const children = await fetchChildren(concept.conceptPath);
+    return children && toConceptNodes(children);
+  }
+
+  // The tree takes over the selection once built; reading the selected concepts tracked would
+  // rebuild it, and drop what's open, on every change.
+  const initialNodes = (concepts: SearchResult[]) =>
+    untrack(() => toConceptNodes(concepts, selectedConcepts, disabledConcepts));
+
+  const onselect = (searchResult: SearchResult) => {
     addExport(mapSearchResultAsExport(searchResult));
   };
 
-  const onunselect = (searchResult?: SearchResult) => {
-    if (!searchResult) return;
+  const onunselect = (searchResult: SearchResult) => {
     removeExport(mapSearchResultAsExport(searchResult));
   };
 </script>
@@ -74,14 +84,13 @@
       {#await getInitialTree(largestDepth)}
         <Loading ring size="small" />
       {:then treeNodes}
-        <RemoteTree
-          initialNodes={treeNodes}
-          {fetchChildren}
-          fullWidth={true}
+        <TreeView
+          nodes={initialNodes(treeNodes)}
+          label="Variables"
+          class="overflow-auto w-full"
+          {loadChildren}
           {onselect}
           {onunselect}
-          {selectedConcepts}
-          {disabledConcepts}
         />
       {/await}
     </div>

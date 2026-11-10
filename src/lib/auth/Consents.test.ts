@@ -1,15 +1,12 @@
+// @vitest-environment happy-dom
+
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { get } from 'svelte/store';
 
 const mockApi = vi.hoisted(() => ({ request: vi.fn() }));
 const mockToaster = vi.hoisted(() => ({ error: vi.fn() }));
 
-vi.mock('$app/env', () => ({ browser: false }));
-vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost') } }));
-vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
-vi.mock('$app/paths', () => ({
-  resolve: (path: string) => (path.startsWith('/') ? path : `/${path}`),
-}));
+vi.mock('$app/env', () => ({ browser: true }));
 vi.mock('#lib/config/config.svelte.ts', () => ({
   config: { features: { explorer: { open: false }, login: { open: false } } },
 }));
@@ -19,13 +16,16 @@ vi.mock('#lib/ui/toaster.ts', () => ({ toaster: mockToaster, isToastShowing: () 
 import {
   ACCESS_UNAVAILABLE_MESSAGE,
   accessUnavailable,
-  clearSession,
   ensureConsentsLoaded,
   getConsents,
   loadConsents,
+  removeToken,
+  setToken,
+  showAccessUnavailable,
   user,
-  tokenStatus,
 } from '#lib/auth/User.ts';
+import { session } from '#lib/auth/session.svelte.ts';
+import { config } from '#lib/config/config.svelte.ts';
 import { addConsents } from '#lib/explorer/Dictionary.ts';
 import { Psama } from '#lib/api/paths.ts';
 import { ApiError } from '#lib/api/errors.ts';
@@ -39,12 +39,20 @@ const blankRequest = () => ({ facets: [], search: '', consents: [] });
 
 const runOutRetries = () => vi.advanceTimersByTimeAsync(5_000);
 
+session.connect({
+  navigate: vi.fn(),
+  currentUrl: () => new URL('http://localhost'),
+  showAccessUnavailable,
+});
+
 beforeEach(() => {
   mockApi.request.mockReset();
   mockToaster.error.mockReset();
   vi.spyOn(console, 'error').mockImplementation(() => {});
-  tokenStatus.set(true);
+  setToken('token');
   user.set({ consents: {} });
+  config.features.termsOfService = false;
+  config.features.enforceTermsOfService = false;
 });
 
 describe('getConsents', () => {
@@ -178,19 +186,17 @@ describe('loadConsents', () => {
   });
 
   it('drops an in-flight response when the session is cleared', async () => {
-    vi.stubGlobal('sessionStorage', { removeItem: vi.fn() });
     let resolveStale!: (value: unknown) => void;
     mockApi.request.mockImplementationOnce(
       () => new Promise((resolve) => (resolveStale = resolve)),
     );
 
     const stale = loadConsents();
-    clearSession();
+    session.clear();
     resolveStale({ consents });
     await stale;
 
     expect(get(user).consents).toBeUndefined();
-    vi.unstubAllGlobals();
   });
 });
 
@@ -222,7 +228,7 @@ describe('accessUnavailable', () => {
 
   it('is false when logged out, where access is simply not applicable', () => {
     user.set({ consents: undefined });
-    tokenStatus.set(false);
+    removeToken();
 
     expect(get(accessUnavailable)).toBe(false);
   });
@@ -256,13 +262,31 @@ describe('addConsents', () => {
 
   it('sends an empty list when the token is gone but the user blob lingers', async () => {
     user.set({ consents });
-    tokenStatus.set(false);
+    removeToken();
 
     await expect(addConsents(blankRequest())).resolves.toHaveProperty('consents', []);
   });
 
   it('throws and toasts rather than sending an empty list when access is unknown', async () => {
     user.set({ consents: undefined });
+
+    await expect(addConsents(blankRequest())).rejects.toThrow(ACCESS_UNAVAILABLE_MESSAGE);
+    expect(mockToaster.error).toHaveBeenCalledWith(
+      expect.objectContaining({ title: ACCESS_UNAVAILABLE_MESSAGE }),
+    );
+  });
+
+  it('throws without toasting while the terms dialog asks the user to accept', async () => {
+    config.features.termsOfService = true;
+    config.features.enforceTermsOfService = true;
+    user.set({ acceptedTOS: false });
+
+    await expect(addConsents(blankRequest())).rejects.toThrow(ACCESS_UNAVAILABLE_MESSAGE);
+    expect(mockToaster.error).not.toHaveBeenCalled();
+  });
+
+  it('toasts for such a user where the app does not ask for the terms', async () => {
+    user.set({ acceptedTOS: false });
 
     await expect(addConsents(blankRequest())).rejects.toThrow(ACCESS_UNAVAILABLE_MESSAGE);
     expect(mockToaster.error).toHaveBeenCalledWith(

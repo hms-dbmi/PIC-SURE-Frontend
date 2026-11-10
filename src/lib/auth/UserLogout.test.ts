@@ -8,10 +8,6 @@ const navigations = vi.hoisted(
 const mockPsamaLogout = vi.hoisted(() => vi.fn());
 
 vi.mock('$app/env', () => ({ browser: true }));
-vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/explorer') } }));
-vi.mock('$app/navigation', () => ({
-  goto: () => new Promise<void>((resolve, reject) => navigations.push({ resolve, reject })),
-}));
 vi.mock('#lib/api/psama/user.ts', () => ({
   logout: (...args: unknown[]) => mockPsamaLogout(...args),
 }));
@@ -23,8 +19,14 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
 
 import { discardingQuery } from '#lib/auth/discardingQuery.ts';
 import { createLog } from '#lib/telemetry/logger.ts';
-import { logout } from '#lib/auth/User.ts';
+import { session } from '#lib/auth/session.svelte.ts';
 import type AuthProvider from '#lib/auth/providers/AuthProvider.ts';
+
+session.connect({
+  navigate: () => new Promise<void>((resolve, reject) => navigations.push({ resolve, reject })),
+  currentUrl: () => new URL('http://localhost/explorer'),
+  showAccessUnavailable: vi.fn(),
+});
 
 async function settle() {
   await new Promise((resolve) => setTimeout(resolve));
@@ -33,14 +35,14 @@ async function settle() {
 describe('logout while the query is being discarded', () => {
   beforeEach(() => {
     navigations.length = 0;
-    localStorage.setItem('token', 'token');
+    session.setToken('token');
     discardingQuery.set(true);
   });
 
   it('lowers the discard once the logout has navigated', async () => {
     mockPsamaLogout.mockResolvedValue({});
 
-    const loggedOut = logout(undefined, false);
+    const loggedOut = session.logout(undefined, false);
     await settle();
     expect(get(discardingQuery)).toBe(true);
 
@@ -63,7 +65,7 @@ describe('logout while the query is being discarded', () => {
       process.off('unhandledRejection', ignoreFailure);
     });
 
-    const loggedOut = logout(undefined, false);
+    const loggedOut = session.logout(undefined, false);
     await settle();
     navigations[0].reject(failure);
     await loggedOut;
@@ -75,10 +77,10 @@ describe('logout while the query is being discarded', () => {
   it('waits for the navigation of a later logout that supersedes the first', async () => {
     mockPsamaLogout.mockResolvedValue({});
 
-    void logout(undefined, false);
+    void session.logout(undefined, false);
     await settle();
     expect(navigations).toHaveLength(1);
-    void logout(undefined, false);
+    void session.logout(undefined, false);
     await settle();
     expect(navigations).toHaveLength(2);
 
@@ -98,7 +100,7 @@ describe('logout while the query is being discarded', () => {
     onTestFinished(() => consoleError.mockRestore());
     const provider = { logout: async () => undefined } as unknown as AuthProvider;
 
-    const loggedOut = logout(provider, false);
+    const loggedOut = session.logout(provider, false);
     await settle();
     navigations[0].resolve();
     await loggedOut;
@@ -115,7 +117,7 @@ describe('logout while the query is being discarded', () => {
 describe('logout and the query', () => {
   beforeEach(() => {
     navigations.length = 0;
-    localStorage.setItem('token', 'token');
+    session.setToken('token');
     discardingQuery.set(false);
     mockPsamaLogout.mockResolvedValue({});
   });
@@ -125,7 +127,7 @@ describe('logout and the query', () => {
     const unsubscribe = discardingQuery.subscribe((discard) => raised.push(discard));
     onTestFinished(unsubscribe);
 
-    const loggedOut = logout(undefined, false, { discardQuery: true });
+    const loggedOut = session.logout(undefined, false, { discardQuery: true });
     await settle();
     expect(get(discardingQuery)).toBe(true);
 
@@ -140,7 +142,7 @@ describe('logout and the query', () => {
     const unsubscribe = discardingQuery.subscribe((discard) => raised.push(discard));
     onTestFinished(unsubscribe);
 
-    const loggedOut = logout(undefined, true);
+    const loggedOut = session.logout(undefined, true);
     await settle();
     navigations[0].resolve();
     await loggedOut;

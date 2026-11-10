@@ -164,7 +164,10 @@ describe('QuerySummary', () => {
 
     // Dialog trigger is replaced by the disabled Popover button
     expect(screen.queryByTestId('dataset-restore-filters-trigger')).not.toBeInTheDocument();
-    expect(screen.getByTestId('dataset-restore-popover-trigger')).toBeDisabled();
+    expect(screen.getByTestId('dataset-restore-popover-trigger')).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
     expect(screen.getByTestId('ui-error-alert')).toBeInTheDocument();
     expect(screen.getByTestId('ui-error-alert')).toHaveTextContent('\\phs001\\');
   });
@@ -176,7 +179,10 @@ describe('QuerySummary', () => {
     await screen.findByTestId('dataset-filters-container');
 
     expect(screen.queryByTestId('dataset-restore-filters-trigger')).not.toBeInTheDocument();
-    expect(screen.getByTestId('dataset-restore-popover-trigger')).toBeDisabled();
+    expect(screen.getByTestId('dataset-restore-popover-trigger')).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
   });
 
   it('enables restoring a saved V2 query when the compatibility flag is on', async () => {
@@ -198,7 +204,7 @@ describe('QuerySummary', () => {
 
     expect(screen.queryByTestId('dataset-restore-filters-trigger')).not.toBeInTheDocument();
     const popover = screen.getByTestId('dataset-restore-popover-trigger');
-    expect(popover).toBeDisabled();
+    expect(popover).toHaveAttribute('aria-disabled', 'true');
     expect(popover).toHaveTextContent('Restore Filters');
   });
 

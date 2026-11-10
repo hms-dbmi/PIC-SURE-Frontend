@@ -7,7 +7,7 @@
   import { config } from '#lib/config/config.svelte.ts';
   import { PROJECT_HOSTNAME } from '#lib/config/deployment.ts';
   import { getApiConnectionResource } from '#lib/explorer/Resources.ts';
-  import { tokenStatus } from '#lib/auth/User.ts';
+  import { session } from '#lib/auth/session.svelte.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
 
   import ApiDocumentation from './ApiDocumentation.svelte';
@@ -21,7 +21,7 @@
   import { tones } from '#lib/ui/surface.ts';
 
   let mounted = $state(false);
-  let loggedIn = $derived(mounted && $tokenStatus);
+  let loggedIn = $derived(mounted && session.isLoggedIn);
   const capabilities = config.branding.apiPage?.capabilities || [];
 
   const codeBlocks = $derived(config.branding.explorePage.codeBlocks);

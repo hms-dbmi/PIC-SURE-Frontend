@@ -2,7 +2,7 @@
   import Button from '#lib/ui/Button.svelte';
   import { config } from '#lib/config/config.svelte.ts';
 
-  import HelpInfoPopup from '#lib/ui/popover/HelpInfoPopup.svelte';
+  import HelpTip from '#lib/ui/popover/HelpTip.svelte';
   import Panel from '#lib/explorer/components/Panel.svelte';
   import Genes from '#lib/explorer/genomic/gene/Genes.svelte';
   import Frequency from '#lib/explorer/genomic/gene/Frequency.svelte';
@@ -45,31 +45,25 @@
     subtitle="The calculated consequence is based on VEP annotation."
   >
     {#snippet help()}
-      <span
-        role="button"
-        tabindex="-1"
-        onclick={() => log(createLog('ACTION', 'genomic.help_click', { section: 'consequence' }))}
-        onkeydown={(e) =>
-          e.key === 'Enter' &&
+      <HelpTip
+        data-testid="genomic-consequence-help"
+        text={helpText.consequence}
+        onopen={(by) =>
+          by === 'click' &&
           log(createLog('ACTION', 'genomic.help_click', { section: 'consequence' }))}
-      >
-        <HelpInfoPopup data-testid="genomic-consequence-help" text={helpText.consequence} />
-      </span>
+      />
     {/snippet}
     <Consequence />
   </Panel>
   <Panel data-testid="genomic-frequency-panel" title="Select Variant Frequency">
     {#snippet help()}
-      <span
-        role="button"
-        tabindex="-1"
-        onclick={() => log(createLog('ACTION', 'genomic.help_click', { section: 'frequency' }))}
-        onkeydown={(e) =>
-          e.key === 'Enter' &&
+      <HelpTip
+        data-testid="genomic-frequency-help"
+        text={helpText.frequency}
+        onopen={(by) =>
+          by === 'click' &&
           log(createLog('ACTION', 'genomic.help_click', { section: 'frequency' }))}
-      >
-        <HelpInfoPopup data-testid="genomic-frequency-help" text={helpText.frequency} />
-      </span>
+      />
     {/snippet}
     <Frequency />
   </Panel>

@@ -1,11 +1,5 @@
-import { redirect } from '@sveltejs/kit';
-import { config } from '#lib/config/config.svelte.ts';
 import type { PageLoad } from './$types';
+import { ACCESS } from '#lib/auth/access.ts';
+import { requireAccess } from '#lib/auth/guard.ts';
 
-export const load: PageLoad = async ({ parent }) => {
-  // The root layout applies config; wait for it before reading the flag.
-  await parent();
-  if (!config.features.dashboard) {
-    redirect(302, '/');
-  }
-};
+export const load: PageLoad = (event) => requireAccess(event, ACCESS.dashboard);

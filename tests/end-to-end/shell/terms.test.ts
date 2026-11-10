@@ -1,10 +1,12 @@
-import { expect } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import {
   test,
   mockApiSuccess,
   mockApiFail,
   mockHTMLBodySuccess,
   mockApiConfig,
+  mockTermsNotAccepted,
+  tokenOnlyState,
 } from '../custom-context';
 import {
   searchResults as mockSearchResults,
@@ -14,6 +16,7 @@ import {
   applications as mockApps,
   connections as mockConnections,
   picsureUser,
+  mockToken,
 } from '../../support/mock-data';
 import { userIsLoggedIn } from '../utils';
 
@@ -364,5 +367,98 @@ test.describe('Logged in', () => {
       await expect(page.getByTestId('toast-root')).toHaveAttribute('data-type', 'success');
       expect(tosUpdateRequest).toBeTruthy();
     });
+  });
+});
+
+test.describe('A fresh tab with only the login token', () => {
+  test.use({ storageState: tokenOnlyState('tests/end-to-end/.auth/generalUser.json') });
+
+  const storedToken = (page: Page) => page.evaluate(() => localStorage.getItem('token'));
+
+  test.beforeEach(async ({ page }) => {
+    await mockHTMLBodySuccess(page, Psama.Latest, mockTerms);
+    await mockApiSuccess(page, Psama.Consents, { consents: picsureUser.consents });
+  });
+
+  test('Shows the terms when PSAMA refuses a user who has not accepted them', async ({ page }) => {
+    // Given
+    await mockApiSuccess(page, Psama.Me, picsureUser);
+    await mockTermsNotAccepted(page);
+
+    // When
+    await page.goto('/help');
+
+    // Then
+    await expect(page.getByTestId('terms-accept')).toBeVisible();
+    await expect(page).toHaveURL('/help');
+    expect(await storedToken(page)).toBe(mockToken);
+  });
+
+  test('Accepting the terms keeps the user signed in on the page', async ({ page }) => {
+    // Given
+    await mockApiSuccess(page, Psama.Me, picsureUser);
+    await mockTermsNotAccepted(page);
+    await page.goto('/help');
+
+    // When
+    await page.getByTestId('terms-accept').click();
+
+    // Then
+    await expect(page.locator('#terms-of-service')).not.toBeVisible();
+    await userIsLoggedIn(page);
+    await expect(page).toHaveURL('/help');
+  });
+
+  test('Does not show the terms to a user who has accepted them', async ({ page }) => {
+    // Given
+    let termsRequested = false;
+    page.on('request', (request) => {
+      if (request.url().includes('/psama/tos/latest')) termsRequested = true;
+    });
+    await mockApiSuccess(page, Psama.Me, picsureUser);
+
+    // When
+    await page.goto('/help');
+
+    // Then: the dialog loads the terms whenever it opens
+    await userIsLoggedIn(page);
+    expect(termsRequested).toBe(false);
+  });
+
+  test('Signs the user out when PSAMA refuses their acceptance too', async ({ page }) => {
+    // Given: an ended session, which PSAMA refuses with the same empty 403, even at /tos/accept
+    for (const path of [Psama.Me, Psama.Accept]) {
+      await page.route(path, (route) => route.fulfill({ status: 403, body: '' }));
+    }
+    await mockApiSuccess(page, Psama.Logout, {});
+    await page.goto('/help');
+
+    // When
+    await page.getByTestId('terms-accept').click();
+
+    // Then
+    await expect(page).toHaveURL(/\/login/);
+    expect(await storedToken(page)).toBeNull();
+  });
+
+  test('Signs the user out on a 403 that is not about the terms', async ({ page }) => {
+    // Given: PSAMA's own refusal, from its exception handler
+    await page.route(Psama.Me, (route) =>
+      route.fulfill({
+        status: 403,
+        json: {
+          message: 'You do not have permission to perform this operation',
+          content: 'Access Denied',
+        },
+      }),
+    );
+    await mockApiSuccess(page, Psama.Logout, {});
+
+    // When
+    await page.goto('/help');
+
+    // Then
+    await expect(page).toHaveURL(/\/login/);
+    expect(await storedToken(page)).toBeNull();
   });
 });

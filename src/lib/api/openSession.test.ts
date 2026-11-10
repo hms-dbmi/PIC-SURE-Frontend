@@ -88,6 +88,7 @@ describe('open-access sessions through api/client.ts', () => {
     (await import('#lib/api/sessionHooks.ts')).registerSessionHooks({
       getToken: () => localStorage.getItem('token'),
       onUnauthorized: mockUnauthorized,
+      onTermsRefusal: vi.fn(),
       onForbidden: vi.fn(),
       onTokenRefreshed: vi.fn(),
     });

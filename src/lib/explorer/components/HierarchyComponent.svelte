@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { SearchResult } from '#lib/explorer/types.ts';
-  import type { NodeInterface } from '#lib/ui/tree/types.ts';
+  import type { TreeNodeInit } from '#lib/ui/tree/treeModel.svelte.ts';
   import {
     type Filter,
     AnyRecordOfFilterError,
@@ -8,7 +8,7 @@
   } from '#lib/query/filter.svelte.ts';
   import { activeRow } from '#lib/explorer/ExpandableRow.ts';
   import { addFilter } from '#lib/query/filters.ts';
-  import RadioTree from '#lib/ui/tree/RadioTree.svelte';
+  import TreeView from '#lib/ui/tree/TreeView.svelte';
   import {
     getConceptTree,
     getHierarchyConcepts,
@@ -36,7 +36,7 @@
     !data?.allowFiltering && page.url.pathname.includes('/discover'),
   );
 
-  async function getHierarchy(): Promise<NodeInterface[]> {
+  async function getHierarchy(): Promise<TreeNodeInit<string>[]> {
     if (!data?.dataset || !data?.conceptPath) {
       throw new Error('Dataset and concept path are required');
     }
@@ -50,13 +50,11 @@
 
       const sorted = sortHierarchyDeepestFirst(hierarchyConcepts);
 
-      const rootNode = sorted.reduce<NodeInterface | null>((child, concept) => {
-        const node = createNode(concept);
-        if (child) {
-          node.children = [child];
-        }
-        return node;
-      }, null);
+      // Built deepest first, so the leaf (this variable) starts selected.
+      const rootNode = sorted.reduce<TreeNodeInit<string> | null>(
+        (child, concept) => createNode(concept, child),
+        null,
+      );
 
       selectedNode = sorted[0].conceptPath;
 
@@ -70,13 +68,20 @@
     }
   }
 
-  function createNode(concept: SearchResult): NodeInterface {
+  function createNode(
+    concept: SearchResult,
+    child: TreeNodeInit<string> | null,
+  ): TreeNodeInit<string> {
+    const name = `${concept.display} (${concept.name})`;
     return {
-      name: `${concept.display} (${concept.name})`,
+      name,
       value: concept.conceptPath,
-      children: [],
+      label: name,
+      payload: concept.conceptPath,
+      children: child ? [child] : undefined,
       open: true,
-      selected: false,
+      selected: !child,
+      disabled: disableAddFilter,
     };
   }
 
@@ -162,10 +167,11 @@
     {#await getHierarchy()}
       <Loading ring size="small" />
     {:then treeNodes}
-      <RadioTree
-        fullWidth={true}
+      <TreeView
         nodes={treeNodes}
-        disableTree={disableAddFilter}
+        label="Data tree"
+        selection="single"
+        class="w-full"
         onselect={(value) => {
           selectedNode = value;
           log(

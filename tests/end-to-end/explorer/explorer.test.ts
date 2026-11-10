@@ -846,10 +846,14 @@ test.describe('Explorer for authenticated users', () => {
       });
       test('Hierarchy component data is expected', async ({ page }) => {
         // Then: the tree runs from the shallowest concept down to the selected one
-        const labels = page.getByTestId('explorer-hierarchy').locator('label');
-        await expect(labels).toHaveText(
-          [...hierarchyResponse].reverse().map(({ display, name }) => `${display} (${name})`),
-        );
+        const radios = page.getByTestId('explorer-hierarchy').getByRole('radio');
+        const names = [...hierarchyResponse]
+          .reverse()
+          .map(({ display, name }) => `${display} (${name})`);
+        await expect(radios).toHaveCount(names.length);
+        for (const [i, name] of names.entries()) {
+          await expect(radios.nth(i)).toHaveAccessibleName(name);
+        }
       });
       test("Hierarchy component's last item is the only one selected", async ({ page }) => {
         // Then
@@ -914,5 +918,8 @@ test.describe('Explorer for unauthenticated users', () => {
 
     // Then
     await expect(page).toHaveURL(/\/login\?redirectTo=%2Fexplorer/);
+    await expect(page.getByTestId('toast-root')).toContainText(
+      'You must be logged in to access Explore.',
+    );
   });
 });

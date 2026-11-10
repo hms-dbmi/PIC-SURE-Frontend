@@ -21,10 +21,7 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
     metadata,
   }),
 }));
-vi.mock('#lib/auth/User.ts', async () => {
-  const { writable } = await import('svelte/store');
-  return { tokenStatus: writable(false) };
-});
+vi.mock('#lib/auth/session.svelte.ts', () => ({ session: { isLoggedIn: false } }));
 vi.mock('#lib/explorer/Resources.ts', () => ({
   getApiConnectionResource: () => ({ requiresAuth: false, usesDistinctOpenResource: true }),
 }));

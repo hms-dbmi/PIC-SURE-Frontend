@@ -30,24 +30,21 @@
         {#if isAdvancedFilteringPage}
           <!-- Hide the AQB affordance when we're already on the AF page -->
         {:else if advancedFilteringDisabled}
-          <Popover
-            triggerTypes={['hover', 'focus']}
-            triggerStyle="ml-auto"
-            placement="left"
-            message="Advanced Query Builder is not available with only one non-genomic filter."
-          >
-            {#snippet trigger()}
+          <Popover triggerTypes={['hover', 'focus']} placement="left">
+            {#snippet trigger(props)}
               <Button
+                {...props}
                 id="results-advanced-filtering-open"
                 data-testid="results-advanced-filtering-open"
                 variant="tonal-static"
                 size="sm"
-                class="ml-auto"
-                disabled
+                class="mr-0 ml-auto"
+                aria-disabled="true"
               >
                 Build Advanced Query
               </Button>
             {/snippet}
+            Advanced Query Builder is not available with only one non-genomic filter.
           </Popover>
         {:else}
           <Button

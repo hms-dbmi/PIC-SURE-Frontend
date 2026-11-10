@@ -3,7 +3,7 @@
   import { onMount } from 'svelte';
   import Toaster from '#lib/ui/Toaster.svelte';
 
-  import { user } from '#lib/auth/User.ts';
+  import { session } from '#lib/auth/session.svelte.ts';
   import { goto } from '$app/navigation';
 
   import Footer from '#lib/shell/Footer.svelte';
@@ -17,7 +17,8 @@
   let { children }: Props = $props();
 
   onMount(() => {
-    if ($user && $user.token) {
+    // An expired session stays, so the login page can end it.
+    if (session.hasValidToken && session.user.token) {
       goto(resolve(''));
     }
   });
