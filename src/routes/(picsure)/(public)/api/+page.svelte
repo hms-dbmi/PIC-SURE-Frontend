@@ -210,7 +210,7 @@
   <TocLayout entries={tocEntries} onselect={tocClick}>
     {#snippet hero()}
       <h1 id="api-header">Programmatic Access with the PIC-SURE API</h1>
-      <p class="mx-0 max-w-3xl text-lg">
+      <p class="mx-0 mt-1 mb-0 max-w-3xl text-lg">
         Search data and build cohorts directly with Python, R, or any HTTP client.
         <br />
         Build reproducible cohort-building pipelines.

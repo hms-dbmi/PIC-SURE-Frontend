@@ -893,6 +893,52 @@ test.describe('API page logged out', () => {
     expect((await toc.boundingBox())!.x).toBeCloseTo(before.x, 0);
   });
 
+  async function heroLayout(page: Page) {
+    const hero = page.locator('header', { has: page.locator('#api-header') });
+    await expect(hero.locator('h1')).toHaveText('Programmatic Access with the PIC-SURE API');
+    const subtitle = hero.locator('p');
+    await expect(subtitle).toContainText(
+      'Search data and build cohorts directly with Python, R, or any HTTP client.',
+    );
+    await expect(subtitle).toContainText('Build reproducible cohort-building pipelines.');
+    return page.evaluate(() => {
+      const header = document.getElementById('api-header')!.closest('header')!;
+      const scroller = document.getElementById('app-page')!;
+      const right = (element: Element) => element.getBoundingClientRect().right;
+      return {
+        hero: header.getBoundingClientRect(),
+        page: document.getElementById('api-page')!.getBoundingClientRect().width,
+        contentRight: Math.max(
+          right(header.querySelector('h1')!),
+          right(header.querySelector('p')!),
+        ),
+        scroller: { clientWidth: scroller.clientWidth, scrollWidth: scroller.scrollWidth },
+      };
+    });
+  }
+
+  test('Hero stays compact so the page content starts near the top', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/api');
+
+    const layout = await heroLayout(page);
+    expect(layout.hero.height).toBeLessThanOrEqual(170);
+    const hero = page.locator('header', { has: page.locator('#api-header') });
+    await expect(hero.locator('h1')).toBeInViewport({ ratio: 1 });
+    await expect(hero.locator('p')).toBeInViewport({ ratio: 1 });
+  });
+
+  test('Hero keeps its full content without overflowing at 200% zoom', async ({ page }) => {
+    // A 1280x800 window at 200% zoom lays out as a 640x400 CSS viewport.
+    await page.setViewportSize({ width: 640, height: 400 });
+    await page.goto('/api');
+
+    const layout = await heroLayout(page);
+    expect(layout.hero.width).toBeCloseTo(layout.page, 0);
+    expect(layout.contentRight).toBeLessThanOrEqual(layout.scroller.clientWidth);
+    expect(layout.scroller.scrollWidth).toBeLessThanOrEqual(layout.scroller.clientWidth);
+  });
+
   test('Legacy /analyze/api redirects to /api when logged out', async ({ page }) => {
     // When
     await page.goto('/analyze/api');

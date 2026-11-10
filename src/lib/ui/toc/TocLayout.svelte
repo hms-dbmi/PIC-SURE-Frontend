@@ -16,7 +16,7 @@
   <header
     class="w-full bg-linear-to-r border-b border-primary-200-800 from-primary-50 to-primary-100 dark:from-primary-950 dark:to-primary-900"
   >
-    <div class="mx-auto max-w-7xl px-4 py-12 sm:px-8">
+    <div class="mx-auto max-w-7xl px-4 py-6 sm:px-8">
       {@render hero()}
     </div>
   </header>
