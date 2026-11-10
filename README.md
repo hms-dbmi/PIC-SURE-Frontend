@@ -36,7 +36,6 @@ Edit `.env` before starting the dev server. At minimum you need:
 
 - **Auth provider settings** (`VITE_AUTH_PROVIDER_MODULE_*`) — configures how users log in (e.g. Auth0 + Google OAuth2)
 - **Auth0 tenant** (`VITE_AUTH0_TENANT`)
-- **HPDS resource UUID** (`VITE_RESOURCE_HPDS`) — points the UI at the query engine
 
 ```bash
 pnpm run dev
@@ -50,14 +49,13 @@ Configuration is done through environment variables in `.env`. See [`.env.exampl
 
 Settings are grouped into a few categories:
 
-| Category         | Variables                                                    | What it controls                       |
-| ---------------- | ------------------------------------------------------------ | -------------------------------------- |
-| Auth providers   | `VITE_AUTH_PROVIDER_MODULE_*`                                | Login methods shown on the login page  |
-| Resources        | `VITE_RESOURCE_HPDS`, `VITE_RESOURCE_OPEN_HPDS`, etc.        | Which backend resources the UI queries |
-| Pages & features | `VITE_OPEN`, `VITE_DASHBOARD`, `VITE_VARIANT_EXPLORER`, etc. | Which pages and features are enabled   |
-| Theming          | `VITE_LOGO`, `VITE_DOTS_COLORS_CLASS`                        | Logo and login page appearance         |
-| Export           | `VITE_ALLOW_EXPORT`, `VITE_ALLOW_DOWNLOAD`, etc.             | Data export behavior                   |
-| Analytics        | `VITE_GOOGLE_ANALYTICS_ID`, `VITE_GOOGLE_TAG_MANAGER_ID`     | Tracking (leave blank to disable)      |
+| Category         | Variables                                                    | What it controls                      |
+| ---------------- | ------------------------------------------------------------ | ------------------------------------- |
+| Auth providers   | `VITE_AUTH_PROVIDER_MODULE_*`                                | Login methods shown on the login page |
+| Pages & features | `VITE_OPEN`, `VITE_DASHBOARD`, `VITE_VARIANT_EXPLORER`, etc. | Which pages and features are enabled  |
+| Theming          | `VITE_LOGO`, `VITE_DOTS_COLORS_CLASS`                        | Logo and login page appearance        |
+| Export           | `VITE_ALLOW_EXPORT`, `VITE_ALLOW_DOWNLOAD`, etc.             | Data export behavior                  |
+| Analytics        | `VITE_GOOGLE_ANALYTICS_ID`, `VITE_GOOGLE_TAG_MANAGER_ID`     | Tracking (leave blank to disable)     |
 
 For full configuration documentation, see the [PIC-SURE Frontend Configuration Guide](https://pic-sure.gitbook.io/pic-sure-developer-guide/configuring-pic-sure/pic-sure-frontend-configuration).
 

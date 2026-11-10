@@ -69,7 +69,7 @@ test.describe('Signed-out visitors can read banners and reach login', () => {
 
     await page.goto('/');
 
-    await expect(page).toHaveURL('/login');
+    await expect(page).toHaveURL('/login?redirectTo=%2F');
     await expect(page.getByRole('region', { name: 'Maintenance' })).toBeVisible();
     await expect(page.getByRole('region', { name: 'Signed-out notice' })).toBeVisible();
     await expect(page.getByRole('region', { name: 'Signed-in notice' })).toHaveCount(0);
@@ -114,7 +114,7 @@ test.describe('Signed-out visitors can read banners and reach login', () => {
 
     await page.goto('/');
 
-    await expect(page).toHaveURL('/login');
+    await expect(page).toHaveURL('/login?redirectTo=%2F');
     await expect(page.getByTestId('banner-item')).toHaveCount(4);
     const loginControl = page.getByRole('button', { name: 'Login with Auth0' });
     await expect(loginControl).not.toBeInViewport();
@@ -1131,10 +1131,9 @@ test.describe('Admins schedule banners through their lifecycle', () => {
     await expect(row).toContainText('Expired');
     showFeedSynchronizationBanner = true;
     await page.goto('/help');
-    // The root layout's hydration-time fetch of the current pathname redirects to '/' when it
-    // is aborted (src/routes/+layout.ts). Waiting for the signed-in shell proves hydration
-    // finished before the internal navigation below can abort it. The visible feed marker then
-    // proves SiteBannerRegion consumed a response before the test asks it to consume an empty one.
+    // Waiting for the signed-in shell proves hydration finished before the internal navigation
+    // below. The visible feed marker then proves SiteBannerRegion consumed a response before the
+    // test asks it to consume an empty one.
     await userIsLoggedIn(page);
     await expect(page.getByTestId('banner-item')).toContainText('Feed synchronization marker');
     await expect(page.getByTestId('banner-item')).not.toContainText('Minute-boundary maintenance');

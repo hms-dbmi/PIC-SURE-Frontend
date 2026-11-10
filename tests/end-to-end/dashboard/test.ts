@@ -100,3 +100,17 @@ test.describe('Dashboard page', () => {
     });
   });
 });
+
+test.describe('Dashboard page with the feature off', () => {
+  test('/dashboard redirects to the home page', async ({ page }) => {
+    // Given
+    await mockApiConfig(page, { features: [{ name: 'DASHBOARD', value: 'false' }] });
+
+    // When
+    await page.goto('/dashboard');
+
+    // Then
+    await expect(page).toHaveURL('/');
+    await expect(page.locator('#dashboard-data')).toBeHidden();
+  });
+});

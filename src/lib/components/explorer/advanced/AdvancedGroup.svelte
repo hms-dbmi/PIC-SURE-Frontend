@@ -178,7 +178,7 @@
           <button
             type="button"
             title="Remove Subquery"
-            class="bg-initial text-black-500 hover:text-primary-600"
+            class="hover:text-primary-600"
             onclick={() => onRemove(group)}
           >
             <i class="fa-solid fa-times-circle"></i>

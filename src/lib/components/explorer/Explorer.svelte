@@ -1,7 +1,7 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
   import { appPath } from '#lib/paths.ts';
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount, onDestroy, tick } from 'svelte';
 
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
@@ -16,6 +16,7 @@
     error,
     tour,
     resetSearch,
+    nextSearchSettled,
     loading as isLoading,
   } from '#lib/stores/Search.ts';
   import type { TourDataType } from '#lib/models/Tour.ts';
@@ -72,7 +73,7 @@
 
   let releaseHandler: (() => void) | undefined;
 
-  onMount(() => {
+  onMount(async () => {
     releaseHandler = initHandler();
     if (searchInput && searchInput !== $searchTerm) {
       searchTerm.set(searchInput);
@@ -81,7 +82,11 @@
       handler.invalidate();
     }
     if (page.url.searchParams.get('startTour') === 'true') {
-      const tourBtn = document.querySelector('#explorer-tour-btn');
+      // A load with a search term hides the tour, so let the one started above finish first
+      await nextSearchSettled();
+      tour.set(true);
+      await tick();
+      const tourBtn = document.querySelector('#explorer-tour-start');
       if (tourBtn) {
         (tourBtn as HTMLElement).click();
       }

@@ -110,7 +110,7 @@
   <input
     type="checkbox"
     id="{uid}-checkbox"
-    class={`&[aria-disabled=“true”]:opacity-75 ${checkedState(facet.name)}`}
+    class={checkedState(facet.name)}
     name={facet.name}
     value={facet}
     {checked}

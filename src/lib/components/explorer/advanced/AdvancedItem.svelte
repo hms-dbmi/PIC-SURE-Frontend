@@ -121,7 +121,7 @@
         <button
           type="button"
           title="Remove Filter"
-          class="bg-initial text-black-500 hover:text-primary-600"
+          class="hover:text-primary-600"
           onclick={() => onRemove(filter)}
         >
           <i class="fa-solid fa-times-circle"></i>
@@ -131,7 +131,7 @@
           <button
             type="button"
             title="See details"
-            class="bg-initial text-black-500 hover:text-primary-600"
+            class="hover:text-primary-600"
             onclick={toggleCardBody}
           >
             <i class="fa-solid {caret}"></i>

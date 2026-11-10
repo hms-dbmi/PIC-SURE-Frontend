@@ -116,7 +116,7 @@
       </label>
     {/if}
 
-    <label class="label {user?.email ?? 'required'}">
+    <label class={['label', !user?.email && 'required']}>
       <span>Email:</span>
       <input
         type="email"
@@ -129,7 +129,7 @@
       />
     </label>
 
-    <label class="label {user?.email ?? 'required'}">
+    <label class={['label', !user?.connection && 'required']}>
       <span>Connection:</span>
       <select bind:value={connection} required disabled={!!user?.connection}>
         <option selected={!user || !user.connection} disabled value>none</option>

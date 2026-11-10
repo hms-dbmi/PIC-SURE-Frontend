@@ -1,4 +1,4 @@
-import { expect, type Locator, type Route } from '@playwright/test';
+import { expect, type Locator, type Page, type Route } from '@playwright/test';
 import { mockApiFail, test, mockApiSuccess, mockApiConfig } from '../../custom-context';
 import {
   searchResults,
@@ -21,6 +21,15 @@ async function setCategoryOpen(control: Locator, open: boolean) {
     }
     await expect(control).toHaveAttribute('aria-expanded', String(open), { timeout: 2000 });
   }).toPass({ timeout: 15000 });
+}
+
+// Each facet change refetches the facets and rebuilds the sidebar a debounce later, and a
+// click that lands mid-rebuild is lost. Wait for the rebuilt checkbox before the next step.
+async function checkFacet(page: Page, checkbox: Locator) {
+  const refetched = page.waitForResponse(facetResultPath);
+  await checkbox.click();
+  await refetched;
+  await expect(checkbox).toBeChecked();
 }
 
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
@@ -101,10 +110,7 @@ test.describe('Facet checkbox reordering', () => {
 
     const child = page.getByTestId('explorer-facet-label-nested_facet_child').locator('input');
     const parent = page.getByTestId('explorer-facet-label-nested_facet').locator('input');
-    const childReloaded = page.waitForResponse(facetResultPath);
-    await child.click();
-    await childReloaded;
-    await expect(child).toBeChecked();
+    await checkFacet(page, child);
     await expect(parent).toHaveClass(/indeterminate/);
 
     await page.clock.pauseAt(new Date(clockStart.getTime() + 60_000));
@@ -622,8 +628,7 @@ test.describe('Facet & search', () => {
       .getByTestId(`explorer-facet-label-${firstCheckName}`)
       .getByRole('checkbox');
     await facetCheckBox.waitFor();
-    await facetCheckBox.click();
-    await expect(facetCheckBox).toBeVisible();
+    await checkFacet(page, facetCheckBox);
 
     //When
     await facetCheckBox.click();
@@ -647,9 +652,8 @@ test.describe('Facet & search', () => {
       .getByTestId(`explorer-facet-label-${firstCheckName}`)
       .getByRole('checkbox');
     await facetCheckBox.waitFor();
-    await facetCheckBox.click();
+    await checkFacet(page, facetCheckBox);
     const badge = page.getByTestId(`explorer-facet-badge-${facetsResponse[0].facets[0].name}`);
-    await expect(facetCheckBox).toBeVisible();
 
     //When
     await expect(badge).not.toBeVisible();
@@ -678,9 +682,8 @@ test.describe('Facet & search', () => {
       .getByTestId(`explorer-facet-label-${firstCheckName}`)
       .getByRole('checkbox');
     await facetCheckBox.waitFor(); // Wait for element to exist
-    await facetCheckBox.click(); // to Included state
+    await checkFacet(page, facetCheckBox); // to Included state
     const badge = page.getByTestId(`explorer-facet-badge-${facetsResponse[0].facets[0].name}`);
-    await expect(facetCheckBox).toBeVisible();
 
     //When
     await expect(badge).not.toBeVisible();
@@ -708,8 +711,7 @@ test.describe('Facet & search', () => {
       .getByTestId(`explorer-facet-label-${firstCheckName}`)
       .getByRole('checkbox');
     await facetCheckBox.waitFor();
-    await facetCheckBox.click();
-    await expect(facetCheckBox).toBeVisible();
+    await checkFacet(page, facetCheckBox);
 
     //When
     await facetCheckBox.click(); // to Default state

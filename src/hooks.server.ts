@@ -45,9 +45,22 @@ async function registerEnabledProviders(enabledProviders: string[], viteProvider
 
 registerEnabledProviders(enabledProviders, PROVIDER_PREFIX);
 
+// The retired /analyze pages. No route matches them, so client navigation falls back to
+// a full page load and lands here too.
+function analyzeRedirect(pathname: string): Response | undefined {
+  let status: number;
+  if (/^\/analyze\/?$/.test(pathname)) status = 302;
+  else if (pathname.startsWith('/analyze/api')) status = 301;
+  else return;
+  return new Response(null, { status, headers: { location: '/api' } });
+}
+
 // Wraps each request in an isolated config store so concurrent requests can't
 // observe each other's config (see lib/server/configuration.ts).
 export const handle: Handle = async ({ event, resolve }) => {
+  const redirect = analyzeRedirect(event.url.pathname);
+  if (redirect) return redirect;
+
   const response = await runWithConfig(() => resolve(event));
   const csp = withStyleNonce(response.headers.get('content-security-policy'));
   if (csp) response.headers.set('content-security-policy', csp);

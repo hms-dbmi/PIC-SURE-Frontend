@@ -1,30 +1,13 @@
 import { expect, type Page } from '@playwright/test';
 import { test, mockApiFail, mockApiSuccess, mockApiConfig } from '../custom-context';
 import { picsureUser, roles as mockRoles, mockExpiredToken, mockToken } from '../mock-data';
-import { userIsLoggedIn } from '../utils';
+import { expectAnimationsFinished, expectSectionAligned, userIsLoggedIn } from '../utils';
 import { Internal } from '../../../src/lib/paths';
 import type { Branding } from '../../../src/lib/models/Configuration';
 import brandingJson from '../../../src/lib/assets/configuration.json' with { type: 'json' };
 const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
 
 const capabilities = branding?.apiPage?.capabilities || [];
-
-async function expectSectionAligned(page: Page, id: string) {
-  await expect
-    .poll(() =>
-      page.evaluate((sectionId) => {
-        const scroller = document.getElementById('app-page')!;
-        const section = document.getElementById(sectionId)!;
-        const sectionTop =
-          section.getBoundingClientRect().top -
-          scroller.getBoundingClientRect().top +
-          scroller.scrollTop;
-        const destination = Math.min(sectionTop, scroller.scrollHeight - scroller.clientHeight);
-        return Math.abs(scroller.scrollTop - destination);
-      }, id),
-    )
-    .toBeLessThan(4);
-}
 
 // A JWT whose exp claim is the given number of days from now. The page only
 // decodes the payload, so the signature is a placeholder.
@@ -173,6 +156,7 @@ test.describe('API page', () => {
       .getByTestId('api-workflow-r')
       .getByRole('heading', { level: 3 })
       .getByRole('button');
+    const workflows = page.locator('#choose-your-workflow');
 
     // When
     await pythonHeader.click();
@@ -180,6 +164,7 @@ test.describe('API page', () => {
     // Then
     await expect(pythonHeader).toHaveAttribute('aria-expanded', 'true');
     await expect(rHeader).toHaveAttribute('aria-expanded', 'false');
+    await expectAnimationsFinished(workflows);
 
     // When
     await rHeader.click();
@@ -187,6 +172,7 @@ test.describe('API page', () => {
     // Then
     await expect(pythonHeader).toHaveAttribute('aria-expanded', 'false');
     await expect(rHeader).toHaveAttribute('aria-expanded', 'true');
+    await expectAnimationsFinished(workflows);
 
     // When
     await rHeader.click();
@@ -283,6 +269,7 @@ test.describe('API page', () => {
     await expect(codeBlock).toContainText('Authorization: Bearer $TOKEN');
     await expect(codeBlock.getByTestId('ui-code-block-copy-trigger')).toBeVisible();
     await expect(panel).not.toContainText('Looking for example notebooks?');
+    await expectAnimationsFinished(panel);
 
     // When
     await panel.getByRole('link', { name: 'API reference' }).click();
@@ -826,6 +813,8 @@ test.describe('API page logged out', () => {
     await toc.getByRole('link', { name: 'Authentication', exact: true }).click();
     await expect(page).toHaveURL(/\/api\?source=docs&filter=a%20b#authentication$/);
     await expect(page.locator('#authentication h2')).toBeFocused();
+    // The rail only sticks once this scroll lands; until then the next link moves under the pointer.
+    await expectSectionAligned(page, 'authentication');
 
     await toc.getByRole('link', { name: 'Choose Your Workflow', exact: true }).click();
     await expect(page).toHaveURL(/\/api\?source=docs&filter=a%20b#choose-your-workflow$/);

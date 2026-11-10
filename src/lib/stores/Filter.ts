@@ -59,8 +59,6 @@ export const hasInvalidFilter: Readable<boolean> = derived([user, filters], ([$u
   return $filters.some((filter) => !hasConsentForFilter(filter, consents));
 });
 
-export const hasOrGroup: Readable<boolean> = derived(filterTree, ($ft) => $ft.hasOr);
-
 // modal data
 export const activeFilter: Writable<Filter | undefined> = writable();
 export const activeSearch: Writable<SearchResult | undefined> = writable();
@@ -112,13 +110,6 @@ function restoreFilterTree(): LogicTree<FilterInterface> {
     return oldTree;
   }
   return newTree;
-}
-
-export function toggleOperator(siblingA: FilterInterface, siblingB: FilterInterface) {
-  const tree = get(filterTree);
-  tree.toggleOperator(siblingA, siblingB);
-  tree.root.uuid = genericUUID();
-  filterTree.set(tree);
 }
 
 export function addFilter(filter: Filter) {
@@ -278,14 +269,6 @@ function resetFilters() {
 export function setFilterTree(tree: LogicTree<FilterInterface>) {
   tree.root.uuid = genericUUID();
   filterTree.set(tree);
-}
-
-export function getFilter(uuid: string) {
-  return [...get(filters), ...get(genomicFilters)].find((f) => f.uuid === uuid);
-}
-
-export function getFilterById(id: string) {
-  return [...get(filters), ...get(genomicFilters)].find((f) => f.id === id);
 }
 
 export function getFiltersByType(type: string) {

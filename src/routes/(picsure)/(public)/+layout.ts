@@ -1,6 +1,6 @@
 import { config } from '#lib/configuration.svelte.ts';
 import { redirect } from '@sveltejs/kit';
-import type { LayoutLoad } from '../../$types';
+import type { LayoutLoad } from './$types';
 
 export const load: LayoutLoad = async ({ url, parent }) => {
   // Root layout's load applies config from data.configCache synchronously, before

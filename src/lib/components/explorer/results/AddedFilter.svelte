@@ -101,7 +101,7 @@
         <button
           type="button"
           title="Edit Filter"
-          class="bg-initial text-black-500 hover:text-primary-600"
+          class="hover:text-primary-600"
           onclick={editFilter}
         >
           <i class="fa-solid fa-pen-to-square"></i>
@@ -111,7 +111,7 @@
         <Modal
           bind:open={filterModal}
           title="Edit Filter"
-          triggerBase="bg-initial text-black-500 hover:text-primary-600"
+          triggerBase="hover:text-primary-600"
           withDefault={false}
           ontrigger={logEditClick}
         >
@@ -129,7 +129,7 @@
       <button
         type="button"
         title="Remove Filter"
-        class="bg-initial text-black-500 hover:text-primary-600"
+        class="hover:text-primary-600"
         onclick={deleteFilter}
       >
         <i class="fa-solid fa-times-circle"></i>
@@ -139,7 +139,7 @@
         <button
           type="button"
           title="See details"
-          class="bg-initial text-black-500 hover:text-primary-600"
+          class="hover:text-primary-600"
           onclick={toggleCardBody}
         >
           <i class="fa-solid {carot}"></i>

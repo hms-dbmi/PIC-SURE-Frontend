@@ -11,6 +11,7 @@ import { goto } from '$app/navigation';
 import type AuthProvider from '#lib/models/AuthProvider.ts';
 import { page } from '$app/state';
 import { loginRedirectPath } from '#lib/utilities/LoginRedirect.ts';
+import { decodeJwtPayload } from '#lib/utilities/Jwt.ts';
 import { log, createLog } from '#lib/logger.ts';
 import { isToastShowing, toaster } from '#lib/toaster.ts';
 import { discardingQuery } from '#lib/discardingQuery.ts';
@@ -59,9 +60,6 @@ export const hasValidToken: Readable<boolean> = derived(
 export const user: Writable<User> = writable(restoreUser());
 export const isTopAdmin = derived(user, ($user: User) => {
   return $user?.privileges?.includes(PicsurePrivileges.SUPER);
-});
-export const isAdmin = derived(user, ($user: User) => {
-  return $user?.privileges?.includes(PicsurePrivileges.ADMIN);
 });
 
 /**
@@ -124,6 +122,7 @@ export function removeToken() {
 export function clearSession() {
   discardPendingConsents();
   removeToken();
+  localStorage.removeItem('oktaIdToken');
   sessionStorage.removeItem('user');
   user.set({});
 }
@@ -135,6 +134,7 @@ function restoreUser() {
   if (token && isTokenExpired(token)) {
     console.log('Clearing expired token from storage.');
     removeToken();
+    localStorage.removeItem('oktaIdToken');
     sessionStorage.removeItem('user');
     log(createLog('AUTH', 'session.expired'));
     return {};
@@ -358,6 +358,8 @@ async function endSession(authProvider: AuthProvider | undefined, redirect: bool
   } else {
     handleLogout(redirect);
   }
+  // Only after the provider's logout: the Okta providers read it for id_token_hint.
+  if (browser) localStorage.removeItem('oktaIdToken');
 }
 
 let logoutNavigation = 0;
@@ -394,7 +396,7 @@ export function getTokenExpiration(token: string) {
   }
   let payload: unknown;
   try {
-    payload = JSON.parse(atob(token.split('.')[1]));
+    payload = decodeJwtPayload(token);
   } catch (error) {
     throw new Error('Error parsing token: ' + error, { cause: error });
   }

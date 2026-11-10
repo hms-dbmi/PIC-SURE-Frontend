@@ -15,7 +15,13 @@ import {
   mockDataWithChildren,
   hierarchyResponse,
 } from '../../mock-data';
-import { getOption, clickNthFilterIcon, optionsHaveLoaded, userIsLoggedIn } from '../../utils';
+import {
+  expectAnimationsFinished,
+  getOption,
+  clickNthFilterIcon,
+  optionsHaveLoaded,
+  userIsLoggedIn,
+} from '../../utils';
 import {
   createCategoricalFilter,
   createNumericFilter,
@@ -645,6 +651,9 @@ test.describe('Any record of filter', () => {
     const hierarchyButton = firstRow.locator('td').last().locator('button').nth(2);
     await hierarchyButton.click();
     await expect(page.getByTestId('explorer-hierarchy')).toBeVisible();
+    // The row clips its content while it slides open. Playwright scrolls a click target into
+    // view inside it, and that scroll resets when the slide ends, moving the Add Filter button.
+    await expectAnimationsFinished(page.locator('tr.expandable-row'));
     const secondItem = page.getByTestId('ui-tree-radio-Disease (disease)');
     await secondItem.click();
     const addFilterButton = page.getByTestId('filter-add');
@@ -727,6 +736,10 @@ test.describe('User with no query scopes can add filters without error', () => {
   test('User can view variable distirubtions', async ({ page }) => {
     // Given
     await mockApiSuccess(page, countResultPath, '9999');
+    await mockApiSuccess(page, '*/**/picsure/visualization/auth/distributions', {
+      categoricalData: [],
+      continuousData: [],
+    });
 
     await page.goto('/explorer?search=somedata');
     await userIsLoggedIn(page);

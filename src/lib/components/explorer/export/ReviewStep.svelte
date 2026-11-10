@@ -30,9 +30,10 @@
     rows: ExportRowInterface[];
     preparePromise: Promise<void>;
     dataLimitExceeded: boolean;
+    maxDataPoints: number;
   }
 
-  let { query, rows, dataLimitExceeded }: PrepareProps = $props();
+  let { query, rows, dataLimitExceeded, maxDataPoints }: PrepareProps = $props();
 
   const columns = [
     { dataElement: 'name', label: 'Variable Name', sort: true },
@@ -141,8 +142,8 @@
         closeText="Back"
         onclose={() => goto(resolve('explorer'))}
       >
-        Warning: Your selected data exceeds 1,000,000 estimated data points, which is too large to
-        export. Please reduce the data selection or the number of selected participants.
+        Warning: Your selected data exceeds {maxDataPoints.toLocaleString('en-US')} estimated data points,
+        which is too large to export. Please reduce the data selection or the number of selected participants.
       </ErrorAlert>
     {:else if !loadingSampleIds}
       <Datatable
@@ -165,7 +166,7 @@
             {:else}
               <input
                 type="checkbox"
-                class="mr-1 &[aria-disabled=“true”]:opacity-75"
+                class="mr-1"
                 data-testid="export-sample-ids-checkbox"
                 id="export-sample-ids"
                 bind:checked={sampleIds}

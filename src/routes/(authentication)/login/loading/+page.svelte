@@ -5,7 +5,7 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { config } from '#lib/configuration.svelte.ts';
-  import type AuthProvider from '#lib/models/AuthProvider.ts';
+  import { findLoginProvider } from '#lib/models/AuthProvider.ts';
   import { createInstance } from '#lib/AuthProviderRegistry.ts';
   import { browser } from '$app/env';
   import { panelOpen } from '#lib/stores/SidePanel.ts';
@@ -16,19 +16,16 @@
 
   async function attemptUserLogin() {
     let redirectTo = '/';
-    let providerType: string | undefined | null;
     if (browser) {
       redirectTo = sessionStorage.getItem('redirect') || '/';
-      providerType = sessionStorage.getItem('type');
     }
 
     // Retrives the providers from the server's AuthProviderRegistry created via hooks.server.ts
-    const provider = providerType
-      ? page.data?.providers.find((p: AuthProvider) => p.type === providerType)
-      : undefined;
+    const provider = findLoginProvider(page.data?.providers);
     if (!provider) {
       throw new Error('Provider not found');
     }
+    const providerType = provider.type;
 
     const providerInstance = await createInstance(provider);
     let hashParts = page.url.hash?.split('&') || [];

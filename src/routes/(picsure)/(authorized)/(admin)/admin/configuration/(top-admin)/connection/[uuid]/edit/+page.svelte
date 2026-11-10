@@ -38,7 +38,7 @@
     </section>
   {:catch}
     <ErrorAlert title="API Error">
-      An error occured while retrieving dataset {page.params.uuid}.
+      An error occurred while retrieving connection {page.params.uuid}.
     </ErrorAlert>
   {/await}
 </Content>

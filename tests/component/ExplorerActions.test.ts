@@ -36,9 +36,9 @@ const row = {
 };
 
 function renderActions() {
-  // Actions types `data` as SearchResult, but Row.svelte passes it { tableName, index, row, cell }.
-  const data = { tableName: 'ExplorerTable', index: 0, row, cell: undefined };
-  render(Actions, { data: data as unknown as SearchResult });
+  render(Actions, {
+    data: { tableName: 'ExplorerTable', row: row as unknown as SearchResult },
+  });
 }
 
 afterEach(() => {

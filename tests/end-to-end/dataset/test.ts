@@ -7,6 +7,9 @@ import {
   facetResultPath,
   conceptTreePath,
   conceptsDetailPath,
+  mockToken,
+  picsureUser,
+  userTypes,
 } from '../mock-data';
 import { expectUniqueIds, userIsLoggedIn } from '../utils';
 
@@ -245,6 +248,26 @@ test.describe('dataset', () => {
 
     // Then
     await expect(page).toHaveURL(new RegExp(`/dataset/${mockData[0].uuid}`));
+  });
+});
+test.describe('dataset in a fresh tab', () => {
+  // A token but no user in sessionStorage, as in a newly opened tab. Starting signed out keeps
+  // the fixture from seeding the user, whatever order the init scripts run in.
+  test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
+
+  test('Opens without bouncing the user away', async ({ page }) => {
+    // Given
+    await page.addInitScript((token) => localStorage.setItem('token', token), mockToken);
+    await mockApiSuccess(page, '*/**/psama/user/me', { ...picsureUser, ...userTypes.generalUser });
+    await mockApiSuccess(page, '*/**/psama/user/me/consents', { consents: picsureUser.consents });
+    await mockApiSuccess(page, datasetPath, mockData);
+
+    // When
+    await page.goto('/dataset');
+
+    // Then
+    await expect(page.getByTestId('dataset-active-table')).toBeVisible();
+    await expect(page).toHaveURL('/dataset');
   });
 });
 test.describe('dataset/[uuid]', () => {

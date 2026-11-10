@@ -13,7 +13,7 @@ vi.mock('$app/paths', () => ({
 }));
 vi.mock('#lib/configuration.svelte.ts', () => ({ config: { features: mockFeatures } }));
 
-import { resources, getCountResource, getApiConnectionResource } from '#lib/stores/Resources.ts';
+import { getCountResource, getApiConnectionResource } from '#lib/stores/Resources.ts';
 
 describe('getCountResource', () => {
   // With path-based gateway routing the non-federated resource UUID is gone: the query PATH
@@ -22,10 +22,6 @@ describe('getCountResource', () => {
   beforeEach(() => {
     mockFeatures.explorer.open = false;
     mockFeatures.login.open = false;
-
-    resources.set({
-      application: '',
-    });
   });
 
   it('returns the auth resource (empty uuid) when isOpenAccess is false', () => {
@@ -65,10 +61,6 @@ describe('getApiConnectionResource', () => {
   beforeEach(() => {
     mockFeatures.explorer.open = false;
     mockFeatures.login.open = false;
-
-    resources.set({
-      application: '',
-    });
   });
 
   it('uses the authorized resource for authenticated users', () => {

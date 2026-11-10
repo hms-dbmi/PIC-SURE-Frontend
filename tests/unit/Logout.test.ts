@@ -16,7 +16,7 @@ vi.mock('#lib/logger.ts', () => ({
   getSessionId: () => 'session-id',
 }));
 
-import { logout } from '#lib/stores/User.ts';
+import { clearSession, logout } from '#lib/stores/User.ts';
 import type AuthProvider from '#lib/models/AuthProvider.ts';
 
 // The PSAMA logout call goes through the real API client, whose 401 and 403 handling starts a
@@ -50,6 +50,51 @@ describe('logout', () => {
 
     expect(fetch).toHaveBeenCalledOnce();
     expect(goto).toHaveBeenCalledOnce();
+  });
+
+  describe('the Okta ID token', () => {
+    beforeEach(() => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(() => Promise.resolve(new Response('{}'))),
+      );
+      localStorage.setItem('oktaIdToken', 'id-token');
+    });
+
+    it('stays until the provider has built its logout URL, then goes', async () => {
+      let seenByProvider: string | null = null;
+      const provider = {
+        logout: vi.fn(async () => {
+          seenByProvider = localStorage.getItem('oktaIdToken');
+        }),
+      };
+
+      await logout(provider as unknown as AuthProvider);
+
+      expect(seenByProvider).toBe('id-token');
+      expect(localStorage.getItem('oktaIdToken')).toBeNull();
+    });
+
+    it('goes on a logout without a provider', async () => {
+      await logout();
+
+      expect(localStorage.getItem('oktaIdToken')).toBeNull();
+    });
+
+    it('goes when a guard clears the session', () => {
+      clearSession();
+
+      expect(localStorage.getItem('oktaIdToken')).toBeNull();
+    });
+
+    it('goes when the app starts with an expired session', async () => {
+      localStorage.setItem('token', `${btoa('{}')}.${btoa(JSON.stringify({ exp: 1 }))}.sig`);
+
+      vi.resetModules();
+      await import('#lib/stores/User.ts');
+
+      expect(localStorage.getItem('oktaIdToken')).toBeNull();
+    });
   });
 
   describe.each(Object.entries(psamaLogoutFailures))(

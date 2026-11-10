@@ -3,5 +3,3 @@ export interface StepperState {
   total: number;
   stepMap: string[];
 }
-
-export type StepperButton = 'submit' | 'reset' | 'button';

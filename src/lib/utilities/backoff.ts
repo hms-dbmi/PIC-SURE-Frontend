@@ -73,20 +73,3 @@ export async function withBackoff<T>(
 
   throw lastError;
 }
-
-/**
- * Default retry condition - retry on any error for network-related operations
- */
-export function defaultShouldRetry(error: unknown): boolean {
-  // Retry on network errors, timeouts, and 5xx status codes
-  if (error instanceof Error) {
-    const message = error.message.toLowerCase();
-    return (
-      message.includes('network') ||
-      message.includes('timeout') ||
-      message.includes('fetch') ||
-      message.includes('connection')
-    );
-  }
-  return true;
-}

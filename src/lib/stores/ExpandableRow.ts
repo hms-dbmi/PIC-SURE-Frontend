@@ -16,7 +16,7 @@ const components: { [key: string]: () => ComponentObject } = {
 
 export const activeTable: Writable<string> = writable('');
 export const activeRow: Writable<string> = writable('');
-export const defaultComponent: Writable<ComponentObject | undefined> = writable(components.info());
+const defaultComponent: Writable<ComponentObject | undefined> = writable(components.info());
 export const activeComponent: Writable<ComponentObject | undefined> = writable(components.info());
 
 export function closeActiveRow() {

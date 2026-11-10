@@ -51,7 +51,6 @@ const baseExportFeatures = [
   { name: 'ENABLE_SAMPLE_ID_CHECKBOX', value: 'true' },
   { name: 'SHOW_TREE_STEP', value: 'true' },
   { name: 'EXPORT_TIMESERIES', value: 'false' },
-  { name: 'USE_QUERY_TEMPLATE', value: 'true' },
 ];
 const baseExportSettings = [{ name: 'EXPORT_SYSTEM_FIELDS', value: '_consents' }];
 
@@ -149,7 +148,6 @@ const exportFeatures = [
   { name: 'ENABLE_SAMPLE_ID_CHECKBOX', value: 'true' },
   { name: 'SHOW_TREE_STEP', value: 'true' },
   { name: 'EXPORT_TIMESERIES', value: 'false' },
-  { name: 'USE_QUERY_TEMPLATE', value: 'true' },
 ];
 const exportSettings = [{ name: 'EXPORT_SYSTEM_FIELDS', value: '_consents' }];
 
@@ -190,6 +188,9 @@ test.describe('Export Page', () => {
     // Then
     await expect(page).toHaveURL('/explorer/export');
     await expect(page.getByTestId('export-review-error')).toBeVisible();
+    await expect(page.getByTestId('export-review-error')).toContainText(
+      'exceeds 10 estimated data points',
+    );
     await expect(page.getByTestId('ui-stepper-next')).toBeDisabled();
   });
 

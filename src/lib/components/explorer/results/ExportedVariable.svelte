@@ -33,6 +33,3 @@
     </button>
   </header>
 </div>
-
-<style>
-</style>

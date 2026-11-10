@@ -382,13 +382,6 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
       description:
         "Shows an 'Include sample identifiers' checkbox in the export review step that adds sample IDs to the export/query.",
     },
-    USE_QUERY_TEMPLATE: {
-      group: 'Explorer & Search',
-      type: 'boolean',
-      default: false,
-      description:
-        "Applies the logged-in user's saved query template (and its consent categories) as the base of new queries and dashboard filtering.",
-    },
     RESTORE_V2_QUERY: {
       group: 'Explorer & Search',
       type: 'boolean',
@@ -397,9 +390,8 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
         "Shows the 'Restore Filters' button for older (V2) saved queries; V3 queries always show it regardless.",
     },
 
-    // --- Guided Tour --- (joined by AUTH_TOUR_NAME, OPEN_TOUR_NAME, and
-    // EXPLORE_TOUR_SEARCH_TERM from settings, once features+settings are merged in the
-    // admin UI)
+    // --- Guided Tour --- (joined by AUTH_TOUR_NAME and OPEN_TOUR_NAME from settings, once
+    // features+settings are merged in the admin UI)
     EXPLORE_TOUR: {
       group: 'Guided Tour',
       type: 'boolean',
@@ -465,7 +457,7 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
       type: 'boolean',
       default: false,
       description:
-        'Shows or hides the Data Dashboard navigation item (the /dashboard page itself is not currently guarded by this flag).',
+        'Shows or hides the Data Dashboard page and its navigation item. With it off, /dashboard redirects to the home page.',
     },
     DASHBOARD_DRAWER: {
       group: 'Dashboard',
@@ -732,7 +724,6 @@ export function mapFeatures(apiFeatures: ConfigObject[]): Features {
     },
     restoreV2queries: parse('RESTORE_V2_QUERY'),
     termsOfService: parse('ENABLE_TOS'),
-    useQueryTemplate: parse('USE_QUERY_TEMPLATE'),
     wafCaptchaRecovery: parse('WAF_CAPTCHA_RECOVERY'),
   };
 }

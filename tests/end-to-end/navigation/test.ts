@@ -82,6 +82,8 @@ roleLandings.forEach(({ userType, path, hidden }) => {
     test(`Marks ${path} as the current page after login`, async ({ page }) => {
       await mockApiConfig(page);
       await mockApiSuccess(page, '*/**/psama/user', []);
+      // /explorer loads its facets as soon as it hydrates.
+      await mockApiSuccess(page, '*/**/picsure/dictionary/facets', []);
 
       await page.goto(path);
       await userIsLoggedIn(page);
@@ -169,7 +171,18 @@ test.describe('Access control', () => {
     await page.goto('/');
 
     // Then
-    await expect(page).toHaveURL('/login');
+    await expect(page).toHaveURL('/login?redirectTo=%2F');
+  });
+
+  test('A deep link keeps its destination through the forced login', async ({ page }) => {
+    // Given: /help has no guard of its own, so only the root layout's login guard redirects
+    await mockApiConfig(page, { features: [{ name: 'OPEN', value: 'false' }] });
+
+    // When
+    await page.goto('/help?section=faq');
+
+    // Then
+    await expect(page).toHaveURL(`/login?redirectTo=${encodeURIComponent('/help?section=faq')}`);
   });
 
   test('/discover redirects to /explorer when DISCOVER is off', async ({ page }) => {
@@ -184,6 +197,8 @@ test.describe('Access control', () => {
         { name: 'DISCOVER', value: 'false' },
       ],
     });
+    // /explorer loads its facets as soon as it hydrates.
+    await mockApiSuccess(page, '*/**/picsure/dictionary/facets', []);
 
     // When
     await page.goto('/discover');

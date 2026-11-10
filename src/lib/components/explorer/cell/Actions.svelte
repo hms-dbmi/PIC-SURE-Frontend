@@ -1,18 +1,17 @@
 <script lang="ts">
   import type { SearchResult } from '#lib/models/Search.ts';
   import { setActiveRow } from '#lib/stores/ExpandableRow.ts';
-  import {
-    exports,
-    addExport,
-    removeExportByUuid,
-    mapSearchResultAsExport,
-  } from '#lib/stores/Export.ts';
+  import { exports, addExport, removeExport, mapSearchResultAsExport } from '#lib/stores/Export.ts';
   import { panelOpen } from '#lib/stores/SidePanel.ts';
   import { config } from '#lib/configuration.svelte.ts';
   import { isOpenAccess } from '#lib/AccessState.ts';
   import { log, createLog, getPageContext } from '#lib/logger.ts';
 
-  let { data = {} as SearchResult } = $props();
+  interface Props {
+    data: { row: SearchResult; tableName?: string };
+  }
+
+  let { data }: Props = $props();
   let exportItem = $derived(mapSearchResultAsExport(data.row));
 
   function updateActiveRow(componentName: string) {
@@ -39,7 +38,7 @@
 
   function insertExportContent(e: Event) {
     e.stopPropagation();
-    if ($exports.includes(exportItem)) {
+    if (isExported) {
       log(
         createLog('ACTION', 'search_result.export_remove', {
           variable: data.row.display || data.row.name,
@@ -47,7 +46,7 @@
           pageContext: getPageContext(),
         }),
       );
-      removeExportByUuid(exportItem.id);
+      removeExport(exportItem);
     } else {
       log(
         createLog('ACTION', 'search_result.export_add', {

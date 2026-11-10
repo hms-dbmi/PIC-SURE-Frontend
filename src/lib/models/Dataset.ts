@@ -28,15 +28,6 @@ export interface DataSetResponse {
   picsureResultId?: string;
 }
 
-export interface DatasetError {
-  message: Message;
-}
-
-interface Message {
-  errorType: string;
-  message: string;
-}
-
 function secondsToDate(seconds: number) {
   const dt = new Date(seconds);
   const year = dt.toLocaleString('default', { year: 'numeric' });

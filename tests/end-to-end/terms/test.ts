@@ -66,7 +66,7 @@ test.describe('Not logged in', () => {
   test('Terms do not open when user is not logged in', async ({ page }) => {
     // When: '/' sends signed-out visitors to /login once the app hydrates
     await page.goto('/');
-    await expect(page).toHaveURL('/login');
+    await expect(page).toHaveURL('/login?redirectTo=%2F');
 
     // Then
     await expect(page.locator('#terms-of-service')).not.toBeVisible();
@@ -89,6 +89,10 @@ test.describe('Not logged in', () => {
     await page.goto('/login');
     await page.getByTestId('app-footer-terms-trigger').click();
     await expect(page.locator('#terms-of-service')).toBeVisible();
+
+    // The dialog starts listening for Escape a frame after it opens, and moves focus inside
+    // only after that; an earlier press is ignored.
+    await expect(page.locator('[role="dialog"]:focus-within')).toBeVisible();
 
     // When
     await page.keyboard.press('Escape');

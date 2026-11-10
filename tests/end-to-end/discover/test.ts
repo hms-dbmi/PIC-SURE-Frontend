@@ -15,20 +15,20 @@ import { getOption, nthFilterIcon, clickNthFilterIcon } from '../utils';
 
 test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
 
+const discoverFeatures = [
+  { name: 'OPEN', value: 'true' },
+  { name: 'DISCOVER', value: 'true' },
+  { name: 'ENABLE_GENE_QUERY', value: 'true' },
+  { name: 'ENABLE_HIERARCHY', value: 'true' },
+  { name: 'ENABLE_SNP_QUERY', value: 'true' },
+  // Required so useOpenAccess() routes counts through the open-access
+  // sync endpoint (picsure/hpds/open/query/sync) instead of query/sync.
+  { name: 'OPEN_EXPLORER', value: 'false' },
+];
+
 test.describe('Discover for unauthenticated users', () => {
   test.beforeEach(async ({ page }) => {
-    await mockApiConfig(page, {
-      features: [
-        { name: 'OPEN', value: 'true' },
-        { name: 'DISCOVER', value: 'true' },
-        { name: 'ENABLE_GENE_QUERY', value: 'true' },
-        { name: 'ENABLE_HIERARCHY', value: 'true' },
-        { name: 'ENABLE_SNP_QUERY', value: 'true' },
-        // Required so useOpenAccess() routes counts through the open-access
-        // sync endpoint (picsure/hpds/open/query/sync) instead of query/sync.
-        { name: 'OPEN_EXPLORER', value: 'false' },
-      ],
-    });
+    await mockApiConfig(page, { features: discoverFeatures });
     await mockApiSuccess(page, searchResultPath, mockData);
     await mockApiSuccess(page, facetResultPath, facetsResponse);
   });
@@ -113,30 +113,46 @@ test.describe('Discover for unauthenticated users', () => {
       await expect(radios.nth(i)).toBeDisabled();
     }
   });
-  test('Cohort details button and variant explorer button are not visible', async ({ page }) => {
+  test('Results panel hides the variant explorer button even with a genomic filter', async ({
+    page,
+  }) => {
     // Given
-    await mockApiSuccess(
-      page,
-      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
-      detailResponseCat,
-    );
-    await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
-    const bigNumberSync = { '\\_studies_consents\\': '1477888±3' };
-    await mockApiSuccess(page, '*/**/picsure/hpds/open/query/sync', bigNumberSync);
-    await page.goto('/discover?search=somedata');
+    await mockApiConfig(page, {
+      features: [...discoverFeatures, { name: 'VARIANT_EXPLORER', value: 'true' }],
+    });
+    // Discover can't add a genomic filter and blocks in-app navigation that carries one,
+    // but a full load still restores one from sessionStorage.
+    await page.addInitScript(() => {
+      sessionStorage.setItem(
+        'genomicFilters',
+        JSON.stringify([
+          {
+            uuid: 'carried-genomic-filter',
+            id: 'genomic',
+            filterType: 'genomic',
+            displayType: 'any',
+            variableName: 'Genomic Filter',
+            description: 'Gene with variant: BRCA1',
+            allowFiltering: true,
+            dataset: '',
+            Gene_with_variant: ['BRCA1'],
+          },
+        ]),
+      );
+    });
+    await mockApiSuccess(page, '*/**/picsure/hpds/open/query/sync', {
+      '\\_studies_consents\\': '1477888±3',
+    });
+
+    await page.goto('/discover');
+    await expect(page.locator('body.started')).toBeAttached();
 
     // When
-    await clickNthFilterIcon(page);
-    const firstItem = await getOption(page);
-    await firstItem.click();
-    const addFilterButton = page.getByTestId('filter-add');
-    await addFilterButton.click();
-    const cohortDetailsButton = page.getByTestId('cohort-details-btn');
+    await page.locator('#results-panel-toggle').click();
 
     // Then
-    await expect(page.locator('#results-panel')).toBeVisible();
-    await expect(cohortDetailsButton).not.toBeVisible();
-    await expect(page.locator('#variant-explorer-btn')).not.toBeVisible();
+    await expect(page.locator('#results-panel')).toContainText('Genomic Filter');
+    await expect(page.getByTestId('results-variant-explorer-open')).toHaveCount(0);
   });
 });
 

@@ -33,11 +33,3 @@ export async function mintPlatformKey(request: PlatformKeyRequest): Promise<Mint
   refreshApiKeys();
   return minted;
 }
-
-export default {
-  listVersion,
-  refreshApiKeys,
-  loadApiKeys,
-  revokeApiKey,
-  mintPlatformKey,
-};
