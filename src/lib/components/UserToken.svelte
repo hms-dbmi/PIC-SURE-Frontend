@@ -85,7 +85,7 @@
   {#await getUser(true, true)}
     <Loading ring size="medium" />
   {:then}
-    <div id="user-token" class="card bg-surface-50-950">
+    <div id="user-token" class="rounded-container border border-surface-700 bg-surface-100-900/50">
       <header class="card-header flex w-full items-center gap-4">
         <i class="fa-solid fa-user-shield text-3xl text-success-500"></i>
         <div>
@@ -97,7 +97,7 @@
         <label for="account">Account:</label>
         <span id="account" class="w-full">{account}</span>
         <label for="token">Token:</label>
-        <div id="token">{revealed ? token : placeHolderToken}</div>
+        <div id="token" class="token-value">{revealed ? token : placeHolderToken}</div>
         <label for="expires">Expires:</label>
         <div>
           <span id="expires" class="w-1/3 mr-2"
