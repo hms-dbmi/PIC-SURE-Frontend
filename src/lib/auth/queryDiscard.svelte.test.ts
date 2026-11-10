@@ -32,6 +32,19 @@ session.onQueryDiscard(() => {
   return () => events.push('lifted');
 });
 
+/** An unsigned JWT for `sub`. */
+function jwt(sub: string): string {
+  const encode = (part: object) => btoa(JSON.stringify(part)).replace(/=+$/, '');
+  return `${encode({ alg: 'none' })}.${encode({ sub })}.signature`;
+}
+
+/** Stores `token` the way another tab does, and tells this tab as the browser would. */
+function storeFromAnotherTab(token: string) {
+  if (token) localStorage.setItem('token', token);
+  else localStorage.removeItem('token');
+  window.dispatchEvent(new StorageEvent('storage', { key: 'token' }));
+}
+
 async function settle() {
   await new Promise((resolve) => setTimeout(resolve));
 }
@@ -329,10 +342,7 @@ describe('a logout in another tab', () => {
       new StorageEvent('storage', { key: 'discard-query', oldValue: '1', newValue: null }),
     );
   };
-  const removeToken = () => {
-    localStorage.removeItem('token');
-    window.dispatchEvent(new StorageEvent('storage', { key: 'token' }));
-  };
+  const removeToken = () => storeFromAnotherTab('');
 
   it('discards the query here too, and lifts the discard once this tab has followed the sign-out', async () => {
     announceDiscard();
@@ -378,10 +388,10 @@ describe('a logout in another tab', () => {
   });
 
   it('lifts the discard at once when the token it then hears of is still the same user’s', () => {
+    session.setToken(jwt('sleeper'));
     // the other tab logged out and back in while this one slept, so it sees no sign-out
-    localStorage.setItem('token', 'token-after-login-again');
     announceDiscard();
-    window.dispatchEvent(new StorageEvent('storage', { key: 'token' }));
+    storeFromAnotherTab(jwt('sleeper') + 'x');
 
     expect(reruns).toHaveLength(0);
     expect(events).toEqual(['discarded', 'lifted']);
@@ -448,6 +458,38 @@ describe('a logout in this tab', () => {
     void session.logout(undefined, false, { discardQuery: true });
 
     expect(writes).toEqual(['set discard-query', 'remove discard-query']);
+  });
+
+  it('tells the other tabs when another tab signs out while PSAMA answers', async () => {
+    const answer = holdFirstRequest();
+    const writes = recordStorageWrites();
+
+    const loggedOut = session.logout(undefined, false, { discardQuery: true });
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+    storeFromAnotherTab('');
+    reruns.forEach((rerun) => rerun.resolve());
+    await settle();
+    answer(new Response('{}'));
+    await loggedOut;
+
+    expect(writes).toContain('set discard-query');
+    expect(events).toEqual(['discarded']);
+  });
+
+  it('lifts the discard only once it has navigated, though a guard run under way settles first', async () => {
+    storeFromAnotherTab(jwt('someone-else'));
+    const writes = recordStorageWrites();
+
+    const loggedOut = session.logout(undefined, false, { discardQuery: true });
+    reruns[0].resolve();
+    await loggedOut;
+    await settle();
+
+    expect(writes).toContain('set discard-query');
+    expect(events).toEqual(['discarded']);
+    navigations[0].resolve();
+    await settle();
+    expect(events).toEqual(['discarded', 'lifted']);
   });
 
   it('tells the other tabs nothing when the session times out', async () => {

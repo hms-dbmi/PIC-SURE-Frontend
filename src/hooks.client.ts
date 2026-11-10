@@ -14,8 +14,13 @@ export const init: ClientInit = () => {
     navigate: (path) => goto(resolve(appPath(path))),
     rerunGuards: async () => {
       await invalidateAll();
-      // A navigation that started meanwhile replaced the re-run, which then settles first.
-      await navigating.complete?.catch(() => {});
+      // A navigation that started meanwhile replaced the re-run, and others may replace that one:
+      // settle with the last.
+      let settled: Promise<void> | null = null;
+      while (navigating.complete && navigating.complete !== settled) {
+        settled = navigating.complete;
+        await settled.catch(() => {});
+      }
     },
     currentUrl: () => page.url,
     showAccessUnavailable,

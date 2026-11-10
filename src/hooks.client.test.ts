@@ -80,20 +80,24 @@ describe('client init', () => {
     expect(shell.currentUrl()).toMatchObject({ pathname: '/explorer', search: '?q=1' });
   });
 
-  it('lets the session run the guards again, settling once a navigation that replaced them has', async () => {
+  it('lets the session run the guards again, settling with the navigations that replaced them', async () => {
     await init();
     const shell: SessionShell = session.connect.mock.calls[0][0];
-    let completeNavigation = () => {};
-    navigating.complete = new Promise<void>((resolve) => (completeNavigation = resolve));
+    const first = Promise.withResolvers<void>();
+    const second = Promise.withResolvers<void>();
+    navigating.complete = first.promise;
     let settled = false;
 
     const rerun = shell.rerunGuards().then(() => (settled = true));
-    await Promise.resolve();
-    await Promise.resolve();
+    await new Promise((resolve) => setTimeout(resolve));
+    navigating.complete = second.promise;
+    first.reject(new Error('navigation aborted'));
+    await new Promise((resolve) => setTimeout(resolve));
     expect(invalidateAll).toHaveBeenCalledOnce();
     expect(settled).toBe(false);
 
-    completeNavigation();
+    second.resolve();
+    navigating.complete = null;
     await rerun;
     expect(settled).toBe(true);
   });

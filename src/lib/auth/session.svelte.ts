@@ -120,8 +120,9 @@ export class Session {
   // From a logout that discards the query, here or in another tab, until this tab has navigated:
   // what the listeners returned.
   #discard: (() => void)[] | undefined;
-  // Logout navigations and guard runs started, and whether the latest has yet to settle.
+  // Bumped by each logout, logout navigation and guard run, so only the latest lifts the discard.
   #navigations = 0;
+  // Whether the latest navigation or guard run has yet to settle.
   #navigating = false;
 
   constructor() {
@@ -147,11 +148,13 @@ export class Session {
       }
       this.#token = stored;
       if (stored) this.bootstrap();
+      // A logout under way here navigates away itself, and lifts any discard once it has.
+      if (this.#pendingLogout) return;
       if (userChanged) {
         this.#track(() => this.#shell.rerunGuards()).catch((error: unknown) => {
           console.error('Error running the guards again: ' + error);
         });
-      } else if (!this.#pendingLogout && !this.#navigating) {
+      } else if (!this.#navigating) {
         // Still the same user: a sign-out this tab never saw (it slept while the other tab logged
         // out and back in) leaves nothing to follow before lifting that logout's discard.
         this.#liftDiscard();
@@ -467,9 +470,13 @@ export class Session {
       // The other tabs hear of it just before #endSession removes the token, or now if it's gone.
       if (!untrack(() => this.#token)) announceQueryDiscard();
     }
-    this.#pendingLogout ??= untrack(() => this.#endSession(authProvider, redirect)).finally(() => {
-      this.#pendingLogout = undefined;
-    });
+    if (!this.#pendingLogout) {
+      // Supersedes a guard run under way, so only this logout's navigation lifts the discard.
+      this.#navigations++;
+      this.#pendingLogout = untrack(() => this.#endSession(authProvider, redirect)).finally(() => {
+        this.#pendingLogout = undefined;
+      });
+    }
     return this.#pendingLogout;
   }
 
