@@ -28,7 +28,7 @@ vi.mock('#lib/auth/User.ts', async () => {
 vi.mock('#lib/explorer/Resources.ts', () => ({
   getApiConnectionResource: () => ({ requiresAuth: false, usesDistinctOpenResource: true }),
 }));
-vi.mock('#lib/api/client.ts', () => ({ post: vi.fn() }));
+vi.mock('#lib/api/psama/apiKeys.ts', () => ({ requestPublic: vi.fn() }));
 vi.mock('./ApiDocumentation.svelte', async () => ({
   default: (await import('../../../../../tests/support/fixtures/StubComponent.svelte')).default,
 }));

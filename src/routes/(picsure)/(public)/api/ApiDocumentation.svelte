@@ -1,9 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { SwaggerComponent, SwaggerSystem } from 'swagger-ui-dist/swagger-ui-bundle.js';
+  import { ApiError } from '#lib/api/errors.ts';
+  import { getDocumentedServices, getOpenApiDocument } from '#lib/api/picsure/openapi.ts';
   import { createLog, log } from '#lib/telemetry/logger.ts';
   import { createDocsLogging } from './apiDocsLogging.ts';
-  import { CLIENT_TYPE_HEADERS } from '#lib/api/clientType.ts';
 
   // The first listed service is shown on load: the dictionary, which every visitor can use.
   const services = [
@@ -40,39 +41,6 @@
     }
   }
 
-  class DocumentationResponseError extends Error {
-    readonly status: number;
-    constructor(status: number) {
-      super('Documentation request failed');
-      this.status = status;
-    }
-  }
-
-  async function getJson(path: string, signal: AbortSignal): Promise<unknown> {
-    const requestController = new AbortController();
-    const abort = () => requestController.abort();
-    signal.addEventListener('abort', abort, { once: true });
-    if (signal.aborted) abort();
-    const timeout = setTimeout(abort, 15000);
-    try {
-      const response = await fetch(path, {
-        signal: requestController.signal,
-        headers: CLIENT_TYPE_HEADERS,
-        credentials: 'omit',
-        redirect: 'error',
-      });
-      if (!response.ok) throw new DocumentationResponseError(response.status);
-      return await response.json();
-    } finally {
-      clearTimeout(timeout);
-      signal.removeEventListener('abort', abort);
-    }
-  }
-
-  function isObject(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
-  }
-
   async function load(index: boolean) {
     controller?.abort();
     controller = new AbortController();
@@ -83,14 +51,11 @@
     let stage = index ? 'registry' : 'document';
     try {
       if (index) {
-        const registry = await getJson('/picsure/openapi', signal);
-        if (!Array.isArray(registry)) throw new Error('Invalid documentation registry');
+        const documented = await getDocumentedServices(signal);
         if (request !== generation) return;
         // Only these researcher-facing services belong on this page. Construct local
         // paths ourselves rather than trusting registry URLs or Swagger configuration.
-        available = services.filter((service) =>
-          registry.some((entry) => isObject(entry) && entry.name === service.name),
-        );
+        available = services.filter((service) => documented.includes(service.name));
         selected = available[0]?.name ?? '';
         if (!selected) {
           error = 'API documentation is unavailable on this deployment.';
@@ -98,18 +63,7 @@
         }
       }
       stage = 'document';
-      const document = await getJson(`/picsure/openapi/${selected}`, signal);
-      if (
-        !isObject(document) ||
-        typeof document.openapi !== 'string' ||
-        !/^3\.(0|1)\./.test(document.openapi) ||
-        !isObject(document.info) ||
-        typeof document.info.title !== 'string' ||
-        typeof document.info.version !== 'string' ||
-        !isObject(document.paths)
-      ) {
-        throw new Error('Invalid OpenAPI document');
-      }
+      const document = await getOpenApiDocument(selected, signal);
       if (request !== generation) return;
       shownService = selected;
       if (viewer) {
@@ -165,7 +119,7 @@
       hasRendered = true;
     } catch (cause) {
       if (request !== generation) return;
-      const status = cause instanceof DocumentationResponseError ? cause.status : undefined;
+      const status = cause instanceof ApiError ? cause.status : undefined;
       // A deployment without the documentation registry is expected, not a failure.
       const unavailable = stage === 'registry' && status === 404;
       if (!unavailable) {

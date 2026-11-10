@@ -163,7 +163,8 @@
         this.children = childrenData?.map((child) => new RemoteTreeNodeClass(child)) || [];
         this.childrenLoaded = true;
       } catch (err) {
-        this.error = err instanceof Error ? err.message : 'Failed to load children';
+        // never the error's message: an API error's is the raw response body
+        this.error = 'Failed to load children';
         console.error('Error loading children for', this.conceptPath, err);
       } finally {
         this.loading = false;

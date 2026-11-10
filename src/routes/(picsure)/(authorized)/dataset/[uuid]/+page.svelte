@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from '$app/state';
 
-  import * as api from '#lib/api/client.ts';
+  import { consentDeniedMessage } from '#lib/api/errors.ts';
   import { config } from '#lib/config/config.svelte.ts';
 
   import { QueryVersion, type DataSet } from '#lib/datasets/dataset.ts';
@@ -73,7 +73,7 @@
     {/if}
   {:catch error}
     <ErrorAlert title="API Error">
-      {api.consentDeniedMessage(error) ??
+      {consentDeniedMessage(error) ??
         `An error occurred while retrieving dataset ${page.params.uuid}.`}
     </ErrorAlert>
   {/await}

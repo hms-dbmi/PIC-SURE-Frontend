@@ -1,15 +1,14 @@
 <script lang="ts">
-  import * as api from '#lib/api/client.ts';
+  import { ApiError, consentDeniedMessage } from '#lib/api/errors.ts';
   import { config } from '#lib/config/config.svelte.ts';
   import { browser } from '$app/env';
   import type { QueryRequestInterfaceV3 } from '#lib/api/picsure/query.types.ts';
-  import { Picsure } from '#lib/api/paths.ts';
+  import { getQueryResult } from '#lib/api/picsure/query.ts';
   import Modal from '#lib/ui/dialog/Modal.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import { toaster } from '#lib/ui/toaster.ts';
   import Loading from '#lib/ui/Loading.svelte';
   import { log, createLog } from '#lib/telemetry/logger.ts';
-  import { isHttpError } from '@sveltejs/kit';
   interface Props {
     query: QueryRequestInterfaceV3;
     datasetId: string | undefined;
@@ -50,7 +49,7 @@
         }),
       );
       const startTime = performance.now();
-      const res = await api.get(`${Picsure.Query}/${datasetId}/result`);
+      const res = await getQueryResult(datasetId);
       const duration = Math.round(performance.now() - startTime);
       const blob = new Blob([res], { type: 'octet/stream' });
 
@@ -83,7 +82,7 @@
       );
     } catch (error) {
       console.error('Error in onCompleteHandler', error);
-      const consentMessage = api.consentDeniedMessage(error);
+      const consentMessage = consentDeniedMessage(error);
       if (consentMessage) {
         toaster.error({ title: consentMessage, closable: true });
       }
@@ -93,7 +92,7 @@
           'export.download_error',
           { type: query.query.expectedResultType, datasetId },
           {
-            status: isHttpError(error) ? error.status : undefined,
+            status: error instanceof ApiError ? error.status : undefined,
             error: { message: (error as Error).message },
           },
         ),

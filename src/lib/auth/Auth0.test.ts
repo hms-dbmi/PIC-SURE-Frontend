@@ -6,7 +6,7 @@ const auth0Calls = vi.hoisted(() => ({
 }));
 
 vi.mock('$app/env', () => ({ browser: true }));
-vi.mock('#lib/api/client.ts', () => ({ post: vi.fn() }));
+vi.mock('#lib/api/client.ts', () => ({ request: vi.fn() }));
 vi.mock('#lib/config/deployment.ts', async (importOriginal) => ({
   ...(await importOriginal<typeof import('#lib/config/deployment.ts')>()),
   AUTH0_TENANT: 'existing-tenant',

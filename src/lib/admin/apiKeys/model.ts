@@ -1,3 +1,5 @@
+import { ApiError } from '#lib/api/errors.ts';
+
 export type ApiKeyType = 'USER' | 'PLATFORM';
 export type ApiKeyStatus = 'Active' | 'Revoked' | 'Expired';
 
@@ -92,10 +94,10 @@ export function extractApiError(
   error: unknown,
   fallback = 'Something went wrong when sending your request.',
 ): string {
-  const message = (error as { body?: { message?: string } })?.body?.message;
+  const message = error instanceof ApiError ? error.message : undefined;
   if (!message) return fallback;
   try {
-    // PSAMA 400s arrive as a JSON body serialized into the error message
+    // PSAMA 400s arrive as a JSON body
     const parsed = JSON.parse(message);
     return parsed?.message || fallback;
   } catch {

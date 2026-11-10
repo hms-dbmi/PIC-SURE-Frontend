@@ -7,10 +7,15 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
   createLog: (...args: unknown[]) => mockCreateLog(...args),
 }));
 
-let mockIsOpen = true;
-vi.mock('#lib/explorer/mode.ts', () => ({
-  isOpenAccess: () => mockIsOpen,
+let mockPathname = '/discover';
+vi.mock('$app/state', () => ({
+  page: {
+    get url() {
+      return new URL(`http://localhost${mockPathname}`);
+    },
+  },
 }));
+let mockToken: string | null = null;
 
 const mockGoto = vi.fn();
 vi.mock('$app/navigation', () => ({
@@ -41,7 +46,8 @@ describe('wafCaptcha', () => {
     vi.clearAllMocks();
     vi.useFakeTimers();
     vi.setSystemTime(NOW);
-    mockIsOpen = true;
+    mockPathname = '/discover';
+    mockToken = null;
 
     reloadSpy = vi.fn();
     vi.stubGlobal('window', {
@@ -62,6 +68,12 @@ describe('wafCaptcha', () => {
     // Fresh module instance per test to reset the module-level reload guard
     vi.resetModules();
     waf = await import('#lib/api/wafCaptcha.ts');
+    (await import('#lib/api/sessionHooks.ts')).registerSessionHooks({
+      getToken: () => mockToken,
+      onUnauthorized: vi.fn(),
+      onForbidden: vi.fn(),
+      onTokenRefreshed: vi.fn(),
+    });
   });
 
   afterEach(() => {
@@ -119,14 +131,31 @@ describe('wafCaptcha', () => {
       expect(reloadSpy).toHaveBeenCalledTimes(1);
     });
 
-    it('reports authorized mode when not in open access', () => {
-      mockIsOpen = false;
+    it('reports authorized mode for a signed-in user outside discover', () => {
+      mockPathname = '/explorer';
+      mockToken = 'token';
       waf.handleWafCaptcha('/picsure/query/sync');
 
       expect(mockCreateLog).toHaveBeenCalledWith(
         'ACTION',
         'waf.captcha_shown',
         { path: '/picsure/query/sync', mode: 'authorized' },
+        { status: 405 },
+      );
+    });
+
+    it.each([
+      ['a signed-in user on discover', '/discover', 'token'],
+      ['an anonymous visitor outside discover', '/explorer', null],
+    ])('reports open mode for %s', (_who, pathname, token) => {
+      mockPathname = pathname;
+      mockToken = token;
+      waf.handleWafCaptcha('/picsure/query/sync');
+
+      expect(mockCreateLog).toHaveBeenCalledWith(
+        'ACTION',
+        'waf.captcha_shown',
+        { path: '/picsure/query/sync', mode: 'open' },
         { status: 405 },
       );
     });

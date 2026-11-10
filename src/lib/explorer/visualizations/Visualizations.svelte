@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import * as api from '#lib/api/client.ts';
+  import { getDistributions } from '#lib/api/picsure/visualization.ts';
   import PlotlyPlot from '#lib/ui/PlotlyPlot.svelte';
   import {
     type PlotValues,
@@ -21,7 +21,6 @@
   import { toaster } from '#lib/ui/toaster.ts';
   import TimedLoading, { type TimedMessage } from '#lib/ui/TimedLoading.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
-  import { Picsure } from '#lib/api/paths.ts';
   import { isOpenAccess, useOpenAccess } from '#lib/explorer/mode.ts';
   import LogicTreeSummary from '#lib/explorer/advanced/LogicTreeSummary.svelte';
   import { filters, filterTree, genomicFilters } from '#lib/query/filters.ts';
@@ -72,18 +71,14 @@
     });
 
     const query = getQueryRequestV3();
-    const openAccess = isOpenAccess();
-    const distributionsPath = useOpenAccess(openAccess)
-      ? Picsure.Visualization.DistributionsOpen
-      : Picsure.Visualization.Distributions;
 
-    await api
-      .post(distributionsPath, { query: query.query }, undefined, !openAccess)
+    const openAccess = isOpenAccess();
+    await getDistributions(query.query, { openEndpoint: useOpenAccess(openAccess), openAccess })
       .then((resp) => {
-        const categoricalData = (resp?.categoricalData || []).filter((data: CategoricalPlotData) =>
+        const categoricalData = resp.categoricalData.filter((data) =>
           categoricalHasData(data, minimumCount),
         );
-        const continuousData = (resp?.continuousData || []).filter((data: ContinuousPlotData) =>
+        const continuousData = resp.continuousData.filter((data) =>
           continuousHasData(data, minimumCount),
         );
         const includedConceptPaths = getIncludedConceptPaths(categoricalData, continuousData);

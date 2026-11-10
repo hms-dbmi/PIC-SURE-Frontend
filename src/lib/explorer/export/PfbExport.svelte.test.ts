@@ -3,10 +3,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 
-const { get } = vi.hoisted(() => ({ get: vi.fn() }));
+const { getSignedUrl } = vi.hoisted(() => ({ getSignedUrl: vi.fn() }));
 
 vi.mock('$app/env', () => ({ browser: true }));
-vi.mock('#lib/api/client.ts', () => ({ get, consentDeniedMessage: () => null }));
+vi.mock('#lib/api/picsure/query.ts', () => ({ getSignedUrl, getQueryResult: vi.fn() }));
 vi.mock('#lib/telemetry/logger.ts', () => ({ log: vi.fn(), createLog: vi.fn() }));
 vi.mock('#lib/config/config.svelte.ts', () => ({
   config: {
@@ -43,7 +43,7 @@ describe('PfbExport', () => {
   it.each(platforms)(
     'shows the loading state only on the clicked $clicked button',
     async ({ clicked, other }) => {
-      get.mockReturnValue(new Promise(() => {}));
+      getSignedUrl.mockReturnValue(new Promise(() => {}));
       render(PfbExport);
 
       await fireEvent.click(screen.getByRole('button', { name: `Export to ${clicked}` }));
@@ -61,13 +61,13 @@ describe('PfbExport', () => {
   );
 
   it('restores both buttons once the export finishes', async () => {
-    let resolveSignedUrl: (value: { signedUrl: string }) => void = () => {};
-    get.mockReturnValue(new Promise((resolve) => (resolveSignedUrl = resolve)));
+    let resolveSignedUrl: (value: string) => void = () => {};
+    getSignedUrl.mockReturnValue(new Promise((resolve) => (resolveSignedUrl = resolve)));
     render(PfbExport);
 
     await fireEvent.click(screen.getByRole('button', { name: 'Export to Terra' }));
     expect(screen.getByRole('button', { name: 'Exporting to Terra' })).toBeDisabled();
-    resolveSignedUrl({ signedUrl: 'https://signed.example/file.avro' });
+    resolveSignedUrl('https://signed.example/file.avro');
 
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Export to Terra' })).toBeEnabled(),

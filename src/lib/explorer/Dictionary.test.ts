@@ -8,7 +8,7 @@ const mockState = vi.hoisted(() => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { writable } = require('svelte/store') as typeof import('svelte/store');
   return {
-    postSpy: vi.fn(),
+    requestSpy: vi.fn(),
     logSpy: vi.fn(),
     consentsSettledSpy: vi.fn().mockResolvedValue(undefined),
     showAccessUnavailableSpy: vi.fn(),
@@ -19,10 +19,7 @@ const mockState = vi.hoisted(() => {
   };
 });
 
-vi.mock('#lib/api/client.ts', () => ({
-  post: mockState.postSpy,
-  isAbortError: (e: unknown) => (e as Error | undefined)?.name === 'AbortError',
-}));
+vi.mock('#lib/api/client.ts', () => ({ request: mockState.requestSpy }));
 
 vi.mock('#lib/explorer/Search.ts', () => ({
   searchTerm: mockState.searchTermStore,
@@ -78,7 +75,7 @@ function facetResponse(categoryName: string, zeroCountFacet = 'empty'): Dictiona
 beforeEach(() => {
   vi.spyOn(console, 'log').mockImplementation(() => {});
   vi.spyOn(console, 'debug').mockImplementation(() => {});
-  mockState.postSpy.mockReset();
+  mockState.requestSpy.mockReset();
   mockState.logSpy.mockClear();
   hiddenFacets.set({});
   openFacets.set([]);
@@ -91,7 +88,7 @@ afterEach(() => {
 
 describe('updateFacetsFromSearch', () => {
   it('commits hiddenFacets and openFacets for a current response', async () => {
-    mockState.postSpy.mockResolvedValueOnce(facetResponse('demographics'));
+    mockState.requestSpy.mockResolvedValueOnce(facetResponse('demographics'));
 
     await updateFacetsFromSearch({ isCurrent: () => true });
 
@@ -100,7 +97,7 @@ describe('updateFacetsFromSearch', () => {
   });
 
   it('commits when no isCurrent guard is supplied', async () => {
-    mockState.postSpy.mockResolvedValueOnce(facetResponse('demographics'));
+    mockState.requestSpy.mockResolvedValueOnce(facetResponse('demographics'));
 
     await updateFacetsFromSearch();
 
@@ -108,7 +105,7 @@ describe('updateFacetsFromSearch', () => {
   });
 
   it('writes neither store when the response has been superseded', async () => {
-    mockState.postSpy.mockResolvedValueOnce(facetResponse('demographics'));
+    mockState.requestSpy.mockResolvedValueOnce(facetResponse('demographics'));
 
     const response = await updateFacetsFromSearch({ isCurrent: () => false });
 
@@ -118,68 +115,65 @@ describe('updateFacetsFromSearch', () => {
   });
 
   it('does not let a superseded response overwrite the current one', async () => {
-    mockState.postSpy.mockResolvedValueOnce(facetResponse('current'));
+    mockState.requestSpy.mockResolvedValueOnce(facetResponse('current'));
     await updateFacetsFromSearch({ isCurrent: () => true });
 
-    mockState.postSpy.mockResolvedValueOnce(facetResponse('stale'));
+    mockState.requestSpy.mockResolvedValueOnce(facetResponse('stale'));
     await updateFacetsFromSearch({ isCurrent: () => false });
 
     expect(get(openFacets)).toEqual(['current']);
   });
 
   it('leaves the accordion alone when the same categories come back', async () => {
-    mockState.postSpy.mockResolvedValueOnce(facetResponse('demographics'));
+    mockState.requestSpy.mockResolvedValueOnce(facetResponse('demographics'));
     await updateFacetsFromSearch({ isCurrent: () => true });
     expect(get(openFacets)).toEqual(['demographics']);
 
     openFacets.set([]);
-    mockState.postSpy.mockResolvedValueOnce(facetResponse('demographics'));
+    mockState.requestSpy.mockResolvedValueOnce(facetResponse('demographics'));
     await updateFacetsFromSearch({ isCurrent: () => true });
 
     expect(get(openFacets)).toEqual([]);
   });
 
   it('auto-opens again once the set of categories with results changes', async () => {
-    mockState.postSpy.mockResolvedValueOnce(facetResponse('demographics'));
+    mockState.requestSpy.mockResolvedValueOnce(facetResponse('demographics'));
     await updateFacetsFromSearch({ isCurrent: () => true });
     openFacets.set([]);
 
-    mockState.postSpy.mockResolvedValueOnce(facetResponse('measurements'));
+    mockState.requestSpy.mockResolvedValueOnce(facetResponse('measurements'));
     await updateFacetsFromSearch({ isCurrent: () => true });
 
     expect(get(openFacets)).toEqual(['measurements']);
   });
 
   it('resetFacetState lets the next response auto-open again', async () => {
-    mockState.postSpy.mockResolvedValueOnce(facetResponse('demographics'));
+    mockState.requestSpy.mockResolvedValueOnce(facetResponse('demographics'));
     await updateFacetsFromSearch({ isCurrent: () => true });
     openFacets.set([]);
 
     resetFacetState();
-    mockState.postSpy.mockResolvedValueOnce(facetResponse('demographics'));
+    mockState.requestSpy.mockResolvedValueOnce(facetResponse('demographics'));
     await updateFacetsFromSearch({ isCurrent: () => true });
 
     expect(get(openFacets)).toEqual(['demographics']);
   });
 
-  it('forwards the abort signal to api.post', async () => {
-    mockState.postSpy.mockResolvedValueOnce(facetResponse('demographics'));
+  it('forwards the abort signal to the facets request', async () => {
+    mockState.requestSpy.mockResolvedValueOnce(facetResponse('demographics'));
     const controller = new AbortController();
 
     await updateFacetsFromSearch({ signal: controller.signal, isCurrent: () => true });
 
-    expect(mockState.postSpy).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.anything(),
-      undefined,
-      undefined,
-      { signal: controller.signal },
+    expect(mockState.requestSpy).toHaveBeenCalledWith(
+      'picsure/dictionary/facets',
+      expect.objectContaining({ method: 'POST', auth: 'open', signal: controller.signal }),
     );
   });
 
   it('rethrows an abort without logging it as a failure', async () => {
     const abortError = Object.assign(new Error('aborted'), { name: 'AbortError' });
-    mockState.postSpy.mockRejectedValueOnce(abortError);
+    mockState.requestSpy.mockRejectedValueOnce(abortError);
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     await expect(updateFacetsFromSearch({ isCurrent: () => false })).rejects.toThrow('aborted');
@@ -189,7 +183,7 @@ describe('updateFacetsFromSearch', () => {
   });
 
   it('still logs a genuine failure', async () => {
-    mockState.postSpy.mockRejectedValueOnce(new Error('boom'));
+    mockState.requestSpy.mockRejectedValueOnce(new Error('boom'));
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     await expect(updateFacetsFromSearch({ isCurrent: () => true })).rejects.toThrow('boom');
@@ -200,8 +194,8 @@ describe('updateFacetsFromSearch', () => {
 });
 
 describe('searchDictionary', () => {
-  it('forwards the abort signal to api.post', async () => {
-    mockState.postSpy.mockResolvedValueOnce({ content: [], totalElements: 0 });
+  it('forwards the page and the abort signal to the concepts request', async () => {
+    mockState.requestSpy.mockResolvedValueOnce({ content: [], totalElements: 0 });
     const controller = new AbortController();
 
     await searchDictionary(
@@ -211,26 +205,23 @@ describe('searchDictionary', () => {
       { signal: controller.signal },
     );
 
-    expect(mockState.postSpy).toHaveBeenCalledWith(
-      expect.stringContaining('page_number=0'),
-      expect.objectContaining({ search: 'age' }),
-      undefined,
-      undefined,
-      { signal: controller.signal },
-    );
+    expect(mockState.requestSpy).toHaveBeenCalledWith('picsure/dictionary/concepts', {
+      method: 'POST',
+      query: { page_number: 0, page_size: 10 },
+      body: expect.objectContaining({ search: 'age' }),
+      auth: 'open',
+      signal: controller.signal,
+    });
   });
 
-  it('omits options entirely when no signal is given', async () => {
-    mockState.postSpy.mockResolvedValueOnce({ content: [], totalElements: 0 });
+  it('sends no signal when none is given', async () => {
+    mockState.requestSpy.mockResolvedValueOnce({ content: [], totalElements: 0 });
 
     await searchDictionary('age', [], { pageNumber: 0, pageSize: 10 });
 
-    expect(mockState.postSpy).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.anything(),
-      undefined,
-      undefined,
-      undefined,
+    expect(mockState.requestSpy).toHaveBeenCalledWith(
+      'picsure/dictionary/concepts',
+      expect.objectContaining({ signal: undefined }),
     );
   });
 });

@@ -382,17 +382,17 @@ on('DELETE', path(`${Psama.Role}/:uuid`), ({ params, res }) => {
   noContent(res);
 });
 
-on('GET', path(Psama.Priviege), ({ res }) => json(res, state.privileges));
-on('GET', path(`${Psama.Priviege}/:uuid`), ({ params, res }) => {
+on('GET', path(Psama.Privilege), ({ res }) => json(res, state.privileges));
+on('GET', path(`${Psama.Privilege}/:uuid`), ({ params, res }) => {
   json(res, state.privileges.find((p) => p.uuid === params.uuid) ?? state.privileges[0]);
 });
-on('POST', path(Psama.Priviege), ({ body, res }) => {
+on('POST', path(Psama.Privilege), ({ body, res }) => {
   const [privilege] = body as { name: string; description: string; application?: unknown }[];
   const created = { ...privilege, uuid: nextId() };
   state.privileges.push(created);
   json(res, [created]);
 });
-on('PATCH', path(Psama.Priviege), ({ body, res }) => {
+on('PATCH', path(Psama.Privilege), ({ body, res }) => {
   const [privilege] = body as { uuid: string }[];
   const index = state.privileges.findIndex((p) => p.uuid === privilege.uuid);
   const updated = { ...(index > -1 ? state.privileges[index] : {}), ...privilege };
@@ -400,7 +400,7 @@ on('PATCH', path(Psama.Priviege), ({ body, res }) => {
   else state.privileges.push(updated);
   noContent(res);
 });
-on('DELETE', path(`${Psama.Priviege}/:uuid`), ({ params, res }) => {
+on('DELETE', path(`${Psama.Privilege}/:uuid`), ({ params, res }) => {
   state.privileges = state.privileges.filter((p) => p.uuid !== params.uuid);
   noContent(res);
 });

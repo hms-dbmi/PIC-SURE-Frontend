@@ -12,7 +12,7 @@ import { optionsIn } from '../../../../../tests/support/helpers';
 vi.mock('$app/env', () => ({ browser: false }));
 
 vi.mock('#lib/api/client.ts', () => ({
-  get: vi.fn(),
+  request: vi.fn(),
 }));
 
 vi.mock('#lib/telemetry/logger.ts', () => ({
@@ -25,7 +25,7 @@ vi.mock('#lib/ui/toaster.ts', () => ({
   toaster: { error: vi.fn() },
 }));
 
-const mockGet = vi.mocked(api.get);
+const mockGet = vi.mocked(api.request);
 
 const GENES = ['BRCA1', 'BRCA2', 'CFTR'];
 
@@ -106,6 +106,6 @@ describe('Genes', () => {
     expect(mockGet).toHaveBeenCalledTimes(1);
 
     await waitFor(() => expect(mockGet).toHaveBeenCalledTimes(2), { timeout: 2000 });
-    expect(mockGet.mock.calls[1][0]).toContain('query=BRC');
+    expect(mockGet.mock.calls[1][1]?.query).toMatchObject({ query: 'BRC' });
   });
 });

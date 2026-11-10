@@ -1,8 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import * as api from '#lib/api/client.ts';
   import { toaster } from '#lib/ui/toaster.ts';
-  import { Picsure } from '#lib/api/paths.ts';
+  import { searchGenes } from '#lib/api/picsure/dictionary.ts';
   import { selectedGenes } from '#lib/query/GeneFilter.ts';
 
   import OptionsSelectionList from '#lib/ui/OptionsSelectionList.svelte';
@@ -34,21 +33,7 @@
     if (!newSearch && (currentPage >= totalPages || allOptionsLoaded)) return;
     loading = true;
     try {
-      const response = await api.get(
-        `${Picsure.SearchValues}?` +
-          new URLSearchParams({
-            genomicConceptPath: 'Gene_with_variant',
-            query: search,
-            page: (newSearch ? 1 : currentPage + 1).toString(),
-            size: pageSize.toString(),
-          }),
-        { 'content-type': 'application/json' },
-      );
-
-      if (response?.error) {
-        throw response.error;
-      }
-
+      const response = await searchGenes(search, newSearch ? 1 : currentPage + 1, pageSize);
       const newGenes = response.results;
       allGenes = newSearch ? newGenes : [...allGenes, ...newGenes];
       totalPages = Math.ceil(response.total / pageSize);

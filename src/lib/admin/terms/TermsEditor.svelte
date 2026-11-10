@@ -1,6 +1,5 @@
 <script lang="ts">
-  import * as api from '#lib/api/client.ts';
-  import { Psama } from '#lib/api/paths.ts';
+  import * as tos from '#lib/api/psama/tos.ts';
   import { toaster } from '#lib/ui/toaster.ts';
 
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
@@ -13,13 +12,13 @@
   let dirty: boolean = $derived(terms !== original);
 
   async function load() {
-    terms = await api.get(Psama.TOS + '/latest');
+    terms = await tos.latest();
     original = terms;
   }
 
   async function onCommit() {
-    await api
-      .post(Psama.TOS + '/update', terms, { 'Content-Type': 'text/html' })
+    await tos
+      .update(terms)
       .then(() => {
         original = terms;
         toaster.success({ description: 'Terms have been successfully published.' });

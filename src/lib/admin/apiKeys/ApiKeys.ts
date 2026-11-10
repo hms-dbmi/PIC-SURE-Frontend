@@ -1,7 +1,6 @@
 import { writable, type Writable } from 'svelte/store';
 
-import * as api from '#lib/api/client.ts';
-import { Psama } from '#lib/api/paths.ts';
+import * as apiKeys from '#lib/api/psama/apiKeys.ts';
 import type {
   ApiKeyMetadata,
   ApiKeyPage,
@@ -18,18 +17,17 @@ export function refreshApiKeys() {
 }
 
 export async function loadApiKeys(page = 0, size = 100, keyType?: ApiKeyType): Promise<ApiKeyPage> {
-  const typeParam = keyType ? `&keyType=${keyType}` : '';
-  return api.get(`${Psama.ApiKey.Admin}?page=${page}&size=${size}${typeParam}`);
+  return apiKeys.list(page, size, keyType);
 }
 
 export async function revokeApiKey(uuid: string): Promise<ApiKeyMetadata> {
-  const revoked: ApiKeyMetadata = await api.put(`${Psama.ApiKey.Admin}/${uuid}/revoke`, undefined);
+  const revoked = await apiKeys.revoke(uuid);
   refreshApiKeys();
   return revoked;
 }
 
 export async function mintPlatformKey(request: PlatformKeyRequest): Promise<MintedPlatformKey> {
-  const minted: MintedPlatformKey = await api.post(Psama.ApiKey.Platform, request);
+  const minted = await apiKeys.mintPlatform(request);
   refreshApiKeys();
   return minted;
 }

@@ -33,6 +33,7 @@ vi.mock('#lib/admin/apiKeys/ApiKeys.ts', async () => {
 
 import MintPlatformKeyModal from '#lib/admin/apiKeys/MintPlatformKeyModal.svelte';
 import { log, createLog } from '#lib/telemetry/logger.ts';
+import { ApiError } from '#lib/api/errors.ts';
 
 const FAKE_KEY = 'picsure_FAKE-TEST-FIXTURE-VALUE-0000000000000000000';
 
@@ -142,12 +143,10 @@ describe('MintPlatformKeyModal', () => {
   });
 
   it('shows the backend message inline when minting fails', async () => {
-    storeMocks.mintPlatformKey.mockRejectedValue({
-      status: 400,
-      body: {
-        message: JSON.stringify({ errorType: 'error', message: 'Expiry must be in the future' }),
-      },
-    });
+    const body = { errorType: 'error', message: 'Expiry must be in the future' };
+    storeMocks.mintPlatformKey.mockRejectedValue(
+      new ApiError(400, 'http', body, JSON.stringify(body)),
+    );
     render(MintPlatformKeyModal);
 
     await openFormAndFill();

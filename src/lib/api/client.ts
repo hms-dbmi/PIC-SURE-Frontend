@@ -1,12 +1,16 @@
-import { error, isHttpError } from '@sveltejs/kit';
-import { logout, login } from '#lib/auth/User.ts';
-import { discardingQuery } from '#lib/auth/discardingQuery.ts';
 import { browser } from '$app/env';
 import { log, createLog, getSessionId } from '#lib/telemetry/logger.ts';
 import { config } from '#lib/config/config.svelte.ts';
 import { isWafCaptchaResponse, handleWafCaptcha } from '#lib/api/wafCaptcha.ts';
 import { joinUrl } from '#lib/api/paths.ts';
 import { CLIENT_TYPE_HEADERS } from '#lib/api/clientType.ts';
+import {
+  ApiError,
+  CONSENT_DENIED_MESSAGE,
+  isAbortError,
+  type ApiErrorCode,
+} from '#lib/api/errors.ts';
+import { sessionHooks } from '#lib/api/sessionHooks.ts';
 import {
   acceptSessionRefresh,
   forgetOpenSession,
@@ -16,99 +20,118 @@ import {
 } from '#lib/api/openSession.ts';
 
 const BEARER = 'Bearer ';
-const CONSENT_DENIED = 'consent_denied';
-export const CONSENT_DENIED_MESSAGE = 'You no longer have consent for this saved result';
 
-export type RequestOptions = { signal?: AbortSignal };
+/**
+ * Which credentials a request carries:
+ * - `user`: the signed-in user's token; without one the request goes keyless.
+ * - `open`: for PIC-SURE data that anonymous visitors may read: the user's token when signed in,
+ *   otherwise this browser's open-access session.
+ * - `none`: no credentials, even when signed in.
+ *
+ * A 401 on an `open` request that went without the user's token ends nothing.
+ */
+export type Auth = 'user' | 'open' | 'none';
 
-export function isAbortError(e: unknown): boolean {
-  return (e as Error | undefined)?.name === 'AbortError';
+export interface RequestOptions {
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+  /** Appended to the path as search params; undefined values are left out. */
+  query?: Record<string, string | number | boolean | undefined>;
+  /** Sent as JSON. A string is sent as it is. */
+  body?: unknown;
+  headers?: Record<string, string>;
+  auth?: Auth;
+  /**
+   * The request is for open-access data, so a 403 on it refuses nothing the user asked for, as on
+   * an anonymous `open` request (`SessionHooks.onForbidden`). It changes neither the credentials
+   * nor what is asked for.
+   */
+  openAccess?: boolean;
+  signal?: AbortSignal;
+  /**
+   * For a request that must not reach the session or the page (the public banner feed): it is
+   * never cached, never refreshes the token, logs nobody out, reloads nothing, and any failure
+   * except an abort resolves undefined. It still carries the credentials `auth` asks for.
+   */
+  softFail?: boolean;
+  /**
+   * SvelteKit's fetch, when called from a load running in the browser. Requests need the browser:
+   * the credentials live in its storage, and the backend is reached through the page's origin.
+   */
+  fetch?: typeof fetch;
 }
 
-// HttpError carries its text at body.message; it has no message of its own.
-export function consentDeniedMessage(e: unknown): string | undefined {
-  return isHttpError(e, 403) && e.body.errorType === CONSENT_DENIED ? e.body.message : undefined;
+/**
+ * Resolves with the parsed body (JSON, else text; an `ArrayBuffer` for octet-stream). An HTTP
+ * failure rejects with an `ApiError`; a network failure or an abort rejects as fetch did.
+ */
+export function request<T>(path: string, opts?: RequestOptions & { softFail?: false }): Promise<T>;
+export function request<T>(path: string, opts: RequestOptions): Promise<T | undefined>;
+export function request<T>(path: string, opts: RequestOptions = {}): Promise<T | undefined> {
+  const sent = send(path, opts) as Promise<T>;
+  if (!opts.softFail) return sent;
+  return sent.catch((e: unknown) => {
+    if (isAbortError(e)) throw e;
+    return undefined;
+  });
 }
 
-// TODO: fix any types
-/* eslint-disable @typescript-eslint/no-explicit-any */
-async function send({
-  method,
-  path,
-  data,
-  headers,
-  authenticate = true,
-  options,
-}: {
-  method: string;
-  path: string;
-  data?: any; //TODO: Change this
-  headers?: any;
-  authenticate?: boolean;
-  options?: RequestOptions;
-}) {
-  const opts: {
-    method: string;
-    headers: { [key: string]: string };
-    body?: string;
-    signal?: AbortSignal;
-    redirect?: RequestRedirect;
-  } = {
-    method,
-    headers: { ...CLIENT_TYPE_HEADERS },
+async function send(path: string, opts: RequestOptions): Promise<unknown> {
+  const {
+    method = 'GET',
+    body,
+    auth = 'user',
+    openAccess = false,
+    signal,
+    softFail = false,
+  } = opts;
+  const doFetch = opts.fetch ?? fetch;
+  const init: RequestInit = { method };
+  const headers: Record<string, string> = {
+    ...CLIENT_TYPE_HEADERS,
+    ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+    ...opts.headers,
   };
+  if (body !== undefined) init.body = typeof body === 'string' ? body : JSON.stringify(body);
+  if (softFail) init.cache = 'no-store';
 
-  if (data) {
-    opts.headers['Content-Type'] = 'application/json';
-    opts.body = typeof data === 'string' ? data : JSON.stringify(data);
-  }
-
-  if (headers) {
-    opts.headers = { ...opts.headers, ...headers };
-  }
-
-  // a token-less data request: no stored token, or authenticate:false (a logged-in user querying
-  // the open variant). Its bearer is this browser's open-access session instead of a login token.
-  // Non-picsure paths (e.g. psama key generation) get no session
+  // an anonymous request with the open-access session as its bearer, if it got one
   let openRequest = false;
   let sessionToken: string | null = null;
   if (browser) {
-    const token = authenticate ? localStorage.getItem('token') : null;
+    const token = auth === 'user' || auth === 'open' ? sessionHooks().getToken() : null;
     if (token) {
-      opts.headers['Authorization'] = `${BEARER}${token}`;
-      opts.headers['request-source'] = 'Authorized';
+      headers['Authorization'] = `${BEARER}${token}`;
+      headers['request-source'] = 'Authorized';
     } else {
-      opts.headers['request-source'] = 'Open';
-      if (path.startsWith('picsure/')) {
+      headers['request-source'] = 'Open';
+      if (auth === 'open') {
         openRequest = true;
-        sessionToken = await unlessAborted(openSessionToken(), options?.signal);
+        sessionToken = await unlessAborted(openSessionToken(), signal);
         if (sessionToken) {
-          opts.headers['Authorization'] = `${BEARER}${sessionToken}`;
+          headers['Authorization'] = `${BEARER}${sessionToken}`;
           // fetch would re-send the key to wherever a redirect points; data paths never redirect
-          opts.redirect = 'error';
+          init.redirect = 'error';
         }
       }
     }
-    opts.headers['X-Session-Id'] = getSessionId();
+    headers['X-Session-Id'] = getSessionId();
   }
+  init.headers = headers;
+  if (signal) init.signal = signal;
 
-  if (options?.signal) {
-    opts.signal = options.signal;
-  }
-
-  const url = joinUrl(window.location.origin, path);
-  let res = await fetch(url, opts);
+  const url = joinUrl(window.location.origin, withQuery(path, opts.query));
+  let res = await doFetch(url, init);
   if (openRequest) {
     acceptSessionRefresh(res);
     // a rejected session (expired, or the signing secret rotated) is replaced and retried once;
     // a second failure falls through to the error below
     if (sessionToken && res.status === 401 && isSessionKeyError(await errorType(res))) {
       log(createLog('AUTH', 'open_session.rejected', undefined, { status: 401 }));
-      const retryToken = await unlessAborted(recoverOpenSession(sessionToken), options?.signal);
+      const retryToken = await unlessAborted(recoverOpenSession(sessionToken), signal);
       if (retryToken) {
-        res = await fetch(url, {
-          ...opts,
-          headers: { ...opts.headers, Authorization: `${BEARER}${retryToken}` },
+        res = await doFetch(url, {
+          ...init,
+          headers: { ...headers, Authorization: `${BEARER}${retryToken}` },
           redirect: 'error',
         });
         acceptSessionRefresh(res);
@@ -119,7 +142,17 @@ async function send({
     }
   }
 
-  return await handleResponse(res, openRequest);
+  return await handleResponse(res, { openRequest, openAccess, softFail });
+}
+
+function withQuery(path: string, query: RequestOptions['query']): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(query ?? {})) {
+    if (value !== undefined) params.append(key, String(value));
+  }
+  const search = params.toString();
+  if (!search) return path;
+  return `${path}${path.includes('?') ? '&' : '?'}${search}`;
 }
 
 // the shared acquisition carries on for other callers; an aborted caller just stops waiting for it
@@ -144,106 +177,73 @@ async function errorType(res: Response): Promise<unknown> {
   }
 }
 
-export function get(path: string, headers?: any, authenticate?: boolean, options?: RequestOptions) {
-  return send({ method: 'GET', path, headers, authenticate, options });
-}
-
-export function del(path: string, headers?: any, authenticate?: boolean, options?: RequestOptions) {
-  return send({ method: 'DELETE', path, headers, authenticate, options });
-}
-
-export function post(
-  path: string,
-  data: any,
-  headers?: any,
-  authenticate?: boolean,
-  options?: RequestOptions,
-) {
-  return send({ method: 'POST', path, data, headers, authenticate, options });
-}
-
-export function put(
-  path: string,
-  data: any,
-  headers?: any,
-  authenticate?: boolean,
-  options?: RequestOptions,
-) {
-  return send({ method: 'PUT', path, data, headers, authenticate, options });
-}
-
-export function patch(path: string, data: any, headers?: any, authenticate?: boolean) {
-  return send({ method: 'PATCH', path, data, headers, authenticate });
-}
-
-async function handleResponse(res: Response, openRequest = false) {
-  if (res.ok || res.status === 422) {
-    refreshToken(res);
+async function handleResponse(
+  res: Response,
+  {
+    openRequest,
+    openAccess,
+    softFail,
+  }: { openRequest: boolean; openAccess: boolean; softFail: boolean },
+): Promise<unknown> {
+  if (res.ok) {
+    if (!softFail) refreshToken(res);
     const contentType = res.headers.get('Content-Type') || '';
     if (contentType.includes('application/octet-stream')) {
       return await res.arrayBuffer();
     }
+    return parseBody(await res.text());
+  }
+  if (softFail) return undefined;
 
-    const text = await res.text();
-    try {
-      return JSON.parse(text);
-    } catch {
-      return text; //TODO: Change this
-    }
-  } else if (browser && config.features.wafCaptchaRecovery && isWafCaptchaResponse(res)) {
-    if (handleWafCaptcha(new URL(res.url).pathname)) {
-      // Reload is imminent; never settle so callers don't toast/render for a
-      // page that's about to be replaced by the WAF interstitial.
-      return new Promise(() => {});
-    }
-    // Loop guard tripped: deliberately fall through to the normal error path.
-  } else if (res.status === 401 && openRequest) {
-    // an anonymous data request has no login to end: logging out would only bounce the visitor to
-    // the login page, or sign out a logged-in user querying the open variant
-    fail(res.status, await res.text());
-  } else if (res.status === 401) {
+  const wafCaptcha = browser && config.features.wafCaptchaRecovery && isWafCaptchaResponse(res);
+  if (wafCaptcha && handleWafCaptcha(new URL(res.url).pathname)) {
+    // Reload is imminent; never settle so callers don't toast/render for a
+    // page that's about to be replaced by the WAF interstitial.
+    return new Promise(() => {});
+  }
+
+  // a WAF challenge comes from the WAF, not the backend, so it says nothing about the session
+  if (!wafCaptcha && res.status === 401 && !openRequest) {
+    // not for an anonymous open request: it has no login to end, and logging out would only
+    // bounce the visitor to the login page
     log(createLog('AUTH', 'session.unauthorized', undefined, { status: 401 }));
-    browser &&
-      sessionStorage.setItem('logout-reason', 'Your session has timed out. Please log in.');
-    logout(undefined, true);
-    return;
-  } else if (res.status === 403) {
-    const resText = await res.text();
-    const consentMessage = parseConsentDenial(resText);
-    if (consentMessage) {
-      error(res.status, consentMessage, { errorType: CONSENT_DENIED });
-    }
+    sessionHooks().onUnauthorized();
+    const text = await res.text();
+    throw new ApiError(401, 'unauthorized', parseBody(text), text);
+  }
+  const text = await res.text();
+  if (!wafCaptcha && res.status === 403) {
+    const body = parseBody(text);
+    const consentMessage = consentDenial(body);
+    if (consentMessage) throw new ApiError(403, 'consent_denied', body, consentMessage);
     log(createLog('AUTH', 'session.forbidden', undefined, { status: 403 }));
-    if (browser) {
-      sessionStorage.removeItem('logout-reason');
-      // an open-access request carries no login token, so the user's filters weren't what was denied
-      if (!openRequest) discardingQuery.set(true);
-    }
-    logout(undefined, false);
-    fail(res.status, resText);
+    sessionHooks().onForbidden(openRequest || openAccess);
+    throw failure(403, 'forbidden', text);
   }
-
-  fail(res.status, await res.text());
+  throw failure(res.status, 'http', text);
 }
 
-function fail(status: number, resText: string): never {
-  log(createLog('ERROR', 'error.unknown', undefined, { status, error: { message: resText } }));
-  error(status, resText);
+function failure(status: number, code: ApiErrorCode, text: string): ApiError {
+  log(createLog('ERROR', 'error.unknown', undefined, { status, error: { message: text } }));
+  return new ApiError(status, code, parseBody(text), text);
 }
 
-function parseConsentDenial(responseBody: string): string | undefined {
+function parseBody(text: string): unknown {
   try {
-    const body = JSON.parse(responseBody) as { errorType?: string; message?: string };
-    return body.errorType === CONSENT_DENIED ? body.message || CONSENT_DENIED_MESSAGE : undefined;
+    return JSON.parse(text);
   } catch {
-    return undefined;
+    return text;
   }
+}
+
+function consentDenial(body: unknown): string | undefined {
+  if (typeof body !== 'object' || body === null) return undefined;
+  const { errorType, message } = body as { errorType?: unknown; message?: unknown };
+  if (errorType !== 'consent_denied') return undefined;
+  return typeof message === 'string' && message ? message : CONSENT_DENIED_MESSAGE;
 }
 
 function refreshToken(res: Response) {
-  let newAuthToken = res.headers.get('Authorization');
-  if (newAuthToken) {
-    newAuthToken = newAuthToken.replace(BEARER, '');
-    login(newAuthToken);
-  }
+  const header = res.headers.get('Authorization');
+  if (header) sessionHooks().onTokenRefreshed(header.replace(BEARER, ''));
 }

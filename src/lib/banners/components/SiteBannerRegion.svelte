@@ -5,8 +5,7 @@
   import { createLog, log } from '#lib/telemetry/logger.ts';
   import type { ActiveBanner, BannerAudience } from '#lib/banners/model/banner.ts';
   import { BANNER_APPEARANCES, BANNER_AUDIENCES, BANNER_ICONS } from '#lib/banners/model/banner.ts';
-  import { Picsure } from '#lib/api/paths.ts';
-  import { CLIENT_TYPE_HEADERS } from '#lib/api/clientType.ts';
+  import { getActiveBanners } from '#lib/api/picsure/banners.ts';
   import { hasValidToken } from '#lib/auth/User.ts';
   import SiteBanner from '#lib/banners/components/SiteBanner.svelte';
   import {
@@ -142,16 +141,7 @@
     pathname = currentPathname;
     const revision = ++refreshRevision;
     try {
-      // Deliberately bypasses #lib/api: the feed renders on the public login layout, where
-      // api/client.ts would throw SvelteKit error() on a feed failure, log the visitor out on a
-      // 401/403, and cannot express cache: 'no-store'. Failures degrade to no banners below.
-      const response = await fetch(`/${Picsure.Banners.Active}`, {
-        cache: 'no-store',
-        headers: { ...CLIENT_TYPE_HEADERS, Accept: 'application/json' },
-      });
-      if (!response.ok) throw new Error(`Banner feed returned HTTP ${response.status}`);
-
-      const feed: unknown = await response.json();
+      const feed = await getActiveBanners();
       if (revision !== refreshRevision) return;
       if (!Array.isArray(feed)) throw new Error('Banner feed returned an invalid response');
 

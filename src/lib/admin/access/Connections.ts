@@ -1,8 +1,7 @@
 import { get, writable, type Writable } from 'svelte/store';
 import type { Connection } from '#lib/auth/model/connection.ts';
 
-import * as api from '#lib/api/client.ts';
-import { Psama } from '#lib/api/paths.ts';
+import * as access from '#lib/api/psama/access.ts';
 
 const loaded = writable(false);
 export const connections: Writable<Connection[]> = writable([]);
@@ -10,8 +9,7 @@ export const connections: Writable<Connection[]> = writable([]);
 export async function loadConnections() {
   if (get(loaded)) return;
 
-  const res = await api.get(Psama.Connection);
-  connections.set(res);
+  connections.set(await access.connections.list());
   loaded.set(true);
 }
 
@@ -34,9 +32,7 @@ export async function getConnection(uuid: string) {
 }
 
 export async function addConnection(connection: Connection) {
-  type AddConnectionResponse = { message: string; content: Connection[] };
-  const res: AddConnectionResponse = await api.post(Psama.Connection, [connection]);
-  const newConnection = res.content[0];
+  const newConnection = await access.connections.add(connection);
 
   const store: Connection[] = get(connections);
   store.push(newConnection);
@@ -44,8 +40,7 @@ export async function addConnection(connection: Connection) {
 }
 
 export async function updateConnection(connection: Connection) {
-  const res: Connection[] = await api.patch(Psama.Connection, [connection]);
-  const newConnection = res[0];
+  const newConnection = await access.connections.update(connection);
 
   const store: Connection[] = get(connections);
   const conIndex: number = store.findIndex((c) => c.uuid === newConnection.uuid);
@@ -59,7 +54,7 @@ export async function updateConnection(connection: Connection) {
 
 export async function deleteConnection(uuid: string) {
   const connection: Connection = await getConnection(uuid);
-  await api.del(`${Psama.Connection}/${connection.id}`);
+  await access.connections.remove(connection.id);
 
   const store: Connection[] = get(connections);
   const conIndex: number = store.findIndex((c) => c.uuid === uuid);

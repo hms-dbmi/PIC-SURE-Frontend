@@ -1,23 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { get as read } from 'svelte/store';
 
+const client = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), patch: vi.fn(), del: vi.fn() }));
+
+// Routes each request() to a mock per method, so the assertions read like the PSAMA calls.
 vi.mock('#lib/api/client.ts', () => ({
-  get: vi.fn(),
-  post: vi.fn(),
-  patch: vi.fn(),
-  del: vi.fn(),
+  request: (path: string, { method = 'GET', body, ...rest }: RequestOptions = {}) => {
+    if (Object.keys(rest).length) throw new Error(`unexpected options ${JSON.stringify(rest)}`);
+    if (method === 'GET') return client.get(path);
+    if (method === 'DELETE') return client.del(path);
+    if (method === 'POST') return client.post(path, body);
+    if (method === 'PATCH') return client.patch(path, body);
+    throw new Error(`unexpected method ${method}`);
+  },
 }));
 
-import * as api from '#lib/api/client.ts';
+import type { RequestOptions } from '#lib/api/client.ts';
 import type { Connection } from '#lib/auth/model/connection.ts';
 import type { UserRequest } from '#lib/auth/model/user.ts';
-
-const client = {
-  get: vi.mocked(api.get),
-  post: vi.mocked(api.post),
-  patch: vi.mocked(api.patch),
-  del: vi.mocked(api.del),
-};
 
 const calls = () => ({
   get: client.get.mock.calls,

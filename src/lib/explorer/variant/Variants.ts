@@ -1,5 +1,4 @@
-import * as api from '#lib/api/client.ts';
-import { Picsure } from '#lib/api/paths.ts';
+import { countVariants, getVariantExcerpt } from '#lib/api/picsure/query.ts';
 import { config } from '#lib/config/config.svelte.ts';
 import type { Indexable } from '#lib/utils/objects.ts';
 
@@ -11,7 +10,7 @@ import type { Column } from '#lib/ui/datatable/types.ts';
 
 export function getVariantCount(request: QueryRequestInterfaceV3): Promise<number> {
   request.query.expectedResultType = 'VARIANT_COUNT_FOR_QUERY';
-  return api.post(Picsure.QuerySync, request).then((resp) => resp.count);
+  return countVariants(request);
 }
 
 export function getVariantData(
@@ -21,7 +20,7 @@ export function getVariantData(
   request.query.expectedResultType =
     exportType === ExportType.Aggregate ? 'AGGREGATE_VCF_EXCERPT' : 'VCF_EXCERPT';
 
-  return api.post(Picsure.QuerySync, request).then((response) => {
+  return getVariantExcerpt(request).then((response) => {
     const downloadUrl = URL.createObjectURL(new Blob([response], { type: 'octet/stream' }));
 
     const lines = response.split('\n');

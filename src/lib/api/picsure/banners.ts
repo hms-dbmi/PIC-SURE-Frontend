@@ -1,45 +1,67 @@
-import * as api from '#lib/api/client.ts';
+import { request, type RequestOptions } from '#lib/api/client.ts';
 import type { ArchivedBanner, BannerDraft, ManagedBanner } from '#lib/banners/model/banner.ts';
-import { Picsure } from '#lib/api/paths.ts';
+import { Picsure, PicsurePaths } from '#lib/api/paths.ts';
+import { expectArray, expectRecord, isRecord } from '#lib/api/picsure/guards.ts';
 import { hasBannerContent, sanitizeBannerHTML } from '#lib/banners/model/html.ts';
 import { normalizeBannerPageTargets } from '#lib/banners/model/pageTargets.ts';
 
 export async function publishBanner(draft: BannerDraft): Promise<ManagedBanner> {
-  return api.post(Picsure.Banners.Manage, authorablePayload(draft));
+  return banner(Picsure.Banners.Manage, { method: 'POST', body: authorablePayload(draft) });
 }
 
 export async function getManagedBanners(): Promise<ManagedBanner[]> {
-  return api.get(Picsure.Banners.Manage);
+  return banners(Picsure.Banners.Manage, {});
 }
 
 export async function reorderBanners(bannerUuids: string[]): Promise<ManagedBanner[]> {
-  return api.put(`${Picsure.Banners.Manage}/order`, { bannerUuids });
+  return banners(PicsurePaths.bannerOrder, { method: 'PUT', body: { bannerUuids } });
 }
 
 export async function saveBanner(draft: BannerDraft): Promise<ManagedBanner> {
-  return api.post(`${Picsure.Banners.Manage}/saved`, authorablePayload(draft));
+  return banner(PicsurePaths.savedBanners, { method: 'POST', body: authorablePayload(draft) });
 }
 
 export async function updateSavedBanner(uuid: string, draft: BannerDraft): Promise<ManagedBanner> {
-  return api.put(`${Picsure.Banners.Manage}/${uuid}`, authorablePayload(draft));
+  return banner(PicsurePaths.banner(uuid), { method: 'PUT', body: authorablePayload(draft) });
 }
 
 export const updatePublishedBanner = updateSavedBanner;
 
 export async function publishSavedBanner(uuid: string, draft: BannerDraft): Promise<ManagedBanner> {
-  return api.post(`${Picsure.Banners.Manage}/${uuid}/publish`, authorablePayload(draft));
+  return banner(PicsurePaths.banner(uuid, 'publish'), {
+    method: 'POST',
+    body: authorablePayload(draft),
+  });
 }
 
 export async function disableBanner(uuid: string): Promise<ManagedBanner> {
-  return api.post(`${Picsure.Banners.Manage}/${uuid}/disable`, undefined);
+  return banner(PicsurePaths.banner(uuid, 'disable'), { method: 'POST' });
 }
 
 export async function archiveBanner(uuid: string): Promise<ArchivedBanner> {
-  return api.post(`${Picsure.Banners.Manage}/${uuid}/archive`, undefined);
+  return banner(PicsurePaths.banner(uuid, 'archive'), { method: 'POST' });
 }
 
 export async function restoreBanner(uuid: string, draft: BannerDraft): Promise<ManagedBanner> {
-  return api.post(`${Picsure.Banners.Manage}/${uuid}/restore`, authorablePayload(draft));
+  return banner(PicsurePaths.banner(uuid, 'restore'), {
+    method: 'POST',
+    body: authorablePayload(draft),
+  });
+}
+
+type ManageOptions = Pick<RequestOptions, 'method' | 'body'>;
+
+async function banner<T extends ManagedBanner | ArchivedBanner>(
+  path: string,
+  opts: ManageOptions,
+): Promise<T> {
+  return expectRecord(await request(path, { ...opts, auth: 'open' }), 'banner') as T;
+}
+
+async function banners(path: string, opts: ManageOptions): Promise<ManagedBanner[]> {
+  const list = expectArray(await request(path, { ...opts, auth: 'open' }), 'banner list');
+  if (list.some((entry) => !isRecord(entry))) throw new Error('Invalid banner list response');
+  return list as ManagedBanner[];
 }
 
 function authorablePayload(
@@ -63,4 +85,32 @@ function authorablePayload(
     title: title || null,
     pageTargets: normalizeBannerPageTargets(draft.pageTargets),
   };
+}
+
+/**
+ * The public feed of active banners, unparsed. It renders on public pages too, so it goes without
+ * credentials, and a failure stays out of the session: no logout, no cached copy. A failure
+ * rejects with its cause (the HTTP status or the network error) for the caller to log.
+ */
+export async function getActiveBanners(): Promise<unknown> {
+  let cause = 'Banner feed request failed';
+  // softFail resolves undefined for every failure; watching the fetch keeps the reason
+  const watchedFetch: typeof fetch = async (input, init) => {
+    try {
+      const response = await fetch(input, init);
+      if (!response.ok) cause = `Banner feed returned HTTP ${response.status}`;
+      return response;
+    } catch (error) {
+      cause = error instanceof Error ? error.message : String(error);
+      throw error;
+    }
+  };
+  const feed = await request<unknown>(Picsure.Banners.Active, {
+    auth: 'none',
+    softFail: true,
+    headers: { Accept: 'application/json' },
+    fetch: watchedFetch,
+  });
+  if (feed === undefined) throw new Error(cause);
+  return feed;
 }

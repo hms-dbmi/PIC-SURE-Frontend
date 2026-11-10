@@ -5,15 +5,21 @@ import { get } from 'svelte/store';
 const navigations = vi.hoisted(
   () => [] as Array<{ resolve: () => void; reject: (error: Error) => void }>,
 );
-const mockApiGet = vi.hoisted(() => vi.fn());
+const mockPsamaLogout = vi.hoisted(() => vi.fn());
 
 vi.mock('$app/env', () => ({ browser: true }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/explorer') } }));
 vi.mock('$app/navigation', () => ({
   goto: () => new Promise<void>((resolve, reject) => navigations.push({ resolve, reject })),
 }));
-vi.mock('#lib/api/client.ts', () => ({ get: (...args: unknown[]) => mockApiGet(...args) }));
-vi.mock('#lib/telemetry/logger.ts', () => ({ createLog: vi.fn(), log: vi.fn() }));
+vi.mock('#lib/api/psama/user.ts', () => ({
+  logout: (...args: unknown[]) => mockPsamaLogout(...args),
+}));
+vi.mock('#lib/telemetry/logger.ts', () => ({
+  createLog: vi.fn(),
+  log: vi.fn(),
+  registerSignedInUser: vi.fn(),
+}));
 
 import { discardingQuery } from '#lib/auth/discardingQuery.ts';
 import { createLog } from '#lib/telemetry/logger.ts';
@@ -32,7 +38,7 @@ describe('logout while the query is being discarded', () => {
   });
 
   it('lowers the discard once the logout has navigated', async () => {
-    mockApiGet.mockResolvedValue({});
+    mockPsamaLogout.mockResolvedValue({});
 
     const loggedOut = logout(undefined, false);
     await settle();
@@ -45,7 +51,7 @@ describe('logout while the query is being discarded', () => {
   });
 
   it('lowers the discard when the logout navigation fails', async () => {
-    mockApiGet.mockResolvedValue({});
+    mockPsamaLogout.mockResolvedValue({});
 
     // logout doesn't await its navigation, so the failure surfaces as an unhandled rejection
     const failure = new Error('navigation failed');
@@ -67,7 +73,7 @@ describe('logout while the query is being discarded', () => {
   });
 
   it('waits for the navigation of a later logout that supersedes the first', async () => {
-    mockApiGet.mockResolvedValue({});
+    mockPsamaLogout.mockResolvedValue({});
 
     void logout(undefined, false);
     await settle();
@@ -86,7 +92,7 @@ describe('logout while the query is being discarded', () => {
   });
 
   it('goes to the login page once when a provider logout returns no redirect', async () => {
-    mockApiGet.mockResolvedValue({});
+    mockPsamaLogout.mockResolvedValue({});
     vi.mocked(createLog).mockClear();
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
     onTestFinished(() => consoleError.mockRestore());
@@ -111,7 +117,7 @@ describe('logout and the query', () => {
     navigations.length = 0;
     localStorage.setItem('token', 'token');
     discardingQuery.set(false);
-    mockApiGet.mockResolvedValue({});
+    mockPsamaLogout.mockResolvedValue({});
   });
 
   it('discards the query once a chosen logout has navigated', async () => {

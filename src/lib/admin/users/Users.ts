@@ -1,13 +1,7 @@
 import { get, writable, type Writable } from 'svelte/store';
-import {
-  mapExtendedUser,
-  type ExtendedUser,
-  type UserRequest,
-  type User,
-} from '../../auth/model/user';
+import { mapExtendedUser, type ExtendedUser, type UserRequest } from '#lib/auth/model/user.ts';
 
-import * as api from '#lib/api/client.ts';
-import { Psama } from '#lib/api/paths.ts';
+import * as access from '#lib/api/psama/access.ts';
 
 const loaded = writable(false);
 export const users: Writable<ExtendedUser[]> = writable([]);
@@ -15,7 +9,7 @@ export const users: Writable<ExtendedUser[]> = writable([]);
 export async function loadUsers() {
   if (get(loaded)) return;
 
-  const res: User[] = await api.get(Psama.Users);
+  const res = await access.users.list();
   users.set(res.map(mapExtendedUser));
   loaded.set(true);
 }
@@ -27,8 +21,7 @@ export async function getUser(uuid: string) {
     return user;
   }
 
-  const res: User = await api.get(`${Psama.Users}/${uuid}`);
-  return mapExtendedUser(res);
+  return mapExtendedUser(await access.users.get(uuid));
 }
 
 export async function getUserByEmailAndConnection(email: string, connection: string) {
@@ -42,8 +35,7 @@ export async function getUserByEmailAndConnection(email: string, connection: str
 }
 
 export async function addUser(user: UserRequest) {
-  const res: User[] = await api.post(Psama.Users, [user]);
-  const newUser: ExtendedUser = mapExtendedUser(res[0]);
+  const newUser: ExtendedUser = mapExtendedUser(await access.users.add(user));
 
   const store: ExtendedUser[] = get(users);
   store.push(newUser);
@@ -51,17 +43,16 @@ export async function addUser(user: UserRequest) {
 }
 
 export async function updateUser(user: UserRequest) {
-  const res: User[] = await api.patch(Psama.Users, [
-    {
+  const newUser: ExtendedUser = mapExtendedUser(
+    await access.users.update({
       uuid: user.uuid,
       email: user.email,
       active: user.active,
       generalMetadata: user.generalMetadata,
       connection: user.connection,
       roles: user.roles,
-    },
-  ]);
-  const newUser: ExtendedUser = mapExtendedUser(res[0]);
+    }),
+  );
 
   const store: ExtendedUser[] = get(users);
   const roleIndex: number = store.findIndex((r) => r.uuid === newUser.uuid);

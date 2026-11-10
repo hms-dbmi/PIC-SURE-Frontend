@@ -2,8 +2,7 @@ import type { AuthData } from '#lib/auth/providers/AuthProvider.ts';
 import AuthProvider from '#lib/auth/providers/AuthProvider.ts';
 import { browser } from '$app/env';
 import type { User } from '#lib/auth/model/user.ts';
-import * as api from '#lib/api/client.ts';
-import { Psama } from '#lib/api/paths.ts';
+import * as psamaUser from '#lib/api/psama/user.ts';
 
 interface MockData extends AuthData {
   // From VITE_AUTH_PROVIDER_MODULE_<name>_PERSONA - hooks.server.ts lowercases whatever
@@ -40,7 +39,7 @@ class Mock extends AuthProvider implements MockData {
       // `psama/user/me` (fetched right after this by User.ts's hydrateUserFromToken) has
       // no way to see which provider logged in, so persona has to reach it indirectly -
       // this hands it to the mock server here, which remembers it for that next request.
-      return api.post(`${Psama.Auth}/mock`, { access_token: token, persona: this.persona });
+      return psamaUser.authenticate('mock', { access_token: token, persona: this.persona });
     }
     return undefined;
   };

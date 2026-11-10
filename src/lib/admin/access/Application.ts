@@ -1,8 +1,7 @@
 import { get, derived, writable, type Writable } from 'svelte/store';
 import { type Application } from '#lib/admin/access/model/applications.ts';
 
-import * as api from '#lib/api/client.ts';
-import { Psama } from '#lib/api/paths.ts';
+import * as access from '#lib/api/psama/access.ts';
 
 const loaded = writable(false);
 export const applications: Writable<Application[]> = writable([]);
@@ -11,8 +10,7 @@ export const applicationList = derived(applications, ($a) => $a.map((a) => [a.na
 export async function loadApplications() {
   if (get(loaded)) return;
 
-  const res = await api.get(Psama.Application);
-  applications.set(res);
+  applications.set(await access.applications.list());
   loaded.set(true);
 }
 

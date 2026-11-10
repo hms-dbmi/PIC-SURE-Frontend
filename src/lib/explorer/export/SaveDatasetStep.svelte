@@ -5,9 +5,7 @@
   import Loading from '#lib/ui/Loading.svelte';
   import TimedLoading, { type TimedMessage } from '#lib/ui/TimedLoading.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
-  import type { DataSetResponse } from '#lib/datasets/dataset.ts';
-  import * as api from '#lib/api/client.ts';
-  import { Picsure } from '#lib/api/paths.ts';
+  import { submitQuery as startQuery } from '#lib/api/picsure/query.ts';
   import { stepperState } from '#lib/ui/stepper/stepperState.ts';
   import { exports } from '#lib/explorer/export/Export.ts';
   import {
@@ -30,12 +28,12 @@
     { afterMs: 0, text: "Something's taking longer than usual. We are still working on it…" },
   ];
   let retrying = $state(false);
-  let datasetIdPromise: Promise<void | DataSetResponse> = $state(Promise.resolve());
+  let datasetIdPromise: Promise<void> = $state(Promise.resolve());
   let preparePromise: Promise<void> = $state(Promise.resolve());
   let datasetNameInput: string | undefined = $state(getDatasetNameInput());
 
   async function submitQuery(): Promise<void> {
-    function requestUpdate(method: () => Promise<void | DataSetResponse>, canRetry = true) {
+    function requestUpdate(method: () => Promise<void>, canRetry = true) {
       retrying = !canRetry;
       datasetIdPromise = method().catch((err) => {
         if (canRetry) {
@@ -57,7 +55,7 @@
           ...request.query.select,
           ...$exports.map(({ conceptPath }) => conceptPath),
         ];
-        return api.post(Picsure.Query, request).then((res: DataSetResponse) => {
+        return startQuery(request).then((res) => {
           setDatasetId(res.picsureResultId || 'Error');
           if (res.picsureResultId) {
             log(

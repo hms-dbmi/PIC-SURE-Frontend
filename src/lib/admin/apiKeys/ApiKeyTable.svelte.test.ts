@@ -51,6 +51,7 @@ vi.mock('#lib/admin/apiKeys/ApiKeys.ts', async () => {
 import ApiKeyTable from '#lib/admin/apiKeys/ApiKeyTable.svelte';
 import { refreshApiKeys } from '#lib/admin/apiKeys/ApiKeys.ts';
 import type { ApiKeyMetadata } from '#lib/admin/apiKeys/model.ts';
+import { ApiError } from '#lib/api/errors.ts';
 
 const activeKey: ApiKeyMetadata = {
   uuid: 'uuid-active',
@@ -171,10 +172,8 @@ describe('ApiKeyTable', () => {
   });
 
   it('shows an inline alert when loading the list fails', async () => {
-    storeMocks.loadApiKeys.mockRejectedValue({
-      status: 400,
-      body: { message: JSON.stringify({ errorType: 'error', message: 'list failed' }) },
-    });
+    const body = { errorType: 'error', message: 'list failed' };
+    storeMocks.loadApiKeys.mockRejectedValue(new ApiError(400, 'http', body, JSON.stringify(body)));
     render(ApiKeyTable, { props: { keyType: 'USER', tableName: 'UserApiKeys' } });
 
     const alert = await screen.findByTestId('admin-api-key-list-error');

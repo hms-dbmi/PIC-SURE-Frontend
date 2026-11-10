@@ -1,7 +1,7 @@
 <script lang="ts">
   import { config } from '#lib/config/config.svelte.ts';
-  import { Picsure } from '#lib/api/paths.ts';
-  import * as api from '#lib/api/client.ts';
+  import { getSignedUrl as requestSignedUrl } from '#lib/api/picsure/query.ts';
+  import { consentDeniedMessage } from '#lib/api/errors.ts';
   import DownloadButton from './DownloadButton.svelte';
   import Loading from '#lib/ui/Loading.svelte';
   import { toaster } from '#lib/ui/toaster.ts';
@@ -30,7 +30,7 @@
     } catch (error) {
       console.error('Error during export:', error);
       toaster.error({
-        title: api.consentDeniedMessage(error) ?? 'Export failed. Please try again.',
+        title: consentDeniedMessage(error) ?? 'Export failed. Please try again.',
         closable: true,
       });
     } finally {
@@ -39,10 +39,8 @@
   }
 
   async function getSignedUrl(): Promise<string | null> {
-    const path = `${Picsure.Query}/${getDatasetId()}/signed-url`;
     try {
-      const res = await api.get(path);
-      return res.signedUrl || null;
+      return await requestSignedUrl(getDatasetId() ?? '');
     } catch (error) {
       console.error('Error getting signed URL:', error);
       throw error; // Re-throw to be handled by caller

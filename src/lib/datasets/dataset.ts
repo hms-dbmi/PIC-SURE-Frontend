@@ -24,10 +24,6 @@ export type DataSet = Indexable & {
 };
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
-export interface DataSetResponse {
-  picsureResultId?: string;
-}
-
 function secondsToDate(seconds: number) {
   const dt = new Date(seconds);
   const year = dt.toLocaleString('default', { year: 'numeric' });

@@ -1,13 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { get as getStore } from 'svelte/store';
 
-vi.mock('#lib/api/client.ts', () => ({
-  get: vi.fn(),
-  post: vi.fn(),
-  put: vi.fn(),
-}));
+vi.mock('#lib/api/client.ts', () => ({ request: vi.fn() }));
 
-import * as api from '#lib/api/client.ts';
+import { request } from '#lib/api/client.ts';
+import { ApiError } from '#lib/api/errors.ts';
 import {
   loadApiKeys,
   revokeApiKey,
@@ -16,9 +13,7 @@ import {
   refreshApiKeys,
 } from '#lib/admin/apiKeys/ApiKeys.ts';
 
-const mockGet = vi.mocked(api.get);
-const mockPost = vi.mocked(api.post);
-const mockPut = vi.mocked(api.put);
+const mockRequest = vi.mocked(request);
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -27,30 +22,34 @@ beforeEach(() => {
 describe('ApiKeys store', () => {
   it('loads a page of keys from the admin endpoint', async () => {
     const page = { keys: [], totalCount: 0, page: 2, size: 50 };
-    mockGet.mockResolvedValue(page);
+    mockRequest.mockResolvedValue(page);
 
     const result = await loadApiKeys(2, 50);
 
-    expect(mockGet).toHaveBeenCalledWith('psama/apiKey?page=2&size=50');
+    expect(mockRequest).toHaveBeenCalledWith('psama/apiKey', {
+      query: { page: 2, size: 50, keyType: undefined },
+    });
     expect(result).toEqual(page);
   });
 
   it('defaults to page 0 with size 100', async () => {
-    mockGet.mockResolvedValue({ keys: [], totalCount: 0, page: 0, size: 100 });
+    mockRequest.mockResolvedValue({ keys: [], totalCount: 0, page: 0, size: 100 });
 
     await loadApiKeys();
 
-    expect(mockGet).toHaveBeenCalledWith('psama/apiKey?page=0&size=100');
+    expect(mockRequest).toHaveBeenCalledWith('psama/apiKey', {
+      query: { page: 0, size: 100, keyType: undefined },
+    });
   });
 
   it('revokes a key via PUT and bumps the list version', async () => {
     const revoked = { uuid: 'uuid-1', revokedAt: '2026-07-14T00:00:00Z' };
-    mockPut.mockResolvedValue(revoked);
+    mockRequest.mockResolvedValue(revoked);
     const before = getStore(listVersion);
 
     const result = await revokeApiKey('uuid-1');
 
-    expect(mockPut).toHaveBeenCalledWith('psama/apiKey/uuid-1/revoke', undefined);
+    expect(mockRequest).toHaveBeenCalledWith('psama/apiKey/uuid-1/revoke', { method: 'PUT' });
     expect(result).toEqual(revoked);
     expect(getStore(listVersion)).toBe(before + 1);
   });
@@ -63,19 +62,24 @@ describe('ApiKeys store', () => {
       keyType: 'PLATFORM',
       expiresAt: null,
     };
-    mockPost.mockResolvedValue(minted);
-    const request = { name: 'Pipeline', email: 'ops@example.org' };
+    mockRequest.mockResolvedValue(minted);
+    const keyRequest = { name: 'Pipeline', email: 'ops@example.org' };
     const before = getStore(listVersion);
 
-    const result = await mintPlatformKey(request);
+    const result = await mintPlatformKey(keyRequest);
 
-    expect(mockPost).toHaveBeenCalledWith('psama/apiKey/platform', request);
+    expect(mockRequest).toHaveBeenCalledWith('psama/apiKey/platform', {
+      method: 'POST',
+      body: keyRequest,
+    });
     expect(result).toEqual(minted);
     expect(getStore(listVersion)).toBe(before + 1);
   });
 
   it('does not bump the list version when the mutation fails', async () => {
-    mockPut.mockRejectedValue({ status: 400, body: { message: 'unknown uuid' } });
+    mockRequest.mockRejectedValue(
+      new ApiError(400, 'http', { message: 'unknown uuid' }, '{"message":"unknown uuid"}'),
+    );
     const before = getStore(listVersion);
 
     await expect(revokeApiKey('bad-uuid')).rejects.toBeTruthy();

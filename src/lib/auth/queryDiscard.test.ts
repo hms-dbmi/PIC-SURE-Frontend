@@ -10,7 +10,7 @@ vi.mock('#lib/explorer/Dictionary.ts', () => ({
   facetsPromise: { set: vi.fn() },
   resetFacetState: vi.fn(),
 }));
-vi.mock('#lib/api/client.ts', () => ({ isAbortError: () => false }));
+vi.mock('#lib/api/client.ts', () => ({ request: vi.fn() }));
 vi.mock('#lib/telemetry/logger.ts', () => ({
   log: (...args: unknown[]) => mockLog(...args),
   createLog: (...args: unknown[]) => args,

@@ -1,19 +1,21 @@
 import { resolve } from '$app/paths';
 import { get, writable, derived, type Writable, type Readable } from 'svelte/store';
 import { browser } from '$app/env';
-import * as api from '#lib/api/client.ts';
+import { ApiError } from '#lib/api/errors.ts';
+import * as psamaUser from '#lib/api/psama/user.ts';
+import { registerSessionHooks } from '#lib/api/sessionHooks.ts';
 import type { Route } from '#lib/auth/model/route.ts';
 import type { ConsentsMap, User } from '#lib/auth/model/user.ts';
 import { PicsurePrivileges } from '#lib/auth/model/privilege.ts';
 import { routes } from '#lib/auth/nav.ts';
 import { config } from '#lib/config/config.svelte.ts';
-import { Psama, appPath } from '#lib/api/paths.ts';
+import { appPath } from '#lib/api/paths.ts';
 import { goto } from '$app/navigation';
 import type AuthProvider from '#lib/auth/providers/AuthProvider.ts';
 import { page } from '$app/state';
 import { loginRedirectPath } from '#lib/auth/loginRedirect.ts';
 import { decodeJwtPayload } from '#lib/auth/token.ts';
-import { log, createLog } from '#lib/telemetry/logger.ts';
+import { log, createLog, registerSignedInUser } from '#lib/telemetry/logger.ts';
 import { isToastShowing, toaster } from '#lib/ui/toaster.ts';
 import { discardingQuery } from '#lib/auth/discardingQuery.ts';
 
@@ -201,15 +203,24 @@ export const userRoutes: Readable<Route[]> = derived([user], ([$user]) => {
   return allowedRoutes(featured);
 });
 
+// A 401 has already started a logout, which navigates to /login. Callers that retried, toasted
+// or navigated on top of it would race that logout.
+const sessionEndedBy = (error: unknown) =>
+  error instanceof ApiError && error.code === 'unauthorized';
+
 export async function getUser(force?: boolean, hasToken = false) {
   if (force || !get(user)?.privileges || !get(user)?.token) {
-    const res: User = await api.get(`${Psama.User.Me}${hasToken ? '?hasToken' : ''}`);
-    user.set({ ...get(user), ...res });
+    try {
+      const res = await psamaUser.me({ hasToken });
+      user.set({ ...get(user), ...res });
+    } catch (error) {
+      if (!sessionEndedBy(error)) throw error;
+    }
   }
 }
 
 export function refreshLongTermToken() {
-  return api.get(Psama.User.Refresh).then((response: { userLongTermToken: string }) => {
+  return psamaUser.refreshLongTermToken().then((response) => {
     if (!response.userLongTermToken) {
       throw new Error('No user token was returned.');
     }
@@ -235,9 +246,10 @@ export async function getConsents(): Promise<ConsentsMap> {
   for (const [attempt, delay] of CONSENTS_RETRY_DELAYS_MS.entries()) {
     if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
     try {
-      const res = await api.get(Psama.User.Consents);
-      return (res?.consents as ConsentsMap) || {};
+      const res = await psamaUser.consents();
+      return res?.consents || {};
     } catch (error) {
+      if (sessionEndedBy(error)) throw error;
       if (attempt === CONSENTS_RETRY_DELAYS_MS.length - 1) {
         console.error(`Error fetching user consents after ${attempt + 1} attempts: ` + error);
         throw error;
@@ -263,8 +275,8 @@ export function loadConsents(): Promise<void> {
     .then((consents) => {
       if (consentsRequest === request) user.set({ ...get(user), consents });
     })
-    .catch(() => {
-      if (consentsRequest === request) showAccessUnavailable();
+    .catch((error: unknown) => {
+      if (consentsRequest === request && !sessionEndedBy(error)) showAccessUnavailable();
     });
   consentsRequest = request;
   return request;
@@ -303,7 +315,24 @@ export async function login(token: string) {
   }
 }
 
-// A 401 or 403 from PSAMA's logout call makes api/client.ts start another logout, which would
+registerSignedInUser(() => (isUserLoggedIn() ? get(user) : undefined));
+
+registerSessionHooks({
+  getToken,
+  onUnauthorized: () => {
+    if (browser) {
+      sessionStorage.setItem('logout-reason', 'Your session has timed out. Please log in.');
+    }
+    logout(undefined, true);
+  },
+  onForbidden: (openAccess) => {
+    if (browser) sessionStorage.removeItem('logout-reason');
+    logout(undefined, false, { discardQuery: !openAccess });
+  },
+  onTokenRefreshed: login,
+});
+
+// A 401 or 403 from PSAMA's logout call makes the API client start another logout, which would
 // navigate to /login a second time, so later calls share the logout already running.
 let pendingLogout: Promise<void> | undefined;
 
@@ -336,7 +365,7 @@ async function endSession(authProvider: AuthProvider | undefined, redirect: bool
     if (token) {
       // Log only: the provider/redirect handling below always finishes the logout, so
       // handling this failure too would navigate to /login twice.
-      await api.get(Psama.User.Logout).catch(logError);
+      await psamaUser.logout().catch(logError);
       removeToken();
     }
   }

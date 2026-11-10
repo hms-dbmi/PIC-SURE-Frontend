@@ -13,9 +13,9 @@ vi.mock('#lib/config/config.svelte.ts', () => ({
     branding: { termsOfService: { rejectionUrl: '' } },
   },
 }));
-vi.mock('#lib/api/client.ts', () => ({
-  get: vi.fn().mockResolvedValue('<p>Terms</p>'),
-  post: vi.fn(),
+vi.mock('#lib/api/psama/tos.ts', () => ({
+  latest: vi.fn().mockResolvedValue('<p>Terms</p>'),
+  accept: vi.fn(),
 }));
 vi.mock('#lib/auth/User.ts', () => ({
   user: { subscribe: (run: (user: object) => void) => (run({ acceptedTOS: false }), () => {}) },
