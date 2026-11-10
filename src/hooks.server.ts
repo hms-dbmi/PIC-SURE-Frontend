@@ -20,7 +20,7 @@ async function registerEnabledProviders(enabledProviders: string[], viteProvider
     const uppercaseProviderName = providerName.toUpperCase();
     const providerConfigPrefix = `${viteProviderPrefix}${uppercaseProviderName}_`;
     try {
-      const authProviderConfigInterface = {} as AuthData;
+      const settings: Record<string, string | boolean> = {};
 
       Object.keys(import.meta.env)
         .filter((key) => key.startsWith(providerConfigPrefix))
@@ -32,11 +32,10 @@ async function registerEnabledProviders(enabledProviders: string[], viteProvider
               : import.meta.env[key] === 'false'
                 ? false
                 : import.meta.env[key];
-          authProviderConfigInterface[configKey] = value;
+          settings[configKey] = value;
         });
-      authProviderConfigInterface.enabled = true;
-      authProviderConfigInterface.name = uppercaseProviderName;
-      registerProviderData(authProviderConfigInterface);
+      // Not validated here: a provider missing a field it needs fails when it's used.
+      registerProviderData({ ...settings, enabled: true, name: uppercaseProviderName } as AuthData);
     } catch (error) {
       console.error(`Error registering auth provider "${uppercaseProviderName}":`, error);
     }

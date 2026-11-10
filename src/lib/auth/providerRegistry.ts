@@ -1,9 +1,11 @@
 import type { AuthData } from '#lib/auth/providers/AuthProvider.ts';
 import AuthProvider from '#lib/auth/providers/AuthProvider.ts';
 
-const providerDataRegistry: AuthData[] = [];
+type ProviderData = AuthData & { connection?: string };
 
-export function registerProviderData(providerModule: AuthData) {
+const providerDataRegistry: ProviderData[] = [];
+
+export function registerProviderData(providerModule: ProviderData) {
   if (!providerModule.name) {
     throw new Error('Provider name is required');
   }

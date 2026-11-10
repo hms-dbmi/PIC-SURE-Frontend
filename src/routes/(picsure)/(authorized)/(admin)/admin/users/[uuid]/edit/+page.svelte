@@ -1,35 +1,22 @@
 <script lang="ts">
-  import { page } from '$app/state';
-
   import { config } from '#lib/config/config.svelte.ts';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import Content from '#lib/shell/Content.svelte';
   import UserForm from '#lib/admin/users/UserForm.svelte';
 
-  import type { ExtendedUser } from '#lib/auth/model/user.ts';
-  import UsersStore from '#lib/admin/users/Users.ts';
-  import RoleStore from '#lib/admin/access/Roles.ts';
-  import ConnectionsStore from '#lib/admin/access/Connections.ts';
+  import * as admin from '#lib/admin/entities.ts';
   import Loading from '#lib/ui/Loading.svelte';
+  import type { PageProps } from './$types';
 
-  const { getUser, loadUsers } = UsersStore;
-  const { roleList, loadRoles } = RoleStore;
-  const { connections, loadConnections } = ConnectionsStore;
+  let { params }: PageProps = $props();
 
-  let user: ExtendedUser = $state({
-    connection: '',
-    generalMetadata: '',
-    active: false,
-    roles: [],
-  });
-
-  async function load() {
-    await loadUsers();
-    if (page.params?.uuid) {
-      user = await getUser(page.params.uuid);
-    }
-    await loadRoles();
-    await loadConnections();
+  async function load(uuid: string) {
+    const [user] = await Promise.all([
+      admin.users.get(uuid),
+      admin.roles.load(),
+      admin.connections.load(),
+    ]);
+    return user;
   }
 </script>
 
@@ -38,15 +25,15 @@
 </svelte:head>
 
 <Content title="Edit User" backUrl="/admin/users" backTitle="Back to Users">
-  {#await load()}
+  {#await load(params.uuid)}
     <Loading />
-  {:then}
+  {:then user}
     <section id="admin-user-edit">
-      <UserForm connections={$connections} roleList={$roleList} {user} />
+      <UserForm connections={admin.connections.items} roleList={admin.roles.options} {user} />
     </section>
   {:catch}
     <ErrorAlert title="API Error">
-      An error occurred while retrieving user {page.params.uuid}.
+      An error occurred while retrieving user {params.uuid}.
     </ErrorAlert>
   {/await}
 </Content>

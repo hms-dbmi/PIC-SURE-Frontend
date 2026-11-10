@@ -13,7 +13,19 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
 import { logout, setToken } from '#lib/auth/User.ts';
 import { session } from '#lib/auth/session.svelte.ts';
 import { request } from '#lib/api/client.ts';
+import { createLog } from '#lib/telemetry/logger.ts';
 import type AuthProvider from '#lib/auth/providers/AuthProvider.ts';
+import { findSessionProvider, saveSessionProvider } from '#lib/auth/providers/AuthProvider.ts';
+import { createInstance } from '#lib/auth/providerRegistry.ts';
+import AUTH0 from '#lib/auth/providers/AUTH0.ts';
+import FENCE from '#lib/auth/providers/FENCE.ts';
+
+/** An unsigned JWT for `sub` that expires in an hour. */
+function jwt(sub: string): string {
+  const encode = (part: object) => btoa(JSON.stringify(part)).replace(/=+$/, '');
+  const exp = Math.floor(Date.now() / 1000) + 3600;
+  return `${encode({ alg: 'none' })}.${encode({ sub, exp })}.signature`;
+}
 
 const navigate = vi.fn();
 session.connect({
@@ -53,6 +65,89 @@ describe('logout', () => {
 
     expect(fetch).toHaveBeenCalledOnce();
     expect(navigate).toHaveBeenCalledOnce();
+  });
+
+  it("ends the session when the provider's logout throws instead of rejecting", async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(new Response('{}'))),
+    );
+    const provider = {
+      logout: () => {
+        throw new URIError('URI malformed');
+      },
+    };
+
+    await logout(provider as unknown as AuthProvider);
+
+    expect(navigate).toHaveBeenCalledExactlyOnceWith('/login');
+  });
+
+  const common = { description: 'Log in', enabled: true, alt: false };
+  describe.each([
+    [
+      'AUTH0',
+      () => new AUTH0({ ...common, name: 'AUTH0', type: 'AUTH0', clientid: 'c', connection: 'x' }),
+    ],
+    [
+      'FENCE',
+      () =>
+        new FENCE({ ...common, name: 'FENCE', type: 'FENCE', uri: 'u', clientid: 'c', idp: 'i' }),
+    ],
+  ])('through %s, which leaves its IdP session alone', (_, create) => {
+    it('ends the session once, without an error', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(() => Promise.resolve(new Response('{}'))),
+      );
+      vi.mocked(createLog).mockClear();
+      const provider = create();
+      saveSessionProvider(provider);
+      const ended = vi.fn();
+      const stopListening = session.onEnd(ended);
+
+      await logout(provider);
+      stopListening();
+
+      expect(navigate).toHaveBeenCalledExactlyOnceWith('/login');
+      expect(ended).toHaveBeenCalledOnce();
+      expect(localStorage.getItem('token')).toBeNull();
+      expect(localStorage.getItem('sessionProvider')).toBeNull();
+      expect(console.error).not.toHaveBeenCalled();
+      const loggedOut = vi
+        .mocked(createLog)
+        .mock.calls.filter((call) => call[1] === 'logout.success');
+      expect(loggedOut).toHaveLength(1);
+    });
+  });
+
+  it('ends the session once when another user logs in through another provider, and once on logout', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(new Response('{}'))),
+    );
+    const providers = [
+      { ...common, name: 'OKTA', type: 'OKTA' },
+      { ...common, name: 'AUTH0', type: 'AUTH0', clientid: 'c', connection: 'x' },
+    ];
+    saveSessionProvider(providers[0]);
+    setToken(jwt('first'));
+    const ended = vi.fn();
+    const stopListening = session.onEnd(ended);
+
+    // What the loading page does once AUTH0 has signed in the second user
+    saveSessionProvider(providers[1]);
+    await session.login(jwt('second'));
+    expect(ended).toHaveBeenCalledOnce();
+
+    const provider = findSessionProvider(providers);
+    expect(provider?.name).toBe('AUTH0');
+    await logout(provider && (await createInstance(provider)));
+    stopListening();
+
+    expect(ended).toHaveBeenCalledTimes(2);
+    expect(navigate).toHaveBeenCalledExactlyOnceWith('/login');
+    expect(localStorage.getItem('sessionProvider')).toBeNull();
   });
 
   describe('the Okta ID token', () => {

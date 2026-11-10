@@ -91,6 +91,21 @@ export function mockHTMLBodySuccess(context: Page, path: string | RegExp, body: 
 }
 
 /**
+ * The `/login/loading` URL Auth0 sends the user back to after a login. Seeds the login state the
+ * tab saves on its way out (the fixture already seeds `type=AUTH0`), so the callback is accepted.
+ */
+export async function auth0Callback(page: Page): Promise<string> {
+  const state = 'mNK7oJ5SLputhCuYrXYh5n4xEVQXhz6G';
+  await page.addInitScript((state) => {
+    if (location.pathname.startsWith('/login/loading')) sessionStorage.setItem('loginState', state);
+  }, state);
+  return (
+    `/login/loading/#access_token=${mockData.mockToken}` +
+    `&scope=openid%20profile%20email&expires_in=86400&token_type=Bearer&state=${state}`
+  );
+}
+
+/**
  * Answers PSAMA the way it answers a signed-in user who hasn't accepted the latest terms: a 403 with
  * an empty body (see `termsRefusal` in src/lib/api/client.ts) to every request that carries their
  * token, except `/tos/accept` and `/logout` (which Spring Security's logout filter answers first).

@@ -9,6 +9,7 @@ vi.mock('$app/paths', () => ({
 
 const mockState = vi.hoisted(() => {
   return {
+    endListeners: [] as (() => void)[],
     toasterErrorSpy: vi.fn(),
     isToastShowingSpy: vi.fn().mockReturnValue(false),
     logSpy: vi.fn(),
@@ -25,7 +26,9 @@ vi.mock('#lib/ui/toaster.ts', () => ({
   isToastShowing: mockState.isToastShowingSpy,
 }));
 
-vi.mock('#lib/auth/session.svelte.ts', () => ({ session: { user: {} } }));
+vi.mock('#lib/auth/session.svelte.ts', () => ({
+  session: { user: {}, onEnd: (listener: () => void) => mockState.endListeners.push(listener) },
+}));
 vi.mock('#lib/explorer/Dictionary.ts', () => ({ getConceptDetails: vi.fn() }));
 
 vi.mock('#lib/telemetry/logger.ts', () => ({
@@ -52,7 +55,7 @@ vi.mock('#lib/query/counts/providers.ts', () => ({
 import type { ResultCountSnapshot } from '#lib/query/counts/snapshot.ts';
 import type { QueryCountService } from '#lib/query/counts/service.ts';
 import type { QueryDescriptor } from '#lib/query/descriptor.svelte.ts';
-import { ResultCounts } from '#lib/query/counts/resultCounts.svelte.ts';
+import { ResultCounts, resultCountsState } from '#lib/query/counts/resultCounts.svelte.ts';
 import { filterState } from '#lib/query/filters.svelte.ts';
 import { createCategoricalFilter } from '#lib/query/filter.svelte.ts';
 import type { SearchResult } from '#lib/explorer/types.ts';
@@ -486,5 +489,15 @@ describe('ResultCounts', () => {
       await state.ensureLoaded(() => true);
       expect(mockService.getCount).toHaveBeenCalledTimes(2);
     });
+  });
+});
+
+describe('the shared result counts', () => {
+  it('are cleared when the session ends, so the next user never sees them', () => {
+    const clear = vi.spyOn(resultCountsState, 'clear');
+
+    for (const listener of mockState.endListeners) listener();
+
+    expect(clear).toHaveBeenCalledOnce();
   });
 });

@@ -1,10 +1,18 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { flushSync } from 'svelte';
 
-const mockPage = vi.hoisted(() => ({ url: new URL('http://localhost/') }));
+const mockPage = vi.hoisted(() => ({
+  url: new URL('http://localhost/'),
+  data: {
+    providers: [
+      { name: 'OKTA', type: 'OKTA', description: 'Okta', enabled: true },
+      { name: 'AUTH0', type: 'AUTH0', description: 'Auth0', enabled: true },
+    ],
+  },
+}));
 
 vi.mock('$app/env', () => ({ browser: true }));
 vi.mock('$app/state', () => ({ page: mockPage }));
@@ -16,6 +24,9 @@ vi.mock('#lib/telemetry/logger.ts', () => ({
   log: vi.fn(),
   createLog: vi.fn(() => ({})),
   registerSignedInUser: vi.fn(),
+}));
+vi.mock('#lib/auth/providerRegistry.ts', () => ({
+  createInstance: vi.fn(async ({ name }: { name: string }) => ({ name })),
 }));
 vi.mock('#lib/config/config.svelte.ts', () => ({
   config: {
@@ -31,6 +42,7 @@ vi.mock('#lib/config/config.svelte.ts', () => ({
 
 import Navigation from '#lib/shell/Navigation.svelte';
 import { session } from '#lib/auth/session.svelte.ts';
+import { createInstance } from '#lib/auth/providerRegistry.ts';
 import { PicsurePrivileges } from '#lib/auth/model/privilege.ts';
 
 const { QUERY, NAMED_DATASET, API_ACCESS, ADMIN, SUPER } = PicsurePrivileges;
@@ -100,6 +112,7 @@ afterEach(() => {
   cleanup();
   session.clear();
   vi.restoreAllMocks();
+  vi.mocked(createInstance).mockClear();
 });
 
 describe('Navigation', () => {
@@ -142,5 +155,37 @@ describe('Navigation', () => {
       'aria-current',
       'page',
     );
+  });
+});
+
+describe('Logout', () => {
+  async function logOutFromMenu() {
+    const logout = vi.spyOn(session, 'logout').mockResolvedValue();
+    await fireEvent.click(screen.getByRole('button', { name: 'Account' }));
+    await fireEvent.click(await screen.findByRole('button', { name: 'Logout' }));
+    await vi.waitFor(() => expect(logout).toHaveBeenCalledOnce());
+    return logout.mock.calls[0][0];
+  }
+
+  beforeEach(async () => {
+    signIn(roles.general.privileges);
+    localStorage.setItem('sessionProvider', 'OKTA');
+    renderAt('/help');
+    await vi.waitFor(() => expect(createInstance).toHaveBeenCalledOnce());
+  });
+
+  it('goes through the provider loaded with the page', async () => {
+    const provider = await logOutFromMenu();
+
+    expect(provider).toBe(await vi.mocked(createInstance).mock.results[0].value);
+    expect(createInstance).toHaveBeenCalledOnce();
+  });
+
+  it('goes through the provider of a login another tab has since finished', async () => {
+    localStorage.setItem('sessionProvider', 'AUTH0');
+
+    const provider = await logOutFromMenu();
+
+    expect(provider?.name).toBe('AUTH0');
   });
 });

@@ -1,17 +1,22 @@
 <script lang="ts">
   import ConfirmButton from '#lib/ui/ConfirmButton.svelte';
-  import { isTopAdmin } from '#lib/auth/User.ts';
+  import { session } from '#lib/auth/session.svelte.ts';
   import { toaster } from '#lib/ui/toaster.ts';
-  import { revokeApiKey } from '#lib/admin/apiKeys/ApiKeys.ts';
+  import { apiKeys } from '#lib/admin/apiKeys/apiKeys.svelte.ts';
   import { extractApiError } from '#lib/admin/apiKeys/model.ts';
 
-  const { data = { cell: '', row: { prefix: '', status: '' } } } = $props();
+  interface Props {
+    /** The table's cell contract: `cell` is the key's uuid. */
+    data: { cell: string; row: { prefix: string; status: string } };
+  }
+
+  const { data }: Props = $props();
 
   async function revoke() {
     // defense-in-depth beyond the disabled trigger
-    if (!$isTopAdmin) return;
+    if (!session.isTopAdmin) return;
     try {
-      await revokeApiKey(data.cell);
+      await apiKeys.revoke(data.cell);
       toaster.success({
         title: `Successfully revoked API key '${data.row.prefix}'`,
       });
@@ -32,7 +37,7 @@
     title="Revoke API Key?"
     confirmLabel="Revoke"
     tone="danger"
-    disabled={!$isTopAdmin}
+    disabled={!session.isTopAdmin}
     onconfirm={revoke}
   >
     <p>

@@ -1,4 +1,3 @@
-import type { Role } from '#lib/auth/model/role.ts';
 import type { Connection } from '#lib/auth/model/connection.ts';
 import { PicsurePrivileges } from '#lib/auth/model/privilege.ts';
 
@@ -36,16 +35,6 @@ export interface UserRequest extends User {
   connection?: Connection;
   generalMetadata: string;
   active: boolean;
-  roles?: Role[];
+  /** PSAMA reads only each role's uuid. */
+  roles?: { uuid: string }[];
 }
-
-// TODO: Replace metadata and query types
-/* eslint-disable @typescript-eslint/no-explicit-any */
-export function mapExtendedUser(data: any) {
-  return {
-    ...data,
-    connection: data.connection ? data.connection.uuid : '',
-    roles: data.roles ? data.roles.map((r: any) => r.uuid) : [],
-  };
-}
-/* eslint-enable @typescript-eslint/no-explicit-any */

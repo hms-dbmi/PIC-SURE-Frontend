@@ -1,4 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+// @vitest-environment happy-dom
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const auth0Calls = vi.hoisted(() => ({
   constructor: vi.fn(),
@@ -39,15 +41,14 @@ const provider = {
 
 describe('Auth0 login', () => {
   beforeEach(() => {
+    vi.stubGlobal('location', { protocol: 'https:', hostname: 'localhost', port: '' });
+  });
+
+  afterEach(() => {
     vi.clearAllMocks();
-    vi.stubGlobal('window', {
-      location: { protocol: 'https:', hostname: 'localhost', port: '' },
-    });
-    vi.stubGlobal('sessionStorage', {
-      getItem: vi.fn(),
-      setItem: vi.fn(),
-      removeItem: vi.fn(),
-    });
+    vi.unstubAllGlobals();
+    sessionStorage.clear();
+    localStorage.clear();
   });
 
   it('uses an explicitly configured Auth0 domain', async () => {
@@ -64,6 +65,7 @@ describe('Auth0 login', () => {
     expect(auth0Calls.authorize).toHaveBeenCalledWith({
       responseType: 'token',
       connection: 'mock-auth0',
+      state: expect.any(String),
       prompt: 'select_account',
     });
   });
@@ -82,6 +84,7 @@ describe('Auth0 login', () => {
     expect(auth0Calls.authorize).toHaveBeenCalledWith({
       responseType: 'token',
       connection: 'mock-auth0',
+      state: expect.any(String),
       prompt: 'select_account',
     });
   });

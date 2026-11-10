@@ -2,10 +2,10 @@
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import ApiKeyTable from '#lib/admin/apiKeys/ApiKeyTable.svelte';
   import MintPlatformKeyModal from '#lib/admin/apiKeys/MintPlatformKeyModal.svelte';
-  import { isTopAdmin } from '#lib/auth/User.ts';
+  import { session } from '#lib/auth/session.svelte.ts';
 </script>
 
-{#if !$isTopAdmin}
+{#if !session.isTopAdmin}
   <ErrorAlert data-testid="admin-top-admin-required" title="Top Administrator Only" color="warning">
     <p>
       API keys are READ ONLY for admin users. Please contact your administrator to make changes.

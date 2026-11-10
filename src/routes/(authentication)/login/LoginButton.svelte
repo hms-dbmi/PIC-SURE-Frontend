@@ -1,7 +1,6 @@
 <script lang="ts">
   import Button from '#lib/ui/Button.svelte';
   import type { ButtonSize, ButtonVariant } from '#lib/ui/button.ts';
-  import { onMount } from 'svelte';
 
   import { createInstance } from '#lib/auth/providerRegistry.ts';
   import { sanitizeHTML } from '#lib/utils/html.ts';
@@ -11,7 +10,7 @@
 
   interface Props {
     provider: AuthData | undefined;
-    helpText: string;
+    helpText?: string;
     buttonText?: string;
     redirectTo?: string;
     variant?: ButtonVariant;
@@ -33,7 +32,7 @@
   let imageSrc: string | undefined = $derived(
     provider?.imagesrc ? './' + provider.imagesrc : undefined,
   );
-  let help: string = $state('');
+  const help = $derived(sanitizeHTML(helpText ?? ''));
 
   let login = async (redirectTo: string, providerType: string) => {
     log(
@@ -49,8 +48,6 @@
       resetSearch();
     });
   };
-
-  onMount(() => (help = sanitizeHTML(helpText)));
 </script>
 
 {#if provider}
@@ -65,7 +62,7 @@
     }}
   >
     {#if imageSrc}
-      <img src={imageSrc} alt={provider!.imageAlt} class="mr-2 h-8" />
+      <img src={imageSrc} alt={provider!.imagealt} class="mr-2 h-8" />
     {/if}
     <span>{buttonText}</span>
   </Button>

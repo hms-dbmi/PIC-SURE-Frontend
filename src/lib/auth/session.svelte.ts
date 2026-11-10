@@ -109,6 +109,7 @@ export class Session {
   // navigate to /login a second time, so later calls share the logout already running.
   #pendingLogout: Promise<void> | undefined;
   #logoutNavigation = 0;
+  #endListeners: (() => void)[] = [];
 
   constructor() {
     if (!browser) return;
@@ -132,6 +133,18 @@ export class Session {
       this.#token = stored;
       if (stored) this.bootstrap();
     });
+  }
+
+  /**
+   * Runs `listener` each time the session ends or another user's token replaces it, so caches of
+   * what the user could see (admin lists, counts, datasets) are dropped before someone else signs
+   * in. Returns the unsubscribe.
+   */
+  onEnd(listener: () => void): () => void {
+    this.#endListeners.push(listener);
+    return () => {
+      this.#endListeners = this.#endListeners.filter((l) => l !== listener);
+    };
   }
 
   connect(shell: SessionShell) {
@@ -201,6 +214,10 @@ export class Session {
 
   setToken(token: string) {
     assertNoSsrWrite('session');
+    // Signing in as someone else without signing out ends the first user's session.
+    if (this.#token && tokenSubject(token) !== tokenSubject(this.#token)) {
+      this.#forgetPendingRequests();
+    }
     writeToken(token);
     this.#token = token;
   }
@@ -296,6 +313,7 @@ export class Session {
   #forgetPendingRequests() {
     this.#generation++;
     this.#consentsRequest = Promise.resolve();
+    for (const listener of this.#endListeners) listener();
   }
 
   /**
@@ -391,32 +409,26 @@ export class Session {
   async #endSession(authProvider: AuthProvider | undefined, redirect: boolean) {
     this.#forgetPendingRequests();
     const logError = (error: unknown) => console.error('Error logging out: ' + error);
-    const handleErrors = (error: unknown) => {
-      logError(error);
-      this.#leave(redirect);
-    };
 
     if (browser && this.#token) {
-      // Log only: the provider/redirect handling below always finishes the logout, so
-      // handling this failure too would navigate to /login twice.
+      // Log only: the logout always finishes below, so handling this failure too would
+      // navigate to /login twice.
       await psamaUser.logout().catch(logError);
       this.removeToken();
     }
 
-    if (authProvider) {
-      await authProvider
-        .logout()
-        .then((redirectURL) => {
-          if (typeof redirectURL === 'string') {
-            log(createLog('AUTH', 'logout.success'));
-            this.user = {};
-            location.replace(redirectURL);
-          } else {
-            // If no redirect is provided, go to the login page
-            this.#leave(redirect);
-          }
-        })
-        .catch(handleErrors);
+    // Okta and RAS return their IdP's logout URL; without one, the logout ends here. Not
+    // `.catch()`: their logout isn't async, so a failure building the URL throws right away.
+    let idpLogout: string | undefined;
+    try {
+      idpLogout = (await authProvider?.logout()) || undefined;
+    } catch (error) {
+      logError(error);
+    }
+    if (idpLogout) {
+      log(createLog('AUTH', 'logout.success'));
+      this.user = {};
+      location.replace(idpLogout);
     } else {
       this.#leave(redirect);
     }

@@ -1,6 +1,7 @@
 import { expect, type Page, type Route } from '@playwright/test';
 import {
   test,
+  auth0Callback,
   mockHTMLBodySuccess,
   mockApiConfig,
   mockApiSuccess,
@@ -174,7 +175,19 @@ test.describe('Login page', () => {
       }
     }
   });
-  for (const providerName of enabledProviders) {
+  test('A provider logo has its alt text', async ({ page }) => {
+    const alt = process.env.VITE_AUTH_PROVIDER_MODULE_OKTA_IMAGEALT;
+    if (!alt) throw new Error('OKTA image not set in .env');
+
+    await page.goto('/login');
+
+    await expect(page.getByTestId('login-provider-okta').getByRole('img')).toHaveAttribute(
+      'alt',
+      alt,
+    );
+  });
+  // MOCK has no IdP page; 'Login state' below logs in with it.
+  for (const providerName of enabledProviders.filter((name) => name !== 'MOCK')) {
     const providerUrl: { [key: string]: string | undefined } = {
       AUTH0: 'https://avillachlab.auth0.com/',
       OKTA: process.env.VITE_AUTH_PROVIDER_MODULE_OKTA_URI,
@@ -201,6 +214,140 @@ test.describe('Login page', () => {
       await expect(page).toHaveURL(urlMatcher);
     });
   }
+});
+
+// MOCK leaves for /login/loading itself with a real state, so these run the whole login. An init
+// script on the callback page stands in for whatever happened to the stored state meanwhile.
+test.describe('Login state', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
+
+  let authentications: number;
+  const restartToast = 'Your login could not be completed. Please log in again.';
+
+  test.beforeEach(async ({ page }) => {
+    authentications = 0;
+    await mockApiConfig(page);
+    await page.route('*/**/psama/authentication/mock', (route: Route) => {
+      authentications++;
+      return route.fulfill({ json: picsureUser });
+    });
+    await mockApiSuccess(page, '*/**/psama/user/me?hasToken', picsureUser);
+    await mockApiSuccess(page, '*/**/psama/user/me', picsureUser);
+    await mockApiSuccess(page, '*/**/psama/user/me/consents', { consents: mockConsents });
+  });
+
+  const storedState = (page: Page) => page.evaluate(() => sessionStorage.getItem('loginState'));
+
+  test('A login that comes back with its own state signs the user in', async ({ page }) => {
+    await page.goto('/login');
+    await page.getByTestId('login-provider-mock').click();
+
+    await page.waitForURL('/');
+    await userIsLoggedIn(page);
+    expect(authentications).toBe(1);
+    expect(await storedState(page)).toBeNull();
+  });
+
+  test('A callback with another state goes to the login error page', async ({ page }) => {
+    await page.addInitScript(() => {
+      if (location.pathname.startsWith('/login/loading')) {
+        sessionStorage.setItem('loginState', 'f'.repeat(64));
+      }
+    });
+    await page.goto('/login');
+    await page.getByTestId('login-provider-mock').click();
+
+    await page.waitForURL('/login/error');
+    await expect(page.getByText('Something went wrong with your login attempt.')).toBeVisible();
+    expect(authentications).toBe(0);
+    expect(await storedState(page)).toBeNull();
+  });
+
+  test('A callback in a tab whose login state is gone starts the login again', async ({ page }) => {
+    await page.addInitScript(() => {
+      if (location.pathname.startsWith('/login/loading')) {
+        sessionStorage.removeItem('loginState');
+        sessionStorage.setItem('redirect', '/explorer?search=age');
+      }
+    });
+    await page.goto('/login');
+    await page.getByTestId('login-provider-mock').click();
+
+    await expect(page).toHaveURL(
+      '/login?redirectTo=%2Fexplorer%3Fsearch%3Dage&reason=login_restart',
+    );
+    await expect(page.getByTestId('toast-root')).toContainText(restartToast);
+    expect(authentications).toBe(0);
+  });
+
+  test('A callback opened in a tab that started no login starts the login again', async ({
+    page,
+  }) => {
+    // The fixture records an AUTH0 login in every tab; a new tab has none.
+    await page.addInitScript(() => sessionStorage.removeItem('type'));
+
+    await page.goto('/login/loading/?code=abc123&state=' + 'f'.repeat(64)).catch(() => {});
+
+    await expect(page).toHaveURL('/login?redirectTo=%2F&reason=login_restart');
+    await expect(page.getByTestId('toast-root')).toContainText(restartToast);
+    expect(authentications).toBe(0);
+  });
+});
+
+// Okta is a route here that sends the browser back with the state it was given.
+test.describe('Logout in another tab', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
+
+  test('goes through the logout of the provider the user logged in with', async ({
+    page,
+    context,
+  }) => {
+    // Given: a user who logged in through OKTA in one tab
+    await mockApiConfig(context);
+    const oktaUser = { ...picsureUser, oktaIdToken: 'okta-id-token' };
+    await mockApiSuccess(context, '*/**/psama/authentication/ras', oktaUser);
+    await mockApiSuccess(context, '*/**/psama/user/me?hasToken', picsureUser);
+    await mockApiSuccess(context, '*/**/psama/user/me', picsureUser);
+    await mockApiSuccess(context, '*/**/psama/user/me/consents', { consents: mockConsents });
+    await mockApiSuccess(context, '*/**/psama/logout', {});
+    await page.route(/^https:\/\/pic-sure\.org\/ras/, (route: Route) => {
+      const authorize = new URL(route.request().url());
+      const callback = new URL(authorize.searchParams.get('redirect_uri') ?? '');
+      callback.searchParams.set('code', 'abc123');
+      callback.searchParams.set('state', authorize.searchParams.get('state') ?? '');
+      // A page that sends the browser on, since WebKit can't fulfill with a redirect status
+      return route.fulfill({
+        contentType: 'text/html',
+        body: `<script>location.replace(${JSON.stringify(callback.href)})</script>`,
+      });
+    });
+    await page.goto('/login');
+    await page.getByTestId('login-provider-okta').click();
+    await page.waitForURL('/');
+    await userIsLoggedIn(page);
+
+    // When: they log out in a tab they opened afterwards, which started no login
+    const other = await context.newPage();
+    await other.addInitScript(() => sessionStorage.removeItem('type'));
+    await mockHTMLBodySuccess(
+      other,
+      /^https:\/\/hms-srce\.oktapreview\.com\//,
+      '<h1>Signed out</h1>',
+    );
+    await other.goto('/');
+    const userMenu = other.getByTestId('app-nav-user-menu-trigger');
+    // Retried because a click before hydration is dropped
+    await expect(async () => {
+      await userMenu.click();
+      await expect(other.locator('#app-nav-logout')).toBeVisible({ timeout: 1000 });
+    }).toPass();
+    await other.locator('#app-nav-logout').click();
+
+    // Then: they leave through Okta's logout, which ends the Okta session too
+    await expect(other).toHaveURL(
+      /^https:\/\/hms-srce\.oktapreview\.com\/oauth2\/default\/v1\/logout\?id_token_hint=okta-id-token&/,
+    );
+  });
 });
 
 test.describe('Login redirect preserves search state', () => {
@@ -245,10 +392,7 @@ test.describe('Login redirect preserves search state', () => {
       sessionStorage.setItem('redirect', redirect as string);
       sessionStorage.setItem('type', 'AUTH0');
     }, redirectTo);
-    const mockLoginResponse =
-      '/login/loading/#access_token=' +
-      mockToken +
-      '&scope=openid%20profile%20email&expires_in=86400&token_type=Bearer&state=mNK7oJ5SLputhCuYrXYh5n4xEVQXhz6G';
+    const mockLoginResponse = await auth0Callback(page);
     // The app's own client-side goto() back to redirectTo can fire before this
     // navigation's load event settles (esp. firefox/webkit), aborting it - that's fine,
     // waitForURL below is what actually confirms we landed on the right page.
@@ -281,13 +425,7 @@ test.describe('Login redirect preserves search state', () => {
     );
 
     // When: login completes
-    await page
-      .goto(
-        '/login/loading/#access_token=' +
-          mockToken +
-          '&scope=openid%20profile%20email&expires_in=86400&token_type=Bearer&state=mNK7oJ5SLputhCuYrXYh5n4xEVQXhz6G',
-      )
-      .catch(() => {});
+    await page.goto(await auth0Callback(page)).catch(() => {});
 
     // Then: goto() rejects the stale path, and the user lands home with the drop logged
     await page.waitForURL('/');
@@ -298,16 +436,14 @@ test.describe('Login redirect preserves search state', () => {
 test.describe('Login with the terms of service enforced', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
 
-  const loginCallback =
-    '/login/loading/#access_token=' +
-    mockToken +
-    '&scope=openid%20profile%20email&expires_in=86400&token_type=Bearer&state=mNK7oJ5SLputhCuYrXYh5n4xEVQXhz6G';
+  let loginCallback: string;
 
   test.beforeEach(async ({ page, browserName }) => {
     test.skip(
       browserName !== 'chromium',
       'Login callback simulation is chromium-only, see setup.ts',
     );
+    loginCallback = await auth0Callback(page);
     await mockApiConfig(page, {
       features: [
         { name: 'ENABLE_TOS', value: 'true' },

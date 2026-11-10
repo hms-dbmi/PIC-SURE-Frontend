@@ -6,13 +6,10 @@ import { fireEvent, render, screen } from '@testing-library/svelte';
 import ConfigKindTab from '#lib/admin/settings/ConfigKindTab.svelte';
 import { describeConfigField } from '#lib/config/admin.ts';
 import {
-  loadAdminConfig,
+  adminConfig,
   isApiAvailable,
-  adminConfigRows,
-  deleteConfigRow,
-  addConfigRow,
-  invalidateConfigCache,
-} from '#lib/admin/settings/AdminConfiguration.ts';
+  type AdminConfigKind,
+} from '#lib/admin/settings/adminConfig.svelte.ts';
 import type { ConfigFieldSchema, FieldOrigin } from '#lib/config/admin.ts';
 import type { ConfigObject } from '#lib/config/resolve.ts';
 
@@ -111,26 +108,25 @@ vi.mock('#lib/config/admin.ts', async () => {
   };
 });
 
-vi.mock('#lib/admin/settings/AdminConfiguration.ts', async () => {
-  const actual = await vi.importActual<typeof import('#lib/admin/settings/AdminConfiguration.ts')>(
-    '#lib/admin/settings/AdminConfiguration.ts',
+vi.mock('#lib/admin/settings/adminConfig.svelte.ts', async () => {
+  const actual = await vi.importActual<typeof import('#lib/admin/settings/adminConfig.svelte.ts')>(
+    '#lib/admin/settings/adminConfig.svelte.ts',
   );
-  return {
-    ...actual,
-    loadAdminConfig: vi.fn().mockResolvedValue(undefined),
-    isApiAvailable: vi.fn().mockReturnValue(true),
-    deleteConfigRow: vi.fn(),
-    addConfigRow: vi.fn(),
-    invalidateConfigCache: vi.fn(),
-  };
+  return { ...actual, isApiAvailable: vi.fn().mockReturnValue(true) };
 });
 
+// The rows each test stores; the tab reads them through `adminConfig.rows`.
+const storedRows: Partial<Record<AdminConfigKind, ConfigObject[]>> = {};
+vi.spyOn(adminConfig, 'rows').mockImplementation((kind) => storedRows[kind] ?? []);
+
 const mockDescribeConfigField = vi.mocked(describeConfigField);
-const mockLoadAdminConfig = vi.mocked(loadAdminConfig);
+const mockLoadAdminConfig = vi.spyOn(adminConfig, 'load').mockResolvedValue(undefined);
 const mockIsApiAvailable = vi.mocked(isApiAvailable);
-const mockDeleteConfigRow = vi.mocked(deleteConfigRow);
-const mockAddConfigRow = vi.mocked(addConfigRow);
-const mockInvalidateConfigCache = vi.mocked(invalidateConfigCache);
+const mockDeleteConfigRow = vi.spyOn(adminConfig, 'remove').mockResolvedValue(undefined);
+const mockAddConfigRow = vi.spyOn(adminConfig, 'add').mockResolvedValue({} as ConfigObject);
+const mockInvalidateConfigCache = vi
+  .spyOn(adminConfig, 'invalidateServerCache')
+  .mockResolvedValue(undefined);
 const mockDeprecatedApiRows = vi.mocked((await import('#lib/config/admin.ts')).deprecatedApiRows);
 
 describe('ConfigKindTab (single kind)', () => {
@@ -139,7 +135,7 @@ describe('ConfigKindTab (single kind)', () => {
     mockLoadAdminConfig.mockResolvedValue(undefined);
     mockIsApiAvailable.mockReturnValue(true);
     mockDeprecatedApiRows.mockReturnValue([]);
-    adminConfigRows.features.set([]);
+    storedRows.features = [];
   });
 
   it('pre-populates the rendered field with the stored API row value', async () => {
@@ -149,7 +145,7 @@ describe('ConfigKindTab (single kind)', () => {
       apiRow,
       disabled: false,
     } as FieldOrigin);
-    adminConfigRows.features.set([apiRow]);
+    storedRows.features = [apiRow];
 
     render(ConfigKindTab, { kinds: ['features'], title: 'Features' });
 
@@ -221,8 +217,8 @@ describe('ConfigKindTab grouping and search (single kind)', () => {
     mockIsApiAvailable.mockReturnValue(true);
     mockDeprecatedApiRows.mockReturnValue([]);
     mockDescribeConfigField.mockReturnValue({ origin: 'default', disabled: false } as FieldOrigin);
-    adminConfigRows.features.set([]);
-    adminConfigRows.settings.set([]);
+    storedRows.features = [];
+    storedRows.settings = [];
   });
 
   it('renders a section header per group when a kind has more than one group', async () => {
@@ -276,8 +272,8 @@ describe('ConfigKindTab merged kinds (Settings & Features)', () => {
     mockIsApiAvailable.mockReturnValue(true);
     mockDeprecatedApiRows.mockReturnValue([]);
     mockDescribeConfigField.mockReturnValue({ origin: 'default', disabled: false } as FieldOrigin);
-    adminConfigRows.features.set([]);
-    adminConfigRows.settings.set([]);
+    storedRows.features = [];
+    storedRows.settings = [];
   });
 
   it('loads and renders fields from every given kind', async () => {

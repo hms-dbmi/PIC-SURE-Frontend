@@ -1,17 +1,21 @@
 import { browser } from '$app/env';
-import type { Indexable } from '#lib/utils/objects.ts';
 import type { User, OktaUser } from '#lib/auth/model/user.ts';
+import { SESSION_PROVIDER_KEY } from '#lib/auth/token.ts';
 
-export interface AuthData extends Indexable {
+/**
+ * A login provider's settings: `name` and `enabled` from hooks.server.ts, the rest from the
+ * provider's `VITE_AUTH_PROVIDER_MODULE_<NAME>_<FIELD>` variables. hooks.server.ts lowercases the
+ * field names, so `_IMAGEALT` arrives as `imagealt`. Each provider type adds its own fields.
+ */
+export interface AuthData {
   name: string;
   description: string;
   type: string;
-  icon?: string;
-  helpText?: string;
   enabled: boolean;
-  alt: boolean;
-  imageSrc?: string;
-  imageAlt?: string;
+  alt?: boolean;
+  helptext?: string;
+  imagesrc?: string;
+  imagealt?: string;
   logouturl?: string;
 }
 
@@ -28,27 +32,35 @@ export function findLoginProvider<T extends AuthData>(providers: T[] = []): T | 
   return type ? providers.find((provider) => provider.type === type) : undefined;
 }
 
+/** Records the provider a login went through next to its token, so every tab can log out of it. */
+export function saveSessionProvider(provider: AuthData): void {
+  localStorage.setItem(SESSION_PROVIDER_KEY, provider.name);
+}
+
+/**
+ * The provider the signed-in user logged in through, to log out of it. A tab that didn't start the
+ * login finds it too. Sessions from before it was saved fall back to this tab's login.
+ */
+export function findSessionProvider<T extends AuthData>(providers: T[] = []): T | undefined {
+  if (!browser) return undefined;
+  const name = localStorage.getItem(SESSION_PROVIDER_KEY);
+  return name ? providers.find((provider) => provider.name === name) : findLoginProvider(providers);
+}
+
 export default class AuthProvider implements AuthData {
   name: string;
   description: string;
   type: string;
   enabled: boolean;
-  icon?: string | undefined;
   logouturl?: string | undefined;
-  callbackurl?: string | undefined;
   alt: boolean;
-  imageSrc?: string | undefined;
-  imageAlt?: string | undefined;
 
   constructor(data: AuthData) {
     this.name = data.name;
     this.description = data.description;
     this.type = data.type;
-    this.icon = data.icon;
     this.enabled = data.enabled;
     this.alt = data.alt || false;
-    this.imageSrc = data.imagesrc;
-    this.imageAlt = data.imagealt;
     this.logouturl = data.logouturl;
   }
 

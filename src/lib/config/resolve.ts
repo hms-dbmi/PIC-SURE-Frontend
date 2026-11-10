@@ -48,7 +48,7 @@ export function envConfigMap(envPrefix: string = VITE_ENV_PREFIX): ConfigMap {
   }, {} as ConfigMap);
 }
 
-export function apiConfigMap(apiRows: ConfigObject[]): ConfigMap {
+export function apiConfigMap(apiRows: readonly ConfigObject[]): ConfigMap {
   return apiRows.reduce((map: ConfigMap, row: ConfigObject) => {
     map[row.name] = row;
     return map;
@@ -70,7 +70,7 @@ export function resolveConfigMap(apiRows: ConfigObject[], envPrefix?: string): C
 // The "kind" value sent as ?kind=<value> to the backend and used to gate whether API
 // overrides are available at all for a config kind - empty means the deployment
 // hasn't wired up the API for that kind. Used both server-side (config/server/cache.ts's SSR
-// bootstrap) and client-side (AdminConfiguration.ts's admin CRUD store,
+// bootstrap) and client-side (adminConfig.svelte.ts's admin CRUD state,
 // ConfigKindTab.svelte's "unavailable" messaging) - centralized here so the env var
 // naming convention has exactly one place to change.
 export const CONFIG_API_KIND: Record<ConfigKind, string> = {

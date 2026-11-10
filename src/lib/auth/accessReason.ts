@@ -3,8 +3,17 @@ import { session } from '#lib/auth/session.svelte.ts';
 import { log, createLog } from '#lib/telemetry/logger.ts';
 import { toaster } from '#lib/ui/toaster.ts';
 
-/** Why a guard turned the visitor away. It travels in the `reason` parameter of the redirect. */
-export type AccessReason = 'no_token' | 'expired' | 'hydrate_failed' | 'explore' | 'no_privilege';
+/**
+ * Why a guard turned the visitor away, or why the login callback sent them back to log in. It
+ * travels in the `reason` parameter of the redirect.
+ */
+export type AccessReason =
+  | 'no_token'
+  | 'expired'
+  | 'hydrate_failed'
+  | 'explore'
+  | 'no_privilege'
+  | 'login_restart';
 
 interface OnArrival {
   /** Whether the reason still describes the session. A reloaded or bookmarked URL may not. */
@@ -16,8 +25,8 @@ interface OnArrival {
   toast?: string;
 }
 
-// What the page a guard redirects to does about the reason the guard gave. The guards only read
-// the session, so this happens on a real arrival and never on a preload.
+// What the page a visitor is redirected to does about the reason they were sent there. The guards
+// only read the session, so this happens on a real arrival and never on a preload.
 const ON_ARRIVAL: Record<AccessReason, OnArrival> = {
   no_token: {
     applies: () => !session.isLoggedIn,
@@ -48,12 +57,16 @@ const ON_ARRIVAL: Record<AccessReason, OnArrival> = {
     event: 'auth.redirect_no_privilege',
     details: { missingPrivilege: 'QUERY' },
   },
+  login_restart: {
+    applies: () => !session.isLoggedIn,
+    toast: 'Your login could not be completed. Please log in again.',
+  },
 };
 
 /**
- * Acts on the `reason` a guard put in `url`: writes its audit event, ends the session and shows
- * its toast. The page the visitor was turned away from comes from `redirectTo` (the login page)
- * or `from` (any other page).
+ * Acts on the `reason` in `url`: writes its audit event, ends the session and shows its toast.
+ * The page the visitor was turned away from comes from `redirectTo` (the login page) or `from`
+ * (any other page).
  */
 export async function handleAccessReason(url: URL) {
   const reason = url.searchParams.get('reason');

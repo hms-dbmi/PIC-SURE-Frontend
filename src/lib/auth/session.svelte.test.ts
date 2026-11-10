@@ -456,3 +456,32 @@ describe('guards that check privileges', () => {
     expect(paths.filter((path) => path.endsWith('/me'))).toHaveLength(1);
   });
 });
+
+describe('the end of a session', () => {
+  it('tells its listeners on logout and on clear, until they unsubscribe', async () => {
+    vi.stubGlobal('fetch', vi.fn(answer({})));
+    const ended = vi.fn();
+    const unsubscribe = session.onEnd(ended);
+
+    session.setToken('token');
+    await session.logout();
+    session.clear();
+    unsubscribe();
+    session.clear();
+
+    expect(ended).toHaveBeenCalledTimes(2);
+  });
+
+  it('tells its listeners when another user signs in over it, but not on a refresh', () => {
+    const ended = vi.fn();
+    const unsubscribe = session.onEnd(ended);
+
+    session.setToken(jwt('first'));
+    session.setToken(jwt('first'));
+    expect(ended).not.toHaveBeenCalled();
+
+    session.setToken(jwt('second'));
+    unsubscribe();
+    expect(ended).toHaveBeenCalledOnce();
+  });
+});

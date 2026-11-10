@@ -32,7 +32,10 @@ export interface ConfigFieldSchema {
 // does not migrate that value. There is no dual-read across kinds, so a field move needs
 // a rollout note (or manual admin action) telling deployments to re-enter the value
 // under the new kind.
-export function deprecatedApiRows(kind: ConfigKind, apiRows: ConfigObject[]): ConfigObject[] {
+export function deprecatedApiRows(
+  kind: ConfigKind,
+  apiRows: readonly ConfigObject[],
+): ConfigObject[] {
   const known = CONFIG_FIELDS[kind];
   return apiRows.filter((row) => !Object.hasOwn(known, row.name));
 }

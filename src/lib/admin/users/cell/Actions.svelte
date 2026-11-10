@@ -4,47 +4,41 @@
   import { goto } from '$app/navigation';
 
   import { toaster } from '#lib/ui/toaster.ts';
-  import { getUser, updateUser } from '#lib/admin/users/Users.ts';
-  import { getConnection } from '#lib/admin/access/Connections.ts';
-  import { getRole } from '#lib/admin/access/Roles.ts';
-  import { getPrivilege } from '#lib/admin/access/Privileges.ts';
+  import * as admin from '#lib/admin/entities.ts';
 
   import ConfirmButton from '#lib/ui/ConfirmButton.svelte';
 
-  let { data = { cell: '', row: { status: '', email: '' } } } = $props();
+  interface Props {
+    /** The table's cell contract: `cell` is the user's uuid. */
+    data: { cell: string; row: { status?: string; email?: string } };
+  }
+
+  let { data }: Props = $props();
   const active = $derived(data.row.status === 'Active');
 
   function edit(event: Event) {
     event.stopPropagation();
-    goto(resolve(`admin/users/${data.cell}/edit`));
+    goto(resolve('/(picsure)/(authorized)/(admin)/admin/users/[uuid]/edit', { uuid: data.cell }));
   }
 
   async function toggleActivate(active: boolean) {
-    const user = await getUser(data.cell);
-    if (!user) return;
-
-    const connection = await getConnection(user.connection);
-    const roles = await Promise.all(
-      user.roles.map((uuid: string) =>
-        getRole(uuid).then((role) => ({
-          ...role,
-          privileges: role.privileges.map((uuid: string) => getPrivilege(uuid)),
-        })),
-      ),
-    );
-
-    if (!(user && connection && roles.length > 0)) return;
-
-    let newUser = { ...user, active, connection, roles };
+    const who = `user '${data.row.email}'`;
     try {
-      await updateUser(newUser);
+      const stored = await admin.users.get(data.cell);
+      const connection = await admin.connections.get(stored.connection);
+      await admin.users.update({
+        ...stored,
+        active,
+        connection,
+        roles: admin.rolesForSave(stored.roles),
+      });
       toaster.success({
-        title: `Successfully ${active ? 'r' : 'd'}eactivated user '${newUser.email}'`,
+        title: `Successfully ${active ? 'reactivated' : 'deactivated'} ${who}`,
       });
     } catch (error) {
       console.error(error);
       toaster.error({
-        title: `An error occured while ${active ? 'r' : 'd'}eactivating user '${user.email}'`,
+        title: `An error occurred while ${active ? 'reactivating' : 'deactivating'} ${who}`,
       });
     }
   }
@@ -68,5 +62,5 @@
   confirmLabel="{active ? 'D' : 'R'}eactivate"
   onconfirm={() => toggleActivate(!active)}
 >
-  Are you sure you want to {active ? 'd' : 'r'}eactiveate user '{data.row.email}'?
+  Are you sure you want to {active ? 'd' : 'r'}eactivate user '{data.row.email}'?
 </ConfirmButton>

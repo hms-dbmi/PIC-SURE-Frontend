@@ -1,6 +1,6 @@
 <script lang="ts">
   import { type RequiredField, parseFieldsFromJSON } from '#lib/auth/model/connection.ts';
-  import { isTopAdmin } from '#lib/auth/User.ts';
+  import { session } from '#lib/auth/session.svelte.ts';
 
   import RequiredFieldRow from './RequiredFieldRow.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
@@ -13,7 +13,7 @@
   let { fields = '[]', onupdate = () => {} }: Props = $props();
 
   let fieldList = $derived(parseFieldsFromJSON(fields));
-  let enableNewField = $derived(fieldList.length === 0 || !$isTopAdmin);
+  let enableNewField = $derived(fieldList.length === 0 || !session.isTopAdmin);
   let duplicates = $derived(
     fieldList.filter((checkField) => {
       return (

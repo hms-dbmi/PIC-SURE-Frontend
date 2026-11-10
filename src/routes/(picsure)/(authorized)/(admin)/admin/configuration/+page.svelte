@@ -23,11 +23,8 @@
   import BannerManagementView from '#lib/banners/components/admin/BannerManagementView.svelte';
   import ApiKeysPanel from '#lib/admin/apiKeys/ApiKeysPanel.svelte';
 
-  import { privileges, loadPrivileges } from '#lib/admin/access/Privileges.ts';
-  import { roles, loadRoles } from '#lib/admin/access/Roles.ts';
-  import { loadApplications } from '#lib/admin/access/Application.ts';
-  import { connections, loadConnections } from '#lib/admin/access/Connections.ts';
-  import { isTopAdmin } from '#lib/auth/User.ts';
+  import * as admin from '#lib/admin/entities.ts';
+  import { session } from '#lib/auth/session.svelte.ts';
 
   import Loading from '#lib/ui/Loading.svelte';
 
@@ -44,7 +41,7 @@
     Object.keys(TAB_PARAMS).filter(
       (tab) =>
         // PSAMA only accepts role, privilege, and connection writes from top admins.
-        (tab !== 'Access Control' || $isTopAdmin) &&
+        (tab !== 'Access Control' || session.isTopAdmin) &&
         (tab !== 'Terms of Service' || config.features.termsOfService),
     ),
   );
@@ -148,8 +145,8 @@
   };
 
   async function loadAppsAndPriv() {
-    await loadPrivileges();
-    await loadApplications();
+    await admin.privileges.load();
+    await admin.applications.load();
   }
 
   const rowClickHandler = (path: string) => (row: Indexable) => {
@@ -168,7 +165,7 @@
 <!-- The operations service only accepts config writes from top admins. Tabs keep hidden panels
      mounted, so only the open tab renders its notice. -->
 {#snippet readOnlyNotice(tab: string)}
-  {#if !$isTopAdmin && tabSet === tab}
+  {#if !session.isTopAdmin && tabSet === tab}
     <ErrorAlert
       data-testid="admin-top-admin-required"
       title="Top Administrator Only"
@@ -193,7 +190,7 @@
       {#if tab === 'Access Control'}
         <div id="admin-role-section" class="mb-10">
           <h2>Roles Management</h2>
-          {#await loadRoles()}
+          {#await admin.roles.load()}
             <Loading />
           {:then}
             <div class="flex gap-4 my-6">
@@ -201,7 +198,10 @@
                 <Button
                   variant="tonal"
                   data-testid="admin-role-add"
-                  href={resolve('admin/configuration/role/new')}
+                  href={resolve(
+                    '/(picsure)/(authorized)/(admin)/admin/configuration/(top-admin)/[kind=accessKind]/new',
+                    { kind: 'role' },
+                  )}
                 >
                   + Add Role
                 </Button>
@@ -211,7 +211,7 @@
               tableName="Roles"
               data-testid="admin-role-table"
               id="admin-role-table"
-              data={$roles}
+              data={admin.roles.items}
               columns={roleTable.columns}
               cellOverides={roleTable.overrides}
               rowClickHandler={roleRowCLick}
@@ -233,7 +233,10 @@
                 <Button
                   variant="tonal"
                   data-testid="admin-privilege-add"
-                  href={resolve('admin/configuration/privilege/new')}
+                  href={resolve(
+                    '/(picsure)/(authorized)/(admin)/admin/configuration/(top-admin)/[kind=accessKind]/new',
+                    { kind: 'privilege' },
+                  )}
                 >
                   + Add Privilege
                 </Button>
@@ -243,7 +246,7 @@
               tableName="Privileges"
               data-testid="admin-privilege-table"
               id="admin-privilege-table"
-              data={$privileges}
+              data={admin.privileges.items}
               columns={privilegesTable.columns}
               cellOverides={privilegesTable.overrides}
               rowClickHandler={privilegeRowClick}
@@ -257,7 +260,7 @@
         </div>
         <div id="admin-connection-section" class="mb-10">
           <h2>Connections Management</h2>
-          {#await loadConnections()}
+          {#await admin.connections.load()}
             <Loading />
           {:then}
             <div class="flex gap-4 my-6">
@@ -265,7 +268,10 @@
                 <Button
                   variant="tonal"
                   data-testid="admin-connection-add"
-                  href={resolve('admin/configuration/connection/new')}
+                  href={resolve(
+                    '/(picsure)/(authorized)/(admin)/admin/configuration/(top-admin)/[kind=accessKind]/new',
+                    { kind: 'connection' },
+                  )}
                 >
                   + Add Connection
                 </Button>
@@ -275,7 +281,7 @@
               tableName="Connections"
               data-testid="admin-connection-table"
               id="admin-connection-table"
-              data={$connections}
+              data={admin.connections.items}
               columns={connectionTable.columns}
               cellOverides={connectionTable.overrides}
               rowClickHandler={connectionRowClick}
@@ -302,11 +308,11 @@
         <ConfigKindTab
           kinds={['features', 'settings']}
           title="Settings & Features"
-          readOnly={!$isTopAdmin}
+          readOnly={!session.isTopAdmin}
         />
       {:else if tab === 'Branding'}
         {@render readOnlyNotice('Branding')}
-        <ConfigKindTab kinds={['branding']} title="Branding" readOnly={!$isTopAdmin} />
+        <ConfigKindTab kinds={['branding']} title="Branding" readOnly={!session.isTopAdmin} />
       {:else if tab === 'API Keys'}
         {#if tabSet === 'API Keys'}
           <ApiKeysPanel />
