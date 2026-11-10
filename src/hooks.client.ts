@@ -30,17 +30,24 @@ export const init: ClientInit = () => {
 // pic-sure-logging's AuditHandler rejects JSON strings over 10KB (maxStringLength).
 const FIELD_LIMIT = 4000;
 
+// URLs in error text can carry the page's query or fragment, which hold auth tokens on
+// /login/loading. Keeps a trailing :line:col so stack frames stay readable.
+const URL_PARAMS = /(https?:\/\/[^\s?#)]*)[?#][^\s)]*?(:\d+:\d+)?(?=[\s)]|$)/gm;
+
+function clean(text: string) {
+  return text.replace(URL_PARAMS, '$1$2').slice(0, FIELD_LIMIT);
+}
+
 // The logging service keeps only `metadata` from a frontend event, not its top-level
 // http_user_agent, so the browser goes here too.
 function unexpectedErrorDetails(error: unknown) {
   if (!(error instanceof Error)) {
-    return { message: String(error).slice(0, FIELD_LIMIT), user_agent: navigator.userAgent };
+    return { message: clean(String(error)), user_agent: navigator.userAgent };
   }
   return {
     name: error.name,
-    message: error.message.slice(0, FIELD_LIMIT),
-    // Frame URLs can carry the page's query or fragment, which hold auth tokens on /login/loading.
-    stack: error.stack?.replace(/[?#][^\s)]*?(?=:\d+:\d+|[\s)]|$)/gm, '').slice(0, FIELD_LIMIT),
+    message: clean(error.message),
+    stack: error.stack && clean(error.stack),
     user_agent: navigator.userAgent,
   };
 }

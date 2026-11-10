@@ -65,17 +65,18 @@ describe('client handleError', () => {
     expect(metadata.stack).toHaveLength(4000);
   });
 
-  it('drops query strings and fragments from stack frame URLs, which can hold auth tokens', async () => {
-    const error = new Error('boom');
+  it('drops query strings and fragments from URLs in the stack and message, which can hold auth tokens', async () => {
+    const error = new Error('Failed to load https://picsure.test/login/loading?code=secret');
     error.stack =
-      'Error: boom\n    at https://picsure.test/login/loading#access_token=secret:3:4\n' +
-      '    at start (https://picsure.test/_app/start.js?code=secret:1:2)';
+      'Error: boom\n    at https://picsure.test/login/loading#access_token=a:1:2secret:3:4\n' +
+      '    at Session.#restore (https://picsure.test/_app/start.js?code=secret:1:2)';
     await handleError({ kind: 'unknown', error, event });
 
-    const { stack } = logger.createLog.mock.calls[0][2];
+    const { message, stack } = logger.createLog.mock.calls[0][2];
+    expect(message).toBe('Failed to load https://picsure.test/login/loading');
     expect(stack).toBe(
       'Error: boom\n    at https://picsure.test/login/loading:3:4\n' +
-        '    at start (https://picsure.test/_app/start.js:1:2)',
+        '    at Session.#restore (https://picsure.test/_app/start.js:1:2)',
     );
   });
 
