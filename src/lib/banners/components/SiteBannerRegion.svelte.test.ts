@@ -70,8 +70,31 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.restoreAllMocks();
 });
+
+/**
+ * Runs `action`, then steps fake time 1 ms at a time for 100 ms (past the announcer's 30 ms repeat
+ * gap) and returns each new text the live region showed. happy-dom's MutationObserver can't be
+ * used here: it holds its callback only through a WeakRef, so after a garbage collection it
+ * silently stops reporting.
+ */
+async function statusChanges(status: HTMLElement, action: () => unknown): Promise<string[]> {
+  const changes: string[] = [];
+  let last = status.textContent ?? '';
+  const sample = () => {
+    const text = status.textContent ?? '';
+    if (text !== last) changes.push((last = text));
+  };
+  await action();
+  sample();
+  for (let ms = 0; ms < 100; ms++) {
+    await vi.advanceTimersByTimeAsync(1);
+    sample();
+  }
+  return changes;
+}
 
 describe('SiteBannerRegion', () => {
   it('fetches on initial navigation and each following SvelteKit navigation', async () => {
@@ -883,24 +906,15 @@ describe('public banner accessibility', () => {
   it('announces only banners that arrive after the page load', async () => {
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify([banner])));
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify([banner, secondBanner])));
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     render(SiteBannerRegion);
     const status = screen.getByRole('status');
-    const announcements: string[] = [];
-    const observer = new MutationObserver(() => announcements.push(status.textContent ?? ''));
-    observer.observe(status, { childList: true, characterData: true, subtree: true });
 
-    await navigation.callback?.({ type: 'enter' });
+    expect(await statusChanges(status, () => navigation.callback?.({ type: 'enter' }))).toEqual([]);
     expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
-    await navigation.callback?.({ type: 'link' });
-    await waitFor(() =>
-      expect(status).toHaveTextContent(
-        '1 new or updated site announcement. Service update. Scheduled maintenance details',
-      ),
-    );
-    expect(announcements.filter(Boolean)).toEqual([
+    expect(await statusChanges(status, () => navigation.callback?.({ type: 'link' }))).toEqual([
       '1 new or updated site announcement. Service update. Scheduled maintenance details',
     ]);
-    observer.disconnect();
   });
 
   it('counts the banners left out of a long announcement', async () => {
@@ -937,51 +951,41 @@ describe('public banner accessibility', () => {
     fetchMock.mockResolvedValueOnce(
       new Response(JSON.stringify([{ ...banner, presentationHash: 'changed' }, secondBanner])),
     );
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     render(SiteBannerRegion);
     const status = screen.getByRole('status');
     expect(status.textContent).toBe('');
-    await navigation.callback?.();
-    await waitFor(() =>
-      expect(status).toHaveTextContent(
-        '1 new or updated site announcement. Maintenance. Scheduled maintenance details',
-      ),
-    );
-    const changes = vi.fn();
-    const observer = new MutationObserver(changes);
-    observer.observe(status, { childList: true, characterData: true, subtree: true });
+    expect(await statusChanges(status, () => navigation.callback?.())).toEqual([
+      '1 new or updated site announcement. Maintenance. Scheduled maintenance details',
+    ]);
 
-    await navigation.callback?.();
-    expect(changes).not.toHaveBeenCalled();
-    await navigation.callback?.();
-    await waitFor(() =>
-      expect(status).toHaveTextContent(
-        '2 new or updated site announcements. Maintenance. Scheduled maintenance details. Service update. Scheduled maintenance details',
+    expect(await statusChanges(status, () => navigation.callback?.())).toEqual([]);
+    expect(await statusChanges(status, () => navigation.callback?.())).toEqual([
+      '2 new or updated site announcements. Maintenance. Scheduled maintenance details. Service update. Scheduled maintenance details',
+    ]);
+    expect(
+      await statusChanges(status, () =>
+        fireEvent.click(screen.getByRole('button', { name: 'Dismiss Maintenance' })),
       ),
-    );
-    changes.mockClear();
-    await fireEvent.click(screen.getByRole('button', { name: 'Dismiss Maintenance' }));
-    expect(changes).not.toHaveBeenCalled();
-    observer.disconnect();
+    ).toEqual([]);
   });
 
   it('remembers announcements across route hide and return, while announcing a changed version', async () => {
     const targeted = { ...banner, pageTargets: [{ kind: 'EXACT', path: '/help' }] };
     fetchMock.mockImplementation(async () => new Response(JSON.stringify([targeted])));
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     render(SiteBannerRegion);
     const navigate = (path: string) =>
       navigation.callback?.({ to: { url: new URL(`https://example.org${path}`) } });
-    await navigate('/help');
     const status = screen.getByRole('status');
-    await waitFor(() => expect(status).toHaveTextContent('Maintenance'));
-    const changes = vi.fn();
-    const observer = new MutationObserver(changes);
-    observer.observe(status, { childList: true, characterData: true, subtree: true });
+    expect(await statusChanges(status, () => navigate('/help'))).toEqual([
+      '1 new or updated site announcement. Maintenance. Scheduled maintenance details',
+    ]);
 
-    await navigate('/elsewhere');
+    expect(await statusChanges(status, () => navigate('/elsewhere'))).toEqual([]);
     expect(screen.queryByRole('region')).not.toBeInTheDocument();
-    await navigate('/help');
+    expect(await statusChanges(status, () => navigate('/help'))).toEqual([]);
     expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
-    expect(changes).not.toHaveBeenCalled();
 
     fetchMock.mockImplementation(
       async () =>
@@ -991,10 +995,9 @@ describe('public banner accessibility', () => {
           ]),
         ),
     );
-    await navigate('/help');
-    await waitFor(() => expect(status).toHaveTextContent('Revised maintenance'));
-    expect(changes).toHaveBeenCalled();
-    observer.disconnect();
+    expect(await statusChanges(status, () => navigate('/help'))).toEqual([
+      '1 new or updated site announcement. Revised maintenance. Scheduled maintenance details',
+    ]);
   });
 
   it('leaves the persistent fallback empty on pages without banners', async () => {
