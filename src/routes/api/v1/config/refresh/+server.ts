@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { getConfig } from '$lib/server/configCache';
 import { Psama, joinUrl } from '$lib/paths';
+import { CLIENT_TYPE_HEADERS } from '$lib/clientType';
 import { PicsurePrivileges } from '$lib/models/Privilege';
 import type { User } from '$lib/models/User';
 import type { RequestHandler } from './$types';
@@ -23,7 +24,7 @@ export const GET: RequestHandler = async ({ request }) => {
     const target = joinUrl(ORIGIN, Psama.User.Me);
     const res = await fetch(target, {
       method: 'GET',
-      headers: { Authorization: authorization },
+      headers: { ...CLIENT_TYPE_HEADERS, Authorization: authorization },
     });
     if (!res.ok) {
       return json({ error: 'Unauthorized' }, { status: 401 });

@@ -3,6 +3,7 @@
   import type { SwaggerComponent, SwaggerSystem } from 'swagger-ui-dist/swagger-ui-bundle.js';
   import { createLog, log } from '$lib/logger';
   import { createDocsLogging } from '$lib/apiDocsLogging';
+  import { CLIENT_TYPE_HEADERS } from '$lib/clientType';
 
   // The first listed service is shown on load: the dictionary, which every visitor can use.
   const services = [
@@ -56,6 +57,7 @@
     try {
       const response = await fetch(path, {
         signal: requestController.signal,
+        headers: CLIENT_TYPE_HEADERS,
         credentials: 'omit',
         redirect: 'error',
       });
