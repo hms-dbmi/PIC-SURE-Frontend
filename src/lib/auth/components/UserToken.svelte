@@ -10,7 +10,6 @@
   import { getTokenExpiration, getTokenExpirationAsDate } from '#lib/auth/token.ts';
   import Loading from '#lib/ui/Loading.svelte';
   import { log, createLog } from '#lib/telemetry/logger.ts';
-  import { cardClass } from '#lib/ui/surface.ts';
 
   const defaultRefreshText = 'Refresh';
   const placeHolderToken =
@@ -84,7 +83,7 @@
   {#await session.loadUser(true, true)}
     <Loading ring size="medium" />
   {:then}
-    <div id="user-token" class="{cardClass} bg-surface-50-950">
+    <div id="user-token" class="rounded-container border border-surface-700 bg-surface-100-900/50">
       <header class="card-header flex w-full items-center gap-4">
         <i class="fa-solid fa-user-shield text-3xl text-success-500"></i>
         <div>
@@ -96,7 +95,7 @@
         <label for="user-token-account">Account:</label>
         <span id="user-token-account" class="w-full">{account}</span>
         <label for="user-token-value">Token:</label>
-        <div id="user-token-value">{revealed ? token : placeHolderToken}</div>
+        <div id="user-token-value" class="token-value">{revealed ? token : placeHolderToken}</div>
         <label for="user-token-expires">Expires:</label>
         <div>
           <span id="user-token-expires" class="w-1/3 mr-2"

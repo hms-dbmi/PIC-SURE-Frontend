@@ -286,13 +286,16 @@
     @apply bg-success-500 text-success-contrast-500;
   }
 
-  #user-token #user-token-value {
+  .token-value {
     @apply input;
     overflow: auto;
     overflow-wrap: break-word;
     word-wrap: break-word;
     padding: 0.5em;
     background-color: var(--input-bg-color);
+    /* a real border instead of the input's faint inset ring, so the value stands out */
+    border: 1px solid var(--color-surface-700);
+    box-shadow: none;
   }
 
   .required span:after,
