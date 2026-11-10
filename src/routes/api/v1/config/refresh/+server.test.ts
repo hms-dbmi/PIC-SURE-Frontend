@@ -105,7 +105,7 @@ describe('GET /api/config/refresh', () => {
     expect(mockGetConfig).not.toHaveBeenCalled();
   });
 
-  it('forwards the Authorization header to psama/user/me', async () => {
+  it('forwards the Authorization header to psama/user/me as the frontend', async () => {
     fetchMock.mockResolvedValue(mockFetchResponse({ body: { privileges: ['SUPER_ADMIN'] } }));
     const GET = await loadHandler();
 
@@ -115,7 +115,7 @@ describe('GET /api/config/refresh', () => {
       expect.stringContaining('psama/user/me'),
       expect.objectContaining({
         method: 'GET',
-        headers: { Authorization: 'Bearer some-token' },
+        headers: { 'X-Client-Type': 'FRONTEND', Authorization: 'Bearer some-token' },
       }),
     );
   });

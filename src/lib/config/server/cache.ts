@@ -6,6 +6,7 @@ import {
   type ConfigKind,
 } from '#lib/config/resolve.ts';
 import { Picsure, joinUrl } from '#lib/api/paths.ts';
+import { CLIENT_TYPE_HEADERS } from '#lib/api/clientType.ts';
 import { withBackoff } from '#lib/utils/backoff.ts';
 
 const ORIGIN = import.meta.env?.VITE_ORIGIN;
@@ -48,7 +49,7 @@ async function fetchWithRetry(url: string, type: string): Promise<ConfigObject[]
   try {
     // +1 because MAX_RETRIES counts retries after the first attempt, not total attempts.
     return await withBackoff(
-      () => fetch(url, { method: 'GET' }).then(handleResponse),
+      () => fetch(url, { method: 'GET', headers: CLIENT_TYPE_HEADERS }).then(handleResponse),
       MAX_RETRIES + 1,
       INITIAL_DELAY,
       MAX_DELAY,

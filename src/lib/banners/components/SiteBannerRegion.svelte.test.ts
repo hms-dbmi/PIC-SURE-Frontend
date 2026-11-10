@@ -85,7 +85,10 @@ describe('SiteBannerRegion', () => {
       expect.stringMatching(/\/picsure\/operations\/banners\/active$/),
       expect.objectContaining({
         cache: 'no-store',
-        headers: expect.objectContaining({ Accept: 'application/json' }),
+        headers: expect.objectContaining({
+          'X-Client-Type': 'FRONTEND',
+          Accept: 'application/json',
+        }),
       }),
     );
     expect(fetchMock.mock.calls[0][1].headers).not.toHaveProperty('Authorization');

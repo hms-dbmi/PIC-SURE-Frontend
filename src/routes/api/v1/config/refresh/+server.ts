@@ -1,5 +1,6 @@
 import { getConfig } from '#lib/config/server/cache.ts';
 import { Psama, joinUrl } from '#lib/api/paths.ts';
+import { CLIENT_TYPE_HEADERS } from '#lib/api/clientType.ts';
 import { PicsurePrivileges } from '#lib/auth/model/privilege.ts';
 import type { User } from '#lib/auth/model/user.ts';
 import type { RequestHandler } from './$types';
@@ -22,7 +23,7 @@ export const GET: RequestHandler = async ({ request }) => {
     const target = joinUrl(ORIGIN, Psama.User.Me);
     const res = await fetch(target, {
       method: 'GET',
-      headers: { Authorization: authorization },
+      headers: { ...CLIENT_TYPE_HEADERS, Authorization: authorization },
     });
     if (!res.ok) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });

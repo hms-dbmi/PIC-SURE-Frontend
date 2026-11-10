@@ -1,5 +1,6 @@
 import { ApiError } from '#lib/api/errors.ts';
 import { Picsure, PicsurePaths } from '#lib/api/paths.ts';
+import { CLIENT_TYPE_HEADERS } from '#lib/api/clientType.ts';
 
 const TIMEOUT_MS = 15000;
 
@@ -50,6 +51,7 @@ async function getJson(path: string, signal: AbortSignal): Promise<unknown> {
   try {
     const response = await fetch(path, {
       signal: requestController.signal,
+      headers: CLIENT_TYPE_HEADERS,
       credentials: 'omit',
       redirect: 'error',
     });

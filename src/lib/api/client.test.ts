@@ -274,6 +274,18 @@ describe('request', () => {
       expect(mockOpenSessionToken).not.toHaveBeenCalled();
     });
 
+    it('identifies authorized and open requests as the frontend', async () => {
+      token = 'my-token';
+      await request('picsure/test');
+      token = null;
+      await request('picsure/test', { method: 'POST', body: {}, auth: 'open' });
+
+      expect(sent(0).headers['request-source']).toBe('Authorized');
+      expect(sent(0).headers['X-Client-Type']).toBe('FRONTEND');
+      expect(sent(1).headers['request-source']).toBe('Open');
+      expect(sent(1).headers['X-Client-Type']).toBe('FRONTEND');
+    });
+
     it('sends no credentials or session id outside the browser', async () => {
       mockBrowser = false;
       token = 'my-token';

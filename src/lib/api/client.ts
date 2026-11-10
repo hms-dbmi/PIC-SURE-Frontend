@@ -3,6 +3,7 @@ import { log, createLog, getSessionId } from '#lib/telemetry/logger.ts';
 import { config } from '#lib/config/config.svelte.ts';
 import { isWafCaptchaResponse, handleWafCaptcha } from '#lib/api/wafCaptcha.ts';
 import { joinUrl } from '#lib/api/paths.ts';
+import { CLIENT_TYPE_HEADERS } from '#lib/api/clientType.ts';
 import {
   ApiError,
   CONSENT_DENIED_MESSAGE,
@@ -85,10 +86,11 @@ async function send(path: string, opts: RequestOptions): Promise<unknown> {
   } = opts;
   const doFetch = opts.fetch ?? fetch;
   const init: RequestInit = { method };
-  const headers: Record<string, string> =
-    body === undefined
-      ? { ...opts.headers }
-      : { 'Content-Type': 'application/json', ...opts.headers };
+  const headers: Record<string, string> = {
+    ...CLIENT_TYPE_HEADERS,
+    ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+    ...opts.headers,
+  };
   if (body !== undefined) init.body = typeof body === 'string' ? body : JSON.stringify(body);
   if (softFail) init.cache = 'no-store';
 

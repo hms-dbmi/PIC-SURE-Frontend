@@ -16,13 +16,17 @@ beforeEach(() => {
 });
 
 describe('openapi', () => {
-  it('lists the named services without credentials', async () => {
+  it('lists the named services without credentials, as the frontend', async () => {
     fetchMock.mockResolvedValue(json([{ name: 'dictionary', url: 'x' }, { url: 'y' }]));
 
     await expect(getDocumentedServices(signal)).resolves.toEqual(['dictionary']);
     expect(fetchMock).toHaveBeenCalledWith(
       '/picsure/openapi',
-      expect.objectContaining({ credentials: 'omit', redirect: 'error' }),
+      expect.objectContaining({
+        headers: { 'X-Client-Type': 'FRONTEND' },
+        credentials: 'omit',
+        redirect: 'error',
+      }),
     );
   });
 
