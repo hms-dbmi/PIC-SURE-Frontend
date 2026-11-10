@@ -23,15 +23,54 @@ function serve(names: string[]) {
   return fetchMock;
 }
 
+// happy-dom (20.10.6) holds a MutationObserver's callback only through a WeakRef, so any garbage
+// collection silently stops it. The tests swap in this observer and report each DOM change to it
+// themselves. It only knows child-list changes.
+const observers = new Set<ReportedObserver>();
+class ReportedObserver {
+  #targets: { node: Node; options: MutationObserverInit }[] = [];
+  constructor(readonly callback: MutationCallback) {}
+  observe(node: Node, options?: MutationObserverInit) {
+    this.#targets.push({ node, options: options ?? {} });
+    observers.add(this);
+  }
+  disconnect() {
+    this.#targets = [];
+    observers.delete(this);
+  }
+  takeRecords() {
+    return [];
+  }
+  watchesChildrenOf(parent: Node) {
+    return this.#targets.some(
+      ({ node, options }) =>
+        options.childList && (node === parent || (options.subtree && node.contains(parent))),
+    );
+  }
+}
+
+// Changes parent's children, then synchronously calls back each observer watching them.
+function changeChildren(parent: Element, change: () => void) {
+  change();
+  const record: Partial<MutationRecord> = { type: 'childList', target: parent };
+  for (const observer of observers) {
+    if (observer.watchesChildrenOf(parent)) {
+      observer.callback([record as MutationRecord], observer as MutationObserver);
+    }
+  }
+}
+
 // Stands in for the Swagger bundle: runs the plugins and draws headings like Swagger does.
 function drawSwagger() {
   SwaggerUI.mockImplementation(({ domNode, plugins }) => {
     const React = { createElement: vi.fn(), useLayoutEffect: vi.fn(), useState: vi.fn() };
     for (const plugin of plugins) plugin({ React });
-    domNode.innerHTML = `
-      <div class="info"><h2 class="title">Docs</h2></div>
-      <h3 class="opblock-tag">Search</h3>
-      <div class="opblock"><h4>Parameters</h4></div>`;
+    changeChildren(domNode, () => {
+      domNode.innerHTML = `
+        <div class="info"><h2 class="title">Docs</h2></div>
+        <h3 class="opblock-tag">Search</h3>
+        <div class="opblock"><h4>Parameters</h4></div>`;
+    });
     return { specActions: { updateSpec: vi.fn() } };
   });
 }
@@ -44,6 +83,8 @@ describe('ApiDocumentation', () => {
   beforeEach(() => {
     SwaggerUI.mockReset();
     drawSwagger();
+    observers.clear();
+    vi.stubGlobal('MutationObserver', ReportedObserver);
   });
   afterEach(() => vi.unstubAllGlobals());
 
@@ -83,11 +124,11 @@ describe('ApiDocumentation', () => {
     expect(level('.opblock h4')).toBe('5');
 
     // Swagger adds headings as sections expand; they are leveled as they appear.
-    const section = document.createElement('div');
-    section.className = 'opblock';
-    section.innerHTML = '<h4 id="responses">Responses</h4>';
-    document.querySelector('.swagger-host')?.append(section);
-    await waitFor(() => expect(level('#responses')).toBe('5'));
+    const operation = document.querySelector('.opblock')!;
+    const responses = document.createElement('h4');
+    responses.id = 'responses';
+    changeChildren(operation, () => operation.append(responses));
+    expect(level('#responses')).toBe('5');
   });
 
   it('stops leveling headings once removed', async () => {
@@ -99,8 +140,7 @@ describe('ApiDocumentation', () => {
     unmount();
     const heading = document.createElement('h3');
     heading.className = 'opblock-tag';
-    host.append(heading);
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    changeChildren(host, () => host.append(heading));
     expect(heading.hasAttribute('aria-level')).toBe(false);
   });
 });
