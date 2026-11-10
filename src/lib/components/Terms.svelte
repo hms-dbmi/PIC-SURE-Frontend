@@ -1,8 +1,6 @@
 <script lang="ts">
-  import { resolve } from '$app/paths';
   import { onMount } from 'svelte';
 
-  import { goto } from '$app/navigation';
   import { browser } from '$app/environment';
   import { config } from '$lib/configuration.svelte';
   import * as api from '$lib/api';
@@ -50,11 +48,11 @@
   function reject() {
     if (browser) {
       log(createLog('AUTH', 'tos.reject'));
-      logout().then(() => {
+      // logout goes to the login page itself; a second navigation would cut its short and reset the
+      // discarded query while this page is still mounted
+      logout(undefined, false, { discardQuery: true }).then(() => {
         if (config.branding.termsOfService.rejectionUrl) {
           window.location.href = config.branding.termsOfService.rejectionUrl;
-        } else {
-          goto(resolve('/login'));
         }
       });
     } else {

@@ -15,7 +15,7 @@ vi.mock('$app/navigation', () => ({
 vi.mock('$lib/api', () => ({ get: (...args: unknown[]) => mockApiGet(...args) }));
 vi.mock('$lib/logger', () => ({ createLog: vi.fn(), log: vi.fn() }));
 
-import { accessDenied } from '$lib/accessDenied';
+import { discardingQuery } from '$lib/discardingQuery';
 import { createLog } from '$lib/logger';
 import { logout } from '$lib/stores/User';
 import type AuthProvider from '$lib/models/AuthProvider';
@@ -24,27 +24,27 @@ async function settle() {
   await new Promise((resolve) => setTimeout(resolve));
 }
 
-describe('logout after access is denied', () => {
+describe('logout while the query is being discarded', () => {
   beforeEach(() => {
     navigations.length = 0;
     localStorage.setItem('token', 'token');
-    accessDenied.set(true);
+    discardingQuery.set(true);
   });
 
-  it('lowers access denied once the logout has navigated', async () => {
+  it('lowers the discard once the logout has navigated', async () => {
     mockApiGet.mockResolvedValue({});
 
     const loggedOut = logout(undefined, false);
     await settle();
-    expect(get(accessDenied)).toBe(true);
+    expect(get(discardingQuery)).toBe(true);
 
     navigations[0].resolve();
     await loggedOut;
     await settle();
-    expect(get(accessDenied)).toBe(false);
+    expect(get(discardingQuery)).toBe(false);
   });
 
-  it('lowers access denied when the logout navigation fails', async () => {
+  it('lowers the discard when the logout navigation fails', async () => {
     mockApiGet.mockResolvedValue({});
 
     // logout doesn't await its navigation, so the failure surfaces as an unhandled rejection
@@ -63,7 +63,7 @@ describe('logout after access is denied', () => {
     await loggedOut;
     await settle();
 
-    expect(get(accessDenied)).toBe(false);
+    expect(get(discardingQuery)).toBe(false);
   });
 
   it('waits for the navigation that supersedes the first', async () => {
@@ -75,11 +75,11 @@ describe('logout after access is denied', () => {
 
     navigations[0].resolve();
     await settle();
-    expect(get(accessDenied)).toBe(true);
+    expect(get(discardingQuery)).toBe(true);
 
     navigations[1].resolve();
     await settle();
-    expect(get(accessDenied)).toBe(false);
+    expect(get(discardingQuery)).toBe(false);
   });
 
   it('goes to the login page once when a provider logout returns no redirect', async () => {
@@ -100,5 +100,43 @@ describe('logout after access is denied', () => {
       vi.mocked(createLog).mock.calls.filter(([, event]) => event === 'logout.success'),
     ).toHaveLength(1);
     expect(consoleError).not.toHaveBeenCalled();
+  });
+});
+
+describe('logout and the query', () => {
+  beforeEach(() => {
+    navigations.length = 0;
+    localStorage.setItem('token', 'token');
+    discardingQuery.set(false);
+    mockApiGet.mockResolvedValue({});
+  });
+
+  it('discards the query once a chosen logout has navigated', async () => {
+    const raised: boolean[] = [];
+    const unsubscribe = discardingQuery.subscribe((discard) => raised.push(discard));
+    onTestFinished(unsubscribe);
+
+    const loggedOut = logout(undefined, false, { discardQuery: true });
+    await settle();
+    expect(get(discardingQuery)).toBe(true);
+
+    navigations[0].resolve();
+    await loggedOut;
+    await settle();
+    expect(raised).toEqual([false, true, false]);
+  });
+
+  it('keeps the query when the session times out', async () => {
+    const raised: boolean[] = [];
+    const unsubscribe = discardingQuery.subscribe((discard) => raised.push(discard));
+    onTestFinished(unsubscribe);
+
+    const loggedOut = logout(undefined, true);
+    await settle();
+    navigations[0].resolve();
+    await loggedOut;
+    await settle();
+
+    expect(raised).toEqual([false]);
   });
 });

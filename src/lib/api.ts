@@ -1,6 +1,6 @@
 import { error, isHttpError, type NumericRange } from '@sveltejs/kit';
 import { logout, login } from '$lib/stores/User';
-import { accessDenied } from '$lib/accessDenied';
+import { discardingQuery } from '$lib/discardingQuery';
 import { browser } from '$app/environment';
 import { log, createLog, getSessionId } from '$lib/logger';
 import { config } from '$lib/configuration.svelte';
@@ -217,7 +217,7 @@ async function handleResponse(res: Response, openRequest = false) {
     if (browser) {
       sessionStorage.removeItem('logout-reason');
       // an open-access request carries no login token, so the user's filters weren't what was denied
-      if (!openRequest) accessDenied.set(true);
+      if (!openRequest) discardingQuery.set(true);
     }
     logout(undefined, false);
     fail(res.status, resText);

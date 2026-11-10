@@ -5,7 +5,7 @@ import { browser } from '$app/environment';
 import { ensureConsentsLoaded, user } from '$lib/stores/User';
 import { getConceptDetails } from '$lib/stores/Dictionary';
 import { log, createLog, registerAssociatedStudies, getPageContext } from '$lib/logger';
-import { accessDenied } from '$lib/accessDenied';
+import { discardingQuery } from '$lib/discardingQuery';
 
 import { type Filter, type FilterInterface, createFilterGroup } from '$lib/models/Filter.svelte';
 import type { SearchResult } from '$lib/models/Search';
@@ -66,13 +66,12 @@ export const activeFilter: Writable<Filter | undefined> = writable();
 export const activeSearch: Writable<SearchResult | undefined> = writable();
 export const filterWarning: Writable<string | undefined> = writable();
 
-// The filters of a forbidden logout asked for data the user can't see, and if they survive into the
-// next login the denied query reruns and logs them out again. Storage is dropped at once, but the
-// stores are reset only after the logout navigates, or the denied page would rerun its count query.
+// Storage is dropped as soon as a discard is raised, but the stores reset only once the logout has
+// navigated, or the page being left would rerun its count query.
 let discarding = false;
 
-accessDenied.subscribe((denied) => {
-  if (denied) {
+discardingQuery.subscribe((discard) => {
+  if (discard) {
     discarding = true;
     sessionStorage.removeItem('filterTree');
     sessionStorage.removeItem('genomicFilters');
