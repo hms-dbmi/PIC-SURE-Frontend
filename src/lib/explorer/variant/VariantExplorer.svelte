@@ -1,0 +1,68 @@
+<script lang="ts">
+  import { onMount } from 'svelte';
+
+  import { ExportType } from '#lib/config/index.ts';
+  import type { VariantResult } from '#lib/explorer/variant/Variant.ts';
+  import { getCountResource } from '#lib/explorer/Resources.ts';
+  import { getVariantCount, getVariantData } from '#lib/explorer/variant/Variants.ts';
+  import { buildRequest } from '#lib/query/build.ts';
+  import { filterState } from '#lib/query/filters.svelte.ts';
+  import { config } from '#lib/config/config.svelte.ts';
+
+  import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
+  import Loading from '#lib/ui/Loading.svelte';
+  import VariantData from '#lib/explorer/variant/VariantData.svelte';
+
+  let variantResults: VariantResult[] = $state([]);
+  let loading: Promise<void> = $state(Promise.resolve());
+
+  async function loadVariants() {
+    const resource = getCountResource();
+    const queryRequest = buildRequest(filterState.queryFilters);
+    variantResults = [
+      {
+        name: resource.name,
+        exportType: config.settings.variantExplorer.type || ExportType.Aggregate,
+        count: getVariantCount(queryRequest),
+        queryRequest,
+      },
+    ];
+    variantResults[0].data = getVariantData(
+      variantResults[0].exportType,
+      variantResults[0].queryRequest,
+    );
+  }
+
+  function aggregateChange(checked: boolean) {
+    const result = variantResults[0];
+    result.exportType = checked ? ExportType.Aggregate : ExportType.Full;
+    result.data = getVariantData(result.exportType, result.queryRequest);
+  }
+
+  onMount(() => {
+    loading = loadVariants();
+  });
+</script>
+
+{#await loading}
+  <Loading ring size="medium" />
+{:then}
+  {#if variantResults.length === 1}
+    {#await variantResults[0].count}
+      <Loading ring size="medium" />
+    {:then countResult}
+      <VariantData
+        count={countResult}
+        onAggregateToggle={aggregateChange}
+        bind:data={variantResults[0].data}
+        bind:exportType={variantResults[0].exportType}
+      />
+    {:catch}
+      <ErrorAlert title="Error">An error occured while loading counts and variant data.</ErrorAlert>
+    {/await}
+  {:else}
+    <ErrorAlert title="Error">No resource was found to query for variant data.</ErrorAlert>
+  {/if}
+{:catch}
+  <ErrorAlert title="Error">An error occured while loading variant data.</ErrorAlert>
+{/await}

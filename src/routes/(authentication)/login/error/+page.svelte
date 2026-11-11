@@ -1,8 +1,10 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { resolve } from '$app/paths';
-  import { config } from '$lib/configuration.svelte';
+  import { config } from '#lib/config/config.svelte.ts';
   import { quintOut } from 'svelte/easing';
   import { fly } from 'svelte/transition';
+  import { buttonClass } from '#lib/ui/button.ts';
 </script>
 
 <section
@@ -14,11 +16,12 @@
   <p class="m-1">If the problem persists contact an administrator.</p>
 
   <div class="flex flex-col justify-between mt-5">
-    <a class="btn preset-filled-primary-500 m-1" href={resolve('/login')}
-      >Back to Login <i class="fa-solid fa-arrow-right ml-3"></i></a
+    <Button class="m-1" href={resolve('login')}
+      >Back to Login <i class="fa-solid fa-arrow-right ml-3"></i></Button
     >
+    <!-- A plain link, because Button renders a button when the configured link is empty. -->
     <a
-      class="btn preset-tonal-primary border border-primary-500 m-1"
+      class="{buttonClass('tonal-static')} m-1"
       target="_blank"
       href={config.branding.login.contactLink}
       rel="external">Contact Administrator</a

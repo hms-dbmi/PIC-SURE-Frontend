@@ -5,6 +5,71 @@ import prettier from 'eslint-config-prettier';
 import svelte from 'eslint-plugin-svelte';
 import globals from 'globals';
 
+const skeletonOnlyInUi = {
+  group: ['@skeletonlabs/*'],
+  message: 'Only src/lib/ui/ may import Skeleton; use or add a ui/ primitive.',
+};
+
+const dndKitOnlyInUi = {
+  group: ['@dnd-kit/*'],
+  message: 'Only src/lib/ui/ may import dnd-kit; use or extend ui/sortable.',
+};
+
+// Skeleton class names, with any variant prefixes (hover:, md:dark:, [&:hover]:) and `!`. A lone
+// "card" string is allowed outside class attributes, since it's also a variant name.
+const variantPrefix = String.raw`(\S*:)?!?`;
+const skeletonClassName = String.raw`preset-\S+|btn(-(sm|xs|lg|base|group|icon(-(sm|lg|base))?))?`;
+const cardClassName = 'card(-hover)?';
+const skeletonClass = String.raw`(^|\s)${variantPrefix}(${skeletonClassName})!?(\s|$)`;
+const cardClass = `${variantPrefix}${cardClassName}!?`;
+const cardInClassList = String.raw`(^|\s)${cardClass}\s|\s${cardClass}$`;
+
+// `folder` (under src/lib/) may import only from `allowed` folders, files (another feature's
+// `index.ts`) and packages: no `#lib/` or `$lib/` specifier outside them, and no relative path
+// that climbs out of `folder` (one config per nesting depth, so `../` is allowed exactly as deep
+// as the file sits). Stylesheets are exempt.
+// `pending` maps a file (under src/lib/) to the `#lib/` modules outside `allowed` it still imports,
+// until a later change removes them; nothing new gets added. `extra` maps a file to more
+// restricted-import patterns of its own.
+function importBoundary(folder, allowed, pending = {}, extra = {}) {
+  const isFile = (entry) => entry.endsWith('.ts');
+  const folders = allowed.filter((entry) => !isFile(entry));
+  const files = allowed.filter(isFile);
+  const message = `${folder}/ may import only ${allowed.map((f) => (isFile(f) ? f : `${f}/`)).join(', ')} and packages.`;
+  const rules = (depth, exempt = [], patterns = []) => ({
+    'no-restricted-imports': [
+      'error',
+      {
+        patterns: [
+          {
+            regex: `^[#$]lib/(?!(${folders.join('|')})(/|$)${[...files, ...exempt].map((path) => `|${path.replace(/[.]/g, '\\.')}$`).join('')})`,
+            message,
+          },
+          { regex: `^(\\.\\./){${depth - 1}}\\.\\.(/|$)(?!.*\\.css$)`, message },
+          // A later config's rule replaces an earlier one's, so repeat the ui-only rules here.
+          ...(folder === 'ui' ? [] : [skeletonOnlyInUi, dndKitOnlyInUi]),
+          ...patterns,
+        ],
+      },
+    ],
+  });
+  return [
+    ...[1, 2, 3, 4, 5, 6].map((depth) => ({
+      files: [`src/lib/${folder}/${'*/'.repeat(depth - 1)}*.{ts,svelte}`],
+      ignores: ['**/*.test.ts'],
+      rules: rules(depth),
+    })),
+    ...Object.entries(pending).map(([file, exempt]) => ({
+      files: [`src/lib/${file}`],
+      rules: rules(file.split('/').length - 1, exempt),
+    })),
+    ...Object.entries(extra).map(([file, patterns]) => ({
+      files: [`src/lib/${file}`],
+      rules: rules(file.split('/').length - 1, pending[file], patterns),
+    })),
+  ];
+}
+
 export default [
   {
     linterOptions: {
@@ -68,6 +133,122 @@ export default [
       sourceType: 'commonjs',
     },
   },
+  {
+    // Typed linting is limited to tests to keep the rest of lint fast.
+    files: ['tests/**/*.ts', 'src/**/*.test.ts', 'scripts/**/*.test.ts'],
+    languageOptions: {
+      parser: tsParser,
+      parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },
+    },
+    rules: {
+      '@typescript-eslint/no-floating-promises': 'error',
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "CallExpression[callee.property.name='waitForTimeout']",
+          message:
+            'Wait for a condition (a web-first assertion, expect.poll, waitForRequest) instead of a fixed sleep.',
+        },
+        {
+          // expect(x), expect.soft(x) or expect.poll(fn) used as a statement, with no matcher
+          selector: [
+            "ExpressionStatement > CallExpression[callee.name='expect']",
+            "ExpressionStatement > AwaitExpression > CallExpression[callee.name='expect']",
+            "ExpressionStatement > CallExpression[callee.object.name='expect'][callee.property.name=/^(soft|poll)$/]",
+            "ExpressionStatement > AwaitExpression > CallExpression[callee.object.name='expect'][callee.property.name=/^(soft|poll)$/]",
+          ].join(', '),
+          message: 'expect(...) without a matcher asserts nothing.',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/**/*.{ts,svelte}', 'tests/**/*.ts'],
+    ignores: ['src/lib/ui/**'],
+    rules: {
+      'no-restricted-imports': ['error', { patterns: [skeletonOnlyInUi, dndKitOnlyInUi] }],
+    },
+  },
+  {
+    // Skeleton's class vocabulary stays in ui/ too: call sites use ui/ variant props or the
+    // tables in ui/button.ts and ui/surface.ts. Test files are left out because a second
+    // no-restricted-syntax config would replace theirs.
+    files: ['src/**/*.{ts,svelte}'],
+    ignores: ['src/lib/ui/**', '**/*.test.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: [
+            ...['Literal[value', 'TemplateElement[value.raw', 'SvelteLiteral[value'].flatMap(
+              (node) => [`${node}=/${skeletonClass}/]`, `${node}=/${cardInClassList}/]`],
+            ),
+            `SvelteAttribute[key.name='class'] SvelteLiteral[value=/(^|\\s)${cardClass}(\\s|$)/]`,
+            `SvelteDirective[kind='Class'][key.name.name=/^(${skeletonClassName}|${cardClassName})$/]`,
+          ].join(', '),
+          message:
+            "Skeleton's preset-*, btn and card classes belong in src/lib/ui/; use a ui/ variant prop or ui/button.ts / ui/surface.ts.",
+        },
+      ],
+    },
+  },
+  ...importBoundary('ui', ['ui', 'utils']),
+  ...importBoundary('utils', ['utils']),
+  ...importBoundary('config', ['config', 'api', 'assets', 'ui', 'utils']),
+  ...importBoundary('auth', ['auth', 'api', 'config', 'telemetry', 'ui', 'utils']),
+  // query/ sits below the explorer but still imports its concept lookup, consent rule and explore
+  // mode. Moving them below query/ (or injecting them) is left for after the refactor.
+  ...importBoundary('query', ['query', 'api', 'auth', 'config', 'telemetry', 'ui', 'utils'], {
+    'query/filters.svelte.ts': ['explorer/Dictionary.ts'],
+    'query/counts/providers.ts': ['explorer/mode.ts'],
+    'query/counts/statProviders.ts': ['explorer/Dictionary.ts', 'explorer/mode.ts'],
+  }),
+  ...importBoundary('datasets', [
+    'datasets',
+    'explorer/index.ts',
+    'query',
+    'api',
+    'auth',
+    'config',
+    'telemetry',
+    'ui',
+    'utils',
+  ]),
+  ...importBoundary(
+    'explorer',
+    ['explorer', 'query', 'api', 'assets', 'auth', 'config', 'shell', 'telemetry', 'ui', 'utils'],
+    {},
+    {
+      // The dictionary helpers sit below explorer search; importing it back restores the cycle
+      // that ExplorerSearch removed.
+      'explorer/Dictionary.ts': [
+        {
+          regex: String.raw`(^|/)search\.svelte(\.ts)?$`,
+          message: 'Dictionary.ts must not import explorer search state.',
+        },
+      ],
+    },
+  ),
+  ...importBoundary('admin', [
+    'admin',
+    'query',
+    'api',
+    'auth',
+    'config',
+    'telemetry',
+    'ui',
+    'utils',
+  ]),
+  ...importBoundary('banners', [
+    'banners',
+    'query',
+    'api',
+    'auth',
+    'config',
+    'telemetry',
+    'ui',
+    'utils',
+  ]),
   ...svelte.configs['flat/prettier'],
   {
     files: ['**/*.svelte.js', '**/*.svelte.ts'],

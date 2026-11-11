@@ -3,10 +3,11 @@
 // and what to do when importing types
 declare namespace App {
   // interface Locals {}
-  // interface PageData {}
+  interface PageData {
+    mode?: import('#lib/explorer/mode.ts').ExploreMode;
+  }
   interface Error {
     message: string;
-    errorType?: string;
   }
   // interface Platform {}
 }

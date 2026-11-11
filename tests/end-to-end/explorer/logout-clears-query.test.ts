@@ -8,7 +8,7 @@ import {
   facetsResponse,
   searchResultPath,
   searchResults,
-} from '../mock-data';
+} from '../../support/mock-data';
 
 const filterId = deniedFilterTree.children[0].id;
 
@@ -24,10 +24,10 @@ function storedFilterIds(page: Page) {
 // Clicks that land before Svelte hydration are dropped, so retry until the menu opens
 async function clickLogout(page: Page) {
   await expect(async () => {
-    await page.locator('#user-session-avatar button').first().click();
-    await expect(page.locator('#user-logout-btn')).toBeVisible({ timeout: 2000 });
+    await page.locator('#app-nav-user button').first().click();
+    await expect(page.locator('#app-nav-logout')).toBeVisible({ timeout: 2000 });
   }).toPass({ timeout: 15000 });
-  await page.locator('#user-logout-btn').click();
+  await page.locator('#app-nav-logout').click();
 }
 
 test.describe('Logging out from the menu', () => {
@@ -48,7 +48,7 @@ test.describe('Logging out from the menu', () => {
 
   test('clears the filters so the next login starts without them', async ({ page }) => {
     await page.goto('/explorer');
-    await expect(page.getByTestId(`added-filter-${filterId}`)).toBeVisible();
+    await expect(page.getByTestId(`results-filter-item-${filterId}`)).toBeVisible();
     const token = await page.evaluate(() => localStorage.getItem('token'));
 
     await clickLogout(page);
@@ -61,8 +61,8 @@ test.describe('Logging out from the menu', () => {
     await page.evaluate((token) => localStorage.setItem('token', token ?? ''), token);
     await page.goto('/explorer');
 
-    await expect(page.getByTestId('user-info-btn')).toBeVisible();
-    await expect(page.getByTestId(`added-filter-${filterId}`)).toHaveCount(0);
+    await expect(page.getByTestId('app-nav-user-menu-trigger')).toBeVisible();
+    await expect(page.getByTestId(`results-filter-item-${filterId}`)).toHaveCount(0);
     expect(await storedFilterIds(page)).toEqual([]);
   });
 });

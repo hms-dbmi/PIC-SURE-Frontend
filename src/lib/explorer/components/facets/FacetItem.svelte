@@ -1,0 +1,133 @@
+<script lang="ts">
+  import FacetItem from './FacetItem.svelte';
+  import type { DictionaryFacetResult, Facet } from '#lib/api/picsure/dictionary.types.ts';
+  import { explorerSearch as search, nestedFacetKey } from '#lib/explorer/search.svelte.ts';
+
+  interface Props {
+    facet: Facet;
+    facetCategory: DictionaryFacetResult;
+    textFilterValue: string | undefined;
+  }
+
+  let { facet, facetCategory, textFilterValue }: Props = $props();
+
+  let expansionKey = $derived(nestedFacetKey(facetCategory.name, facet.name));
+  let open = $derived(search.expandedNestedFacets.includes(expansionKey));
+
+  function getCurrentlySelectedChildren() {
+    return (
+      facet.children?.filter((child) => search.selectedFacets.some((f) => f.name === child.name)) ??
+      []
+    );
+  }
+
+  function onClick(event: MouseEvent) {
+    if (facet?.children && facet?.children?.length > 0) {
+      if (checkedState(facet.name) === 'indeterminate') {
+        // Clearing children leaves checked false, so cancel the browser's toggle to true.
+        event.preventDefault();
+        search.toggleFacets(getCurrentlySelectedChildren());
+      } else {
+        search.toggleFacets(facet.children);
+      }
+    } else {
+      search.toggleFacets([facet]);
+    }
+  }
+
+  let checkedState = $derived((facetToCheck: string) => {
+    const atLeastOneChildSelected =
+      facet.children &&
+      facet.children.some((child) => search.selectedFacets.some((f) => f.name === child.name));
+    let isEveryChildSelected = false;
+    if (atLeastOneChildSelected) {
+      isEveryChildSelected =
+        facet.children?.every((child) =>
+          search.selectedFacets.some((f) => f.name === child.name),
+        ) ?? false;
+    }
+    const isIndeterminate = atLeastOneChildSelected && !isEveryChildSelected;
+    const isSelected =
+      search.selectedFacets.some((facet) => facet.name === facetToCheck) || isEveryChildSelected;
+
+    if (isSelected) return 'true';
+    if (isIndeterminate) return 'indeterminate';
+    return 'false';
+  });
+
+  let checked = $derived(checkedState(facet.name) === 'true');
+  function matchesFilter(child: Facet) {
+    const text = textFilterValue?.toLowerCase();
+    return (
+      !text ||
+      child.display.toLowerCase().includes(text) ||
+      child.name.toLowerCase().includes(text) ||
+      child.description?.toLowerCase().includes(text)
+    );
+  }
+  const isSelected = (child: Facet) => search.selectedFacets.some((f) => f.name === child.name);
+  const byCount = (a: Facet, b: Facet) => (b.count || 0) - (a.count || 0);
+  // Selected children first, each part by count
+  let facetsToDisplay = $derived.by(() => {
+    const shown = facet.children?.filter(matchesFilter) ?? [];
+    return [
+      ...shown.filter(isSelected).sort(byCount),
+      ...shown.filter((child) => !isSelected(child)).sort(byCount),
+    ];
+  });
+  const uid = $props.id();
+</script>
+
+<label
+  data-testId={`explorer-facet-label-${facet.name}`}
+  for="{uid}-checkbox"
+  class="flex gap-1 m-1 leading-[normal]"
+>
+  {#if facet?.children !== undefined && facet?.children?.length > 0}
+    <button
+      type="button"
+      class="arrow-button"
+      aria-label="{open ? 'Collapse' : 'Expand'} {facet.display} children"
+      aria-expanded={open}
+      data-testId={`explorer-facet-toggle-${facet.name}`}
+      onclick={() => search.toggleNestedFacet(expansionKey)}
+    >
+      <i class="fa-solid {open ? 'fa-angle-down' : 'fa-angle-right'}"></i>
+    </button>
+  {/if}
+  <input
+    type="checkbox"
+    id="{uid}-checkbox"
+    class={checkedState(facet.name)}
+    name={facet.name}
+    value={facet}
+    {checked}
+    disabled={facet.count === 0 && !checked}
+    aria-checked={checked}
+    onclick={onClick}
+  />
+  <span class:opacity-75={facet.count === 0} class="wrap-anywhere"
+    >{`${facet.display} (${facet.count?.toLocaleString()})`}</span
+  >
+</label>
+{#if open && facetsToDisplay !== undefined && facetsToDisplay?.length > 0}
+  <div class="flex flex-col ml-8" data-testId={`explorer-facet-children-${facet.name}`}>
+    {#each facetsToDisplay as child (child.name)}
+      <FacetItem facet={child} {facetCategory} {textFilterValue} />
+    {/each}
+  </div>
+{/if}
+
+<style lang="postcss">
+  input.indeterminate {
+    background-image: url('../../../assets/dash.svg');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-color: var(--color-primary-500);
+  }
+
+  .arrow-button {
+    background-color: transparent;
+  }
+</style>

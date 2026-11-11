@@ -1,15 +1,14 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
   import { onMount } from 'svelte';
-  import { Toaster } from '@skeletonlabs/skeleton-svelte';
-  import { toaster } from '$lib/toaster';
+  import Toaster from '#lib/ui/Toaster.svelte';
 
-  import { user } from '$lib/stores/User';
+  import { session } from '#lib/auth/session.svelte.ts';
   import { goto } from '$app/navigation';
 
-  import Footer from '$lib/components/Footer.svelte';
-  import Dots from '$lib/components/Dots.svelte';
-  import SiteBannerRegion from '$lib/components/banner/SiteBannerRegion.svelte';
+  import Footer from '#lib/shell/Footer.svelte';
+  import Dots from './Dots.svelte';
+  import SiteBannerRegion from '#lib/banners/components/SiteBannerRegion.svelte';
 
   interface Props {
     children?: import('svelte').Snippet;
@@ -18,13 +17,14 @@
   let { children }: Props = $props();
 
   onMount(() => {
-    if ($user && $user.token) {
-      goto(resolve('/'));
+    // An expired session stays, so the login page can end it.
+    if (session.hasValidToken && session.user.token) {
+      goto(resolve(''));
     }
   });
 </script>
 
-<Toaster {toaster} />
+<Toaster />
 <div class="h-full w-full overflow-y-auto flex flex-col">
   <SiteBannerRegion />
   <div class="relative flex-auto pb-14">

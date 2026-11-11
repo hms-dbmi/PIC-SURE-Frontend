@@ -1,26 +1,30 @@
 <script lang="ts">
+  import Button from '#lib/ui/Button.svelte';
   import { resolve } from '$app/paths';
-  import { config } from '$lib/configuration.svelte';
+  import { appPath } from '#lib/utils/appPath.ts';
+  import { config } from '#lib/config/config.svelte.ts';
   import { goto } from '$app/navigation';
-  import Searchbox from '$lib/components/Searchbox.svelte';
-  import Stats from '$lib/components/landing/Stats.svelte';
-  import { isUserLoggedIn } from '$lib/stores/User';
-  import { log, createLog } from '$lib/logger';
+  import Searchbox from '#lib/ui/Searchbox.svelte';
+  import Stats from './Stats.svelte';
+  import { session } from '#lib/auth/session.svelte.ts';
+  import { log, createLog } from '#lib/telemetry/logger.ts';
 
   let searchTerm = $state('');
 
   function search() {
     log(createLog('SEARCH', 'landing.search', { term: searchTerm }));
-    if (config.features.login.open && config.features.discover && !isUserLoggedIn()) {
-      goto(resolve(`/discover?search=${encodeURIComponent(searchTerm)}`));
+    if (config.features.login.open && config.features.discover && !session.isLoggedIn) {
+      goto(resolve(`discover?search=${encodeURIComponent(searchTerm)}`));
     } else {
-      goto(resolve(`/explorer?search=${encodeURIComponent(searchTerm)}`));
+      goto(resolve(`explorer?search=${encodeURIComponent(searchTerm)}`));
     }
   }
 
+  const actionWidths: Record<number, string> = { 2: 'w-1/2', 3: 'w-1/3', 4: 'w-1/4' };
+
   const actionsToDisplay = $derived(
     config.branding.landing.actions.filter((action) => {
-      if (isUserLoggedIn()) {
+      if (session.isLoggedIn) {
         return action.showIfLoggedIn;
       } else {
         return action.isOpen || !action.showIfLoggedIn;
@@ -34,36 +38,24 @@
 </svelte:head>
 
 <div
-  id="landing"
+  id="landing-page"
   class="flex flex-wrap flex-col justify-evenly text-center items-center w-full h-full mt-8"
 >
-  <section id="search-section" class="flex flex-col text-center items-center my-auto w-2/3">
+  <section id="landing-search" class="flex flex-col text-center items-center my-auto w-2/3">
     <Searchbox placeholder={config.branding.landing.searchPlaceholder} bind:searchTerm {search} />
   </section>
-  <section id="actions-section" class="flex flex-row justify-evenly items-center mb-auto w-2/3">
-    {#each actionsToDisplay as { title, description, icon, url, btnText }}
-      <div class="flex flex-col items-center w-1/{actionsToDisplay?.length || 3}">
+  <section id="landing-actions" class="flex flex-row justify-evenly items-center mb-auto w-2/3">
+    {#each actionsToDisplay as { title, description, icon, url, btnText }, i}
+      <div class="flex flex-col items-center {actionWidths[actionsToDisplay.length] ?? ''}">
         <div class="text-3xl my-1">{title}</div>
         <i class="text-[5rem] my-3 text-secondary-600-400 {icon}"></i>
         <div class="subtitle my-3">{description}</div>
-        {#if url.startsWith('/')}
-          <a
-            data-testid="landing-action-{title}-btn"
-            href={resolve(url as '/')}
-            class="btn preset-filled-primary-500"
-            onclick={() => log(createLog('NAVIGATION', 'landing.action_click', { title, url }))}
-            >{btnText}</a
-          >
-        {:else}
-          <a
-            data-testid="landing-action-{title}-btn"
-            href={url}
-            rel="external"
-            class="btn preset-filled-primary-500"
-            onclick={() => log(createLog('NAVIGATION', 'landing.action_click', { title, url }))}
-            >{btnText}</a
-          >
-        {/if}
+        <Button
+          data-testid="landing-action-{i}"
+          href={url.startsWith('/') ? resolve(appPath(url)) : url}
+          onclick={() => log(createLog('NAVIGATION', 'landing.action_click', { title, url }))}
+          >{btnText}</Button
+        >
       </div>
     {/each}
   </section>

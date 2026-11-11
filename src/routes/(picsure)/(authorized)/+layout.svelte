@@ -1,24 +1,23 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
+  import { appPath } from '#lib/utils/appPath.ts';
   import type { Snippet } from 'svelte';
   import { beforeNavigate, goto } from '$app/navigation';
-  import { clearSession, isTokenExpired } from '$lib/stores/User';
-  import { loginRedirectPath } from '$lib/utilities/LoginRedirect';
-  import { log, createLog } from '$lib/logger';
+  import { session } from '#lib/auth/session.svelte.ts';
+  import { loginRedirectPath } from '#lib/auth/loginRedirect.ts';
 
   let { children }: { children?: Snippet } = $props();
 
-  // The +layout.ts load function checks token expiry on initial navigation, but SvelteKit
-  // won't re-run it when navigating to the same URL (e.g. clicking "Explorer" while already
-  // on /explorer). beforeNavigate fires on every navigation attempt, catching that gap.
+  // The guards check token expiry when a load runs, but SvelteKit doesn't re-run them when
+  // navigating to the same URL (e.g. clicking "Explorer" while already on /explorer).
+  // beforeNavigate fires on every navigation attempt, catching that gap. The login page ends the
+  // session and logs it, as it does for the guards.
   beforeNavigate(({ to, cancel }) => {
-    if (to && to.url.origin !== location.origin) return;
-    const token = localStorage.getItem('token');
-    if (token && isTokenExpired(token)) {
+    if (!to || to.url.origin !== location.origin) return;
+    if (to.route.id?.startsWith('/(authentication)/')) return;
+    if (session.isLoggedIn && !session.hasValidToken) {
       cancel();
-      log(createLog('AUTH', 'auth.redirect_token_expired', { targetUrl: to?.url.pathname }));
-      clearSession();
-      goto(resolve(loginRedirectPath(to?.url ?? { pathname: '/', search: '' }) as '/'));
+      goto(resolve(appPath(loginRedirectPath(to.url, 'expired'))));
     }
   });
 </script>

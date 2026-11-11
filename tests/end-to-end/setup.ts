@@ -1,5 +1,5 @@
-import { picsureUser, mockToken, userTypes } from './mock-data';
-import { test, mockApiSuccess, mockApiConfig } from './custom-context';
+import { picsureUser, userTypes } from '../support/mock-data';
+import { test, mockApiSuccess, mockApiConfig, auth0Callback } from './custom-context';
 
 // Creates authenticated user contexts for tests using method noted at
 // https://playwright.dev/docs/auth
@@ -20,14 +20,11 @@ Object.entries(userTypes).forEach(async ([user, userVariation]) => {
 
     // We must accept the Google consent dialog before we can interact with some elements in the page.
     await page.goto('/');
-    await page.waitForSelector('[data-testid="consentModal"]');
-    const acceptConsentButton = page.getByTestId('acceptGoogleConsent');
+    await page.waitForSelector('[data-testid="app-consent-modal"]');
+    const acceptConsentButton = page.getByTestId('app-consent-accept');
     await acceptConsentButton.click();
 
-    const mockLoginResponse =
-      '/login/loading/#access_token=' +
-      mockToken +
-      '&scope=openid%20profile%20email&expires_in=86400&token_type=Bearer&state=mNK7oJ5SLputhCuYrXYh5n4xEVQXhz6G';
+    const mockLoginResponse = await auth0Callback(page);
 
     await mockApiSuccess(page, '*/**/psama/authentication', userData);
     await mockApiSuccess(page, '*/**/psama/authentication/auth0', userData);
@@ -53,12 +50,12 @@ Object.entries(userTypes).forEach(async ([user, userVariation]) => {
 
 test('unauthenticated user', async ({ page }) => {
   await page.goto('/');
-  await page.waitForSelector('[data-testid="consentModal"]');
-  const acceptConsentButton = page.getByTestId('acceptGoogleConsent');
+  await page.waitForSelector('[data-testid="app-consent-modal"]');
+  const acceptConsentButton = page.getByTestId('app-consent-accept');
   await acceptConsentButton.click();
 
   // Unauthenticated users are redirected to /login; accepting consent doesn't navigate away.
-  await page.waitForURL('/login');
+  await page.waitForURL((url) => url.pathname === '/login');
 
   await page.evaluate(() => {
     const user = sessionStorage.getItem('user');

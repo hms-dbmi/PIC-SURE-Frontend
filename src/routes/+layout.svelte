@@ -1,24 +1,32 @@
 <script lang="ts">
   import { onMount, type Snippet } from 'svelte';
-  import { afterNavigate } from '$app/navigation';
+  import { afterNavigate, beforeNavigate } from '$app/navigation';
   import { asset } from '$app/paths';
+  import type { AssetPath } from '$app/types';
   import '@fortawesome/fontawesome-free/css/all.min.css';
   import '../styles/app.css';
-  import { config } from '$lib/configuration.svelte';
-  import GoogleTracking from '$lib/components/tracking/GoogleTracking.svelte';
-  import ExternalLinkWarning from '$lib/components/ExternalLinkWarning.svelte';
-  import { log, createLog, isHashOnlyGoto } from '$lib/logger';
-  import { resumeAfterWafCaptcha } from '$lib/wafCaptcha';
+  import { config } from '#lib/config/config.svelte.ts';
+  import GoogleTracking from '#lib/shell/GoogleTracking.svelte';
+  import ExternalLinkWarning from '#lib/shell/ExternalLinkWarning.svelte';
+  import TermsDialog from '#lib/shell/TermsDialog.svelte';
+  import { handleAccessReason } from '#lib/auth/accessReason.ts';
+  import { log, createLog, isHashOnlyGoto } from '#lib/telemetry/logger.ts';
+  import { resumeAfterWafCaptcha } from '#lib/api/wafCaptcha.ts';
 
   let { children }: { children?: Snippet } = $props();
 
   onMount(() => {
     if (config.features.wafCaptchaRecovery) resumeAfterWafCaptcha();
+    // The e2e fixture waits for this marker after each page load, so its clicks can't land
+    // before hydration.
+    document.documentElement.dataset.hydrated = '';
   });
 
   let theme = $derived(config.branding.theme);
   let favicon = $derived(
-    ['aim-ahead', 'bdc', 'picsure'].includes(theme) ? `/${theme}-favicon.png` : '/favicon.png',
+    (['aim-ahead', 'bdc', 'picsure'].includes(theme)
+      ? `${theme}-favicon.png`
+      : 'favicon.png') as AssetPath,
   );
 
   // theme.css tokens live under [data-theme='...'], but toasts/modals/drawers are
@@ -27,6 +35,14 @@
   // defaults regardless of what <main> carries for its own (SSR-safe) content.
   $effect(() => {
     document.documentElement.dataset.theme = theme;
+  });
+
+  // Where the current navigation set out for. SvelteKit doesn't run beforeNavigate for a guard's
+  // redirect, so a Back or Forward that lands somewhere else was redirected by a guard, and its
+  // reason is new; one that lands where it set out is a history step onto a URL handled before.
+  let requested: string | undefined;
+  beforeNavigate(({ to }) => {
+    requested = to?.url.href;
   });
 
   afterNavigate(({ from, to, type }) => {
@@ -38,6 +54,7 @@
         type,
       }),
     );
+    if (to && (type !== 'popstate' || to.url.href !== requested)) handleAccessReason(to.url);
   });
 </script>
 
@@ -47,6 +64,7 @@
 
 <main class="w-full h-full" data-theme={theme}>
   {@render children?.()}
+  <TermsDialog />
   <GoogleTracking />
   {#if config.features.confirmExternalNavigation}
     <ExternalLinkWarning />

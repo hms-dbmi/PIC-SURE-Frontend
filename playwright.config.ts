@@ -11,14 +11,19 @@ import path from 'path';
 dotenv.config({ path: path.resolve('.env.test'), quiet: true });
 const isUI = process.argv.includes('--ui');
 const isDebug = !!process.env.PLAYWRIGHT_DEV || process.argv.includes('--debug');
+// Each worktree running e2e at the same time needs its own port: reuseExistingServer
+// would otherwise quietly test whichever checkout's server already holds 4173.
+const port = Number(process.env.E2E_PORT || 4173);
+if (!Number.isInteger(port) || port < 1 || port > 65535)
+  throw new Error(`E2E_PORT must be a port number, got ${process.env.E2E_PORT}`);
 
 const config: PlaywrightTestConfig = {
   webServer: {
     command:
       isUI && isDebug
-        ? 'npm run dev -- --port 4173 --mode test'
-        : 'npm run build -- --mode test && npm run preview -- --mode test',
-    port: 4173,
+        ? `npm run dev -- --port ${port} --strictPort --mode test`
+        : `npm run build -- --mode test && npm run preview -- --port ${port} --strictPort --mode test`,
+    port,
     reuseExistingServer: !process.env.CI,
     stdout: process.env.WEBSERVER_LOG_STDERR === 'ignore' ? 'ignore' : 'pipe',
     stderr: process.env.WEBSERVER_LOG_STDERR === 'ignore' ? 'ignore' : 'pipe',
@@ -34,6 +39,7 @@ const config: PlaywrightTestConfig = {
   reporter: [['list'], ['html']],
   retries: 3,
   fullyParallel: true,
+  use: { baseURL: `http://localhost:${port}` },
   projects: [
     {
       name: 'setup',
