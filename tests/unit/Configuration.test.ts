@@ -390,6 +390,17 @@ describe('mapBranding', () => {
   });
 });
 
+describe('mapSettings - assistedSearch.privileges', () => {
+  it('is empty by default, meaning no selected group', () => {
+    expect(mapSettings([]).assistedSearch.privileges).toEqual([]);
+  });
+
+  it('splits and trims a comma-separated list, dropping blanks', () => {
+    const settings = mapSettings([apiRow('ASSISTED_SEARCH_PRIVILEGES', ' AI_PILOT, ,ADMIN ')]);
+    expect(settings.assistedSearch.privileges).toEqual(['AI_PILOT', 'ADMIN']);
+  });
+});
+
 describe('mapSettings - exportSystemFields', () => {
   it('parses comma-separated fields into concept paths with slash wrappers', () => {
     const settings = mapSettings([

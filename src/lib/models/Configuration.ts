@@ -42,6 +42,10 @@ export type Features = Indexable & {
 };
 
 export type Settings = Indexable & {
+  assistedSearch: {
+    /** Privileges that make up the selected user group; empty means every user. */
+    privileges: string[];
+  };
   distributionExplorer: {
     graphColors: string[];
   };
@@ -545,6 +549,17 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
         'System fields to bypass dictionary lookup on dataset view and restore. (Loads from dictionary/concepts/detail/{conceptPathDataset} otherwise.)',
     },
 
+    // --- Assisted Search --- (joined by ENABLE_ASSISTED_SEARCH and
+    // ENABLE_ASSISTED_SEARCH_DISCOVER from features, once features+settings are merged in the
+    // admin UI)
+    ASSISTED_SEARCH_PRIVILEGES: {
+      group: 'Assisted Search',
+      type: 'string',
+      default: '',
+      description:
+        'Comma-separated privilege names that make up the selected user group for the assistant. When set, the chat is shown only to users holding at least one of them (super admins always see it), so it stays hidden on Discover for users who are not logged in. Blank shows it to everyone the page flag allows.',
+    },
+
     // --- Export ---
     MAX_DATA_POINTS_FOR_EXPORT: {
       group: 'Export',
@@ -768,6 +783,13 @@ function asFieldList(list: string): string[] {
 export function mapSettings(apiSettings: ConfigObject[]): Settings {
   const parse = parsersFor('settings', resolveConfigMap(apiSettings));
   return {
+    assistedSearch: {
+      privileges: parse
+        .asString('ASSISTED_SEARCH_PRIVILEGES')
+        .split(',')
+        .map((p) => p.trim())
+        .filter(Boolean),
+    },
     distributionExplorer: {
       graphColors: parse.asJson('DIST_EXPLORER_GRAPH_COLORS') as string[],
     },

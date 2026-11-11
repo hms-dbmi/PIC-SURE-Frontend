@@ -27,7 +27,19 @@ export type ChatDeps = {
   maxPolls?: number;
 };
 
-const FALLBACK_ERROR = 'The assistant could not answer that. Please try again.';
+// Recovery is automatic (the stored reply is fetched by requestId), so there is no retry button;
+// what is left to the researcher is sending the message again.
+export const FALLBACK_ERROR =
+  'Sorry, the assistant could not answer that. You can send your message again, or put it another way.';
+export const TIMEOUT_ERROR =
+  'Sorry, the assistant took too long to answer. You can send your message again, or come back to it later.';
+
+/** Raised when the stored reply never turned up within the polling budget. */
+class TurnTimedOut extends Error {
+  constructor() {
+    super(TIMEOUT_ERROR);
+  }
+}
 
 const statusOf = (e: unknown) => (e as { status?: number } | undefined)?.status;
 
@@ -77,6 +89,8 @@ const sleep = (ms: number, signal: AbortSignal) =>
 export class ChatSession {
   messages = $state<ChatMessage[]>([]);
   pending = $state(false);
+  /** The turn's own request gave up and the stored reply is being fetched by its requestId. */
+  recovering = $state(false);
   open = $state(false);
   /** The compact panel's transcript is short; expanded it takes most of the viewport. */
   tall = $state(false);
@@ -202,6 +216,7 @@ export class ChatSession {
     this.stop();
     // The aborted turn's cleanup runs later; don't make the next message wait for it.
     this.pending = false;
+    this.recovering = false;
     this.messages = [];
     this.#conversationId = null;
     this.#persist();
@@ -227,13 +242,16 @@ export class ChatSession {
         if (sent) sent.stopped = true;
         this.#deps.log?.('chat.stop', { requestId });
       } else {
-        this.#deps.log?.('chat.error', { requestId, status: statusOf(e) });
-        this.messages.push({ id: requestId, role: 'assistant', text: messageOf(e), failed: true });
+        const timedOut = e instanceof TurnTimedOut;
+        this.#deps.log?.('chat.error', { requestId, status: statusOf(e), timedOut });
+        const text = timedOut ? TIMEOUT_ERROR : messageOf(e);
+        this.messages.push({ id: requestId, role: 'assistant', text, failed: true });
       }
     } finally {
       // After a reset a newer turn may own these.
       if (this.#controller === controller) {
         this.pending = false;
+        this.recovering = false;
         this.#controller = undefined;
       }
       this.#persist();
@@ -312,6 +330,7 @@ export class ChatSession {
 
   async #recover(requestId: string, signal: AbortSignal): Promise<ChatResponse> {
     const { pollMs = 2_000, maxPolls = 30 } = this.#deps;
+    this.recovering = true;
     for (let i = 0; i < maxPolls; i++) {
       await sleep(pollMs, signal);
       try {
@@ -322,6 +341,6 @@ export class ChatSession {
         if (signal.aborted || !isTransient(e)) throw e;
       }
     }
-    throw new Error(FALLBACK_ERROR);
+    throw new TurnTimedOut();
   }
 }

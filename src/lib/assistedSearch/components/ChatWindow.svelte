@@ -16,6 +16,15 @@
     { afterMs: 7000, text: 'Hang tight…' },
   ];
 
+  // Shown once the request itself has given up and the stored answer is being checked for; no
+  // action is needed from the researcher, so none is offered.
+  const RECOVERING_MESSAGES: TimedMessage[] = [
+    {
+      afterMs: 0,
+      text: 'This is taking longer than usual. The answer will show here when it is ready…',
+    },
+  ];
+
   const SUGGESTIONS = [
     'Which studies measure blood pressure?',
     'Find variables about smoking',
@@ -114,7 +123,10 @@
     {/each}
     {#if session.pending}
       <div class="mt-2 text-sm text-surface-600-400" data-testid="chat-thinking">
-        <TimedLoading size="micro" messages={LOADING_MESSAGES} />
+        <TimedLoading
+          size="micro"
+          messages={session.recovering ? RECOVERING_MESSAGES : LOADING_MESSAGES}
+        />
       </div>
     {/if}
   </div>

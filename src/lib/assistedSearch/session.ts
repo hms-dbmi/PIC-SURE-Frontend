@@ -1,4 +1,5 @@
 import { createLog, log } from '$lib/logger';
+import { onResetSearch } from '$lib/stores/Search';
 import { user } from '$lib/stores/User';
 import { genericUUID } from '$lib/utilities/UUID';
 
@@ -18,6 +19,10 @@ export const chat = new ChatSession({
   watch: watchScreen,
   store: { load: loadSavedChat, save: saveChat, clear: clearSavedChat },
 });
+
+// Reset starts a new search, and the conversation was about the old one. It stops any turn still
+// being answered; whether the panel is open is left as it is.
+onResetSearch(() => chat.reset());
 
 // When the session is cleared on logout the thread must go too, from memory as well as storage,
 // or the next persist writes it back for whoever logs in next.

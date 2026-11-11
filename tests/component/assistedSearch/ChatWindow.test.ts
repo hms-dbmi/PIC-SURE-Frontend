@@ -151,6 +151,43 @@ describe('ChatMessage', () => {
     expect(screen.queryByTestId('chat-copy')).toBeNull();
   });
 
+  it('offers no retry control on a failed reply', () => {
+    render(ChatMessage, {
+      message: { id: '1', role: 'assistant', text: 'It broke', failed: true },
+    });
+    expect(screen.queryByRole('button', { name: /retry|try again/i })).toBeNull();
+  });
+
+  it('says it is still waiting while the stored reply is fetched, then shows it', async () => {
+    let found!: (r: ChatResponse) => void;
+    const fetchResult = vi.fn(() => new Promise<ChatResponse>((r) => (found = r)));
+    const chat = new ChatSession({
+      readScreen: emptyScreen,
+      applyScreen: async () => {},
+      send: vi.fn(async () => {
+        throw new TypeError('Failed to fetch');
+      }),
+      fetchResult,
+      newId: () => 'id',
+      pollMs: 1,
+    });
+    render(ChatWindow, { session: chat });
+
+    const sent = chat.send('slow');
+    await waitFor(() =>
+      expect(screen.getByTestId('chat-thinking')).toHaveTextContent('taking longer than usual'),
+    );
+    expect(screen.queryByRole('button', { name: /retry|try again/i })).toBeNull();
+
+    await waitFor(() => expect(fetchResult).toHaveBeenCalled());
+    found({ response: 'Here it is.' });
+    await sent;
+    await waitFor(() =>
+      expect(screen.getByTestId('chat-message-text')).toHaveTextContent('Here it is.'),
+    );
+    expect(screen.queryByTestId('chat-thinking')).toBeNull();
+  });
+
   it('says when proposed changes could not be applied', () => {
     render(ChatMessage, {
       message: { id: '1', role: 'assistant', text: 'Here you go', applyFailed: true },

@@ -272,8 +272,19 @@ export async function updateFacets(facetsToUpdate: Facet[]) {
   selectedFacets.set(currentFacets.sort((a, b) => b.count - a.count));
 }
 
+// Lets a feature that belongs to the search, like the assistant's conversation, start over with
+// it, without this store importing that feature (which itself reads and writes these stores).
+const resetListeners = new Set<() => void>();
+
+/** Runs `listener` on every resetSearch(); returns the unsubscribe. */
+export function onResetSearch(listener: () => void): () => void {
+  resetListeners.add(listener);
+  return () => resetListeners.delete(listener);
+}
+
 export function resetSearch() {
   log(createLog('SEARCH', 'search.reset', { pageContext: getPageContext() }));
+  resetListeners.forEach((listener) => listener());
   isResetting = true;
   searchTerm.set('');
   selectedFacets.set([]);

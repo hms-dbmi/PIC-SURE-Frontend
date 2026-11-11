@@ -59,6 +59,8 @@ import {
   loading,
   nextSearchSettled,
   updateFacets,
+  resetSearch,
+  onResetSearch,
 } from '$lib/stores/Search';
 
 type LoadCallback = (state: State) => Promise<SearchResult[] | undefined>;
@@ -686,5 +688,21 @@ describe('nextSearchSettled', () => {
     release();
 
     await expect(settled).resolves.toBe('cancelled');
+  });
+});
+
+describe('onResetSearch', () => {
+  it('runs each listener on reset until it unsubscribes', () => {
+    const listener = vi.fn();
+    const stop = onResetSearch(listener);
+    searchTerm.set('age');
+
+    resetSearch();
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(get(searchTerm)).toBe('');
+
+    stop();
+    resetSearch();
+    expect(listener).toHaveBeenCalledTimes(1);
   });
 });

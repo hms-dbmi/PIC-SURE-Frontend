@@ -225,9 +225,7 @@ test.describe('Assisted search', () => {
     await expect(reply).not.toContainText('errorType');
   });
 
-  test('a refresh keeps the conversation, and resetting the search does not end it', async ({
-    page,
-  }) => {
+  test('a refresh keeps the conversation, and resetting the search ends it', async ({ page }) => {
     const conversations: string[] = [];
     await page.route(chatPath, async (route) => {
       conversations.push(route.request().postDataJSON().conversationId);
@@ -251,14 +249,84 @@ test.describe('Assisted search', () => {
 
     await page.getByLabel('You are on the reset button').click();
     await expect(page.getByTestId('search-box')).toHaveValue('');
-    await expect(page.getByTestId('chat-message-user')).toHaveCount(2);
+    await expect(page.getByTestId('chat-message-user')).toHaveCount(0);
+    await expect(page.getByTestId('chat-message-assistant')).toHaveCount(0);
+    // Reset starts the conversation over but leaves the panel showing.
+    await expect(page.getByTestId('chat-window')).toBeVisible();
 
     await page.reload();
     await userIsLoggedIn(page);
-    await expect(page.getByTestId('chat-message-user')).toHaveCount(2);
+    await expect(page.getByTestId('chat-window')).toBeVisible();
+    await expect(page.getByTestId('chat-message-user')).toHaveCount(0);
     await ask(page, 'third question');
-    await expect(page.getByTestId('chat-message-text')).toHaveCount(3);
-    expect(conversations[2]).toBe(conversations[0]);
+    await expect(page.getByTestId('chat-message-text')).toHaveCount(1);
+    expect(conversations[2]).not.toBe(conversations[0]);
+  });
+
+  test('Reset stops a reply that is still pending and clears it', async ({ page }) => {
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => (release = resolve));
+    await page.route(chatPath, async (route) => {
+      await held;
+      await route.fulfill({ json: { response: 'Too late.', search: 'late' } }).catch(() => {});
+    });
+    await openChat(page);
+    await page.getByTestId('search-box').fill('age');
+    await page.getByTestId('search-box').press('Enter');
+    await ask(page, 'slow question');
+    await expect(page.getByTestId('chat-stop')).toBeVisible();
+
+    await page.getByLabel('You are on the reset button').click();
+    await expect(page.getByTestId('chat-stop')).toHaveCount(0);
+    await expect(page.getByTestId('chat-thinking')).toHaveCount(0);
+    await expect(page.getByTestId('chat-message-user')).toHaveCount(0);
+
+    release();
+    await expect(page.getByTestId('chat-message-text')).toHaveCount(0);
+    await expect(page.getByTestId('search-box')).toHaveValue('');
+  });
+
+  test('closing, reopening, expanding and collapsing keep the conversation', async ({ page }) => {
+    const conversations: string[] = [];
+    await page.route(chatPath, async (route) => {
+      conversations.push(route.request().postDataJSON().conversationId);
+      await route.fulfill({ json: { response: `Answer ${conversations.length}` } });
+    });
+    await openChat(page);
+    await ask(page, 'first question');
+    await expect(page.getByTestId('chat-message-text')).toHaveText('Answer 1');
+
+    await page.getByTestId('chat-expand').click();
+    await page.getByTestId('chat-expand').click();
+    await expect(page.getByTestId('chat-message-user')).toHaveText('first question');
+
+    await page.getByTestId('chat-close').click();
+    await expect(page.getByTestId('chat-window')).toHaveCount(0);
+    await page.getByTestId('chat-toggle').click();
+    await expect(page.getByTestId('chat-message-user')).toHaveText('first question');
+
+    await page.getByTestId('chat-toggle').click();
+    await page.getByTestId('chat-toggle').click();
+    await expect(page.getByTestId('chat-message-text')).toHaveText('Answer 1');
+
+    await ask(page, 'second question');
+    await expect(page.getByTestId('chat-message-text')).toHaveCount(2);
+    expect(conversations[1]).toBe(conversations[0]);
+  });
+
+  test('a failure with no message from the service says so plainly, with no retry button', async ({
+    page,
+  }) => {
+    await page.route(chatPath, (route) => route.fulfill({ status: 500, body: '' }));
+    await openChat(page);
+    await ask(page, 'hello');
+
+    await expect(page.getByTestId('chat-message-text')).toHaveText(
+      'Sorry, the assistant could not answer that. You can send your message again, or put it another way.',
+    );
+    await expect(page.getByTestId('chat-stop')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /retry|try again/i })).toHaveCount(0);
+    await expect(page.getByTestId('chat-input')).toBeEditable();
   });
 
   test.describe('Clear all filters', () => {
@@ -382,6 +450,28 @@ test.describe('Assisted search', () => {
     await expect(page.locator('input[type="checkbox"]:checked')).toHaveCount(0);
   });
 
+  test('is hidden from a user outside the selected group', async ({ page }) => {
+    await mockApiConfig(page, {
+      features: [{ name: 'ENABLE_ASSISTED_SEARCH', value: 'true' }],
+      settings: [{ name: 'ASSISTED_SEARCH_PRIVILEGES', value: 'AI_PILOT' }],
+    });
+    await page.goto('/explorer');
+    await userIsLoggedIn(page);
+    await expect(page.getByTestId('search-box')).toBeVisible();
+    await expect(page.getByTestId('chat-toggle')).toHaveCount(0);
+    await expect(page.getByTestId('chat-window')).toHaveCount(0);
+    await expect(page.locator('#assisted-search')).toHaveCount(0);
+  });
+
+  test('shows to a user in the selected group', async ({ page }) => {
+    await mockApiConfig(page, {
+      features: [{ name: 'ENABLE_ASSISTED_SEARCH', value: 'true' }],
+      settings: [{ name: 'ASSISTED_SEARCH_PRIVILEGES', value: 'AI_PILOT, API_ACCESS' }],
+    });
+    await openChat(page);
+    await expect(page.getByTestId('chat-window')).toBeVisible();
+  });
+
   test('is hidden unless the feature is on', async ({ page }) => {
     await mockApiConfig(page, { features: [] });
     await page.goto('/explorer');
@@ -420,6 +510,19 @@ test.describe('Assisted search per page', () => {
     await expect(page.getByTestId('search-box')).toBeVisible();
     await expect(page.getByTestId('chat-toggle')).toHaveCount(0);
     await expect(page.getByTestId('chat-window')).toHaveCount(0);
+  });
+
+  test('a selected group keeps the assistant off Discover for users outside it', async ({
+    page,
+  }) => {
+    await mockApiConfig(page, {
+      features: [...discoverFeatures, { name: 'ENABLE_ASSISTED_SEARCH_DISCOVER', value: 'true' }],
+      settings: [{ name: 'ASSISTED_SEARCH_PRIVILEGES', value: 'AI_PILOT' }],
+    });
+
+    await page.goto('/discover');
+    await expect(page.getByTestId('search-box')).toBeVisible();
+    await expect(page.getByTestId('chat-toggle')).toHaveCount(0);
   });
 
   test('the Explorer flag alone leaves Discover without the assistant', async ({ page }) => {

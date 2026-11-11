@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ChatSession, type ChatDeps } from '$lib/assistedSearch/chat.svelte';
+import {
+  ChatSession,
+  FALLBACK_ERROR,
+  TIMEOUT_ERROR,
+  type ChatDeps,
+} from '$lib/assistedSearch/chat.svelte';
 import type { ChatResponse, SavedChat, ScreenState } from '$lib/assistedSearch/model/types';
 
 const emptyScreen = (): ScreenState => ({
@@ -218,7 +223,44 @@ describe('ChatSession', () => {
       }),
     });
     await chat.send('hello');
-    expect(chat.messages[1]).toMatchObject({ failed: true });
+    expect(chat.messages[1]).toMatchObject({ text: TIMEOUT_ERROR, failed: true });
+    expect(chat.pending).toBe(false);
+    expect(chat.recovering).toBe(false);
+  });
+
+  it('says plainly that it could not answer when a failure carries no message', async () => {
+    const { chat } = setup({
+      send: vi.fn(async () => {
+        throw { status: 500 };
+      }),
+    });
+    await chat.send('hello');
+    expect(chat.messages[1]).toMatchObject({ text: FALLBACK_ERROR, failed: true });
+    expect(chat.pending).toBe(false);
+  });
+
+  it('error messages point to sending again, not to a retry control', () => {
+    for (const text of [FALLBACK_ERROR, TIMEOUT_ERROR]) {
+      expect(text).toMatch(/send your message again/);
+      expect(text).not.toMatch(/retry|try again|click|button/i);
+    }
+  });
+
+  it('marks the turn as recovering only while the stored reply is fetched', async () => {
+    let seen: boolean | undefined;
+    const { chat } = setup({
+      send: vi.fn(async () => {
+        throw new TypeError('Failed to fetch');
+      }),
+      fetchResult: vi.fn(async () => {
+        seen = chat.recovering;
+        return { response: 'recovered' };
+      }),
+    });
+    expect(chat.recovering).toBe(false);
+    await chat.send('hello');
+    expect(seen).toBe(true);
+    expect(chat.recovering).toBe(false);
   });
 
   it('treats a still-running 409 as recoverable but not a 400', async () => {
@@ -270,6 +312,59 @@ describe('ChatSession', () => {
     await sent;
     expect(chat.messages).toHaveLength(1);
     expect(chat.pending).toBe(false);
+  });
+
+  it('reset clears the thread, any error and the pending turn, and stops that turn', async () => {
+    let aborted = false;
+    let calls = 0;
+    const { chat, deps } = setup({
+      send: vi.fn((_request, signal: AbortSignal) => {
+        if (++calls === 1) return Promise.reject({ status: 400, body: { message: 'refused' } });
+        return new Promise<ChatResponse>((_, reject) =>
+          signal.addEventListener('abort', () => {
+            aborted = true;
+            reject(new DOMException('', 'AbortError'));
+          }),
+        );
+      }),
+    });
+    chat.setOpen(true);
+    await chat.send('first');
+    expect(chat.messages[1]).toMatchObject({ failed: true });
+    const pending = chat.send('second');
+    expect(chat.pending).toBe(true);
+
+    chat.reset();
+    expect(aborted).toBe(true);
+    expect(chat.messages).toEqual([]);
+    expect(chat.pending).toBe(false);
+    expect(chat.recovering).toBe(false);
+    expect(chat.open).toBe(true);
+
+    await pending;
+    // The stopped turn leaves nothing behind in the new conversation.
+    expect(chat.messages).toEqual([]);
+    expect(chat.pending).toBe(false);
+    const third = chat.send('third');
+    chat.stop();
+    await third;
+    const ids = vi.mocked(deps.send).mock.calls.map(([r]) => r.conversationId);
+    expect(ids[2]).not.toBe(ids[0]);
+  });
+
+  it('closing or collapsing the panel keeps the conversation', async () => {
+    const { chat, deps } = setup();
+    chat.setOpen(true);
+    await chat.send('one');
+    chat.tall = true;
+    chat.tall = false;
+    chat.setOpen(false);
+    expect(chat.messages).toHaveLength(2);
+    chat.setOpen(true);
+    await chat.send('two');
+    expect(chat.messages).toHaveLength(4);
+    const ids = vi.mocked(deps.send).mock.calls.map(([r]) => r.conversationId);
+    expect(ids[1]).toBe(ids[0]);
   });
 
   it('reset starts a new conversation', async () => {
