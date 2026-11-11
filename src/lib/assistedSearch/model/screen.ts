@@ -4,21 +4,27 @@ const PARTS: ScreenPart[] = ['query', 'facets', 'search'];
 
 // Comparison ignores what the two sides disagree on without meaning to: the UI keeps a `type`
 // discriminator and explicit `not: false`, the service sends neither, and either may carry nulls
-// or leave an empty list out.
-function canonical(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(canonical);
+// or leave an empty list out. `values` are sets of strings, so their order means nothing.
+// The query contract has no field named `type`; only the UI's two clause tags are dropped.
+const CLAUSE_TAGS = ['PhenotypicFilter', 'PhenotypicSubquery'];
+
+function canonical(value: unknown, key?: string): unknown {
+  if (Array.isArray(value)) {
+    const items = value.map((v) => canonical(v));
+    return key === 'values' ? items.sort() : items;
+  }
   if (value && typeof value === 'object') {
     return Object.fromEntries(
       Object.entries(value)
         .filter(
           ([key, v]) =>
-            key !== 'type' &&
+            !(key === 'type' && CLAUSE_TAGS.includes(v as string)) &&
             v !== null &&
             v !== undefined &&
             !(key === 'not' && v === false) &&
             !(Array.isArray(v) && v.length === 0),
         )
-        .map(([key, v]) => [key, canonical(v)])
+        .map(([key, v]) => [key, canonical(v, key)])
         .sort(([a], [b]) => (a as string).localeCompare(b as string)),
     );
   }

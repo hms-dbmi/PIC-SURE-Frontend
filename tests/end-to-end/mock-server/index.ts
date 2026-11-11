@@ -292,7 +292,7 @@ on('DELETE', path(`${Picsure.Configuration.Admin}/:uuid`), ({ params, res }) => 
  *
  * To log in as something other than the default fully-privileged picsureUser - useful for
  * exercising admin-only pages or the "no consents" states locally - pick a persona
- * (admin|super|general|noScope|noTOS) one of two ways:
+ * (admin|super|general|noScope|assistant|noTOS) one of two ways:
  *   - via the MOCK provider: set VITE_AUTH_PROVIDER_MODULE_<name>_PERSONA in .env
  *   - via the localStorage-token shortcut: set MOCK_USER_PERSONA before `npm run mock-api`
  * ------------------------------------------------------------------------------------- */
@@ -302,6 +302,7 @@ const personas: Record<string, unknown> = {
   super: { ...picsureUser, ...userTypes.superUser },
   general: { ...picsureUser, ...userTypes.generalUser },
   noScope: { ...picsureUser, ...userTypes.noScopeUser },
+  assistant: { ...picsureUser, ...userTypes.assistantUser },
   noTOS: { ...picsureUser, ...userTypes.noTOS },
 };
 
@@ -447,7 +448,8 @@ on('PATCH', path(Psama.Users), ({ body, res }) => {
 on('GET', path(Psama.Application), ({ res }) => json(res, state.applications));
 
 /* ---------------------------------------------------------------------------------------
- * Assisted search chat (needs ENABLE_ASSISTED_SEARCH=true, e.g. VITE_ENABLE_ASSISTED_SEARCH)
+ * Assisted search chat (needs ENABLE_ASSISTED_SEARCH=true, e.g. VITE_ENABLE_ASSISTED_SEARCH, and a persona holding an
+ * assisted-search privilege: `assistant`)
  *
  * Replies are canned and picked by whole-word keyword in the message, not by a model, first
  * match wins in this order:

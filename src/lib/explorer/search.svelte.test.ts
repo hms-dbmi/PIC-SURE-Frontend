@@ -690,6 +690,22 @@ describe('immediate supersession on criteria change', () => {
   });
 });
 
+describe('onReset', () => {
+  it('runs each listener on reset until it unsubscribes', () => {
+    const listener = vi.fn();
+    const stop = search.onReset(listener);
+    search.setTerm('age');
+
+    search.reset();
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(search.term).toBe('');
+
+    stop();
+    search.reset();
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('facet failure recovery', () => {
   it('retries facets for unchanged criteria after a facet request fails', async () => {
     search.setTerm('age');

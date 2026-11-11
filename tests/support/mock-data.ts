@@ -358,6 +358,15 @@ export const userTypes = {
       PicsurePrivileges.SUPER,
       PicsurePrivileges.NAMED_DATASET,
       PicsurePrivileges.API_ACCESS,
+      PicsurePrivileges.ASSISTED_SEARCH,
+    ],
+  },
+  assistantUser: {
+    privileges: [
+      PicsurePrivileges.QUERY,
+      PicsurePrivileges.NAMED_DATASET,
+      PicsurePrivileges.API_ACCESS,
+      PicsurePrivileges.ASSISTED_SEARCH,
     ],
   },
   noTOS: { acceptedTOS: false },

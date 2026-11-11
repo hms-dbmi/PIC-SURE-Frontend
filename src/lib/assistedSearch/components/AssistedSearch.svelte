@@ -15,9 +15,9 @@
   The toggle lives in the layout's `{#if}`, not here, so the transition has to be global.
 -->
 <div
-  id="assisted-search"
+  id="explorer-assistant"
   class="flex-none px-6 pt-4 pb-2"
-  data-testid="assisted-search"
+  data-testid="explorer-assistant"
   transition:slide|global={{ duration: reducedMotion ? 0 : 200 }}
 >
   <ChatWindow {session} />

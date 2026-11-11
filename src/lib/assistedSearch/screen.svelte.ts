@@ -7,6 +7,7 @@ import { parseQuery } from '#lib/query/query.ts';
 import { loadQuerySummaryData } from '#lib/query/restore.ts';
 import { getConceptTree } from '#lib/api/picsure/dictionary.ts';
 import { explorerSearch } from '#lib/explorer/search.svelte.ts';
+import { explorerPanel } from '#lib/explorer/panel.svelte.ts';
 import {
   ENSURE_MAX_DEPTH,
   exportState,
@@ -48,6 +49,8 @@ async function queryToState(query: ChatQuery) {
   return () => {
     filterState.restore(tree, genomic);
     exportState.replace(selected.map(mapSearchResultAsExport));
+    // Filters added by hand open the results panel, and so do the assistant's.
+    if (filterState.all.length !== 0) explorerPanel.show();
   };
 }
 

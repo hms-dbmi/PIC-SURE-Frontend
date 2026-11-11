@@ -40,6 +40,26 @@ describe('changedParts', () => {
     expect(changedParts(response as never, screen())).toEqual({});
   });
 
+  it('ignores the order of a filter’s values but not a different value', () => {
+    const withValues = (values: string[]) =>
+      screen({
+        query: {
+          select: [],
+          phenotypicClause: {
+            type: 'PhenotypicFilter',
+            phenotypicFilterType: 'FILTER',
+            conceptPath: '\\ds\\sex\\',
+            values,
+            not: false,
+          },
+          genomicFilters: [],
+        },
+      });
+    const reply = (values: string[]) => ({ response: 'ok', query: withValues(values).query });
+    expect(changedParts(reply(['M', 'F']), withValues(['F', 'M']))).toEqual({});
+    expect(partsOf(changedParts(reply(['M']), withValues(['F', 'M'])))).toEqual(['query']);
+  });
+
   it('keeps only the parts that differ', () => {
     const changes = changedParts(
       {

@@ -40,7 +40,7 @@
 {#if isUser}
   <div
     class="flex justify-end {startsExchange ? 'mt-3.5' : 'mt-0.5'}"
-    data-testid="chat-message-user"
+    data-testid="explorer-assistant-message-user"
   >
     <p
       class="max-w-[70%] whitespace-pre-wrap break-words rounded-[14px_14px_4px_14px] bg-primary-100-900 px-3.5 py-2 leading-snug"
@@ -49,11 +49,11 @@
     </p>
   </div>
 {:else}
-  <div class="group mt-2 max-w-[72ch]" data-testid="chat-message-assistant">
+  <div class="group mt-2 max-w-[72ch]" data-testid="explorer-assistant-message-assistant">
     {#if message.failed}
       <p
         class="rounded-container border border-error-500 bg-error-50 px-3 py-2"
-        data-testid="chat-message-text"
+        data-testid="explorer-assistant-message-text"
       >
         {message.text}
       </p>
@@ -61,7 +61,7 @@
       <div class="flex items-end gap-1">
         <div
           class="chat-markdown min-w-0 break-words rounded-[14px_14px_14px_4px] bg-surface-100-900 leading-relaxed"
-          data-testid="chat-message-text"
+          data-testid="explorer-assistant-message-text"
         >
           <!-- eslint-disable-next-line svelte/no-at-html-tags -- sanitized in renderChatMarkdown -->
           {@html renderChatMarkdown(message.text)}
@@ -73,14 +73,14 @@
             itemToCopy={message.text}
             useIcon
             triggerTitle="Copy this reply"
-            data-testid="chat-copy"
+            data-testid="explorer-assistant-copy"
             oncopy={() => log(createLog('CHAT', 'chat.copy'))}
           />
         </div>
       </div>
     {/if}
     {#if message.applyFailed}
-      <p class="mt-2 text-sm" role="alert">
+      <p class="mt-2 text-sm" data-testid="explorer-assistant-apply-failed">
         The suggested changes could not be put on your screen.
       </p>
     {/if}
@@ -92,15 +92,15 @@
       >
         <span
           class="font-semibold text-primary-600-400 {message.undone ? 'line-through' : ''}"
-          data-testid="chat-changed">{changedText}</span
+          data-testid="explorer-assistant-changed">{changedText}</span
         >
         {#if message.undone}
-          <span class="sr-only" data-testid="chat-undone">Undone</span>
+          <span class="sr-only" data-testid="explorer-assistant-undone">Undone</span>
         {/if}
         <button
           type="button"
-          class="{linkClass} ml-auto"
-          data-testid={message.undone ? 'chat-redo' : 'chat-undo'}
+          class="{linkClass} ml-auto focus-visible:outline-2 focus-visible:outline-primary-500"
+          data-testid={message.undone ? 'explorer-assistant-redo' : 'explorer-assistant-undo'}
           disabled={undoState === 'locked'}
           title={undoState === 'locked' ? 'Disabled after you changed the screen' : undefined}
           onclick={message.undone ? onredo : onundo}>{message.undone ? 'Redo' : 'Undo'}</button

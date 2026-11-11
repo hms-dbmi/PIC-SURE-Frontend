@@ -12,9 +12,9 @@
 <!-- The label never changes, so the search bar beside it never resizes. -->
 <Button
   variant={open ? 'filled-bordered' : 'tonal'}
-  class="w-36"
+  class="w-36 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500"
   aria-pressed={open}
-  data-testid="chat-toggle"
+  data-testid="explorer-assistant-toggle"
   title={open ? 'Hide the search assistant' : 'Ask the search assistant'}
   onclick={ontoggle}
 >

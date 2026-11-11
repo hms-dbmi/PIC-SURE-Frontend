@@ -27,7 +27,7 @@ Search, facets, dictionary concepts/tree/hierarchy, dashboard, saved datasets, q
 execution (cross counts, patient counts, variant export, dataframe export/status/signed-url),
 runtime + admin configuration, audit logging, and the full PSAMA admin surface (roles,
 privileges, connections, users, applications, TOS). Also the assisted-search chat
-(`POST /picsure/ai/chat`, canned keyword replies; set `VITE_ENABLE_ASSISTED_SEARCH=true`).
+(`POST /picsure/ai/chat`, canned keyword replies; set `VITE_ENABLE_ASSISTED_SEARCH=true` and log in as the `assistant` persona, which holds the assisted-search privilege).
 See `index.ts` for the full route table.
 
 Audit-log forwarding (`src/routes/api/v1/log`) targets a gateway sidecar at

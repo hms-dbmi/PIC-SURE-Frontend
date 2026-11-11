@@ -77,6 +77,15 @@ Features and settings are each resolved from up to three layers: hardcoded defau
 
 This system is under active development and subject to change.
 
+### AI-assisted search
+
+The assistant (the chat toggle on Explorer and Discover) shows only when both of these hold, decided by `assistedSearchEnabled()` in `src/lib/assistedSearch/enabled.ts`:
+
+- **The deployment offers it on that page:** the `ENABLE_ASSISTED_SEARCH` feature flag for Explorer, `ENABLE_ASSISTED_SEARCH_DISCOVER` for Discover. Some environments grant the privilege automatically to users but do not want the feature on so this enables or disables that feature in the UI. (The API has it's own gating mechanism.)
+- **The signed-in user holds the `ASSISTED_SEARCH` privilege** (`PicsurePrivileges.ASSISTED_SEARCH`), granted through roles like any other privilege. Currently, a logged-out visitor (open-access) never sees the assistant.
+
+The API enforces the same privilege: `POST /picsure/ai/chat` and `GET /picsure/ai/chat/{requestId}` answer 403 without it, so hiding the toggle is a convenience, not the access check. The backend switch `AI_ENABLED` is separate; when it is off the endpoints answer 404 (see the [ai-service README](../api/services/pic-sure-ai-service/README.md#who-may-use-the-assistant)). To try it locally with the e2e mock server, set `VITE_ENABLE_ASSISTED_SEARCH=true` and log in as the `assistant` persona.
+
 ### Testing configuration
 
 - **e2e (Playwright):** use `mockApiConfig(page, { features, settings, branding })` from `tests/end-to-end/custom-context.ts` to set per-test feature/setting/branding rows. It works by seeding a cookie that `src/routes/+layout.server.ts` reads and applies to that `BrowserContext`'s requests only — real config, real backend calls, and other concurrent tests are unaffected. The override is only honored when the app is built/served with `--mode test` (how Playwright's `webServer` always runs it); it's inert in dev and production builds.

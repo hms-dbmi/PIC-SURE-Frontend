@@ -7,11 +7,12 @@ const CHAT = Picsure.Chat;
 
 // The client rejects a 422 (a reused requestId) with its body on the error, so unwrap it here:
 // the service answers that turn with the reply the first request earned.
-function asResponse(body: unknown): ChatResponse {
+function asResponse(body: unknown, status?: number): ChatResponse {
   if (body && typeof body === 'object' && typeof (body as ChatResponse).response === 'string') {
     return body as ChatResponse;
   }
   throw Object.assign(new Error('Unexpected chat response'), {
+    status,
     body: body && typeof body === 'object' ? body : undefined,
   });
 }
@@ -25,7 +26,7 @@ export async function sendChat(
       await request(CHAT, { method: 'POST', body: chatRequest, auth: 'open', signal }),
     );
   } catch (e) {
-    if (e instanceof ApiError && e.status === 422) return asResponse(e.body);
+    if (e instanceof ApiError && e.status === 422) return asResponse(e.body, e.status);
     throw e;
   }
 }
@@ -42,7 +43,7 @@ export async function fetchChatResult(
     });
     return body ? asResponse(body) : undefined;
   } catch (e) {
-    if (e instanceof ApiError && e.status === 422) return asResponse(e.body);
+    if (e instanceof ApiError && e.status === 422) return asResponse(e.body, e.status);
     throw e;
   }
 }

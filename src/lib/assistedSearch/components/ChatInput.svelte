@@ -9,6 +9,9 @@
 
   let { pending, onsend, onstop }: Props = $props();
 
+  const focusRing =
+    'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500';
+
   let text = $state('');
   let box: HTMLTextAreaElement | undefined = $state();
 
@@ -25,6 +28,14 @@
     if (!message || pending) return;
     onsend(message);
     text = '';
+    // Send disables while the turn runs, which would drop focus to the page.
+    box?.focus();
+  }
+
+  function stop() {
+    onstop();
+    // Stop disappears with the turn; keep the keyboard where the next message is typed.
+    box?.focus();
   }
 
   function onkeydown(e: KeyboardEvent) {
@@ -46,31 +57,36 @@
   <div class="flex items-stretch">
     <textarea
       bind:this={box}
-      class="chat-box w-full"
+      class="chat-box w-full {focusRing}"
       rows="1"
       maxlength="4000"
       placeholder="Ask the assistant…"
       aria-label="Message the search assistant"
-      data-testid="chat-input"
+      aria-describedby="explorer-assistant-input-hint"
+      data-testid="explorer-assistant-input"
       bind:value={text}
       {onkeydown}></textarea>
     {#if pending}
-      <Button variant="tint-error" size="none" class="px-4" data-testid="chat-stop" onclick={onstop}
-        >Cancel</Button
+      <Button
+        variant="tint-error"
+        size="none"
+        class="px-4 {focusRing}"
+        title="Stop waiting for the reply"
+        data-testid="explorer-assistant-stop"
+        onclick={stop}>Stop</Button
       >
     {/if}
     <Button
       type="submit"
-      class="w-32 justify-start chat-button disabled:opacity-50"
-      aria-label="Send"
+      class="w-32 justify-start chat-button disabled:opacity-50 {focusRing}"
       title="Send (Enter)"
-      data-testid="chat-send"
+      data-testid="explorer-assistant-send"
       disabled={pending || !text.trim()}
     >
       <i class="fas fa-paper-plane" aria-hidden="true"></i> Send
     </Button>
   </div>
-  <p class="m-1 text-right text-xs text-surface-600-400">
+  <p id="explorer-assistant-input-hint" class="m-1 text-right text-xs text-surface-600-400">
     Enter to send · Shift+Enter for new line
   </p>
 </form>

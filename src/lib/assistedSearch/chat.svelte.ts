@@ -33,7 +33,19 @@ export type ChatDeps = {
   maxPolls?: number;
 };
 
-const FALLBACK_ERROR = 'The assistant could not answer that. Please try again.';
+// Recovery is automatic (the stored reply is fetched by requestId), so there is no retry button;
+// what is left to the researcher is sending the message again.
+export const FALLBACK_ERROR =
+  'Sorry, the assistant could not answer that. You can send your message again, or put it another way.';
+export const TIMEOUT_ERROR =
+  'Sorry, the assistant took too long to answer. You can send your message again, or come back to it later.';
+
+/** Raised when the stored reply never turned up within the polling budget. */
+class TurnTimedOut extends Error {
+  constructor() {
+    super(TIMEOUT_ERROR);
+  }
+}
 
 const statusOf = (e: unknown) => (e as { status?: number } | undefined)?.status;
 
@@ -47,8 +59,8 @@ const isTransient = (e: unknown) => {
   return [502, 503, 504].includes(status) && !answered;
 };
 
-// api.ts raises an HttpError whose message is the response body as text, and the service's body
-// is JSON, so the text to show is one level down.
+// An ApiError carries the parsed response as `body`, but its `message` may itself be the service's
+// JSON error as text, so the text to show can be one level down.
 function messageOf(e: unknown): string {
   let text = (e as { body?: { message?: unknown } } | undefined)?.body?.message;
   if (typeof text === 'string' && text.trimStart().startsWith('{')) {
@@ -83,6 +95,8 @@ const sleep = (ms: number, signal: AbortSignal) =>
 export class ChatSession {
   messages = $state<ChatMessage[]>([]);
   pending = $state(false);
+  /** The turn's own request gave up and the stored reply is being fetched by its requestId. */
+  recovering = $state(false);
   open = $state(false);
   /** The compact panel's transcript is short; expanded it takes most of the viewport. */
   tall = $state(false);
@@ -208,6 +222,7 @@ export class ChatSession {
     this.stop();
     // The aborted turn's cleanup runs later; don't make the next message wait for it.
     this.pending = false;
+    this.recovering = false;
     this.messages = [];
     this.#conversationId = null;
     this.#persist();
@@ -225,7 +240,11 @@ export class ChatSession {
     this.pending = true;
 
     try {
-      await this.#accept(requestId, await produce(controller.signal), epoch);
+      const response = await produce(controller.signal);
+      // Stop wins over a reply that arrived in the same moment. Once the changes are being applied
+      // it is too late: the screen is set, so the reply is shown with its undo.
+      controller.signal.throwIfAborted();
+      await this.#accept(requestId, response, epoch);
     } catch (e) {
       if (epoch !== this.#epoch) return;
       if (controller.signal.aborted) {
@@ -233,13 +252,16 @@ export class ChatSession {
         if (sent) sent.stopped = true;
         this.#deps.log?.('chat.stop', { requestId });
       } else {
-        this.#deps.log?.('chat.error', { requestId, status: statusOf(e) });
-        this.messages.push({ id: requestId, role: 'assistant', text: messageOf(e), failed: true });
+        const timedOut = e instanceof TurnTimedOut;
+        this.#deps.log?.('chat.error', { requestId, status: statusOf(e), timedOut });
+        const text = timedOut ? TIMEOUT_ERROR : messageOf(e);
+        this.messages.push({ id: requestId, role: 'assistant', text, failed: true });
       }
     } finally {
       // After a reset a newer turn may own these.
       if (this.#controller === controller) {
         this.pending = false;
+        this.recovering = false;
         this.#controller = undefined;
       }
       this.#persist();
@@ -273,7 +295,7 @@ export class ChatSession {
       }
     }
     // A reset while the changes were being applied started a new conversation; this reply is not
-    // part of it.
+    // part of it. The screen change stays, as the researcher's own edits would.
     if (epoch !== this.#epoch) return;
     this.messages.push(reply);
   }
@@ -318,6 +340,7 @@ export class ChatSession {
 
   async #recover(requestId: string, signal: AbortSignal): Promise<ChatResponse> {
     const { pollMs = 2_000, maxPolls = 30 } = this.#deps;
+    this.recovering = true;
     for (let i = 0; i < maxPolls; i++) {
       await sleep(pollMs, signal);
       try {
@@ -328,6 +351,6 @@ export class ChatSession {
         if (signal.aborted || !isTransient(e)) throw e;
       }
     }
-    throw new Error(FALLBACK_ERROR);
+    throw new TurnTimedOut();
   }
 }
