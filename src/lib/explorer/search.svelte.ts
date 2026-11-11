@@ -178,9 +178,22 @@ export class ExplorerSearch {
     this.#expandedNestedFacets = [];
   };
 
+  // Lets a feature that belongs to the search, like the assistant's conversation, start over with
+  // it, without this module importing that feature (which itself reads and writes this state).
+  #resetListeners: (() => void)[] = [];
+
+  /** Runs `listener` on every reset(); returns the unsubscribe. */
+  onReset = (listener: () => void): (() => void) => {
+    this.#resetListeners.push(listener);
+    return () => {
+      this.#resetListeners = this.#resetListeners.filter((l) => l !== listener);
+    };
+  };
+
   reset = () => {
     assertNoSsrWrite('explorerSearch');
     log(createLog('SEARCH', 'search.reset', { pageContext: getPageContext() }));
+    this.#resetListeners.forEach((listener) => listener());
     this.discard();
   };
 

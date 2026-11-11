@@ -49,10 +49,6 @@ export type Features = {
 };
 
 export type Settings = {
-  assistedSearch: {
-    /** Privileges that make up the selected user group; empty means every user. */
-    privileges: string[];
-  };
   distributionExplorer: {
     graphColors: string[];
   };
@@ -217,19 +213,21 @@ export const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
     },
 
     // --- Assisted Search ---
+    // Feature level: whether the deployment offers the assistant at all.
+    // Which users get it is decided by the ASSISTED_SEARCH privilege their roles grant, the same for both pages.
     ENABLE_ASSISTED_SEARCH: {
       group: 'assistedSearch',
       type: 'boolean',
       default: false,
       description:
-        'Shows the AI-assisted search chat on the Explorer (authorized) page. Needs the AI service deployed behind the gateway.',
+        'Offers the AI-assisted search chat on the Explorer (authorized) page, to signed-in users holding the assisted-search privilege. Needs the AI service deployed behind the gateway.',
     },
     ENABLE_ASSISTED_SEARCH_DISCOVER: {
       group: 'assistedSearch',
       type: 'boolean',
       default: false,
       description:
-        'Shows the AI-assisted search chat on the Discover (open access) page. Needs the AI service deployed behind the gateway, with open access enabled there.',
+        'Offers the AI-assisted search chat on the Discover (open access) page, to signed-in users holding the assisted-search privilege. Needs the AI service deployed behind the gateway; open-access visitors are not offered it.',
     },
 
     // --- Genomic Search ---
@@ -384,17 +382,6 @@ export const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
         'Name of the tour definition (from TourConfiguration.json) used for the guided tour on the public Discover page.',
     },
 
-    // --- Assisted Search --- (joined by ENABLE_ASSISTED_SEARCH and
-    // ENABLE_ASSISTED_SEARCH_DISCOVER from features, once features+settings are merged in the
-    // admin UI)
-    ASSISTED_SEARCH_PRIVILEGES: {
-      group: 'assistedSearch',
-      type: 'string',
-      default: '',
-      description:
-        'Comma-separated privilege names that make up the selected user group for the assistant. When set, the chat is shown only to users holding at least one of them (super admins always see it), so it stays hidden on Discover for users who are not logged in. Blank shows it to everyone the page flag allows.',
-    },
-
     // --- Genomic Search --- (joined by ENABLE_GENE_QUERY, ENABLE_SNP_QUERY, and
     // VARIANT_EXPLORER from features, once features+settings are merged in the admin UI)
     VARIANT_EXPLORER_EXCLUDE_COLUMNS: {
@@ -520,13 +507,6 @@ function asFieldList(list: string): string[] {
 export function mapSettings(apiSettings: ConfigObject[]): Settings {
   const parse = parsersFor('settings', resolveConfigMap(apiSettings));
   return {
-    assistedSearch: {
-      privileges: parse
-        .asString('ASSISTED_SEARCH_PRIVILEGES')
-        .split(',')
-        .map((p) => p.trim())
-        .filter(Boolean),
-    },
     distributionExplorer: {
       graphColors: parse.asJson('DIST_EXPLORER_GRAPH_COLORS') as string[],
     },

@@ -1,5 +1,6 @@
 import { createLog, log } from '#lib/telemetry/logger.ts';
 import { session } from '#lib/auth/session.svelte.ts';
+import { explorerSearch } from '#lib/explorer/search.svelte.ts';
 import { genericUUID } from '#lib/utils/uuid.ts';
 
 import { fetchChatResult, sendChat } from './api.ts';
@@ -18,6 +19,10 @@ export const chat = new ChatSession({
   watch: watchScreen,
   store: { load: loadSavedChat, save: saveChat, clear: clearSavedChat },
 });
+
+// Reset starts a new search, and the conversation was about the old one. It stops any turn still
+// being answered; whether the panel is open is left as it is.
+explorerSearch.onReset(() => chat.reset());
 
 // A session that ends (logout, timeout, or another user's sign-in) takes the thread with it, from
 // memory as well as storage, or the next persist writes it back for whoever signs in next.
