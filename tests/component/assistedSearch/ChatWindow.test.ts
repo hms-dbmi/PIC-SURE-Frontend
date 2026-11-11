@@ -378,3 +378,119 @@ describe('ChatToggleButton', () => {
     );
   });
 });
+
+describe('ChatWindow conversation', () => {
+  it('keeps the same conversation across close, reopen and expand', async () => {
+    const send = vi.fn<ChatDeps['send']>(async () => ({ response: 'ok' }));
+    let id = 0;
+    const chat = new ChatSession({
+      readScreen: emptyScreen,
+      applyScreen: async () => {},
+      send,
+      fetchResult: vi.fn(async () => undefined),
+      newId: () => `id-${++id}`,
+    });
+    chat.setOpen(true);
+    const view = render(ChatWindow, { session: chat });
+
+    await chat.send('first');
+    await fireEvent.click(screen.getByTestId('chat-expand'));
+    await fireEvent.click(screen.getByTestId('chat-close'));
+    expect(chat.open).toBe(false);
+    await view.rerender({ session: chat });
+    chat.setOpen(true);
+    await fireEvent.click(screen.getByTestId('chat-expand'));
+    await chat.send('second');
+
+    await waitFor(() => expect(screen.getAllByTestId('chat-message-user')).toHaveLength(2));
+    expect(screen.getAllByTestId('chat-message-text')).toHaveLength(2);
+    const ids = send.mock.calls.map(([request]) => request.conversationId);
+    expect(ids[1]).toBe(ids[0]);
+  });
+
+  it('stop keeps the message, adds no error, and lets the researcher send again', async () => {
+    const send = vi.fn(
+      (_request: unknown, signal: AbortSignal) =>
+        new Promise<ChatResponse>((_, reject) =>
+          signal.addEventListener('abort', () => reject(new Error('aborted'))),
+        ),
+    );
+    const chat = new ChatSession({
+      readScreen: emptyScreen,
+      applyScreen: async () => {},
+      send: send as ChatDeps['send'],
+      fetchResult: vi.fn(async () => undefined),
+      newId: () => `id-${Math.random()}`,
+    });
+    render(ChatWindow, { session: chat });
+
+    await fireEvent.input(screen.getByTestId('chat-input'), { target: { value: 'slow one' } });
+    await fireEvent.click(screen.getByTestId('chat-send'));
+    await fireEvent.click(await screen.findByTestId('chat-stop'));
+
+    await waitFor(() => expect(screen.queryByTestId('chat-stop')).toBeNull());
+    expect(screen.getByTestId('chat-message-user').textContent).toContain('slow one');
+    expect(screen.queryByTestId('chat-message-assistant')).toBeNull();
+    await fireEvent.input(screen.getByTestId('chat-input'), { target: { value: 'next' } });
+    expect((screen.getByTestId('chat-send') as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('shows a failure as a plain message with no retry, and a later send still works', async () => {
+    const send = vi
+      .fn()
+      .mockRejectedValueOnce(
+        Object.assign(new Error('x'), { status: 500, body: { message: 'Model unavailable.' } }),
+      )
+      .mockResolvedValueOnce({ response: 'Back now.' });
+    const chat = new ChatSession({
+      readScreen: emptyScreen,
+      applyScreen: async () => {},
+      send,
+      fetchResult: vi.fn(async () => undefined),
+      newId: () => `id-${Math.random()}`,
+    });
+    render(ChatWindow, { session: chat });
+
+    await fireEvent.input(screen.getByTestId('chat-input'), { target: { value: 'hello' } });
+    await fireEvent.click(screen.getByTestId('chat-send'));
+    await waitFor(() =>
+      expect(screen.getByTestId('chat-message-text')).toHaveTextContent('Model unavailable.'),
+    );
+    expect(screen.queryByRole('button', { name: /retry|try again/i })).toBeNull();
+    expect(screen.queryByTestId('chat-copy-btn')).toBeNull();
+
+    await fireEvent.input(screen.getByTestId('chat-input'), { target: { value: 'again' } });
+    await fireEvent.click(screen.getByTestId('chat-send'));
+    await waitFor(() => expect(screen.getAllByTestId('chat-message-text')).toHaveLength(2));
+    expect(screen.getAllByTestId('chat-message-text')[1]).toHaveTextContent('Back now.');
+  });
+});
+
+describe('ChatMessage copy', () => {
+  const RAW = '**Three** studies match `age`.';
+
+  it('copies the raw text, not the rendered markdown, and shows Copied! then reverts', async () => {
+    const writeText = vi.fn(async () => {});
+    vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } });
+    render(ChatMessage, { message: { id: '1', role: 'assistant', text: RAW } });
+    expect(screen.getByTestId('chat-message-text').innerHTML).toContain('<strong>Three</strong>');
+
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const button = screen.getByTestId('chat-copy-btn');
+      expect(button.innerHTML).toContain('fa-copy');
+      await fireEvent.click(button);
+
+      expect(writeText).toHaveBeenCalledExactlyOnceWith(RAW);
+      await waitFor(() => expect(button.innerHTML).toContain('fa-square-check'));
+      expect(await screen.findByText('Copied!')).toBeTruthy();
+
+      await vi.advanceTimersByTimeAsync(4600);
+      await waitFor(() => expect(button.innerHTML).toContain('fa-copy'));
+      expect(button.innerHTML).not.toContain('fa-square-check');
+    } finally {
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+    }
+  });
+});
