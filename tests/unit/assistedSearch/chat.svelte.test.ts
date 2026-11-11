@@ -541,3 +541,166 @@ describe('ChatSession persistence', () => {
     expect(chat.messages).toEqual([]);
   });
 });
+
+describe('ChatSession recovery never runs a turn twice', () => {
+  beforeEach(() => vi.useRealTimers());
+  afterEach(() => vi.useRealTimers());
+
+  const dropped = () =>
+    vi.fn(async () => {
+      throw new TypeError('Failed to fetch');
+    });
+
+  it('keeps polling one requestId while the turn runs (GET 202) and sends it once', async () => {
+    const fetchResult = vi
+      .fn()
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce({ response: 'done', search: 'bmi' });
+    const { chat, deps } = setup({ send: dropped(), fetchResult, maxPolls: 5 });
+    await chat.send('hello');
+
+    expect(deps.send).toHaveBeenCalledTimes(1);
+    expect(fetchResult).toHaveBeenCalledTimes(3);
+    const ids = new Set(fetchResult.mock.calls.map(([id]) => id));
+    expect([...ids]).toEqual([vi.mocked(deps.send).mock.calls[0][0].requestId]);
+    expect(deps.applyScreen).toHaveBeenCalledTimes(1);
+    expect(chat.messages.filter((m) => m.role === 'assistant')).toHaveLength(1);
+  });
+
+  it('after a 409 on the POST, only polls for the stored reply', async () => {
+    const { chat, deps } = setup({
+      send: vi.fn(async () => {
+        throw { status: 409, body: { message: 'in progress' } };
+      }),
+      fetchResult: vi.fn().mockResolvedValueOnce(undefined).mockResolvedValue({ response: 'ok' }),
+    });
+    await chat.send('x');
+    expect(deps.send).toHaveBeenCalledTimes(1);
+    expect(chat.messages.map((m) => m.role)).toEqual(['user', 'assistant']);
+  });
+
+  it('does not re-send after the polling budget runs out', async () => {
+    const { chat, deps } = setup({ send: dropped(), maxPolls: 3 });
+    await chat.send('x');
+    expect(deps.send).toHaveBeenCalledTimes(1);
+    expect(deps.fetchResult).toHaveBeenCalledTimes(3);
+    expect(chat.messages[1]).toMatchObject({ failed: true, text: TIMEOUT_ERROR });
+  });
+
+  it('keeps polling through transient poll failures and stops on a final one', async () => {
+    const transient = setup({
+      send: dropped(),
+      fetchResult: vi
+        .fn()
+        .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+        .mockRejectedValueOnce({ status: 503 })
+        .mockResolvedValueOnce({ response: 'found' }),
+    });
+    await transient.chat.send('x');
+    expect(transient.chat.messages[1].text).toBe('found');
+    expect(transient.deps.send).toHaveBeenCalledTimes(1);
+
+    const final = setup({
+      send: dropped(),
+      fetchResult: vi.fn().mockRejectedValue({ status: 404, body: { message: 'gone' } }),
+    });
+    await final.chat.send('x');
+    expect(final.deps.fetchResult).toHaveBeenCalledTimes(1);
+    expect(final.chat.messages[1]).toMatchObject({ failed: true, text: 'gone' });
+  });
+
+  it('ignores a new message while the stored reply is awaited', async () => {
+    let found!: (r: ChatResponse) => void;
+    const { chat, deps } = setup({
+      send: dropped(),
+      fetchResult: vi.fn(() => new Promise<ChatResponse>((r) => (found = r))),
+    });
+    const first = chat.send('one');
+    await vi.waitFor(() => expect(chat.recovering).toBe(true));
+    await vi.waitFor(() => expect(deps.fetchResult).toHaveBeenCalled());
+    await chat.send('two');
+    expect(chat.messages).toHaveLength(1);
+    expect(deps.send).toHaveBeenCalledTimes(1);
+
+    found({ response: 'answer' });
+    await first;
+    expect(chat.messages.map((m) => m.text)).toEqual(['one', 'answer']);
+  });
+
+  it('does not double up when the patience window passes and the late POST also fails', async () => {
+    vi.useFakeTimers();
+    const { chat, deps } = setup({
+      patienceMs: 100,
+      send: vi.fn(
+        (_request, signal: AbortSignal) =>
+          new Promise<ChatResponse>((_, reject) =>
+            signal.addEventListener('abort', () => reject(new DOMException('', 'AbortError'))),
+          ),
+      ),
+      fetchResult: vi.fn().mockResolvedValueOnce(undefined).mockResolvedValue({ response: 'late' }),
+    });
+    const sent = chat.send('slow');
+    await vi.advanceTimersByTimeAsync(1000);
+    await sent;
+    expect(deps.send).toHaveBeenCalledTimes(1);
+    expect(chat.messages.map((m) => m.text)).toEqual(['slow', 'late']);
+  });
+
+  describe('after a refresh', () => {
+    const stored = (): SavedChat => ({
+      conversationId: 'c',
+      open: true,
+      savedAt: Date.now(),
+      messages: [{ id: 'r1', role: 'user', text: 'q' }],
+    });
+    const store = () => {
+      let saved: SavedChat | null = stored();
+      return {
+        load: vi.fn(() => saved),
+        save: vi.fn((c: SavedChat) => (saved = c)),
+        clear: vi.fn(() => (saved = null)),
+      };
+    };
+
+    it('recovers a running turn once even if restore is called twice', async () => {
+      let found!: (r: ChatResponse) => void;
+      const { chat, deps } = setup({
+        store: store(),
+        fetchResult: vi.fn(() => new Promise<ChatResponse>((r) => (found = r))),
+      });
+      const a = chat.restore();
+      const b = chat.restore();
+      await vi.waitFor(() => expect(deps.fetchResult).toHaveBeenCalledTimes(1));
+      found({ response: 'ok' });
+      await Promise.all([a, b]);
+
+      expect(deps.send).not.toHaveBeenCalled();
+      expect(deps.fetchResult).toHaveBeenCalledTimes(1);
+      expect(chat.messages.map((m) => m.role)).toEqual(['user', 'assistant']);
+    });
+
+    it('does not recover again once the reply is in, and never re-sends', async () => {
+      const s = store();
+      const first = setup({ store: s, fetchResult: vi.fn(async () => ({ response: 'ok' })) });
+      await first.chat.restore();
+
+      const second = setup({ store: s });
+      await second.chat.restore();
+      expect(second.deps.fetchResult).not.toHaveBeenCalled();
+      expect(second.deps.send).not.toHaveBeenCalled();
+      expect(second.chat.messages).toHaveLength(2);
+    });
+
+    it('does not recover a failed turn after a timeout', async () => {
+      const s = store();
+      const first = setup({ store: s, maxPolls: 1 });
+      await first.chat.restore();
+      expect(first.chat.messages[1]).toMatchObject({ failed: true });
+
+      const second = setup({ store: s });
+      await second.chat.restore();
+      expect(second.deps.fetchResult).not.toHaveBeenCalled();
+    });
+  });
+});

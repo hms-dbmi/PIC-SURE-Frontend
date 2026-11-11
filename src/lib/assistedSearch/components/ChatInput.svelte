@@ -7,6 +7,9 @@
 
   let { pending, onsend, onstop }: Props = $props();
 
+  const focusRing =
+    'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500';
+
   let text = $state('');
   let box: HTMLTextAreaElement | undefined = $state();
 
@@ -23,6 +26,14 @@
     if (!message || pending) return;
     onsend(message);
     text = '';
+    // Send disables while the turn runs, which would drop focus to the page.
+    box?.focus();
+  }
+
+  function stop() {
+    onstop();
+    // Stop disappears with the turn; keep the keyboard where the next message is typed.
+    box?.focus();
   }
 
   function onkeydown(e: KeyboardEvent) {
@@ -44,23 +55,27 @@
   <div class="flex items-stretch">
     <textarea
       bind:this={box}
-      class="chat-box w-full"
+      class="chat-box w-full {focusRing}"
       rows="1"
       maxlength="4000"
       placeholder="Ask the assistant…"
       aria-label="Message the search assistant"
+      aria-describedby="chat-input-hint"
       data-testid="chat-input"
       bind:value={text}
       {onkeydown}></textarea>
     {#if pending}
-      <button type="button" class="px-4 preset-tonal-error" data-testid="chat-stop" onclick={onstop}
-        >Cancel</button
+      <button
+        type="button"
+        class="px-4 preset-tonal-error {focusRing}"
+        title="Stop waiting for the reply"
+        data-testid="chat-stop"
+        onclick={stop}>Stop</button
       >
     {/if}
     <button
       type="submit"
-      class="btn w-32 justify-start preset-filled-primary-500 chat-button disabled:opacity-50"
-      aria-label="Send"
+      class="btn w-32 justify-start preset-filled-primary-500 chat-button disabled:opacity-50 {focusRing}"
       title="Send (Enter)"
       data-testid="chat-send"
       disabled={pending || !text.trim()}
@@ -68,7 +83,7 @@
       <i class="fas fa-paper-plane" aria-hidden="true"></i> Send
     </button>
   </div>
-  <p class="m-1 text-right text-xs text-surface-600-400">
+  <p id="chat-input-hint" class="m-1 text-right text-xs text-surface-600-400">
     Enter to send · Shift+Enter for new line
   </p>
 </form>

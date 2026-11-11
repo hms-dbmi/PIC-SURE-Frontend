@@ -80,7 +80,7 @@
       </div>
     {/if}
     {#if message.applyFailed}
-      <p class="mt-2 text-sm" role="alert">
+      <p class="mt-2 text-sm" data-testid="chat-apply-failed">
         The suggested changes could not be put on your screen.
       </p>
     {/if}
@@ -99,7 +99,7 @@
         {/if}
         <button
           type="button"
-          class="{linkClass} ml-auto"
+          class="{linkClass} ml-auto focus-visible:outline-2 focus-visible:outline-primary-500"
           data-testid={message.undone ? 'chat-redo' : 'chat-undo'}
           disabled={undoState === 'locked'}
           title={undoState === 'locked' ? 'Disabled after you changed the screen' : undefined}

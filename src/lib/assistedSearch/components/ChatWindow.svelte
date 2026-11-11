@@ -37,15 +37,27 @@
   // The panel follows the researcher's screen only while it is showing.
   onMount(() => session.watch());
 
-  // Follows the newest message, but only on a change in the thread, so scrolling up to reread
-  // is not undone by an unrelated re-render.
+  // Follows the newest message while the researcher is at the bottom. Scrolling up to reread
+  // stops it, and it resumes once they scroll back down. Sending a message always jumps down.
+  const NEAR_BOTTOM_PX = 24;
+  let following = true;
+
+  function onscroll() {
+    if (!thread) return;
+    following = thread.scrollHeight - thread.scrollTop - thread.clientHeight <= NEAR_BOTTOM_PX;
+  }
+
   $effect(() => {
-    void session.messages.length;
     void session.pending;
-    tick().then(() => thread?.scrollTo({ top: thread.scrollHeight }));
+    if (session.messages.at(-1)?.role === 'user') following = true;
+    if (!following) return;
+    tick().then(() => {
+      if (following) thread?.scrollTo({ top: thread.scrollHeight });
+    });
   });
 
-  const ghost = 'rounded-md px-2 py-1.5 text-sm hover:bg-surface-100-900';
+  const ghost =
+    'rounded-md px-2 py-1.5 text-sm hover:bg-surface-100-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500';
 </script>
 
 <section
@@ -70,7 +82,7 @@
         type="button"
         class="{ghost} min-w-[4.5rem]"
         data-testid="chat-expand"
-        aria-pressed={session.tall}
+        aria-label={session.tall ? 'Compact assistant panel' : 'Expand assistant panel'}
         title={session.tall
           ? 'Make the assistant panel shorter'
           : 'Make the assistant panel taller'}
@@ -91,9 +103,8 @@
     class="flex flex-col overflow-y-auto px-5 pt-4 pb-2 {session.tall
       ? 'max-h-[62vh]'
       : 'max-h-[220px]'}"
-    role="log"
-    aria-live="polite"
     data-testid="chat-thread"
+    {onscroll}
   >
     {#if session.messages.length === 0}
       <div class="flex flex-col gap-3 pb-2">
@@ -112,15 +123,19 @@
         </div>
       </div>
     {/if}
-    {#each session.messages as message, i (`${message.id}-${message.role}`)}
-      <ChatMessage
-        {message}
-        startsExchange={i > 0 && message.role === 'user'}
-        undoState={message.role === 'assistant' ? session.undoState(message.id) : 'locked'}
-        onundo={() => session.undo(message.id)}
-        onredo={() => session.redo(message.id)}
-      />
-    {/each}
+    <!-- Only the messages are announced. The status below is its own live region, so the two
+         never read each other out. -->
+    <div class="flex flex-col" role="log" aria-live="polite" aria-label="Conversation">
+      {#each session.messages as message, i (`${message.id}-${message.role}`)}
+        <ChatMessage
+          {message}
+          startsExchange={i > 0 && message.role === 'user'}
+          undoState={message.role === 'assistant' ? session.undoState(message.id) : 'locked'}
+          onundo={() => session.undo(message.id)}
+          onredo={() => session.redo(message.id)}
+        />
+      {/each}
+    </div>
     {#if session.pending}
       <div class="mt-2 text-sm text-surface-600-400" data-testid="chat-thinking">
         <TimedLoading

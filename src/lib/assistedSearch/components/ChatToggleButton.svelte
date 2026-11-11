@@ -10,7 +10,7 @@
 <!-- The label never changes, so the search bar beside it never resizes. -->
 <button
   type="button"
-  class="btn w-36 border border-primary-500 {open
+  class="btn w-36 border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500 border-primary-500 {open
     ? 'preset-filled-primary-500'
     : 'preset-tonal-primary hover:preset-filled-primary-500'}"
   aria-pressed={open}

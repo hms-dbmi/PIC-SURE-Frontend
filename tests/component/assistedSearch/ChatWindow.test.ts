@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 
 import ChatWindow from '$lib/assistedSearch/components/ChatWindow.svelte';
+import ChatToggleButton from '$lib/assistedSearch/components/ChatToggleButton.svelte';
 import ChatMessage from '$lib/assistedSearch/components/ChatMessage.svelte';
 import { ChatSession, type ChatDeps } from '$lib/assistedSearch/chat.svelte';
 import type { ChatResponse, ScreenState } from '$lib/assistedSearch/model/types';
@@ -192,11 +193,188 @@ describe('ChatMessage', () => {
     render(ChatMessage, {
       message: { id: '1', role: 'assistant', text: 'Here you go', applyFailed: true },
     });
-    expect(screen.getByRole('alert').textContent).toContain('could not be put on your screen');
+    // Inside the polite log, so it is announced once rather than again as an assertive alert.
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByTestId('chat-apply-failed').textContent).toContain(
+      'could not be put on your screen',
+    );
   });
 
   it('renders user text as plain text, not markdown or HTML', () => {
     render(ChatMessage, { message: { id: '1', role: 'user', text: '**x** <b>y</b>' } });
     expect(screen.getByTestId('chat-message-user').textContent).toContain('**x** <b>y</b>');
+  });
+});
+
+describe('ChatWindow accessibility', () => {
+  it('names every control', () => {
+    const chat = session({ response: 'x' });
+    render(ChatWindow, { session: chat });
+    expect(screen.getByRole('textbox', { name: 'Message the search assistant' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Send' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Expand assistant panel' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Hide the assistant' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'New conversation' })).toBeTruthy();
+    expect(screen.getByTestId('chat-input').getAttribute('aria-describedby')).toBe(
+      'chat-input-hint',
+    );
+  });
+
+  it('names Stop while pending and keeps focus in the box after it', async () => {
+    const chat = session(new Promise<ChatResponse>(() => {}));
+    render(ChatWindow, { session: chat });
+    const box = screen.getByTestId('chat-input');
+    await fireEvent.input(box, { target: { value: 'hi' } });
+    await fireEvent.click(screen.getByTestId('chat-send'));
+    const stop = await screen.findByRole('button', { name: 'Stop' });
+    expect(document.activeElement).toBe(box);
+    await fireEvent.click(stop);
+    expect(document.activeElement).toBe(box);
+  });
+
+  it('has a label that follows the Expand control state, without a conflicting pressed state', async () => {
+    const chat = session({ response: 'x' });
+    render(ChatWindow, { session: chat });
+    const expand = screen.getByRole('button', { name: 'Expand assistant panel' });
+    expect(expand.hasAttribute('aria-pressed')).toBe(false);
+    await fireEvent.click(expand);
+    expect(screen.getByRole('button', { name: 'Compact assistant panel' })).toBeTruthy();
+  });
+
+  it('submits from the keyboard with Enter and not while composing', async () => {
+    const chat = session({ response: 'ok' });
+    render(ChatWindow, { session: chat });
+    const box = screen.getByTestId('chat-input');
+    await fireEvent.input(box, { target: { value: 'composing' } });
+    await fireEvent.keyDown(box, { key: 'Enter', isComposing: true });
+    expect(chat.messages).toHaveLength(0);
+    await fireEvent.keyDown(box, { key: 'Enter' });
+    expect(chat.messages[0].text).toBe('composing');
+  });
+
+  it('keeps the controls as ordinary focusable buttons with a visible focus style', () => {
+    const chat = session({ response: 'x' });
+    render(ChatWindow, { session: chat });
+    for (const id of ['chat-expand', 'chat-close', 'chat-send', 'chat-input']) {
+      const el = screen.getByTestId(id);
+      expect(el.getAttribute('tabindex')).not.toBe('-1');
+      expect(el.className).toContain('focus-visible:outline');
+    }
+  });
+
+  it('announces only the conversation in the log, and the waiting status separately', async () => {
+    let finish!: (r: ChatResponse) => void;
+    const chat = session(new Promise<ChatResponse>((r) => (finish = r)));
+    render(ChatWindow, { session: chat });
+    void chat.send('hi');
+
+    const log = screen.getByRole('log', { name: 'Conversation' });
+    expect(log.getAttribute('aria-live')).toBe('polite');
+    await waitFor(() => expect(screen.getByTestId('chat-thinking')).toBeTruthy());
+    expect(log.contains(screen.getByTestId('chat-thinking'))).toBe(false);
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+    expect(screen.queryByRole('alert')).toBeNull();
+
+    finish({ response: 'Answer.' });
+    await waitFor(() => expect(log.textContent).toContain('Answer.'));
+    expect(log.querySelectorAll('[aria-live], [role=alert], [role=status]')).toHaveLength(0);
+  });
+
+  it('puts a failed reply in the polite log, not an assertive alert', async () => {
+    const chat = session(Promise.reject({ status: 422, body: { message: 'No can do.' } }));
+    render(ChatWindow, { session: chat });
+    await chat.send('hi');
+    const log = screen.getByRole('log');
+    await waitFor(() => expect(log.textContent).toContain('No can do.'));
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+});
+
+describe('ChatWindow scrolling', () => {
+  // happy-dom does no layout, so give the thread a geometry the scroll maths can read.
+  function geometry(el: HTMLElement, g: { scrollHeight: number; clientHeight: number }) {
+    Object.defineProperty(el, 'scrollHeight', { configurable: true, get: () => g.scrollHeight });
+    Object.defineProperty(el, 'clientHeight', { configurable: true, get: () => g.clientHeight });
+    const scrollTo = vi.fn((opts: ScrollToOptions) => {
+      el.scrollTop = opts.top ?? 0;
+    });
+    el.scrollTo = scrollTo as unknown as typeof el.scrollTo;
+    return scrollTo;
+  }
+
+  const settle = () => new Promise((r) => setTimeout(r, 0));
+
+  it('follows new messages at the bottom, yields when scrolled up, resumes at the bottom', async () => {
+    let n = 0;
+    const chat = new ChatSession({
+      readScreen: emptyScreen,
+      applyScreen: async () => {},
+      send: vi.fn(async () => ({ response: `reply ${++n}` })),
+      fetchResult: vi.fn(async () => undefined),
+      newId: () => `id-${Math.random()}`,
+    });
+    render(ChatWindow, { session: chat });
+    const thread = screen.getByTestId('chat-thread');
+    const g = { scrollHeight: 1000, clientHeight: 200 };
+    const scrollTo = geometry(thread, g);
+
+    // At the bottom: a reply is followed.
+    thread.scrollTop = 800;
+    await fireEvent.scroll(thread);
+    chat.messages.push({ id: 'a', role: 'assistant', text: 'one' });
+    await settle();
+    expect(scrollTo).toHaveBeenCalledWith({ top: 1000 });
+
+    // Scrolled up to reread: a new reply does not pull them back.
+    scrollTo.mockClear();
+    thread.scrollTop = 100;
+    await fireEvent.scroll(thread);
+    g.scrollHeight = 1200;
+    chat.messages.push({ id: 'b', role: 'assistant', text: 'two' });
+    await settle();
+    expect(scrollTo).not.toHaveBeenCalled();
+    expect(thread.scrollTop).toBe(100);
+
+    // Back at the bottom: following resumes.
+    thread.scrollTop = 1000;
+    await fireEvent.scroll(thread);
+    g.scrollHeight = 1400;
+    chat.messages.push({ id: 'c', role: 'assistant', text: 'three' });
+    await settle();
+    expect(scrollTo).toHaveBeenCalledWith({ top: 1400 });
+  });
+
+  it('jumps to the bottom when the researcher sends, even from further up', async () => {
+    const chat = session({ response: 'ok' });
+    render(ChatWindow, { session: chat });
+    const thread = screen.getByTestId('chat-thread');
+    const scrollTo = geometry(thread, { scrollHeight: 1000, clientHeight: 200 });
+
+    thread.scrollTop = 0;
+    await fireEvent.scroll(thread);
+    await chat.send('hello');
+    await settle();
+    expect(scrollTo).toHaveBeenCalledWith({ top: 1000 });
+  });
+});
+
+describe('ChatToggleButton', () => {
+  it('is a named toggle operable from the keyboard', async () => {
+    const ontoggle = vi.fn();
+    render(ChatToggleButton, { open: false, ontoggle });
+    const button = screen.getByRole('button', { name: 'Assistant' });
+    expect(button.getAttribute('aria-pressed')).toBe('false');
+    expect(button.className).toContain('focus-visible:outline');
+    button.focus();
+    expect(document.activeElement).toBe(button);
+    await fireEvent.click(button);
+    expect(ontoggle).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports the open state', () => {
+    render(ChatToggleButton, { open: true, ontoggle: () => {} });
+    expect(screen.getByRole('button', { name: 'Assistant' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
   });
 });
