@@ -78,7 +78,7 @@
 >
   <p>Are you sure you want to clear all filters?</p>
   {#if clearsConversation}
-    <p class="mt-2" data-testid="clear-all-chat-note">
+    <p class="mt-2" data-testid="results-reset-assistant-note">
       This will also clear your conversation with the search assistant.
     </p>
   {/if}

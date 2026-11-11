@@ -13,6 +13,7 @@ export enum PicsurePrivileges {
   NAMED_DATASET = 'NAMED_DATASET',
   ADMIN = 'ADMIN',
   SUPER = 'SUPER_ADMIN',
+  ASSISTED_SEARCH = 'ASSISTED_SEARCH',
 }
 
 export enum BDCPrivileges {
