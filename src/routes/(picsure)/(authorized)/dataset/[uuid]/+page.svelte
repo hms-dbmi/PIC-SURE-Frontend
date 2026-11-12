@@ -24,7 +24,6 @@
     query: null,
     queryId: '',
     queries: [],
-    supportsLinkedQueries: false,
     startTime: '',
     rawStartTime: 0,
     status: 'UNDEFINED',
@@ -68,7 +67,7 @@
           </tbody>
         </table>
       </section>
-      <DatasetDownload {dataset} onlinked={(linked) => (dataset = linked)} />
+      <DatasetDownload {dataset} />
     {/if}
     {#if dataset?.query && dataset?.queryId}
       <QuerySummary query={dataset.query} version={dataset.version} name={dataset.name} />

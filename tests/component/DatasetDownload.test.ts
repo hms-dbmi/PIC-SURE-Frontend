@@ -48,7 +48,6 @@ import { QueryV3, type ExpectedResultType } from '$lib/models/query/Query';
 import { toaster } from '$lib/toaster';
 
 const QUERY_PATH = 'picsure/hpds/auth/query';
-const DATASET_PATH = 'picsure/operations/dataset/named/dataset-uuid';
 const STATUS_WAIT_LIMIT_MS = 11 * 60000;
 const FULL_LINK: LinkedQuery = { queryId: 'full-id', sample: false, resultType: 'DATAFRAME' };
 const SAMPLE_LINK: LinkedQuery = { queryId: 'sample-id', sample: true, resultType: 'DATAFRAME' };
@@ -104,7 +103,6 @@ function makeDataset(
     }),
     queryId: 'full-id',
     queries,
-    supportsLinkedQueries: true,
     startTime: '2026-11-09',
     rawStartTime: 1,
     status: 'AVAILABLE',
@@ -200,7 +198,7 @@ describe('DatasetDownload', () => {
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 
-  it('reuses an already linked sample query', async () => {
+  it('reuses a sample query the dataset lists', async () => {
     get.mockResolvedValueOnce({ status: 'AVAILABLE' }).mockResolvedValueOnce('a,b\n1,2\n');
     render(DatasetDownload, { dataset: makeDataset('DATAFRAME', [FULL_LINK, SAMPLE_LINK]) });
 
@@ -227,69 +225,40 @@ describe('DatasetDownload', () => {
     expect(paths(get)).toEqual([statusPath('full-id'), `${QUERY_PATH}/full-id/result`]);
   });
 
-  it('submits with sample true and links the new query when none is linked', async () => {
+  it('submits and sends no PUT when the variant is not listed', async () => {
     post.mockResolvedValueOnce({ picsureResultId: 'sample-id' });
-    put.mockResolvedValueOnce({});
-    get.mockResolvedValueOnce({ status: 'AVAILABLE' });
-    const onlinked = vi.fn();
-    render(DatasetDownload, { dataset: makeDataset(), onlinked });
+    get.mockResolvedValueOnce({ status: 'AVAILABLE' }).mockResolvedValueOnce('a,b\n1,2\n');
+    render(DatasetDownload, { dataset: makeDataset() });
 
     await fireEvent.click(sampleButton());
-    await screen.findByRole('button', { name: /Download as CSV/ });
+    await fireEvent.click(await screen.findByRole('button', { name: /Download as CSV/ }));
 
+    await waitFor(() => expect(saved).toHaveBeenCalledTimes(1));
     expect(paths(post)).toEqual([QUERY_PATH]);
     const body = JSON.parse(JSON.stringify(post.mock.calls[0][1]));
     expect(body.query.sample).toBe(true);
     expect(body.query.expectedResultType).toBe('DATAFRAME');
     expect(body.query.select).toEqual(['\\study\\age\\']);
-    expect(paths(put)).toEqual([DATASET_PATH]);
-    expect(put.mock.calls[0][1]).toEqual({
-      queryId: 'sample-id',
-      name: 'My cohort',
-      archived: false,
-      metadata: { note: 'kept' },
-    });
-    expect(paths(get)).toEqual([statusPath('sample-id')]);
-    expect(onlinked).toHaveBeenCalledTimes(1);
-    expect(onlinked.mock.calls[0][0].queryId).toBe('full-id');
-    expect(onlinked.mock.calls[0][0].queries).toEqual([FULL_LINK, SAMPLE_LINK]);
-    expect(toastError).not.toHaveBeenCalled();
-  });
-
-  it('offers the download without recording a link when the link answers 409', async () => {
-    post.mockResolvedValueOnce({ picsureResultId: 'sample-id' });
-    put.mockRejectedValueOnce(httpError(409, '{"errorType":"conflict"}'));
-    get.mockResolvedValueOnce({ status: 'AVAILABLE' }).mockResolvedValueOnce('a,b\n1,2\n');
-    const onlinked = vi.fn();
-    render(DatasetDownload, { dataset: makeDataset(), onlinked });
-
-    await fireEvent.click(sampleButton());
-    await fireEvent.click(await screen.findByRole('button', { name: /Download as CSV/ }));
-
-    await waitFor(() => expect(saved).toHaveBeenCalledTimes(1));
-    expect(paths(put)).toEqual([DATASET_PATH]);
+    expect(put).not.toHaveBeenCalled();
     expect(paths(get)).toEqual([statusPath('sample-id'), `${QUERY_PATH}/sample-id/result`]);
-    expect(onlinked).not.toHaveBeenCalled();
     expect(toastError).not.toHaveBeenCalled();
   });
 
-  it('sends no link to a server that listed no queries and still offers the download', async () => {
-    post.mockResolvedValueOnce({ picsureResultId: 'sample-id' });
+  it('submits the full variant for a dataset that lists no queries', async () => {
+    post.mockResolvedValueOnce({ picsureResultId: 'full-id' });
     get.mockResolvedValueOnce({ status: 'AVAILABLE' }).mockResolvedValueOnce('a,b\n1,2\n');
-    const onlinked = vi.fn();
-    render(DatasetDownload, {
-      dataset: { ...makeDataset('DATAFRAME', []), supportsLinkedQueries: false },
-      onlinked,
-    });
+    render(DatasetDownload, { dataset: makeDataset('DATAFRAME', []) });
 
-    await fireEvent.click(sampleButton());
+    await fireEvent.click(fullButton());
     await fireEvent.click(await screen.findByRole('button', { name: /Download as CSV/ }));
 
     await waitFor(() => expect(saved).toHaveBeenCalledTimes(1));
     expect(paths(post)).toEqual([QUERY_PATH]);
+    const body = JSON.parse(JSON.stringify(post.mock.calls[0][1]));
+    expect(body.query).not.toHaveProperty('sample');
+    expect(body.query.expectedResultType).toBe('DATAFRAME');
     expect(put).not.toHaveBeenCalled();
-    expect(paths(get)).toEqual([statusPath('sample-id'), `${QUERY_PATH}/sample-id/result`]);
-    expect(onlinked).not.toHaveBeenCalled();
+    expect(paths(get)).toEqual([statusPath('full-id'), `${QUERY_PATH}/full-id/result`]);
     expect(toastError).not.toHaveBeenCalled();
   });
 
@@ -337,25 +306,26 @@ describe('DatasetDownload', () => {
     });
   });
 
-  it('reuses the newly linked query on a second click without another submit', async () => {
-    post.mockResolvedValueOnce({ picsureResultId: 'sample-id' });
-    put.mockResolvedValueOnce({});
+  it('a second click submits again and uses the id the server returns', async () => {
+    post
+      .mockResolvedValueOnce({ picsureResultId: 'sample-id' })
+      .mockResolvedValueOnce({ picsureResultId: 'sample-id-again' });
     get.mockResolvedValue({ status: 'AVAILABLE' });
-    const onlinked = vi.fn();
-    const { rerender } = render(DatasetDownload, { dataset: makeDataset(), onlinked });
+    render(DatasetDownload, { dataset: makeDataset() });
 
     await fireEvent.click(sampleButton());
-    await waitFor(() => expect(onlinked).toHaveBeenCalledTimes(1));
-    await rerender({ dataset: onlinked.mock.calls[0][0], onlinked });
+    await screen.findByRole('button', { name: /Download as CSV/ });
     await waitFor(() => expect(sampleButton()).toBeEnabled());
     await fireEvent.click(sampleButton());
     await waitFor(() => expect(get).toHaveBeenCalledTimes(2));
+    await screen.findByRole('button', { name: /Download as CSV/ });
     await waitFor(() => expect(sampleButton()).toBeEnabled());
 
-    expect(post).toHaveBeenCalledTimes(1);
-    expect(put).toHaveBeenCalledTimes(1);
-    expect(onlinked).toHaveBeenCalledTimes(1);
-    expect(paths(get)).toEqual([statusPath('sample-id'), statusPath('sample-id')]);
+    expect(paths(post)).toEqual([QUERY_PATH, QUERY_PATH]);
+    expect(post.mock.calls[1][1]).toEqual(post.mock.calls[0][1]);
+    expect(put).not.toHaveBeenCalled();
+    expect(paths(get)).toEqual([statusPath('sample-id'), statusPath('sample-id-again')]);
+    expect(toastError).not.toHaveBeenCalled();
   });
 
   it('shows the not available message on sample_disabled', async () => {
@@ -465,7 +435,6 @@ describe('DatasetDownload', () => {
   it('disables both buttons while a request is in flight', async () => {
     let finishSubmit: (value: { picsureResultId: string }) => void = () => {};
     post.mockReturnValueOnce(new Promise((resolve) => (finishSubmit = resolve)));
-    put.mockResolvedValueOnce({});
     get.mockResolvedValueOnce({ status: 'AVAILABLE' });
     render(DatasetDownload, { dataset: makeDataset() });
 

@@ -56,26 +56,6 @@ export async function getDataset(uuid: string) {
   return mapDataset(res);
 }
 
-/**
- * Reads a dataset from the cache without asking the server for it.
- *
- * @param uuid The uuid of the dataset.
- * @returns The cached copy, or undefined when the dataset is not cached.
- */
-export function cachedDataset(uuid: string): DataSet | undefined {
-  return get(datasets).find((ds) => ds.uuid === uuid);
-}
-
-/**
- * Swaps the cached copy of a dataset for a newer one, so the next read of the cache sees it.
- * A dataset that is not cached is left out, and the next read fetches it from the server.
- *
- * @param dataset The newer copy, matched to the cached one by its uuid.
- */
-export function replaceDataset(dataset: DataSet) {
-  datasets.update((store) => store.map((ds) => (ds.uuid === dataset.uuid ? dataset : ds)));
-}
-
 export default {
   subscribe: datasets.subscribe,
   active,

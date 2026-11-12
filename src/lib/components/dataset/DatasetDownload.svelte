@@ -22,8 +22,6 @@
   interface Props {
     /** The named dataset whose full and sample exports are offered. */
     dataset: DataSet;
-    /** Called with the dataset as it stands after a new query has been linked to it. */
-    onlinked?: (dataset: DataSet) => void;
   }
 
   interface Variant {
@@ -31,7 +29,7 @@
     label: string;
   }
 
-  let { dataset, onlinked }: Props = $props();
+  let { dataset }: Props = $props();
 
   let preparing: Variant | undefined = $state(undefined);
   let ready: { queryId: string; sample: boolean } | undefined = $state(undefined);
@@ -69,7 +67,7 @@
    *
    * @param error The value the request or the status wait rejected with.
    * @param waiting True when the failure came from the status wait, false when it came from
-   * submitting or linking the query.
+   * submitting the query.
    * @returns The consent, sample or export message that matches the failure.
    */
   function failureMessage(error: unknown, waiting: boolean): string {
@@ -103,19 +101,16 @@
           type: resultType,
         }),
       );
-      const request = await requestVariant(dataset, variant.sample, unmounted.signal);
+      const queryId = await requestVariant(dataset, variant.sample, unmounted.signal);
       if (unmounted.signal.aborted) {
         return;
-      }
-      if (request.dataset !== dataset) {
-        onlinked?.(request.dataset);
       }
       waiting = true;
-      await waitUntilAvailable(request.queryId, unmounted.signal);
+      await waitUntilAvailable(queryId, unmounted.signal);
       if (unmounted.signal.aborted) {
         return;
       }
-      ready = { queryId: request.queryId, sample: variant.sample };
+      ready = { queryId, sample: variant.sample };
     } catch (error) {
       if (unmounted.signal.aborted || isSessionEnded(error)) {
         return;

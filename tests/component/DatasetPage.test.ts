@@ -82,10 +82,9 @@ describe('dataset page', () => {
     vi.restoreAllMocks();
   });
 
-  it('keeps the Dataset ID and reuses the link after a sample query is linked', async () => {
+  it('keeps the Dataset ID and sends no PUT when the sample is requested twice', async () => {
     get.mockResolvedValueOnce(serverDataset()).mockResolvedValue({ status: 'AVAILABLE' });
-    post.mockResolvedValueOnce({ picsureResultId: 'sample-id' });
-    put.mockResolvedValueOnce({});
+    post.mockResolvedValue({ picsureResultId: 'sample-id' });
     render(DatasetPage);
 
     const datasetId = await screen.findByTestId('dataset-summary-uuid');
@@ -96,8 +95,7 @@ describe('dataset page', () => {
     await screen.findByText('Your sample dataset is ready.');
 
     expect(paths(post)).toEqual([QUERY_PATH]);
-    expect(paths(put)).toEqual([DATASET_PATH]);
-    expect(put.mock.calls[0][1].queryId).toBe('sample-id');
+    expect(put).not.toHaveBeenCalled();
     expect(screen.getByTestId('dataset-summary-uuid')).toHaveTextContent('full-id');
     expect(screen.getByTestId('dataset-summary-uuid')).not.toHaveTextContent('sample-id');
     expect(screen.getByTestId('dataset-summary-name')).toHaveTextContent('My cohort');
@@ -108,8 +106,8 @@ describe('dataset page', () => {
     await fireEvent.click(screen.getByRole('button', { name: /Sample dataset/ }));
     await waitFor(() => expect(get).toHaveBeenCalledTimes(3));
 
-    expect(post).toHaveBeenCalledTimes(1);
-    expect(put).toHaveBeenCalledTimes(1);
+    expect(paths(post)).toEqual([QUERY_PATH, QUERY_PATH]);
+    expect(put).not.toHaveBeenCalled();
     expect(paths(get)).toEqual([
       DATASET_PATH,
       `${QUERY_PATH}/sample-id/status`,

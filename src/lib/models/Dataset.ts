@@ -29,12 +29,6 @@ export type DataSet = Indexable & {
   query: MappedQuery;
   queryId: string;
   queries: LinkedQuery[];
-  /**
-   * True when the server sent a `queries` array for this dataset, even an empty one. Only a
-   * server that links queries to datasets sends it. Without it a `PUT` carrying another query
-   * id replaces the dataset's own query, so no link may be sent.
-   */
-  supportsLinkedQueries: boolean;
   federated?: any;
   startTime: string;
   rawStartTime: number;
@@ -151,7 +145,6 @@ export function mapDataset(data: any) {
     federated,
     queryId: data.query.uuid,
     queries: mapLinkedQueries(data.queries),
-    supportsLinkedQueries: Array.isArray(data.queries),
     startTime: secondsToDate(data.query.startTime),
     rawStartTime: data.query.startTime,
     status: data.query.status || 'UNDEFINED',
