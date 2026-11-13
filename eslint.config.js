@@ -135,7 +135,7 @@ export default [
   },
   {
     // Typed linting is limited to tests to keep the rest of lint fast.
-    files: ['tests/**/*.ts', 'src/**/*.test.ts', 'scripts/**/*.test.ts'],
+    files: ['tests/**/*.ts', 'src/**/*.test.ts'],
     languageOptions: {
       parser: tsParser,
       parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },
