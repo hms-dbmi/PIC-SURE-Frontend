@@ -17,10 +17,6 @@ export const EXPORT_NOT_READY_MESSAGE =
 /** Shown when a sample is asked for while sampling is switched off on the server. */
 export const SAMPLE_DISABLED_MESSAGE = 'Sample datasets are not available at this time';
 
-/** Shown when a sample query is about to be saved as a named dataset. Nothing is sent. */
-export const SAMPLE_SAVE_REFUSED_MESSAGE =
-  'A sample query cannot be saved as a dataset. Save the full query instead.';
-
 /**
  * Rejects a status wait whose request found the session over. A 401 makes the request log the
  * user out, start the redirect to the login page and resolve with nothing, so there is no

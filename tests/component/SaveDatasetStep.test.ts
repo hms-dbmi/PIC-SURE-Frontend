@@ -2,6 +2,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/svelte';
+import { error } from '@sveltejs/kit';
 
 const { post, stepper } = vi.hoisted(() => ({
   post: vi.fn(),
@@ -13,7 +14,10 @@ const { post, stepper } = vi.hoisted(() => ({
 
 vi.mock('$app/environment', () => ({ browser: true }));
 vi.mock('$app/paths', () => ({ resolve: (path: string) => path }));
-vi.mock('$lib/api', () => ({ post }));
+vi.mock('$lib/api', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('$lib/api')>()),
+  post,
+}));
 vi.mock('$lib/logger', () => ({ log: vi.fn(), createLog: vi.fn() }));
 vi.mock('$lib/configuration.svelte', () => ({
   config: { settings: { exportSystemFields: [] } },
@@ -47,8 +51,16 @@ vi.mock('$lib/ExportStepperManager.svelte', () => ({
 import SaveDatasetStep from '$lib/components/explorer/export/SaveDatasetStep.svelte';
 
 const QUERY_PATH = 'picsure/hpds/auth/query';
-const SAMPLE_SAVE_REFUSED =
-  'A sample query cannot be saved as a dataset. Save the full query instead.';
+const SERVER_REFUSAL = 'Sample datasets are switched off for this project.';
+const DATASET_ID_FAILED = 'An error occurred while getting the dataset ID. Please try again later.';
+
+function httpError(status: 400 | 500, text: string): unknown {
+  try {
+    error(status, text);
+  } catch (e) {
+    return e;
+  }
+}
 
 describe('SaveDatasetStep', () => {
   beforeEach(() => {
@@ -57,15 +69,38 @@ describe('SaveDatasetStep', () => {
     stepper.request = { query: { expectedResultType: 'COUNT' } };
   });
 
-  it('submits nothing and shows the sample message for a sample query', async () => {
+  it('submits a sample query and shows its id', async () => {
     stepper.request = { query: { expectedResultType: 'DATAFRAME', sample: true } };
+    post.mockResolvedValueOnce({ picsureResultId: 'sample-csv' });
 
     render(SaveDatasetStep);
 
-    expect(await screen.findByText(SAMPLE_SAVE_REFUSED)).toBeInTheDocument();
-    expect(post).not.toHaveBeenCalled();
-    expect(stepper.datasetId).toBeUndefined();
-    expect(screen.queryByLabelText('Dataset Name:')).not.toBeInTheDocument();
+    await waitFor(() => expect(post).toHaveBeenCalledTimes(1));
+    expect(post).toHaveBeenCalledWith(QUERY_PATH, stepper.request);
+    expect(stepper.request.query.sample).toBe(true);
+    expect(await screen.findByText('sample-csv')).toBeInTheDocument();
+    expect(screen.getByLabelText('Dataset Name:')).toBeInTheDocument();
+  });
+
+  it('shows the message the server refused a sample query with', async () => {
+    stepper.request = { query: { expectedResultType: 'DATAFRAME', sample: true } };
+    post.mockRejectedValue(
+      httpError(400, JSON.stringify({ errorType: 'sample_disabled', message: SERVER_REFUSAL })),
+    );
+
+    render(SaveDatasetStep);
+
+    expect(await screen.findByText(SERVER_REFUSAL)).toBeInTheDocument();
+    expect(post).toHaveBeenCalledWith(QUERY_PATH, stepper.request);
+    expect(screen.queryByText(DATASET_ID_FAILED)).not.toBeInTheDocument();
+  });
+
+  it('shows the generic message when the server gives none', async () => {
+    post.mockRejectedValue(httpError(500, '<html>Bad Gateway</html>'));
+
+    render(SaveDatasetStep);
+
+    expect(await screen.findByText(DATASET_ID_FAILED)).toBeInTheDocument();
   });
 
   it('submits the query and shows its id for a query that is not a sample', async () => {
@@ -77,6 +112,5 @@ describe('SaveDatasetStep', () => {
     expect(post).toHaveBeenCalledWith(QUERY_PATH, stepper.request);
     expect(await screen.findByText('full-csv')).toBeInTheDocument();
     expect(screen.getByLabelText('Dataset Name:')).toBeInTheDocument();
-    expect(screen.queryByText(SAMPLE_SAVE_REFUSED)).not.toBeInTheDocument();
   });
 });

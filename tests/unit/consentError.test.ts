@@ -29,7 +29,8 @@ vi.mock('$lib/wafCaptcha', () => ({
 }));
 
 // @sveltejs/kit is left unmocked on purpose: error() must throw a real HttpError.
-import { get, consentDeniedMessage, CONSENT_DENIED_MESSAGE } from '$lib/api';
+import { error } from '@sveltejs/kit';
+import { get, consentDeniedMessage, serverErrorMessage, CONSENT_DENIED_MESSAGE } from '$lib/api';
 
 describe('consentDeniedMessage', () => {
   let fetchMock: Mock;
@@ -108,5 +109,38 @@ describe('consentDeniedMessage', () => {
     expect(consentDeniedMessage(undefined)).toBeUndefined();
     expect(consentDeniedMessage(null)).toBeUndefined();
     expect(consentDeniedMessage('a string')).toBeUndefined();
+  });
+});
+
+describe('serverErrorMessage', () => {
+  function httpError(status: 400 | 403 | 500, body: string | App.Error): unknown {
+    try {
+      error(status, body);
+    } catch (e) {
+      return e;
+    }
+  }
+
+  it('reads the message of a JSON error body', () => {
+    const e = httpError(400, JSON.stringify({ errorType: 'bad_request', message: 'Not allowed' }));
+    expect(serverErrorMessage(e)).toBe('Not allowed');
+  });
+
+  it('reads the message of a consent denial', () => {
+    const e = httpError(403, { message: 'Consent withdrawn', errorType: 'consent_denied' });
+    expect(serverErrorMessage(e)).toBe('Consent withdrawn');
+  });
+
+  it.each(['Bad Gateway', '<html></html>', '{}', '{"message":"  "}', '{"message":5}', 'null', ''])(
+    'finds no message in the body %j',
+    (body) => {
+      expect(serverErrorMessage(httpError(500, body))).toBeUndefined();
+    },
+  );
+
+  it('finds no message in a value that is not an HTTP error', () => {
+    expect(serverErrorMessage('Please input a Dataset ID name')).toBeUndefined();
+    expect(serverErrorMessage(new Error('{"message":"Not allowed"}'))).toBeUndefined();
+    expect(serverErrorMessage(undefined)).toBeUndefined();
   });
 });

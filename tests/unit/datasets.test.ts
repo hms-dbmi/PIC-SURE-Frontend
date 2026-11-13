@@ -11,7 +11,6 @@ vi.mock('$lib/api', () => ({ post, put }));
 import { mapDataset, QueryVersion, type DataSet, type LinkedQuery } from '$lib/models/Dataset';
 import { QueryV3, type ExpectedResultType, type PhenotypicClause } from '$lib/models/query/Query';
 import { createDatasetName, exportResultType, requestVariant } from '$lib/services/datasets';
-import { SAMPLE_SAVE_REFUSED_MESSAGE } from '$lib/services/exportStatus';
 import { buildQueryRequestV3FromDescriptor } from '$lib/utilities/QueryBuilder';
 
 const QUERY_PATH = 'picsure/hpds/auth/query';
@@ -246,42 +245,24 @@ describe('createDatasetName', () => {
     vi.clearAllMocks();
   });
 
-  it('sends no request and throws the sample message for a sample query', async () => {
-    await expect(
-      createDatasetName('sample-csv', 'My cohort', storedQuery('DATAFRAME', true)),
-    ).rejects.toBe('A sample query cannot be saved as a dataset. Save the full query instead.');
-
-    expect(SAMPLE_SAVE_REFUSED_MESSAGE).toBe(
-      'A sample query cannot be saved as a dataset. Save the full query instead.',
-    );
-    expect(post).not.toHaveBeenCalled();
-    expect(put).not.toHaveBeenCalled();
-  });
-
-  it('refuses a sample query before it checks the name', async () => {
-    await expect(createDatasetName('sample-csv', '', { sample: true })).rejects.toBe(
-      SAMPLE_SAVE_REFUSED_MESSAGE,
-    );
-
-    expect(post).not.toHaveBeenCalled();
-  });
-
-  it('posts the query id and name for a query that is not a sample', async () => {
-    const saved = makeDataset();
+  it('posts the query id and name for the id of a sample query', async () => {
+    const saved = makeDataset({
+      query: storedQuery('DATAFRAME', true),
+      queryId: 'sample-csv',
+      queries: [{ queryId: 'sample-csv', sample: true, resultType: 'DATAFRAME' }],
+    });
     post.mockResolvedValueOnce(saved);
 
-    await expect(
-      createDatasetName('full-csv', 'My cohort', storedQuery('DATAFRAME')),
-    ).resolves.toBe(saved);
+    await expect(createDatasetName('sample-csv', 'My cohort')).resolves.toBe(saved);
 
     expect(post).toHaveBeenCalledTimes(1);
     expect(post).toHaveBeenCalledWith(NAMED_DATASET_PATH, {
-      queryId: 'full-csv',
+      queryId: 'sample-csv',
       name: 'My cohort',
     });
   });
 
-  it('posts the query id and name when no query is given', async () => {
+  it('posts the query id and name for a query that is not a sample', async () => {
     const saved = makeDataset();
     post.mockResolvedValueOnce(saved);
 
@@ -292,6 +273,23 @@ describe('createDatasetName', () => {
       queryId: 'full-csv',
       name: 'My cohort',
     });
+  });
+
+  it('rejects with what the server refused the save with', async () => {
+    const refusal = { status: 400, body: { message: '{"message":"Not allowed"}' } };
+    post.mockRejectedValueOnce(refusal);
+
+    await expect(createDatasetName('sample-csv', 'My cohort')).rejects.toBe(refusal);
+
+    expect(post).toHaveBeenCalledTimes(1);
+  });
+
+  it('sends nothing for a name with a character that is not allowed', async () => {
+    await expect(createDatasetName('sample-csv', 'My <cohort>')).rejects.toContain(
+      'Name can only contain',
+    );
+
+    expect(post).not.toHaveBeenCalled();
   });
 });
 
@@ -421,6 +419,32 @@ describe('requestVariant', () => {
     expect(post).toHaveBeenCalledTimes(2);
     expect(sentBody(post.mock.calls[1])).toEqual(sentBody(post.mock.calls[0]));
     expect(put).not.toHaveBeenCalled();
+  });
+
+  it('reuses the listed row for the sample of a dataset saved from a sample query', async () => {
+    const dataset = makeDataset({
+      query: storedQuery('DATAFRAME', true),
+      queryId: 'sample-csv',
+      queries: [{ queryId: 'sample-csv', sample: true, resultType: 'DATAFRAME' }],
+    });
+
+    const queryId = await requestVariant(dataset, true);
+
+    expect(queryId).toBe('sample-csv');
+    expect(post).not.toHaveBeenCalled();
+  });
+
+  it('submits with sample set for a dataset saved from a sample query that lists no queries', async () => {
+    post.mockResolvedValueOnce({ picsureResultId: 'sample-csv-new' });
+    const dataset = makeDataset({
+      query: storedQuery('DATAFRAME', true),
+      queryId: 'sample-csv',
+    });
+
+    const queryId = await requestVariant(dataset, true);
+
+    expect(sentBody(post.mock.calls[0]).query).toHaveProperty('sample', true);
+    expect(queryId).toBe('sample-csv-new');
   });
 
   it('leaves sample off the request when the full variant has to be submitted', async () => {

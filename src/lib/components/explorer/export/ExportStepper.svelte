@@ -8,11 +8,11 @@
   import { exports } from '$lib/stores/Export';
   import { filters } from '$lib/stores/Filter';
   import { resultCountsState } from '$lib/state/resultCounts.svelte';
+  import { serverErrorMessage } from '$lib/api';
   import { createDatasetName } from '$lib/services/datasets';
   import {
     EXPORT_NOT_READY_MESSAGE,
     EXPORT_PREPARE_FAILED_MESSAGE,
-    SAMPLE_SAVE_REFUSED_MESSAGE,
     isExportFailure,
     isSessionEnded,
     statusWaitFailureMessage,
@@ -48,6 +48,9 @@
   import { QueryV3 } from '$lib/models/query/Query';
 
   const { rows = [] }: { rows?: ExportRowInterface[] } = $props();
+
+  const SAVE_FAILED_MESSAGE =
+    'An error occurred while saving your dataset. Please try again. If this problem persists, please contact an administrator.';
 
   const unmounted = new AbortController();
   onDestroy(() => unmounted.abort());
@@ -89,7 +92,6 @@
         saveDatasetPromise = createDatasetName(
           getDatasetId() ?? '',
           getDatasetNameInput() ?? '',
-          getQueryRequest().query,
         ).then((data: DataSet) => {
           statusPromise = checkExportStatus(getDatasetId());
           return data;
@@ -218,18 +220,11 @@
         {/await}
       {:catch e}
         <div class="flex justify-center">
-          {#if e === SAMPLE_SAVE_REFUSED_MESSAGE}
-            <ErrorAlert title={SAMPLE_SAVE_REFUSED_MESSAGE} />
-          {:else}
-            <ErrorAlert
-              title="An error occurred while saving your dataset. Please try again. If this problem persists, please
-          contact an administrator."
-            >
-              {#if e.includes('Export not ready')}
-                <p>{e}</p>
-              {/if}
-            </ErrorAlert>
-          {/if}
+          <ErrorAlert title={serverErrorMessage(e) ?? SAVE_FAILED_MESSAGE}>
+            {#if typeof e === 'string' && e.includes('Export not ready')}
+              <p>{e}</p>
+            {/if}
+          </ErrorAlert>
           <div class="hidden">{e}</div>
         </div>
       {/await}

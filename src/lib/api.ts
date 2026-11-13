@@ -55,6 +55,31 @@ export function isSampleDisabled(e: unknown): boolean {
 }
 
 /**
+ * Reads the message the server put in the body of a failed response, so a caller can show it
+ * in place of its own generic text.
+ *
+ * @param e The value a rejected request rejected with.
+ * @returns The consent message of a consent denial, or the non-blank `message` of a JSON error
+ * body. Undefined when `e` is not an HTTP error or its body carries no such message.
+ */
+export function serverErrorMessage(e: unknown): string | undefined {
+  if (!isHttpError(e)) {
+    return undefined;
+  }
+  const consentMessage = consentDeniedMessage(e);
+  if (consentMessage) {
+    return consentMessage;
+  }
+  try {
+    const body = JSON.parse(e.body.message) as { message?: unknown } | null;
+    const message = body?.message;
+    return typeof message === 'string' && message.trim() !== '' ? message : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * Reads the error type out of a response body.
  *
  * @param responseBody The raw text of a response.

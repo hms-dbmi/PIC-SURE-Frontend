@@ -3,7 +3,6 @@ import { Picsure } from '$lib/paths';
 import { QueryVersion, type DataSet, type DataSetResponse } from '$lib/models/Dataset';
 import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
 import { QueryV3, serializeQueryV3 } from '$lib/models/query/Query';
-import { SAMPLE_SAVE_REFUSED_MESSAGE } from '$lib/services/exportStatus';
 
 const EXPORT_RESULT_TYPES = ['DATAFRAME', 'DATAFRAME_PFB', 'DATAFRAME_TIMESERIES'] as const;
 
@@ -16,25 +15,16 @@ interface DatasetRequest {
 }
 
 /**
- * Saves a query as a named dataset. A sample query is refused here, before the name is checked
- * and before anything is sent, because a named dataset is saved from its full query and the
- * dataset page adds the sample to it afterwards.
+ * Saves a query as a named dataset. A sample query is saved like any other, and only the server
+ * decides whether a save is refused.
  *
  * @param queryId The id of the submitted query the dataset is saved from.
  * @param name The name the user gave the dataset.
- * @param query The query behind `queryId`, when the caller holds it.
  * @returns The saved dataset.
- * @throws The text of {@link SAMPLE_SAVE_REFUSED_MESSAGE} when `query.sample` is true, a text
- * naming what is wrong with `name`, or whatever the request rejects with.
+ * @throws A text naming what is wrong with `name`, in which case nothing is sent, or whatever
+ * the request rejects with.
  */
-export async function createDatasetName(
-  queryId: string,
-  name: string,
-  query?: { sample?: unknown },
-): Promise<DataSet> {
-  if (query?.sample === true) {
-    throw SAMPLE_SAVE_REFUSED_MESSAGE;
-  }
+export async function createDatasetName(queryId: string, name: string): Promise<DataSet> {
   if (name === '' && name.trim() === '') {
     throw 'Please input a Dataset ID name';
   }

@@ -22,7 +22,6 @@
   } from '$lib/ExportStepperManager.svelte';
   import { log, createLog } from '$lib/logger';
   import { config } from '$lib/configuration.svelte';
-  import { SAMPLE_SAVE_REFUSED_MESSAGE } from '$lib/services/exportStatus';
 
   const CREATING_MESSAGES: TimedMessage[] = [
     { afterMs: 0, text: 'Creating dataset ID…' },
@@ -48,9 +47,6 @@
       });
     }
 
-    if (getQueryRequest().query.sample === true) {
-      throw SAMPLE_SAVE_REFUSED_MESSAGE;
-    }
     try {
       getQueryRequest().query.expectedResultType = getActiveType() || 'DATAFRAME';
       setDatasetId('');
@@ -127,9 +123,10 @@
               {:then}
                 <label for="dataset-id" class="font-bold mr-2">Dataset ID:</label>
                 <div id="dataset-id" class="mr-4">{getDatasetId()}</div>
-              {:catch}
+              {:catch e}
                 <ErrorAlert
-                  title="An error occurred while getting the dataset ID. Please try again later."
+                  title={api.serverErrorMessage(e) ??
+                    'An error occurred while getting the dataset ID. Please try again later.'}
                 />
               {/await}
             </div>
@@ -137,16 +134,12 @@
         </div>
       </div>
     </div>
-  {:catch e}
+  {:catch}
     <div class="flex justify-center mb-4">
-      {#if e === SAMPLE_SAVE_REFUSED_MESSAGE}
-        <ErrorAlert title={SAMPLE_SAVE_REFUSED_MESSAGE} />
-      {:else}
-        <ErrorAlert
-          title="An error occurred while preparing your dataset. Please try again. If this problem persists, please
+      <ErrorAlert
+        title="An error occurred while preparing your dataset. Please try again. If this problem persists, please
           contact an administrator."
-        />
-      {/if}
+      />
     </div>
   {/await}
 </section>
