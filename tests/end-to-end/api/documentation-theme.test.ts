@@ -134,7 +134,7 @@ async function contrastFailures(region: Locator): Promise<Failure[]> {
       }
     };
 
-    // The service tabs above the viewer, and everything Swagger draws.
+    // Every visible element in the region.
     for (const element of host.querySelectorAll('*')) {
       if (!element.checkVisibility({ visibilityProperty: true })) continue;
       const style = getComputedStyle(element);

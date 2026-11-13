@@ -224,7 +224,7 @@
         Build reproducible cohort-building pipelines.
       </p>
       <div
-        class="mt-4 inline-flex flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl border border-primary-500 bg-surface-50-950 py-1 pr-4 pl-1"
+        class="mt-4 inline-flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-primary-500 bg-surface-50-950 py-1 pr-4 pl-1.5"
         data-testid="api-feedback-callout"
       >
         <span class="badge {tones['tonal-primary']}">New</span>

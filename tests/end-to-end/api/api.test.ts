@@ -942,7 +942,7 @@ test.describe('API page logged out', () => {
       'href',
       'https://hms-dbmi.atlassian.net/servicedesk/customer/portal/5/group/6/create/362',
     );
-    // A new-tab link is what the site's external-link warning opens in a new tab.
+    // The external-link warning opens target="_blank" links in a new tab.
     await expect(link).toHaveAttribute('target', '_blank');
     await expect(link.locator('i.fa-arrow-up-right-from-square')).toBeVisible();
 
