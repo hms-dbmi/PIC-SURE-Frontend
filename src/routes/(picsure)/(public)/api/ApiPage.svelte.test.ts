@@ -111,6 +111,27 @@ describe('API page logging', () => {
     ]);
   });
 
+  it('logs feedback link clicks with the form URL', async () => {
+    render(ApiPage);
+    await tick();
+
+    await fireEvent.click(
+      screen.getByRole('link', {
+        name: 'Tell us what you think, opens feedback form in a new tab',
+      }),
+    );
+
+    expect(actions('api.feedback_click')).toEqual([
+      {
+        event_type: 'NAVIGATION',
+        action: 'api.feedback_click',
+        metadata: {
+          target: 'https://hms-dbmi.atlassian.net/servicedesk/customer/portal/5/group/6/create/362',
+        },
+      },
+    ]);
+  });
+
   it('logs external docs links with their URL', async () => {
     window.location.hash = '#workflow-python';
     render(ApiPage);
