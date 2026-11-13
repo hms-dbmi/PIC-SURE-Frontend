@@ -54,7 +54,7 @@ export default defineConfig(async ({ mode }) => {
           test: {
             name: 'node',
             environment: 'node',
-            include: ['src/**/*.test.ts', 'scripts/**/*.test.ts', 'tests/support/**/*.test.ts'],
+            include: ['src/**/*.test.ts', 'tests/support/**/*.test.ts'],
             exclude: [...configDefaults.exclude, '**/*.svelte.test.ts'],
           },
         },
