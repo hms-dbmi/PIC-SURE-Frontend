@@ -366,7 +366,7 @@ on('POST', path(Psama.Role), ({ body, res }) => {
 on('PATCH', path(Psama.Role), ({ body, res }) => {
   const [role] = body as { uuid: string; privileges?: (string | { uuid: string })[] }[];
   const index = state.roles.findIndex((r) => r.uuid === role.uuid);
-  // The client now PATCHes privileges as bare uuids; the real API responds with privilege objects.
+  // Like the real API, accepts privilege refs and responds with privilege objects.
   const privileges = role.privileges?.map((p) => (typeof p === 'string' ? { uuid: p } : p));
   const updated = {
     ...(index > -1 ? state.roles[index] : {}),

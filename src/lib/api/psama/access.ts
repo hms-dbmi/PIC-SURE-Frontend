@@ -61,8 +61,7 @@ export const privileges = {
   get: (uuid: string) => request<PrivilegeDto>(`${Psama.Privilege}/${uuid}`),
   add: async (privilege: PrivilegeDto) =>
     (await request<PrivilegeDto[]>(Psama.Privilege, { method: 'POST', body: [privilege] }))[0],
-  /** Sends the application as a bare uuid, unlike `add`. */
-  update: (privilege: Privilege) =>
+  update: (privilege: PrivilegeDto) =>
     request<unknown>(Psama.Privilege, { method: 'PATCH', body: [privilege] }),
   remove: (uuid: string) => request<unknown>(`${Psama.Privilege}/${uuid}`, { method: 'DELETE' }),
 };
@@ -72,8 +71,7 @@ export const roles = {
   get: (uuid: string) => request<RoleDto>(`${Psama.Role}/${uuid}`),
   add: async (role: RoleDto) =>
     (await request<Envelope<RoleDto>>(Psama.Role, { method: 'POST', body: [role] })).content[0],
-  /** Sends the privileges as bare uuids, unlike `add`. */
-  update: async (role: Role) =>
+  update: async (role: RoleDto) =>
     (await request<Envelope<RoleDto>>(Psama.Role, { method: 'PATCH', body: [role] })).content[0],
   remove: (uuid: string) => request<unknown>(`${Psama.Role}/${uuid}`, { method: 'DELETE' }),
 };
