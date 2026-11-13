@@ -33,17 +33,62 @@ beforeEach(() => {
 });
 
 describe('client handleError', () => {
-  it('sends unexpected errors to telemetry', async () => {
-    await handleError({ kind: 'unknown', error: new Error('boom'), event });
+  it('sends unexpected errors to telemetry with their name and stack', async () => {
+    const error = new TypeError('boom');
+    error.stack = 'TypeError: boom\n    at load (app.js:1:2)';
+    await handleError({ kind: 'unknown', error, event });
 
     expect(logger.log).toHaveBeenCalledWith(
       {
         event_type: 'ERROR',
         action: 'client.error',
-        metadata: { kind: 'unknown', message: 'boom', route: '/explorer' },
+        metadata: {
+          kind: 'unknown',
+          name: 'TypeError',
+          message: 'boom',
+          stack: 'TypeError: boom\n    at load (app.js:1:2)',
+          user_agent: navigator.userAgent,
+          route: '/explorer',
+        },
       },
       { keepalive: true },
     );
+  });
+
+  it('caps the message and stack so the logging service accepts the event', async () => {
+    const error = new Error('m'.repeat(20_000));
+    error.stack = 'x'.repeat(20_000);
+    await handleError({ kind: 'unknown', error, event });
+
+    const metadata = logger.createLog.mock.calls[0][2];
+    expect(metadata.message).toHaveLength(4000);
+    expect(metadata.stack).toHaveLength(4000);
+  });
+
+  it('drops query strings and fragments from URLs in the stack and message, which can hold auth tokens', async () => {
+    const error = new Error('Failed to load https://picsure.test/login/loading?code=secret');
+    error.stack =
+      'Error: boom\n    at https://picsure.test/login/loading#access_token=a:1:2secret:3:4\n' +
+      '    at Session.#restore (https://picsure.test/_app/start.js?code=secret:1:2)';
+    await handleError({ kind: 'unknown', error, event });
+
+    const { message, stack } = logger.createLog.mock.calls[0][2];
+    expect(message).toBe('Failed to load https://picsure.test/login/loading');
+    expect(stack).toBe(
+      'Error: boom\n    at https://picsure.test/login/loading:3:4\n' +
+        '    at Session.#restore (https://picsure.test/_app/start.js:1:2)',
+    );
+  });
+
+  it('logs thrown values that are not Errors as a message', async () => {
+    await handleError({ kind: 'unknown', error: 'plain string', event });
+
+    expect(logger.createLog).toHaveBeenCalledWith('ERROR', 'client.error', {
+      kind: 'unknown',
+      message: 'plain string',
+      user_agent: navigator.userAgent,
+      route: '/explorer',
+    });
   });
 
   it('sends framework errors with their status', async () => {
