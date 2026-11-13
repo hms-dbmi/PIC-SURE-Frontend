@@ -13,6 +13,8 @@ permissions:
 jobs:
   setup:
     runs-on: ubuntu-22.04
+    outputs:
+      playwright-version: ${{ steps.playwright-version.outputs.version }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
@@ -32,6 +34,12 @@ jobs:
         with:
           path: node_modules
           key: node-modules-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Read Playwright version
+        id: playwright-version
+        run: |
+          version=$(pnpm exec playwright --version | awk '{print $2}')
+          test -n "$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
   audit:
     runs-on: ubuntu-22.04
@@ -120,7 +128,12 @@ jobs:
 
   playwright:
     runs-on: ubuntu-22.04
-    needs: [lint, typecheck]
+    needs: [setup, lint, typecheck]
+    # The tag must match the installed @playwright/test, so it comes from the setup job.
+    # --user 1001 matches the runner's workspace owner; Firefox refuses to run as root.
+    container:
+      image: mcr.microsoft.com/playwright:v${{ needs.setup.outputs.playwright-version }}-jammy
+      options: --user 1001
     strategy:
       fail-fast: false
       matrix:
@@ -136,20 +149,13 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version-file: .nvmrc
-      - name: Restore dependencies
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: node_modules
-          key: node-modules-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
-      - name: Cache Playwright browsers
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-browsers-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          cache: 'pnpm'
+      # The setup job's node_modules cache can't be restored here: the image lacks zstd, so
+      # actions/cache looks for a gzip entry and misses. The pnpm store cache is container-only too.
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
       - name: Sync SvelteKit
         run: pnpm svelte-kit sync
-      - name: Install Playwright Browsers
-        run: pnpm exec playwright install --with-deps
       - name: Run Playwright tests
         run: pnpm run test:integration --shard=${{ matrix.shard }} --reporter=blob,list
       - name: Upload blob report
