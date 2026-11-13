@@ -20,6 +20,9 @@ const RESULT_NOT_READY = 'result_not_ready';
 const SAMPLE_DISABLED = 'sample_disabled';
 export const CONSENT_DENIED_MESSAGE = 'You no longer have consent for this saved result';
 
+/** The longest server message, in characters, that {@link serverErrorMessage} hands back. */
+export const SERVER_MESSAGE_MAX_LENGTH = 300;
+
 export type RequestOptions = { signal?: AbortSignal };
 
 export function isAbortError(e: unknown): boolean {
@@ -55,24 +58,33 @@ export function isSampleDisabled(e: unknown): boolean {
 }
 
 /**
- * Reads the message the server put in the body of a failed response, so a caller can show it
- * in place of its own generic text.
+ * Reads the message the server put in the body of a refused request, so a caller can show it
+ * in place of its own generic text. Only a 4xx is read: the message of a 5xx can describe the
+ * server's internals, and the caller's generic text is shown for it. A message longer than
+ * {@link SERVER_MESSAGE_MAX_LENGTH} is dropped whole, never cut short.
  *
  * @param e The value a rejected request rejected with.
  * @returns The consent message of a consent denial, or the non-blank `message` of a JSON error
- * body. Undefined when `e` is not an HTTP error or its body carries no such message.
+ * body. Undefined when `e` is not an HTTP error with a status from 400 to 499, when its body
+ * carries no such message, or when the message is too long to show.
  */
 export function serverErrorMessage(e: unknown): string | undefined {
-  if (!isHttpError(e)) {
+  if (!isHttpError(e) || e.status < 400 || e.status > 499) {
     return undefined;
   }
-  const consentMessage = consentDeniedMessage(e);
-  if (consentMessage) {
-    return consentMessage;
-  }
+  const message = consentDeniedMessage(e) || jsonBodyMessage(e.body.message);
+  return message && message.length <= SERVER_MESSAGE_MAX_LENGTH ? message : undefined;
+}
+
+/**
+ * Reads the `message` field out of a response body.
+ *
+ * @param responseBody The raw text of a response.
+ * @returns The field when the text is JSON and the field is a non-blank string.
+ */
+function jsonBodyMessage(responseBody: string): string | undefined {
   try {
-    const body = JSON.parse(e.body.message) as { message?: unknown } | null;
-    const message = body?.message;
+    const message = (JSON.parse(responseBody) as { message?: unknown } | null)?.message;
     return typeof message === 'string' && message.trim() !== '' ? message : undefined;
   } catch {
     return undefined;

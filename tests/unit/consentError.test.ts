@@ -30,7 +30,13 @@ vi.mock('$lib/wafCaptcha', () => ({
 
 // @sveltejs/kit is left unmocked on purpose: error() must throw a real HttpError.
 import { error } from '@sveltejs/kit';
-import { get, consentDeniedMessage, serverErrorMessage, CONSENT_DENIED_MESSAGE } from '$lib/api';
+import {
+  get,
+  consentDeniedMessage,
+  serverErrorMessage,
+  CONSENT_DENIED_MESSAGE,
+  SERVER_MESSAGE_MAX_LENGTH,
+} from '$lib/api';
 
 describe('consentDeniedMessage', () => {
   let fetchMock: Mock;
@@ -113,7 +119,7 @@ describe('consentDeniedMessage', () => {
 });
 
 describe('serverErrorMessage', () => {
-  function httpError(status: 400 | 403 | 500, body: string | App.Error): unknown {
+  function httpError(status: 400 | 403 | 404 | 499 | 500 | 502, body: string | App.Error): unknown {
     try {
       error(status, body);
     } catch (e) {
@@ -134,9 +140,31 @@ describe('serverErrorMessage', () => {
   it.each(['Bad Gateway', '<html></html>', '{}', '{"message":"  "}', '{"message":5}', 'null', ''])(
     'finds no message in the body %j',
     (body) => {
-      expect(serverErrorMessage(httpError(500, body))).toBeUndefined();
+      expect(serverErrorMessage(httpError(400, body))).toBeUndefined();
     },
   );
+
+  it.each([400, 404, 499] as const)('reads the message of a %i', (status) => {
+    expect(serverErrorMessage(httpError(status, '{"message":"Not allowed"}'))).toBe('Not allowed');
+  });
+
+  it.each([500, 502] as const)('hides the message of a %i', (status) => {
+    const body = JSON.stringify({ message: 'HPDS call failed: http://hpds.internal:8080/query' });
+    expect(serverErrorMessage(httpError(status, body))).toBeUndefined();
+  });
+
+  it('reads a message exactly as long as the limit', () => {
+    const message = 'a'.repeat(SERVER_MESSAGE_MAX_LENGTH);
+    expect(serverErrorMessage(httpError(400, JSON.stringify({ message })))).toBe(message);
+  });
+
+  it('drops a message longer than the limit without cutting it', () => {
+    const message = 'a'.repeat(SERVER_MESSAGE_MAX_LENGTH + 1);
+    expect(serverErrorMessage(httpError(400, JSON.stringify({ message })))).toBeUndefined();
+    expect(
+      serverErrorMessage(httpError(403, { message, errorType: 'consent_denied' })),
+    ).toBeUndefined();
+  });
 
   it('finds no message in a value that is not an HTTP error', () => {
     expect(serverErrorMessage('Please input a Dataset ID name')).toBeUndefined();

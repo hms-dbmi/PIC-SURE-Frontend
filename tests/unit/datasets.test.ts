@@ -245,7 +245,7 @@ describe('createDatasetName', () => {
     vi.clearAllMocks();
   });
 
-  it('posts the query id and name for the id of a sample query', async () => {
+  it('posts the query id and name when handed a sample query', async () => {
     const saved = makeDataset({
       query: storedQuery('DATAFRAME', true),
       queryId: 'sample-csv',
@@ -253,13 +253,21 @@ describe('createDatasetName', () => {
     });
     post.mockResolvedValueOnce(saved);
 
-    await expect(createDatasetName('sample-csv', 'My cohort')).resolves.toBe(saved);
+    const saveWithQuery = createDatasetName as (
+      queryId: string,
+      name: string,
+      query: QueryV3,
+    ) => Promise<DataSet>;
+
+    await expect(
+      saveWithQuery('sample-csv', 'My cohort', storedQuery('DATAFRAME', true)),
+    ).resolves.toBe(saved);
 
     expect(post).toHaveBeenCalledTimes(1);
-    expect(post).toHaveBeenCalledWith(NAMED_DATASET_PATH, {
-      queryId: 'sample-csv',
-      name: 'My cohort',
-    });
+    expect(post.mock.calls[0]).toEqual([
+      NAMED_DATASET_PATH,
+      { queryId: 'sample-csv', name: 'My cohort' },
+    ]);
   });
 
   it('posts the query id and name for a query that is not a sample', async () => {

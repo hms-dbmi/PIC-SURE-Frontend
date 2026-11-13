@@ -54,7 +54,7 @@ const QUERY_PATH = 'picsure/hpds/auth/query';
 const SERVER_REFUSAL = 'Sample datasets are switched off for this project.';
 const DATASET_ID_FAILED = 'An error occurred while getting the dataset ID. Please try again later.';
 
-function httpError(status: 400 | 500, text: string): unknown {
+function httpError(status: 400 | 500 | 502, text: string): unknown {
   try {
     error(status, text);
   } catch (e) {
@@ -101,6 +101,26 @@ describe('SaveDatasetStep', () => {
     render(SaveDatasetStep);
 
     expect(await screen.findByText(DATASET_ID_FAILED)).toBeInTheDocument();
+  });
+
+  it('shows the generic message for a 502 whose body carries a message', async () => {
+    const internal = 'HPDS call failed: http://hpds.internal:8080/query';
+    post.mockRejectedValue(httpError(502, JSON.stringify({ message: internal })));
+
+    render(SaveDatasetStep);
+
+    expect(await screen.findByText(DATASET_ID_FAILED)).toBeInTheDocument();
+    expect(screen.queryByText(internal)).not.toBeInTheDocument();
+  });
+
+  it('shows the generic message for a 400 whose message is too long for the alert', async () => {
+    const long = 'a'.repeat(301);
+    post.mockRejectedValue(httpError(400, JSON.stringify({ message: long })));
+
+    render(SaveDatasetStep);
+
+    expect(await screen.findByText(DATASET_ID_FAILED)).toBeInTheDocument();
+    expect(screen.queryByText(long)).not.toBeInTheDocument();
   });
 
   it('submits the query and shows its id for a query that is not a sample', async () => {
