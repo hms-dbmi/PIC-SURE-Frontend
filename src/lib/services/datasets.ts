@@ -4,10 +4,18 @@ import { QueryVersion, type DataSet, type DataSetResponse } from '$lib/models/Da
 import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
 import { QueryV3, serializeQueryV3 } from '$lib/models/query/Query';
 
-const EXPORT_RESULT_TYPES = ['DATAFRAME', 'DATAFRAME_PFB', 'DATAFRAME_TIMESERIES'] as const;
+const EXPORT_RESULT_TYPES = ['DATAFRAME', 'DATAFRAME_TIMESERIES', 'DATAFRAME_PFB'] as const;
 
 /** A result type that produces an export file, the only kind a sample can be taken of. */
 export type ExportResultType = (typeof EXPORT_RESULT_TYPES)[number];
+
+/** The feature switches that decide which export types the explorer offers. */
+export interface ExportTypeSwitches {
+  /** True when the timeseries export is offered. */
+  enableExportTimeseries: boolean;
+  /** True when the PFB export is offered. */
+  enablePfbExport: boolean;
+}
 
 interface DatasetRequest {
   queryId: string;
@@ -74,14 +82,38 @@ export function exportResultType(dataset: DataSet): ExportResultType | undefined
 }
 
 /**
- * Finds the query that serves the full or the sample variant of a dataset, submitting it when
- * the dataset does not list one. A variant is the pair of `sample` and the dataset's stored
- * result type.
+ * Lists the export types a dataset can be downloaded as: the plain data frame, the timeseries
+ * and PFB types whose feature switch is on, and the type the dataset was stored with whether
+ * or not its switch is on.
+ *
+ * @param dataset The named dataset.
+ * @param switches The export feature switches.
+ * @returns The offered types in display order, empty when the dataset offers no export.
+ */
+export function offeredExportTypes(
+  dataset: DataSet,
+  switches: ExportTypeSwitches,
+): ExportResultType[] {
+  const stored = exportResultType(dataset);
+  if (stored === undefined) {
+    return [];
+  }
+  const enabled: Record<ExportResultType, boolean> = {
+    DATAFRAME: true,
+    DATAFRAME_TIMESERIES: switches.enableExportTimeseries,
+    DATAFRAME_PFB: switches.enablePfbExport,
+  };
+  return EXPORT_RESULT_TYPES.filter((type) => type === stored || enabled[type]);
+}
+
+/**
+ * Finds the query that serves one variant of a dataset, submitting it when the dataset does not
+ * list one. A variant is the pair of `sample` and an export result type.
  *
  * A query the dataset lists for the variant is reused without a request. Otherwise the stored
- * query is submitted with `sample` set and, like a query built in the explorer, with `picsureId`
- * and `id` null and no authorization filters, so nothing the server filled in on the stored copy
- * is sent back. The body goes through the explorer's own serializer, so it carries no `type`
+ * query is submitted with the wanted result type, with `sample` set and, like a query built in
+ * the explorer, with `picsureId` and `id` null and no authorization filters, so nothing the
+ * server filled in on the stored copy is sent back. The body goes through the explorer's own serializer, so it carries no `type`
  * key on any clause. The result is not waited for.
  *
  * The submit is the only request. The server associates a submitted query with its dataset, so
@@ -89,6 +121,7 @@ export function exportResultType(dataset: DataSet): ExportResultType | undefined
  *
  * @param dataset The named dataset. It is not modified.
  * @param sample True for the sample variant, false for the full one.
+ * @param resultType The export type wanted. Defaults to the stored query's type.
  * @param signal Cancels the submit when it aborts.
  * @returns The id of the variant's query: the listed one, or the one the submit answered with.
  * @throws An error when the dataset's stored query is not a V3 query of an export type, in
@@ -98,15 +131,16 @@ export function exportResultType(dataset: DataSet): ExportResultType | undefined
 export async function requestVariant(
   dataset: DataSet,
   sample: boolean,
+  resultType?: ExportResultType,
   signal?: AbortSignal,
 ): Promise<string> {
   const stored = storedExportQuery(dataset);
   if (!stored) {
     throw new Error('This dataset has no export to request.');
   }
-  const resultType = stored.expectedResultType;
+  const expectedResultType = resultType ?? stored.expectedResultType;
   const listed = dataset.queries.find(
-    (candidate) => candidate.sample === sample && candidate.resultType === resultType,
+    (candidate) => candidate.sample === sample && candidate.resultType === expectedResultType,
   );
   if (listed) {
     return listed.queryId;
@@ -114,7 +148,14 @@ export async function requestVariant(
 
   const request: QueryRequestInterfaceV3 = {
     query: serializeQueryV3(
-      new QueryV3({ ...stored, sample, picsureId: null, id: null, authorizationFilters: [] }),
+      new QueryV3({
+        ...stored,
+        expectedResultType,
+        sample,
+        picsureId: null,
+        id: null,
+        authorizationFilters: [],
+      }),
     ),
   };
   const options = signal ? { signal } : undefined;

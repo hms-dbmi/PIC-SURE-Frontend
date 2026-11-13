@@ -10,7 +10,12 @@ vi.mock('$lib/api', () => ({ post, put }));
 
 import { mapDataset, QueryVersion, type DataSet, type LinkedQuery } from '$lib/models/Dataset';
 import { QueryV3, type ExpectedResultType, type PhenotypicClause } from '$lib/models/query/Query';
-import { createDatasetName, exportResultType, requestVariant } from '$lib/services/datasets';
+import {
+  createDatasetName,
+  exportResultType,
+  offeredExportTypes,
+  requestVariant,
+} from '$lib/services/datasets';
 import { buildQueryRequestV3FromDescriptor } from '$lib/utilities/QueryBuilder';
 
 const QUERY_PATH = 'picsure/hpds/auth/query';
@@ -323,9 +328,110 @@ describe('exportResultType', () => {
   });
 });
 
+describe('offeredExportTypes', () => {
+  const allOn = { enableExportTimeseries: true, enablePfbExport: true };
+  const allOff = { enableExportTimeseries: false, enablePfbExport: false };
+
+  it('lists every export type when both switches are on', () => {
+    expect(offeredExportTypes(makeDataset(), allOn)).toEqual([
+      'DATAFRAME',
+      'DATAFRAME_TIMESERIES',
+      'DATAFRAME_PFB',
+    ]);
+  });
+
+  it('lists only the data frame when both switches are off', () => {
+    expect(offeredExportTypes(makeDataset(), allOff)).toEqual(['DATAFRAME']);
+  });
+
+  it.each([
+    { enableExportTimeseries: true, enablePfbExport: false, extra: 'DATAFRAME_TIMESERIES' },
+    { enableExportTimeseries: false, enablePfbExport: true, extra: 'DATAFRAME_PFB' },
+  ])('lists $extra when only its switch is on', ({ extra, ...switches }) => {
+    expect(offeredExportTypes(makeDataset(), switches)).toEqual(['DATAFRAME', extra]);
+  });
+
+  it.each(['DATAFRAME_TIMESERIES', 'DATAFRAME_PFB'] as const)(
+    'keeps the stored type %s when its switch is off',
+    (stored) => {
+      const dataset = makeDataset({ query: storedQuery(stored) });
+
+      expect(offeredExportTypes(dataset, allOff)).toEqual(['DATAFRAME', stored]);
+    },
+  );
+
+  it('lists nothing for a dataset stored with a count type', () => {
+    expect(offeredExportTypes(makeDataset({ query: storedQuery('COUNT') }), allOn)).toEqual([]);
+  });
+});
+
 describe('requestVariant', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('picks the listed query by sample and the chosen result type', async () => {
+    const queries: LinkedQuery[] = [
+      { queryId: 'full-csv', sample: false, resultType: 'DATAFRAME' },
+      { queryId: 'sample-csv', sample: true, resultType: 'DATAFRAME' },
+      { queryId: 'full-pfb', sample: false, resultType: 'DATAFRAME_PFB' },
+      { queryId: 'sample-pfb', sample: true, resultType: 'DATAFRAME_PFB' },
+      { queryId: 'sample-timeseries', sample: true, resultType: 'DATAFRAME_TIMESERIES' },
+    ];
+    const dataset = makeDataset({ queries });
+
+    expect(await requestVariant(dataset, true, 'DATAFRAME_PFB')).toBe('sample-pfb');
+    expect(await requestVariant(dataset, false, 'DATAFRAME_PFB')).toBe('full-pfb');
+    expect(await requestVariant(dataset, true, 'DATAFRAME_TIMESERIES')).toBe('sample-timeseries');
+    expect(await requestVariant(dataset, true, 'DATAFRAME')).toBe('sample-csv');
+    expect(post).not.toHaveBeenCalled();
+  });
+
+  it('submits the stored query with the chosen type when that variant is not listed', async () => {
+    post.mockResolvedValueOnce({ picsureResultId: 'sample-pfb' });
+    const queries: LinkedQuery[] = [
+      { queryId: 'full-csv', sample: false, resultType: 'DATAFRAME' },
+      { queryId: 'sample-csv', sample: true, resultType: 'DATAFRAME' },
+      { queryId: 'full-pfb', sample: false, resultType: 'DATAFRAME_PFB' },
+    ];
+
+    const queryId = await requestVariant(makeDataset({ queries }), true, 'DATAFRAME_PFB');
+
+    expect(queryId).toBe('sample-pfb');
+    expect(post).toHaveBeenCalledTimes(1);
+    expect(post.mock.calls[0][0]).toBe(QUERY_PATH);
+    const body = sentBody(post.mock.calls[0]) as { query: Record<string, unknown> };
+    expect(body.query.expectedResultType).toBe('DATAFRAME_PFB');
+    expect(body.query.sample).toBe(true);
+    expect(body.query.select).toEqual(['\\study\\age\\']);
+    expect(put).not.toHaveBeenCalled();
+  });
+
+  it('never sends sample for the full variant of a chosen type', async () => {
+    post.mockResolvedValueOnce({ picsureResultId: 'full-timeseries' });
+
+    await requestVariant(makeDataset(), false, 'DATAFRAME_TIMESERIES');
+
+    const body = sentBody(post.mock.calls[0]) as { query: Record<string, unknown> };
+    expect(body.query.expectedResultType).toBe('DATAFRAME_TIMESERIES');
+    expect(body.query).not.toHaveProperty('sample');
+  });
+
+  it('uses the stored type when no type is given', async () => {
+    post.mockResolvedValueOnce({ picsureResultId: 'sample-timeseries' });
+    const dataset = makeDataset({
+      query: storedQuery('DATAFRAME_TIMESERIES'),
+      queries: [
+        { queryId: 'full-timeseries', sample: false, resultType: 'DATAFRAME_TIMESERIES' },
+        { queryId: 'full-csv', sample: false, resultType: 'DATAFRAME' },
+        { queryId: 'sample-csv', sample: true, resultType: 'DATAFRAME' },
+      ],
+    });
+
+    expect(await requestVariant(dataset, false)).toBe('full-timeseries');
+    expect(await requestVariant(dataset, true)).toBe('sample-timeseries');
+    const body = sentBody(post.mock.calls[0]) as { query: Record<string, unknown> };
+    expect(body.query.expectedResultType).toBe('DATAFRAME_TIMESERIES');
   });
 
   it('picks the listed query by sample and result type', async () => {
@@ -584,7 +690,7 @@ describe('requestVariant', () => {
     post.mockResolvedValueOnce({ picsureResultId: 'sample-csv' });
     const { signal } = new AbortController();
 
-    await requestVariant(makeDataset(), true, signal);
+    await requestVariant(makeDataset(), true, undefined, signal);
 
     expect(post.mock.calls[0][4]).toEqual({ signal });
     expect(put).not.toHaveBeenCalled();

@@ -9,7 +9,12 @@ const { get, post, put, features } = vi.hoisted(() => ({
   put: vi.fn(),
   features: {
     confirmDownload: false,
-    explorer: { allowDownload: true, enablePfbExport: true, enableSampleDataset: true },
+    explorer: {
+      allowDownload: true,
+      enablePfbExport: true,
+      enableExportTimeseries: false,
+      enableSampleDataset: true,
+    },
   },
 }));
 
@@ -24,6 +29,7 @@ vi.mock('$lib/api', () => ({
   consentDeniedMessage: () => undefined,
   isResultNotReady: () => false,
   isSampleDisabled: () => false,
+  serverErrorMessage: () => undefined,
 }));
 vi.mock('$lib/logger', () => ({ log: vi.fn(), createLog: vi.fn() }));
 vi.mock('$lib/configuration.svelte', () => ({
@@ -113,6 +119,31 @@ describe('dataset page', () => {
       `${QUERY_PATH}/sample-id/status`,
       `${QUERY_PATH}/sample-id/status`,
     ]);
+    expect(screen.getByTestId('dataset-summary-uuid')).toHaveTextContent('full-id');
+  });
+
+  it('offers the enabled export types and submits the chosen one as a sample', async () => {
+    get.mockResolvedValueOnce(serverDataset()).mockResolvedValue({ status: 'AVAILABLE' });
+    post.mockResolvedValue({ picsureResultId: 'sample-pfb' });
+    render(DatasetPage);
+
+    const control = (await screen.findByLabelText('Export type')) as HTMLSelectElement;
+    expect(Array.from(control.options).map((option) => option.value)).toEqual([
+      'DATAFRAME',
+      'DATAFRAME_PFB',
+    ]);
+    expect(control.value).toBe('DATAFRAME');
+
+    await fireEvent.change(control, { target: { value: 'DATAFRAME_PFB' } });
+    await fireEvent.click(screen.getByRole('button', { name: /Sample dataset/ }));
+    await screen.findByRole('button', { name: /Download as PFB/ });
+
+    expect(paths(post)).toEqual([QUERY_PATH]);
+    const body = JSON.parse(JSON.stringify(post.mock.calls[0][1]));
+    expect(body.query.expectedResultType).toBe('DATAFRAME_PFB');
+    expect(body.query.sample).toBe(true);
+    expect(put).not.toHaveBeenCalled();
+    expect(paths(get)).toEqual([DATASET_PATH, `${QUERY_PATH}/sample-pfb/status`]);
     expect(screen.getByTestId('dataset-summary-uuid')).toHaveTextContent('full-id');
   });
 });

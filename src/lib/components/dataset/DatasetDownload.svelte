@@ -6,7 +6,12 @@
   import type { DataSet } from '$lib/models/Dataset';
   import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
   import { QueryV3 } from '$lib/models/query/Query';
-  import { exportResultType, requestVariant } from '$lib/services/datasets';
+  import {
+    exportResultType,
+    offeredExportTypes,
+    requestVariant,
+    type ExportResultType,
+  } from '$lib/services/datasets';
   import {
     EXPORT_PREPARE_FAILED_MESSAGE,
     SAMPLE_DISABLED_MESSAGE,
@@ -29,16 +34,33 @@
     label: string;
   }
 
+  interface ReadyExport {
+    queryId: string;
+    sample: boolean;
+    resultType: ExportResultType;
+  }
+
+  const TYPE_LABELS: Record<ExportResultType, string> = {
+    DATAFRAME: 'Data frame (CSV)',
+    DATAFRAME_TIMESERIES: 'Timeseries (CSV)',
+    DATAFRAME_PFB: 'PFB',
+  };
+
   let { dataset }: Props = $props();
 
   let preparing: Variant | undefined = $state(undefined);
-  let ready: { queryId: string; sample: boolean } | undefined = $state(undefined);
+  let ready: ReadyExport | undefined = $state(undefined);
+  let chosenType: ExportResultType | undefined = $state(undefined);
 
   const unmounted = new AbortController();
   onDestroy(() => unmounted.abort());
 
   const resultType = $derived(exportResultType(dataset));
   const isPfb = $derived(resultType === 'DATAFRAME_PFB');
+  const types = $derived(offeredExportTypes(dataset, config.features.explorer));
+  const selectedType = $derived(
+    chosenType !== undefined && types.includes(chosenType) ? chosenType : resultType,
+  );
   const offered = $derived(
     resultType !== undefined &&
       !dataset.federated &&
@@ -55,11 +77,36 @@
    * Builds the query handed to the export controls, which read its result type and log its
    * `sample` flag. The controls fetch by query id and never send this query.
    *
-   * @param sample True when the prepared variant is the sample.
+   * @param prepared The variant that was prepared.
    * @returns The stored query marked with the variant that was prepared.
    */
-  function variantQuery(sample: boolean): QueryRequestInterfaceV3 {
-    return { query: new QueryV3({ ...(dataset.query as QueryV3), sample }) };
+  function variantQuery(prepared: ReadyExport): QueryRequestInterfaceV3 {
+    return {
+      query: new QueryV3({
+        ...(dataset.query as QueryV3),
+        sample: prepared.sample,
+        expectedResultType: prepared.resultType,
+      }),
+    };
+  }
+
+  /**
+   * Switches the export type the two actions act on and drops the export prepared for the
+   * previous type. While an export is being prepared the choice is refused and the control is
+   * put back on the type in use.
+   *
+   * @param control The type control, read for the chosen option.
+   */
+  function chooseType(control: HTMLSelectElement): void {
+    const type = types.find((candidate) => candidate === control.value);
+    if (preparing || type === undefined) {
+      control.value = selectedType ?? '';
+      return;
+    }
+    if (type !== selectedType) {
+      chosenType = type;
+      ready = undefined;
+    }
   }
 
   /**
@@ -68,7 +115,8 @@
    * @param error The value the request or the status wait rejected with.
    * @param waiting True when the failure came from the status wait, false when it came from
    * submitting the query.
-   * @returns The consent, sample or export message that matches the failure.
+   * @returns The consent, sample or export message that matches the failure. A refused submit
+   * shows the server's own message when it gave one.
    */
   function failureMessage(error: unknown, waiting: boolean): string {
     if (waiting) {
@@ -78,16 +126,22 @@
     if (consentMessage) {
       return consentMessage;
     }
-    return api.isSampleDisabled(error) ? SAMPLE_DISABLED_MESSAGE : EXPORT_PREPARE_FAILED_MESSAGE;
+    if (api.isSampleDisabled(error)) {
+      return SAMPLE_DISABLED_MESSAGE;
+    }
+    return api.serverErrorMessage(error) ?? EXPORT_PREPARE_FAILED_MESSAGE;
   }
 
   /**
-   * Gets the query for a variant, waits for its result, then shows the export controls for it.
+   * Gets the query for a variant of the selected export type, waits for its result, then shows
+   * the export controls for it. The type is read once, when the request starts, so the finished
+   * export is always the type that was asked for.
    *
    * @param variant The variant the user asked for.
    */
   async function prepare(variant: Variant): Promise<void> {
-    if (preparing) {
+    const type = selectedType;
+    if (preparing || type === undefined) {
       return;
     }
     preparing = variant;
@@ -98,10 +152,10 @@
         createLog('DATASET', 'dataset.variant_requested', {
           datasetId: dataset.queryId,
           sample: variant.sample,
-          type: resultType,
+          type,
         }),
       );
-      const queryId = await requestVariant(dataset, variant.sample, unmounted.signal);
+      const queryId = await requestVariant(dataset, variant.sample, type, unmounted.signal);
       if (unmounted.signal.aborted) {
         return;
       }
@@ -110,7 +164,7 @@
       if (unmounted.signal.aborted) {
         return;
       }
-      ready = { queryId, sample: variant.sample };
+      ready = { queryId, sample: variant.sample, resultType: type };
     } catch (error) {
       if (unmounted.signal.aborted || isSessionEnded(error)) {
         return;
@@ -126,7 +180,21 @@
 {#if offered}
   <section data-testid="dataset-download" class="my-4">
     <h2 class="text-left h4 mb-2 mt-6">Export Dataset</h2>
-    <div class="flex gap-2">
+    <div class="flex items-end gap-2">
+      <label class="grid gap-1">
+        <span class="font-bold">Export type</span>
+        <select
+          class="select"
+          data-testid="dataset-download-type"
+          value={selectedType}
+          disabled={preparing !== undefined}
+          onchange={(event) => chooseType(event.currentTarget)}
+        >
+          {#each types as type (type)}
+            <option value={type}>{TYPE_LABELS[type]}</option>
+          {/each}
+        </select>
+      </label>
       {#each variants as variant (variant.sample)}
         {@const busy = preparing?.sample === variant.sample}
         <button
@@ -148,8 +216,8 @@
       <div data-testid="dataset-download-ready" class="flex flex-col items-start mt-4">
         <p>Your {ready.sample ? 'sample' : 'full'} dataset is ready.</p>
         {#key ready.queryId}
-          {@const query = variantQuery(ready.sample)}
-          {#if isPfb}
+          {@const query = variantQuery(ready)}
+          {#if ready.resultType === 'DATAFRAME_PFB'}
             <PfbExport {query} datasetId={ready.queryId} />
           {:else}
             <DownloadButton {query} datasetId={ready.queryId} />

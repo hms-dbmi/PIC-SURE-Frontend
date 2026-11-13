@@ -12,7 +12,12 @@ const { get, post, put, createLog, notReady, features } = vi.hoisted(() => ({
   notReady: { status: 409, body: { message: '{"errorType":"result_not_ready"}' } },
   features: {
     confirmDownload: false,
-    explorer: { allowDownload: true, enablePfbExport: true, enableSampleDataset: true },
+    explorer: {
+      allowDownload: true,
+      enablePfbExport: true,
+      enableExportTimeseries: true,
+      enableSampleDataset: true,
+    },
   },
 }));
 
@@ -28,6 +33,16 @@ vi.mock('$lib/api', () => ({
     e?.status === 400 && String(e.body?.message).includes('sample_disabled'),
   consentDeniedMessage: (e: Refusal) =>
     e?.status === 403 && e.body?.errorType === 'consent_denied' ? e.body.message : undefined,
+  serverErrorMessage: (e: Refusal) => {
+    if (!e?.status || e.status < 400 || e.status > 499) {
+      return undefined;
+    }
+    try {
+      return JSON.parse(String(e.body?.message)).message as string | undefined;
+    } catch {
+      return undefined;
+    }
+  },
 }));
 vi.mock('$lib/logger', () => ({ log: vi.fn(), createLog }));
 vi.mock('$lib/configuration.svelte', () => ({
@@ -117,6 +132,18 @@ function sampleButton(): HTMLElement {
   return screen.getByRole('button', { name: /Sample dataset/ });
 }
 
+function typeControl(): HTMLSelectElement {
+  return screen.getByLabelText('Export type') as HTMLSelectElement;
+}
+
+function offeredTypes(): string[] {
+  return Array.from(typeControl().options).map((option) => option.value);
+}
+
+async function chooseType(type: string): Promise<void> {
+  await fireEvent.change(typeControl(), { target: { value: type } });
+}
+
 function paths(mock: ReturnType<typeof vi.fn>): unknown[] {
   return mock.mock.calls.map(([path]) => path);
 }
@@ -129,6 +156,7 @@ describe('DatasetDownload', () => {
     vi.resetAllMocks();
     features.explorer.allowDownload = true;
     features.explorer.enablePfbExport = true;
+    features.explorer.enableExportTimeseries = true;
     features.explorer.enableSampleDataset = true;
     vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -484,6 +512,158 @@ describe('DatasetDownload', () => {
     expect(paths(get)).toEqual([statusPath('sample-pfb'), `${QUERY_PATH}/sample-pfb/signed-url`]);
     expect(screen.getByRole('button', { name: /Download as PFB/ })).toBeInTheDocument();
     expect(post).not.toHaveBeenCalled();
+  });
+
+  it('lists every export type and selects the stored one', () => {
+    render(DatasetDownload, { dataset: makeDataset('DATAFRAME_TIMESERIES') });
+
+    expect(offeredTypes()).toEqual(['DATAFRAME', 'DATAFRAME_TIMESERIES', 'DATAFRAME_PFB']);
+    expect(typeControl().value).toBe('DATAFRAME_TIMESERIES');
+  });
+
+  it('lists only the enabled types', () => {
+    features.explorer.enablePfbExport = false;
+    features.explorer.enableExportTimeseries = false;
+    render(DatasetDownload, { dataset: makeDataset() });
+
+    expect(offeredTypes()).toEqual(['DATAFRAME']);
+  });
+
+  it('lists the stored type when its switch is off', () => {
+    features.explorer.enablePfbExport = false;
+    features.explorer.enableExportTimeseries = false;
+    render(DatasetDownload, { dataset: makeDataset('DATAFRAME_TIMESERIES') });
+
+    expect(offeredTypes()).toEqual(['DATAFRAME', 'DATAFRAME_TIMESERIES']);
+    expect(typeControl().value).toBe('DATAFRAME_TIMESERIES');
+  });
+
+  it('submits the chosen type with sample set when the sample is clicked', async () => {
+    post.mockResolvedValueOnce({ picsureResultId: 'sample-timeseries' });
+    get.mockResolvedValueOnce({ status: 'AVAILABLE' }).mockResolvedValueOnce('a,b\n1,2\n');
+    render(DatasetDownload, { dataset: makeDataset('DATAFRAME', [FULL_LINK, SAMPLE_LINK]) });
+
+    await chooseType('DATAFRAME_TIMESERIES');
+    await fireEvent.click(sampleButton());
+    await fireEvent.click(await screen.findByRole('button', { name: /Download as CSV/ }));
+
+    await waitFor(() => expect(saved).toHaveBeenCalledTimes(1));
+    expect(paths(post)).toEqual([QUERY_PATH]);
+    const body = JSON.parse(JSON.stringify(post.mock.calls[0][1]));
+    expect(body.query.sample).toBe(true);
+    expect(body.query.expectedResultType).toBe('DATAFRAME_TIMESERIES');
+    expect(put).not.toHaveBeenCalled();
+    expect(paths(get)).toEqual([
+      statusPath('sample-timeseries'),
+      `${QUERY_PATH}/sample-timeseries/result`,
+    ]);
+    expect((saved.mock.contexts[0] as HTMLAnchorElement).download).toBe('pic-sure-data.csv');
+    expect(createLog).toHaveBeenCalledWith('DOWNLOAD', 'export.download_clicked', {
+      type: 'DATAFRAME_TIMESERIES',
+      datasetId: 'sample-timeseries',
+      sample: true,
+    });
+  });
+
+  it('leaves sample off when the full variant of a chosen type is submitted', async () => {
+    post.mockResolvedValueOnce({ picsureResultId: 'full-pfb' });
+    get.mockResolvedValueOnce({ status: 'AVAILABLE' });
+    render(DatasetDownload, { dataset: makeDataset() });
+
+    await chooseType('DATAFRAME_PFB');
+    await fireEvent.click(fullButton());
+    await screen.findByRole('button', { name: /Download as PFB/ });
+
+    const body = JSON.parse(JSON.stringify(post.mock.calls[0][1]));
+    expect(body.query).not.toHaveProperty('sample');
+    expect(body.query.expectedResultType).toBe('DATAFRAME_PFB');
+  });
+
+  it('goes straight to status with the listed row of the chosen type', async () => {
+    get.mockResolvedValueOnce({ status: 'AVAILABLE' }).mockResolvedValueOnce(new ArrayBuffer(4));
+    render(DatasetDownload, {
+      dataset: makeDataset('DATAFRAME', [
+        FULL_LINK,
+        SAMPLE_LINK,
+        { queryId: 'full-pfb', sample: false, resultType: 'DATAFRAME_PFB' },
+        { queryId: 'sample-pfb', sample: true, resultType: 'DATAFRAME_PFB' },
+      ]),
+    });
+
+    await chooseType('DATAFRAME_PFB');
+    await fireEvent.click(sampleButton());
+    await fireEvent.click(await screen.findByRole('button', { name: /Download as PFB/ }));
+
+    await waitFor(() => expect(saved).toHaveBeenCalledTimes(1));
+    expect(post).not.toHaveBeenCalled();
+    expect(paths(get)).toEqual([statusPath('sample-pfb'), `${QUERY_PATH}/sample-pfb/result`]);
+    expect((saved.mock.contexts[0] as HTMLAnchorElement).download).toBe('pic-sure-data.avro');
+    expect(screen.getByRole('button', { name: 'Export to Terra' })).toBeInTheDocument();
+  });
+
+  it('saves a data frame as a CSV file', async () => {
+    get.mockResolvedValueOnce({ status: 'AVAILABLE' }).mockResolvedValueOnce('a,b\n1,2\n');
+    render(DatasetDownload, { dataset: makeDataset('DATAFRAME_PFB', [FULL_LINK]) });
+
+    await chooseType('DATAFRAME');
+    await fireEvent.click(fullButton());
+    await fireEvent.click(await screen.findByRole('button', { name: /Download as CSV/ }));
+
+    await waitFor(() => expect(saved).toHaveBeenCalledTimes(1));
+    expect(post).not.toHaveBeenCalled();
+    expect(paths(get)).toEqual([statusPath('full-id'), `${QUERY_PATH}/full-id/result`]);
+    expect((saved.mock.contexts[0] as HTMLAnchorElement).download).toBe('pic-sure-data.csv');
+    expect(screen.queryByRole('button', { name: 'Export to Terra' })).not.toBeInTheDocument();
+  });
+
+  it('disables the type control while a download is being prepared', async () => {
+    let finishSubmit: (value: { picsureResultId: string }) => void = () => {};
+    post.mockReturnValueOnce(new Promise((resolve) => (finishSubmit = resolve)));
+    get.mockResolvedValueOnce({ status: 'AVAILABLE' });
+    render(DatasetDownload, { dataset: makeDataset() });
+
+    await chooseType('DATAFRAME_TIMESERIES');
+    await fireEvent.click(sampleButton());
+    expect(typeControl()).toBeDisabled();
+
+    typeControl().removeAttribute('disabled');
+    await chooseType('DATAFRAME_PFB');
+
+    finishSubmit({ picsureResultId: 'sample-timeseries' });
+    await screen.findByRole('button', { name: /Download as CSV/ });
+    await waitFor(() => expect(typeControl()).toBeEnabled());
+    expect(typeControl().value).toBe('DATAFRAME_TIMESERIES');
+    expect(screen.queryByRole('button', { name: /Download as PFB/ })).not.toBeInTheDocument();
+    expect(paths(get)).toEqual([statusPath('sample-timeseries')]);
+  });
+
+  it('drops the prepared download when another type is chosen', async () => {
+    get.mockResolvedValueOnce({ status: 'AVAILABLE' });
+    render(DatasetDownload, { dataset: makeDataset() });
+
+    await fireEvent.click(fullButton());
+    await screen.findByRole('button', { name: /Download as CSV/ });
+    await waitFor(() => expect(typeControl()).toBeEnabled());
+    await chooseType('DATAFRAME_PFB');
+
+    expect(screen.queryByTestId('dataset-download-ready')).not.toBeInTheDocument();
+  });
+
+  it('shows the message the server refused the submit with', async () => {
+    post.mockRejectedValueOnce(httpError(400, '{"message":"Result type is not allowed"}'));
+    render(DatasetDownload, { dataset: makeDataset() });
+
+    await chooseType('DATAFRAME_PFB');
+    await fireEvent.click(fullButton());
+
+    await waitFor(() =>
+      expect(toastError).toHaveBeenCalledWith({
+        title: 'Result type is not allowed',
+        closable: true,
+      }),
+    );
+    expect(toastError).toHaveBeenCalledTimes(1);
+    expect(get).not.toHaveBeenCalled();
   });
 
   it('stops waiting and shows no toast after the page is left', async () => {
