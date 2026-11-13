@@ -95,4 +95,53 @@ describe('Tabs', () => {
 
     expect(one).toHaveFocus();
   });
+
+  describe('with a shared panel', () => {
+    function renderShared(value = 'one', sharedTabs = tabs) {
+      return render(Tabs, {
+        tabs: sharedTabs,
+        value,
+        onchange: vi.fn(),
+        label: 'Sections',
+        panel,
+        shared: true,
+      });
+    }
+
+    it('renders one panel, for the selected tab, that every tab controls', () => {
+      renderShared('two');
+
+      const panels = screen.getAllByRole('tabpanel');
+      expect(panels).toHaveLength(1);
+      expect(screen.getByRole('tabpanel', { name: 'Two' })).toHaveTextContent('two content');
+      for (const tab of screen.getAllByRole('tab')) {
+        expect(tab).toHaveAttribute('aria-controls', panels[0].id);
+      }
+    });
+
+    it('keeps the same panel element as the selection changes', async () => {
+      const { rerender } = renderShared('one');
+      const panelElement = screen.getByRole('tabpanel', { name: 'One' });
+
+      await rerender({ value: 'three' });
+
+      expect(screen.getByRole('tabpanel', { name: 'Three' })).toBe(panelElement);
+    });
+
+    it('drops the list and the panel role with a single tab, without remounting the panel', async () => {
+      const { rerender } = renderShared('one');
+      const panelElement = screen.getByRole('tabpanel', { name: 'One' });
+
+      await rerender({ tabs: tabs.slice(0, 1) });
+
+      expect(screen.queryByRole('tablist')).toBeNull();
+      expect(screen.queryByRole('tabpanel')).toBeNull();
+      expect(screen.getByText('one content').parentElement).toBe(panelElement);
+      expect(panelElement).not.toHaveAttribute('tabindex');
+
+      await rerender({ tabs });
+
+      expect(screen.getByRole('tabpanel', { name: 'One' })).toBe(panelElement);
+    });
+  });
 });

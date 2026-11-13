@@ -1,20 +1,38 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import type { Attachment } from 'svelte/attachments';
+  import { SvelteURL } from 'svelte/reactivity';
+  import { goto } from '$app/navigation';
+  import { page } from '$app/state';
   import type { SwaggerComponent, SwaggerSystem } from 'swagger-ui-dist/swagger-ui-bundle.js';
   import { ApiError } from '#lib/api/errors.ts';
   import { getDocumentedServices, getOpenApiDocument } from '#lib/api/picsure/openapi.ts';
+  import { session } from '#lib/auth/session.svelte.ts';
   import Button from '#lib/ui/Button.svelte';
+  import LiveRegion from '#lib/ui/LiveRegion.svelte';
+  import Tabs from '#lib/ui/Tabs.svelte';
+  import { createAnnouncer } from '#lib/ui/announcer.svelte.ts';
   import { createLog, log } from '#lib/telemetry/logger.ts';
   import { createDocsLogging } from './apiDocsLogging.ts';
 
-  // The first listed service is shown on load: the dictionary, which every visitor can use.
+  // The first visible service is shown on load: the dictionary, which every visitor can use.
   const services = [
-    { name: 'dictionary', title: 'Dictionary' },
-    { name: 'hpds-query-service', title: 'Authorized Queries' },
-    { name: 'hpds-open-access', title: 'Open Queries' },
+    { name: 'dictionary', title: 'Dictionary', signedInOnly: false },
+    { name: 'hpds-query-service', title: 'Authorized Queries', signedInOnly: true },
+    { name: 'hpds-open-access', title: 'Open Queries', signedInOnly: false },
   ];
-  let available = $state<typeof services>([]);
+  const SERVICE_PARAM = 'service';
+  const UNAVAILABLE = 'API documentation is unavailable on this deployment.';
+  type SelectSource = 'tab' | 'url' | 'session';
+
+  let documented = $state.raw<string[]>([]);
+  const visible = $derived(
+    services.filter(
+      (service) =>
+        documented.includes(service.name) && (session.isLoggedIn || !service.signedInOnly),
+    ),
+  );
+  const tabs = $derived(visible.map((service) => ({ value: service.name, label: service.title })));
   let selected = $state('');
   let loading = $state(true);
   let hasRendered = $state(false);
@@ -25,7 +43,13 @@
   let viewer: SwaggerSystem | undefined;
   let disposeViewer: (() => void) | undefined;
   let shownService = '';
+  // Set by a change of service or a retry, so the document that arrives is announced; the first
+  // load's isn't.
+  let announceNext = false;
   const docsLogging = createDocsLogging(() => shownService);
+  const announcer = createAnnouncer({ repeat: true });
+
+  const titleOf = (name: string) => services.find((service) => service.name === name)?.title;
 
   // Swagger's headings nest under the page's "API Documentation" h2: the document title is
   // level 3, its tags level 4 beside the Schemas h4, and the sections of an operation level 5.
@@ -60,14 +84,14 @@
     let stage = index ? 'registry' : 'document';
     try {
       if (index) {
-        const documented = await getDocumentedServices(signal);
+        const names = await getDocumentedServices(signal);
         if (request !== generation) return;
         // Only these researcher-facing services belong on this page. Construct local
         // paths ourselves rather than trusting registry URLs or Swagger configuration.
-        available = services.filter((service) => documented.includes(service.name));
-        selected = available[0]?.name ?? '';
+        documented = names;
+        selected = serviceFromUrl() ?? visible[0]?.name ?? '';
         if (!selected) {
-          error = 'API documentation is unavailable on this deployment.';
+          fail(UNAVAILABLE);
           return;
         }
       }
@@ -77,6 +101,7 @@
       shownService = selected;
       if (viewer) {
         viewer.specActions.updateSpec(JSON.stringify(document));
+        announceShown();
         return;
       }
       stage = 'viewer';
@@ -126,6 +151,7 @@
         ],
       });
       hasRendered = true;
+      announceShown();
     } catch (cause) {
       if (request !== generation) return;
       const status = cause instanceof ApiError ? cause.status : undefined;
@@ -141,22 +167,100 @@
           ),
         );
       }
-      error = unavailable
-        ? 'API documentation is unavailable on this deployment.'
-        : 'Unable to load API documentation. Please try again.';
+      fail(unavailable ? UNAVAILABLE : 'Unable to load API documentation. Please try again.');
     } finally {
       if (request === generation) loading = false;
     }
   }
 
-  function selectService() {
+  function fail(message: string) {
+    error = message;
+    announceNext = false;
+    void announcer.announce(message);
+  }
+
+  function retry() {
+    announceNext = true;
+    void load(documented.length === 0 || !selected);
+  }
+
+  function announceShown() {
+    if (!announceNext) return;
+    announceNext = false;
+    void announcer.announce(`Showing the ${titleOf(selected)} API documentation.`);
+  }
+
+  function visibleService(name: string | null): string | undefined {
+    return visible.find((service) => service.name === name)?.name;
+  }
+
+  // On load, a link's service replaces the default; a value this visitor can't see is dropped
+  // from the address.
+  function serviceFromUrl(): string | undefined {
+    const linked = visibleService(page.url.searchParams.get(SERVICE_PARAM));
+    if (!linked && page.url.searchParams.has(SERVICE_PARAM)) setServiceParam(undefined);
+    if (linked && linked !== visible[0]?.name) logSelect(linked, 'url');
+    return linked;
+  }
+
+  // A navigation, not shallow routing: page.url and SvelteKit's own idea of the address stay
+  // current, so links within the page and Back keep the parameter. It replaces the entry, adds
+  // no history, and leaves scroll and focus alone.
+  function setServiceParam(name: string | undefined) {
+    const url = new SvelteURL(page.url.href);
+    if (name) {
+      url.searchParams.set(SERVICE_PARAM, name);
+      url.hash = 'api-access';
+    } else {
+      url.searchParams.delete(SERVICE_PARAM);
+    }
+    void goto(url, { replace: true, reset: false, state: page.state });
+  }
+
+  function logSelect(to: string, source: SelectSource) {
     log(
       createLog('ACTION', 'api.docs_service_select', {
         from: shownService || undefined,
-        to: selected,
+        to,
+        source,
       }),
     );
+  }
+
+  function showService(name: string, source: SelectSource) {
+    logSelect(name, source);
+    selected = name;
+    announceNext = true;
     void load(false);
+  }
+
+  function selectTab(name: string) {
+    showService(name, 'tab');
+    setServiceParam(name);
+  }
+
+  // A sign-out (here, in another tab, or by expiry) hides the authorized queries; move off them.
+  $effect(() => {
+    const names = visible.map((service) => service.name);
+    untrack(() => {
+      if (!selected || names.includes(selected)) return;
+      if (names.length > 0) {
+        showService(names[0], 'session');
+        return;
+      }
+      generation++;
+      controller?.abort();
+      selected = '';
+      loading = false;
+      fail(UNAVAILABLE);
+    });
+  });
+
+  // Back or Forward to an address naming another service. Read from the address bar, since not
+  // every entry is SvelteKit's: Swagger's bundled smooth scroll pushes its own for #anchor links.
+  function followHistory() {
+    const linked = visibleService(new URLSearchParams(location.search).get(SERVICE_PARAM));
+    if (linked && linked !== selected) showService(linked, 'url');
   }
 
   onMount(() => {
@@ -173,44 +277,38 @@
   });
 </script>
 
+<svelte:window onpopstate={followHistory} />
+
 <div class="api-documentation mt-6" data-testid="api-documentation">
-  {#if available.length > 0}
-    <div class="flex flex-wrap items-center gap-3 mb-4">
-      <label for="api-document-service" class="font-bold">Select service:</label>
-      <select
-        id="api-document-service"
-        class="select w-auto max-w-full bg-white"
-        bind:value={selected}
-        onchange={selectService}
-      >
-        {#each available as service (service.name)}
-          <option value={service.name}>{service.title}</option>
-        {/each}
-      </select>
-    </div>
-  {/if}
-  {#if loading}
-    <p role="status" class="mx-0">
-      Loading API documentation{selected
-        ? ` for ${available.find((service) => service.name === selected)?.title}`
-        : ''}…
-    </p>
-  {:else if error}
-    <div role="status" class="border border-surface-200 rounded p-4">
-      <p class="mx-0">{error}</p>
-      <Button
-        variant="outlined-static"
-        class="mt-2"
-        onclick={() => void load(available.length === 0)}>Retry</Button
-      >
-    </div>
-  {/if}
-  <div
-    bind:this={host}
-    {@attach nestHeadings}
-    class="swagger-host"
-    hidden={!hasRendered || !!error}
-  ></div>
+  <LiveRegion message={announcer.message} data-testid="api-docs-announcement" />
+  <Tabs
+    {tabs}
+    value={selected}
+    onchange={selectTab}
+    label="API documentation by service"
+    variant="section"
+    shared
+    data-testid="api-docs-service"
+  >
+    {#snippet panel()}
+      {#if loading}
+        <p class="mx-0 mt-4">
+          Loading API documentation{selected ? ` for ${titleOf(selected)}` : ''}…
+        </p>
+      {:else if error}
+        <div class="border border-surface-200 rounded p-4 mt-4">
+          <p class="mx-0">{error}</p>
+          <Button variant="outlined-static" class="mt-2" onclick={retry}>Retry</Button>
+        </div>
+      {/if}
+      <div
+        bind:this={host}
+        {@attach nestHeadings}
+        class="swagger-host"
+        hidden={!hasRendered || !!error}
+      ></div>
+    {/snippet}
+  </Tabs>
 </div>
 
 <style>
