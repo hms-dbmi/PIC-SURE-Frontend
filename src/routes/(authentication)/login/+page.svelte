@@ -61,7 +61,7 @@
           href={resolve('')}
           rel="external"
           onclick={() => log(createLog('NAVIGATION', 'login.explore_open', { url: resolve('') }))}
-          >{backLinkText}</Button
+          ><i class="fa-solid fa-arrow-left mr-2" aria-hidden="true"></i>{backLinkText}</Button
         >
       </div>
     {/if}
