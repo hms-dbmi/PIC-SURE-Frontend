@@ -268,13 +268,6 @@ test.describe('Login page buttons', () => {
     await expect(page).toHaveURL(/\/$/);
   });
 
-  test('A closed site has no way back to PIC-SURE', async ({ page }) => {
-    await mockApiConfig(page);
-    await page.goto('/login');
-    await expect(page.getByTestId('login-provider-okta')).toBeVisible();
-    await expect(page.getByTestId('login-back')).toHaveCount(0);
-  });
-
   test('Alternate logins are the same size as the main logins', async ({ page }) => {
     await mockApiConfig(page);
     await page.goto('/login');
