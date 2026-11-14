@@ -163,8 +163,7 @@
   "login": {
     "description": "Where searching for, filtering on, and analyzing data is made simple.",
     "showSiteName": false,
-    "openPicsureLink": "/",
-    "openPicsureLinkText": "Explore without Login",
+    "backLinkText": "Back to PIC-SURE",
     "contactLink": "https://hms-dbmi.atlassian.net/servicedesk/customer/portal/5",
     "logoHeight": 7.5
   },

@@ -4,6 +4,7 @@
   import { fly } from 'svelte/transition';
 
   import { page } from '$app/state';
+  import { resolve } from '$app/paths';
   import { browser } from '$app/env';
 
   import { config } from '#lib/config/config.svelte.ts';
@@ -21,7 +22,7 @@
   const redirectTo = page.url.searchParams.get('redirectTo') || '/';
   const siteName = $derived(config.branding.applicationName);
   const description = $derived(config.branding.login.description);
-  const openPicsureLinkText = $derived(config.branding.login.openPicsureLinkText);
+  const backLinkText = $derived(config.branding.login.backLinkText);
   let logoutReason: string | null;
   const loading = page.data?.providers;
 
@@ -49,6 +50,21 @@
   in:fly={{ duration: 600, x: '100%' }}
 >
   <div id="login-title" class="flex flex-col items-center text-center mb-8 max-w-3/4">
+    {#if config.features.login.open}
+      <!-- The wrapper aligns it left: compact buttons center themselves with auto margins. -->
+      <div class="self-start mb-2">
+        <Button
+          data-testid="login-back"
+          variant="outlined"
+          size="compact"
+          class="bg-surface-50-950"
+          href={resolve('')}
+          rel="external"
+          onclick={() => log(createLog('NAVIGATION', 'login.explore_open', { url: resolve('') }))}
+          ><i class="fa-solid fa-arrow-left mr-2" aria-hidden="true"></i>{backLinkText}</Button
+        >
+      </div>
+    {/if}
     <h1 data-testid="login-title" class="mb-6 w-full flex gap-2 items-center justify-center">
       <Logo class="flex-none" height={config.branding.login.logoHeight || 7.5} />
     </h1>
@@ -105,20 +121,6 @@
             {/each}
           {/if}
         </div>
-        {#if config.features.login.open}
-          <Button
-            variant="outlined"
-            class="mb-4 w-full"
-            href={config.branding.login.openPicsureLink || '/'}
-            rel="external"
-            onclick={() =>
-              log(
-                createLog('NAVIGATION', 'login.explore_open', {
-                  url: config.branding.login.openPicsureLink || '/',
-                }),
-              )}>{openPicsureLinkText}</Button
-          >
-        {/if}
         {#await page.data?.altProviders}
           <Loading ring />
         {:then altProviders}
@@ -130,7 +132,7 @@
                 {redirectTo}
                 helpText={provider.helptext}
                 variant="outlined"
-                size="compact"
+                class="w-full"
               />
             {/each}
           </div>

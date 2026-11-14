@@ -23,7 +23,7 @@
     helpText,
     buttonText = 'Log In',
     redirectTo = '/',
-    variant = 'filled',
+    variant = 'filled-bordered',
     size = 'md',
     class: className = '',
   }: Props = $props();
@@ -62,7 +62,7 @@
     }}
   >
     {#if imageSrc}
-      <img src={imageSrc} alt={provider!.imagealt} class="mr-2 h-8" />
+      <img src={imageSrc} alt={provider!.imagealt} class="mr-2 h-[1lh]" />
     {/if}
     <span>{buttonText}</span>
   </Button>
@@ -73,6 +73,7 @@
   {/if}
 {:else}
   <Button
+    {variant}
     class="m-1 w-full"
     disabled
     title="No provider selected"

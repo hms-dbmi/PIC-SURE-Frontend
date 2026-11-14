@@ -216,6 +216,74 @@ test.describe('Login page', () => {
   }
 });
 
+test.describe('Login page buttons', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
+
+  test('An open site offers a way back to PIC-SURE first in the tab order', async ({
+    page,
+    browserName,
+  }) => {
+    // Given
+    await mockApiConfig(page, { features: [{ name: 'OPEN', value: 'true' }] });
+    await page.goto('/login?redirectTo=/explorer');
+    const back = page.getByTestId('login-back');
+    await expect(back).toHaveText(branding.login.backLinkText);
+    // It sits at the top left of the logo and description, above the logo.
+    const backBox = await back.boundingBox();
+    const titleBox = await page.locator('#login-title').boundingBox();
+    const logoBox = await page.getByTestId('login-title').boundingBox();
+    expect(backBox!.x).toBeCloseTo(titleBox!.x, 0);
+    expect(backBox!.y + backBox!.height).toBeLessThanOrEqual(logoBox!.y);
+
+    // When tabbing from the back button to the last login
+    await back.focus();
+    const order: string[] = [];
+    // WebKit follows macOS, where Tab skips buttons and links unless Option is held.
+    const tab = browserName === 'webkit' ? 'Alt+Tab' : 'Tab';
+    for (let i = 0; i < 10 && order.at(-1) !== 'login-provider-mock'; i++) {
+      await page.keyboard.press(tab);
+      // Help text can hold links; only the login buttons have test ids.
+      const testId = await page.evaluate(() => document.activeElement?.getAttribute('data-testid'));
+      if (testId) order.push(testId);
+    }
+
+    // Then the main logins come next, then the alternate ones
+    expect(order).toEqual([
+      'login-provider-auth0',
+      'login-provider-okta',
+      'login-provider-fence',
+      'login-provider-mock',
+    ]);
+
+    // And nothing on the login page comes before it (Shift+Tab from it leaves the document, which
+    // browsers report differently)
+    const focusable = page.locator(
+      '#login-page :is(a[href], button:not([disabled]), select, input, [tabindex]:not([tabindex="-1"]))',
+    );
+    await expect(focusable.first()).toHaveAttribute('data-testid', 'login-back');
+
+    // When
+    await back.click();
+    // Then it goes to the home page, not the page that sent the user to login
+    await expect(page).toHaveURL(/\/$/);
+  });
+
+  test('Alternate logins are the same size as the main logins', async ({ page }) => {
+    await mockApiConfig(page);
+    await page.goto('/login');
+    // OKTA stands in for RAS, with its logo.
+    const main = page.getByTestId('login-provider-okta');
+    const alt = page.getByTestId('login-provider-fence');
+    await expect(alt).toBeVisible();
+    // Alternate logins render after the main ones, so retry until the layout settles.
+    await expect(async () => {
+      const [mainBox, altBox] = [await main.boundingBox(), await alt.boundingBox()];
+      expect(altBox!.width).toBeCloseTo(mainBox!.width, 0);
+      expect(altBox!.height).toBeCloseTo(mainBox!.height, 0);
+    }).toPass();
+  });
+});
+
 // MOCK leaves for /login/loading itself with a real state, so these run the whole login. An init
 // script on the callback page stands in for whatever happened to the stored state meanwhile.
 test.describe('Login state', () => {
