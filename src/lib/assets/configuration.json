@@ -157,7 +157,8 @@
       { "text": "Filter on genomic variants" },
       { "text": "Retrieve authorized, participant-level data", "requiresLogin": true }
     ],
-    "publicKeyEnabled": true
+    "publicKeyEnabled": true,
+    "feedbackUrl": "https://hms-dbmi.atlassian.net/servicedesk/customer/portal/5/group/6/create/362"
   },
   "login": {
     "description": "Where searching for, filtering on, and analyzing data is made simple.",

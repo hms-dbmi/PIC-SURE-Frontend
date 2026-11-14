@@ -331,6 +331,13 @@ test.describe('API page', () => {
     });
   }
 
+  test('Shows the feedback callout when logged in', async ({ page }) => {
+    await page.goto('/api');
+    await userIsLoggedIn(page);
+
+    await expect(page.getByTestId('api-feedback-callout')).toBeVisible();
+  });
+
   test('Shows all capabilities with success icons when logged in', async ({ page }) => {
     // Given
     await page.goto('/api');
@@ -911,21 +918,71 @@ test.describe('API page logged out', () => {
         contentRight: Math.max(
           right(header.querySelector('h1')!),
           right(header.querySelector('p')!),
+          right(document.querySelector('[data-testid="api-feedback-callout"]')!),
         ),
         scroller: { clientWidth: scroller.clientWidth, scrollWidth: scroller.scrollWidth },
       };
     });
   }
 
+  const feedbackLinkName = 'Tell us what you think, opens feedback form in a new tab';
+
+  test('Feedback callout sits below the subtitle on one line and links to the feedback form', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/api');
+
+    const callout = page.getByTestId('api-feedback-callout');
+    await expect(callout).toHaveText(
+      /^\s*New\s+Open access to the PIC-SURE API, no login required\.\s+Tell us what you think\s*$/,
+    );
+    const link = callout.getByRole('link', { name: feedbackLinkName });
+    await expect(link).toHaveAttribute('href', branding.apiPage.feedbackUrl!);
+    // The external-link warning opens target="_blank" links in a new tab.
+    await expect(link).toHaveAttribute('target', '_blank');
+    await expect(link.locator('i.fa-arrow-up-right-from-square')).toBeVisible();
+
+    const subtitle = (await page.locator('#api-header ~ p').boundingBox())!;
+    const parts = await Promise.all(
+      [callout.locator('.badge'), callout.getByText('Open access'), link].map(
+        async (part) => (await part.boundingBox())!,
+      ),
+    );
+    expect((await callout.boundingBox())!.y).toBeGreaterThanOrEqual(subtitle.y + subtitle.height);
+    for (const part of parts)
+      expect(part.y + part.height / 2).toBeCloseTo(parts[0].y + parts[0].height / 2, 0);
+  });
+
+  test('Feedback link is the next tab stop after the subtitle and shows focus', async ({
+    page,
+    browserName,
+  }) => {
+    await page.goto('/api');
+    await expect(page.locator('body.started')).toBeAttached();
+
+    // Clicking the subtitle moves the sequential focus starting point there.
+    await page.locator('#api-header ~ p').click();
+    // WebKit only tabs to links with Option held.
+    await page.keyboard.press(browserName === 'webkit' ? 'Alt+Tab' : 'Tab');
+
+    const link = page.getByRole('link', { name: feedbackLinkName });
+    await expect(link).toBeFocused();
+    expect(await link.evaluate((element) => getComputedStyle(element).outlineStyle)).not.toBe(
+      'none',
+    );
+  });
+
   test('Hero stays compact so the page content starts near the top', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/api');
 
     const layout = await heroLayout(page);
-    expect(layout.hero.height).toBeLessThanOrEqual(170);
+    expect(layout.hero.height).toBeLessThanOrEqual(220);
     const hero = page.locator('header', { has: page.locator('#api-header') });
     await expect(hero.locator('h1')).toBeInViewport({ ratio: 1 });
     await expect(hero.locator('p')).toBeInViewport({ ratio: 1 });
+    await expect(hero.getByTestId('api-feedback-callout')).toBeInViewport({ ratio: 1 });
   });
 
   test('Hero keeps its full content without overflowing at 200% zoom', async ({ page }) => {

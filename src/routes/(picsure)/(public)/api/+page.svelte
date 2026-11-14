@@ -23,6 +23,7 @@
   let mounted = $state(false);
   let loggedIn = $derived(mounted && session.isLoggedIn);
   const capabilities = config.branding.apiPage?.capabilities || [];
+  const feedbackUrl = config.branding.apiPage?.feedbackUrl;
 
   const codeBlocks = $derived(config.branding.explorePage.codeBlocks);
 
@@ -199,6 +200,10 @@
     log(createLog('NAVIGATION', 'api.workflow_docs_click', { workflow, target }));
   }
 
+  function feedbackClick(target: string) {
+    log(createLog('NAVIGATION', 'api.feedback_click', { target }));
+  }
+
   function loginClick(location: 'capabilities' | 'public_notice') {
     log(createLog('NAVIGATION', 'api.login_click', { location }));
   }
@@ -217,6 +222,29 @@
         <br />
         Build reproducible cohort-building pipelines.
       </p>
+      <div
+        class="mt-4 inline-flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-primary-500 bg-surface-50-950 py-1 pr-4 pl-1.5"
+        data-testid="api-feedback-callout"
+      >
+        <span class="badge {tones['tonal-primary']}">New</span>
+        <span>Open access to the PIC-SURE API, no login required.</span>
+        {#if feedbackUrl}
+          <!-- eslint-disable svelte/no-navigation-without-resolve -- external feedback form -->
+          <a
+            class="anchor"
+            href={feedbackUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Tell us what you think, opens feedback form in a new tab"
+            onclick={() => feedbackClick(feedbackUrl)}
+            >Tell us what you think <i
+              class="fa-solid fa-arrow-up-right-from-square text-sm"
+              aria-hidden="true"
+            ></i></a
+          >
+          <!-- eslint-enable svelte/no-navigation-without-resolve -->
+        {/if}
+      </div>
     {/snippet}
     <TocSection id="authentication">
       <h2>Authentication</h2>

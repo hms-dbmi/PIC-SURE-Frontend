@@ -43,6 +43,7 @@ export interface ApiCapability {
 export interface ApiPageConfig {
   capabilities: ApiCapability[];
   publicKeyEnabled?: boolean;
+  feedbackUrl?: string;
 }
 
 export type Branding = {

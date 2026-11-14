@@ -31,6 +31,7 @@ vi.mock('./ApiDocumentation.svelte', async () => ({
 }));
 
 import ApiPage from './+page.svelte';
+import { config } from '#lib/config/config.svelte.ts';
 
 function actions(name: string) {
   return log.mock.calls.map(([event]) => event).filter((event) => event.action === name);
@@ -109,6 +110,43 @@ describe('API page logging', () => {
       { location: 'capabilities' },
       { location: 'public_notice' },
     ]);
+  });
+
+  it('logs feedback link clicks with the form URL', async () => {
+    render(ApiPage);
+    await tick();
+
+    await fireEvent.click(
+      screen.getByRole('link', {
+        name: 'Tell us what you think, opens feedback form in a new tab',
+      }),
+    );
+
+    expect(actions('api.feedback_click')).toEqual([
+      {
+        event_type: 'NAVIGATION',
+        action: 'api.feedback_click',
+        metadata: {
+          target: 'https://hms-dbmi.atlassian.net/servicedesk/customer/portal/5/group/6/create/362',
+        },
+      },
+    ]);
+  });
+
+  it('keeps the callout but hides the feedback link when no feedback URL is configured', async () => {
+    const { feedbackUrl } = config.branding.apiPage;
+    config.branding.apiPage.feedbackUrl = undefined;
+    try {
+      render(ApiPage);
+      await tick();
+
+      expect(screen.getByTestId('api-feedback-callout')).toHaveTextContent(
+        'Open access to the PIC-SURE API, no login required.',
+      );
+      expect(screen.queryByRole('link', { name: /Tell us what you think/ })).toBeNull();
+    } finally {
+      config.branding.apiPage.feedbackUrl = feedbackUrl;
+    }
   });
 
   it('logs external docs links with their URL', async () => {

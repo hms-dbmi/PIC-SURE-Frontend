@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import { test, mockApiConfig } from '../custom-context';
 
 const operation = (summary: string, extra: Record<string, unknown> = {}) => ({
@@ -78,8 +78,8 @@ interface Failure {
 
 // Computes WCAG contrast in the browser, which resolves the theme's oklch() and color-mix()
 // values to sRGB through a canvas.
-async function contrastFailures(page: Page): Promise<Failure[]> {
-  return page.getByTestId('api-documentation').evaluate((host) => {
+async function contrastFailures(region: Locator): Promise<Failure[]> {
+  return region.evaluate((host) => {
     const canvas = document.createElement('canvas');
     canvas.width = canvas.height = 1;
     const context = canvas.getContext('2d', { willReadFrequently: true })!;
@@ -134,7 +134,7 @@ async function contrastFailures(page: Page): Promise<Failure[]> {
       }
     };
 
-    // The service tabs above the viewer, and everything Swagger draws.
+    // Every visible element in the region.
     for (const element of host.querySelectorAll('*')) {
       if (!element.checkVisibility({ visibilityProperty: true })) continue;
       const style = getComputedStyle(element);
@@ -238,10 +238,20 @@ for (const theme of ['picsure', 'bdc', 'aim-ahead']) {
       for (const [label, palette] of colors.methods) expect(label).toBe(palette);
     });
 
+    test('the feedback callout in the page header meets WCAG contrast', async ({ page }) => {
+      await mockApiConfig(page, {
+        features: [{ name: 'OPEN', value: 'true' }],
+        branding: [{ name: 'THEME', value: theme }],
+      });
+      await page.goto('/api');
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+      expect(await contrastFailures(page.getByTestId('api-feedback-callout'))).toEqual([]);
+    });
+
     for (const openapi of ['3.0.3', '3.1.0']) {
       test(`meets WCAG contrast for text and controls in OpenAPI ${openapi}`, async ({ page }) => {
         await openDocs(page, openapi);
-        expect(await contrastFailures(page)).toEqual([]);
+        expect(await contrastFailures(page.getByTestId('api-documentation'))).toEqual([]);
       });
     }
   });
