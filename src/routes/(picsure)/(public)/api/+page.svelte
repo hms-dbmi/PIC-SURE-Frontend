@@ -23,6 +23,7 @@
   let mounted = $state(false);
   let loggedIn = $derived(mounted && session.isLoggedIn);
   const capabilities = config.branding.apiPage?.capabilities || [];
+  const feedbackUrl = config.branding.apiPage?.feedbackUrl;
 
   const codeBlocks = $derived(config.branding.explorePage.codeBlocks);
 
@@ -127,8 +128,6 @@
   ];
 
   const NOTEBOOKS_URL = 'https://github.com/hms-dbmi/Access-to-Data-using-PIC-SURE-API';
-  const FEEDBACK_URL =
-    'https://hms-dbmi.atlassian.net/servicedesk/customer/portal/5/group/6/create/362';
 
   let openWorkflows: string[] = $state([]);
 
@@ -201,8 +200,8 @@
     log(createLog('NAVIGATION', 'api.workflow_docs_click', { workflow, target }));
   }
 
-  function feedbackClick() {
-    log(createLog('NAVIGATION', 'api.feedback_click', { target: FEEDBACK_URL }));
+  function feedbackClick(target: string) {
+    log(createLog('NAVIGATION', 'api.feedback_click', { target }));
   }
 
   function loginClick(location: 'capabilities' | 'public_notice') {
@@ -229,20 +228,22 @@
       >
         <span class="badge {tones['tonal-primary']}">New</span>
         <span>Open access to the PIC-SURE API, no login required.</span>
-        <!-- eslint-disable svelte/no-navigation-without-resolve -- external feedback form -->
-        <a
-          class="anchor"
-          href={FEEDBACK_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Tell us what you think, opens feedback form in a new tab"
-          onclick={feedbackClick}
-          >Tell us what you think <i
-            class="fa-solid fa-arrow-up-right-from-square text-sm"
-            aria-hidden="true"
-          ></i></a
-        >
-        <!-- eslint-enable svelte/no-navigation-without-resolve -->
+        {#if feedbackUrl}
+          <!-- eslint-disable svelte/no-navigation-without-resolve -- external feedback form -->
+          <a
+            class="anchor"
+            href={feedbackUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Tell us what you think, opens feedback form in a new tab"
+            onclick={() => feedbackClick(feedbackUrl)}
+            >Tell us what you think <i
+              class="fa-solid fa-arrow-up-right-from-square text-sm"
+              aria-hidden="true"
+            ></i></a
+          >
+          <!-- eslint-enable svelte/no-navigation-without-resolve -->
+        {/if}
       </div>
     {/snippet}
     <TocSection id="authentication">

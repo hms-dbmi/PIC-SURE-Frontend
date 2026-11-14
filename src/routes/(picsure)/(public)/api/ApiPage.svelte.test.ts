@@ -31,6 +31,7 @@ vi.mock('./ApiDocumentation.svelte', async () => ({
 }));
 
 import ApiPage from './+page.svelte';
+import { config } from '#lib/config/config.svelte.ts';
 
 function actions(name: string) {
   return log.mock.calls.map(([event]) => event).filter((event) => event.action === name);
@@ -130,6 +131,22 @@ describe('API page logging', () => {
         },
       },
     ]);
+  });
+
+  it('keeps the callout but hides the feedback link when no feedback URL is configured', async () => {
+    const { feedbackUrl } = config.branding.apiPage;
+    config.branding.apiPage.feedbackUrl = undefined;
+    try {
+      render(ApiPage);
+      await tick();
+
+      expect(screen.getByTestId('api-feedback-callout')).toHaveTextContent(
+        'Open access to the PIC-SURE API, no login required.',
+      );
+      expect(screen.queryByRole('link', { name: /Tell us what you think/ })).toBeNull();
+    } finally {
+      config.branding.apiPage.feedbackUrl = feedbackUrl;
+    }
   });
 
   it('logs external docs links with their URL', async () => {

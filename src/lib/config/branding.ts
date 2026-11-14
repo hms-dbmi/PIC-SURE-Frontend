@@ -43,6 +43,8 @@ export interface ApiCapability {
 export interface ApiPageConfig {
   capabilities: ApiCapability[];
   publicKeyEnabled?: boolean;
+  /** Feedback form linked from the page header; the link is hidden without one. */
+  feedbackUrl?: string;
 }
 
 export type Branding = {

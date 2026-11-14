@@ -938,10 +938,7 @@ test.describe('API page logged out', () => {
       /^\s*New\s+Open access to the PIC-SURE API, no login required\.\s+Tell us what you think\s*$/,
     );
     const link = callout.getByRole('link', { name: feedbackLinkName });
-    await expect(link).toHaveAttribute(
-      'href',
-      'https://hms-dbmi.atlassian.net/servicedesk/customer/portal/5/group/6/create/362',
-    );
+    await expect(link).toHaveAttribute('href', branding.apiPage.feedbackUrl!);
     // The external-link warning opens target="_blank" links in a new tab.
     await expect(link).toHaveAttribute('target', '_blank');
     await expect(link.locator('i.fa-arrow-up-right-from-square')).toBeVisible();
