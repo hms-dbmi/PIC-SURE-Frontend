@@ -120,7 +120,7 @@ export const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
       type: 'boolean',
       default: false,
       description:
-        "Allows unauthenticated access to the app (skips the forced login redirect) and, combined with OPEN_EXPLORER, makes the Explorer page reachable without logging in. Also shows the 'Explore without Login' entry point.",
+        "Allows unauthenticated access to the app (skips the forced login redirect) and, combined with OPEN_EXPLORER, makes the Explorer page reachable without logging in. Also shows the login page's 'Back to PIC-SURE' link.",
     },
     OPEN_EXPLORER: {
       group: 'access',

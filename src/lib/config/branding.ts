@@ -110,8 +110,7 @@ export type Branding = {
   login: {
     description: string;
     showSiteName: boolean;
-    openPicsureLink: string;
-    openPicsureLinkText: string;
+    backLinkText: string;
     contactLink: string;
     logoHeight: number;
   };
@@ -214,8 +213,7 @@ export function mapBranding(hostname: string, apiBranding: ConfigObject[] = []):
       login: {
         description: '',
         showSiteName: false,
-        openPicsureLink: '',
-        openPicsureLinkText: '',
+        backLinkText: 'Back to PIC-SURE',
         contactLink: '',
         logoHeight: 7.5,
       },

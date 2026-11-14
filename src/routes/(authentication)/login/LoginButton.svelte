@@ -23,7 +23,8 @@
     helpText,
     buttonText = 'Log In',
     redirectTo = '/',
-    variant = 'filled',
+    // Bordered so the main logins match the outlined alternate logins' height.
+    variant = 'filled-bordered',
     size = 'md',
     class: className = '',
   }: Props = $props();
