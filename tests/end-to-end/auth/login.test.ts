@@ -255,6 +255,13 @@ test.describe('Login page buttons', () => {
       'login-provider-mock',
     ]);
 
+    // And nothing on the login page comes before it (Shift+Tab from it leaves the document, which
+    // browsers report differently)
+    const focusable = page.locator(
+      '#login-page :is(a[href], button:not([disabled]), select, input, [tabindex]:not([tabindex="-1"]))',
+    );
+    await expect(focusable.first()).toHaveAttribute('data-testid', 'login-back');
+
     // When
     await back.click();
     // Then it goes to the home page, not the page that sent the user to login
@@ -271,11 +278,11 @@ test.describe('Login page buttons', () => {
   test('Alternate logins are the same size as the main logins', async ({ page }) => {
     await mockApiConfig(page);
     await page.goto('/login');
-    // OKTA's logo makes it taller, so compare against the main login without one.
-    const main = page.getByTestId('login-provider-auth0');
+    // OKTA stands in for RAS, with its logo.
+    const main = page.getByTestId('login-provider-okta');
     const alt = page.getByTestId('login-provider-fence');
     await expect(alt).toBeVisible();
-    // Retried until layout settles (alternate logins load separately; fonts swap in).
+    // Alternate logins render after the main ones, so retry until the layout settles.
     await expect(async () => {
       const [mainBox, altBox] = [await main.boundingBox(), await alt.boundingBox()];
       expect(altBox!.width).toBeCloseTo(mainBox!.width, 0);

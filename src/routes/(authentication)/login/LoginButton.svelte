@@ -63,7 +63,8 @@
     }}
   >
     {#if imageSrc}
-      <img src={imageSrc} alt={provider!.imagealt} class="mr-2 h-8" />
+      <!-- One line tall, so a logo leaves the button the same height as the others. -->
+      <img src={imageSrc} alt={provider!.imagealt} class="mr-2 h-[1lh]" />
     {/if}
     <span>{buttonText}</span>
   </Button>
@@ -74,6 +75,7 @@
   {/if}
 {:else}
   <Button
+    {variant}
     class="m-1 w-full"
     disabled
     title="No provider selected"

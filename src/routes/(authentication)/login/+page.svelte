@@ -4,6 +4,7 @@
   import { fly } from 'svelte/transition';
 
   import { page } from '$app/state';
+  import { resolve } from '$app/paths';
   import { browser } from '$app/env';
 
   import { config } from '#lib/config/config.svelte.ts';
@@ -58,9 +59,9 @@
           variant="outlined"
           size="compact"
           class="bg-surface-50-950"
-          href="/"
+          href={resolve('')}
           rel="external"
-          onclick={() => log(createLog('NAVIGATION', 'login.explore_open', { url: '/' }))}
+          onclick={() => log(createLog('NAVIGATION', 'login.explore_open', { url: resolve('') }))}
           >{backLinkText}</Button
         >
       </div>

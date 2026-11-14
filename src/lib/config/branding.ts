@@ -213,6 +213,7 @@ export function mapBranding(hostname: string, apiBranding: ConfigObject[] = []):
       login: {
         description: '',
         showSiteName: false,
+        // Deployments ship their own configuration.json, which may lack this key.
         backLinkText: 'Back to PIC-SURE',
         contactLink: '',
         logoHeight: 7.5,
