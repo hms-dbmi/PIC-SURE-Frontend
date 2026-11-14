@@ -53,7 +53,6 @@
     {#if config.features.login.open}
       <!-- The wrapper aligns it left: compact buttons center themselves with auto margins. -->
       <div class="self-start mb-2">
-        <!-- Opaque so the top dots don't show through it. -->
         <Button
           data-testid="login-back"
           variant="outlined"

@@ -23,7 +23,6 @@
     helpText,
     buttonText = 'Log In',
     redirectTo = '/',
-    // Bordered so the main logins match the outlined alternate logins' height.
     variant = 'filled-bordered',
     size = 'md',
     class: className = '',
@@ -63,7 +62,6 @@
     }}
   >
     {#if imageSrc}
-      <!-- One line tall, so a logo leaves the button the same height as the others. -->
       <img src={imageSrc} alt={provider!.imagealt} class="mr-2 h-[1lh]" />
     {/if}
     <span>{buttonText}</span>
