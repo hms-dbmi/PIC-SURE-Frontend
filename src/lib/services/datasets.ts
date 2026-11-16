@@ -85,15 +85,19 @@ export function exportResultType(dataset: DataSet): ExportResultType | undefined
 }
 
 /**
- * Lists the export types a dataset can be downloaded as: the plain data frame, the timeseries
- * and PFB types whose feature switch is on, and the type the dataset was stored with whether
- * or not its switch is on. The data frame and the timeseries are CSV exports, which can only
- * be fetched as a file download, so neither is listed while downloads are off unless it is the
- * stored type.
+ * Lists the export types a dataset can be exported as, which is also what decides whether the
+ * dataset offers an export at all.
+ *
+ * The data frame and the timeseries are CSV exports, fetched only as a file download, so both
+ * need downloads to be allowed. The timeseries also needs its feature switch, unless the
+ * dataset was stored as a timeseries. PFB needs its feature switch and nothing else. A dataset
+ * whose stored type is not offered under these rules offers no export, whatever the other
+ * types would allow.
  *
  * @param dataset The named dataset.
  * @param switches The export feature switches.
- * @returns The offered types in display order, empty when the dataset offers no export.
+ * @returns The offered types in display order, the stored type always among them. Empty when
+ * the stored query has no export type or its type is not offered.
  */
 export function offeredExportTypes(
   dataset: DataSet,
@@ -103,12 +107,14 @@ export function offeredExportTypes(
   if (stored === undefined) {
     return [];
   }
-  const enabled: Record<ExportResultType, boolean> = {
+  const offered: Record<ExportResultType, boolean> = {
     DATAFRAME: switches.allowDownload,
-    DATAFRAME_TIMESERIES: switches.allowDownload && switches.enableExportTimeseries,
+    DATAFRAME_TIMESERIES:
+      switches.allowDownload &&
+      (switches.enableExportTimeseries || stored === 'DATAFRAME_TIMESERIES'),
     DATAFRAME_PFB: switches.enablePfbExport,
   };
-  return EXPORT_RESULT_TYPES.filter((type) => type === stored || enabled[type]);
+  return offered[stored] ? EXPORT_RESULT_TYPES.filter((type) => offered[type]) : [];
 }
 
 /**

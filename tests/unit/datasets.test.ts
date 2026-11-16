@@ -363,12 +363,46 @@ describe('offeredExportTypes', () => {
     ]);
   });
 
-  it.each(['DATAFRAME_TIMESERIES', 'DATAFRAME_PFB'] as const)(
-    'keeps the stored type %s when its switch is off',
+  it('keeps a stored timeseries when its switch is off', () => {
+    const dataset = makeDataset({ query: storedQuery('DATAFRAME_TIMESERIES') });
+
+    expect(offeredExportTypes(dataset, allOff)).toEqual(['DATAFRAME', 'DATAFRAME_TIMESERIES']);
+  });
+
+  it('lists nothing for a PFB dataset when PFB export is off', () => {
+    const dataset = makeDataset({ query: storedQuery('DATAFRAME_PFB') });
+
+    expect(offeredExportTypes(dataset, { ...allOn, enablePfbExport: false })).toEqual([]);
+  });
+
+  it.each(['DATAFRAME', 'DATAFRAME_TIMESERIES'] as const)(
+    'lists nothing for a dataset stored as %s when downloads are off',
     (stored) => {
       const dataset = makeDataset({ query: storedQuery(stored) });
 
-      expect(offeredExportTypes(dataset, allOff)).toEqual(['DATAFRAME', stored]);
+      expect(offeredExportTypes(dataset, { ...allOn, allowDownload: false })).toEqual([]);
+    },
+  );
+
+  it.each(['DATAFRAME', 'DATAFRAME_TIMESERIES', 'DATAFRAME_PFB'] as const)(
+    'always lists the stored type %s when it lists anything',
+    (stored) => {
+      const dataset = makeDataset({ query: storedQuery(stored) });
+      const flags = [true, false];
+
+      for (const allowDownload of flags) {
+        for (const enableExportTimeseries of flags) {
+          for (const enablePfbExport of flags) {
+            const types = offeredExportTypes(dataset, {
+              allowDownload,
+              enableExportTimeseries,
+              enablePfbExport,
+            });
+
+            expect(types.length === 0 || types.includes(stored)).toBe(true);
+          }
+        }
+      }
     },
   );
 

@@ -56,16 +56,11 @@
   onDestroy(() => unmounted.abort());
 
   const resultType = $derived(exportResultType(dataset));
-  const isPfb = $derived(resultType === 'DATAFRAME_PFB');
   const types = $derived(offeredExportTypes(dataset, config.features.explorer));
   const selectedType = $derived(
     chosenType !== undefined && types.includes(chosenType) ? chosenType : resultType,
   );
-  const offered = $derived(
-    resultType !== undefined &&
-      !dataset.federated &&
-      (isPfb ? config.features.explorer.enablePfbExport : config.features.explorer.allowDownload),
-  );
+  const offered = $derived(types.length > 0 && !dataset.federated);
   const variants: Variant[] = $derived([
     { sample: false, label: 'Full dataset' },
     ...(config.features.explorer.enableSampleDataset

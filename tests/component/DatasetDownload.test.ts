@@ -218,6 +218,21 @@ describe('DatasetDownload', () => {
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 
+  it('shows neither option for a timeseries dataset when downloads are off', () => {
+    features.explorer.allowDownload = false;
+    render(DatasetDownload, { dataset: makeDataset('DATAFRAME_TIMESERIES') });
+
+    expect(screen.queryByTestId('dataset-download')).not.toBeInTheDocument();
+  });
+
+  it('shows the options for a PFB dataset when downloads are off', () => {
+    features.explorer.allowDownload = false;
+    render(DatasetDownload, { dataset: makeDataset('DATAFRAME_PFB') });
+
+    expect(fullButton()).toBeEnabled();
+    expect(sampleButton()).toBeEnabled();
+  });
+
   it('shows neither option for a federated dataset', () => {
     render(DatasetDownload, {
       dataset: { ...makeDataset(), federated: { commonId: 'common-area-uuid' } },
