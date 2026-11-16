@@ -427,6 +427,19 @@ describe('DatasetDownload', () => {
     expect(sampleButton()).toBeEnabled();
   });
 
+  it('shows no toast when a 401 on the submit has logged the user out', async () => {
+    post.mockResolvedValueOnce(undefined);
+    render(DatasetDownload, { dataset: makeDataset() });
+
+    await fireEvent.click(sampleButton());
+    await waitFor(() => expect(sampleButton()).toBeEnabled());
+
+    expect(paths(post)).toEqual([QUERY_PATH]);
+    expect(toastError).not.toHaveBeenCalled();
+    expect(get).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('dataset-download-ready')).not.toBeInTheDocument();
+  });
+
   it('shows the preparation failure once when the submit fails', async () => {
     post.mockRejectedValueOnce({ status: 500, body: { message: 'Server Error' } });
     render(DatasetDownload, { dataset: makeDataset() });

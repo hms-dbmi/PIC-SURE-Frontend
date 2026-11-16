@@ -16,6 +16,7 @@ import {
   offeredExportTypes,
   requestVariant,
 } from '$lib/services/datasets';
+import { isSessionEnded } from '$lib/services/exportStatus';
 import { buildQueryRequestV3FromDescriptor } from '$lib/utilities/QueryBuilder';
 
 const QUERY_PATH = 'picsure/hpds/auth/query';
@@ -687,6 +688,23 @@ describe('requestVariant', () => {
 
     await expect(requestVariant(makeDataset(), true)).rejects.toThrow();
     expect(put).not.toHaveBeenCalled();
+  });
+
+  it('rejects with a session-ended error when a 401 left the submit without an answer', async () => {
+    post.mockResolvedValueOnce(undefined);
+
+    const failure = await requestVariant(makeDataset(), true).catch((e: unknown) => e);
+
+    expect(isSessionEnded(failure)).toBe(true);
+  });
+
+  it('does not take a submit answered without a query id for an ended session', async () => {
+    post.mockResolvedValueOnce({});
+
+    const failure = await requestVariant(makeDataset(), true).catch((e: unknown) => e);
+
+    expect(failure).toBeInstanceOf(Error);
+    expect(isSessionEnded(failure)).toBe(false);
   });
 
   it('submits nothing for a dataset stored with a count type', async () => {

@@ -3,6 +3,7 @@ import { Picsure } from '$lib/paths';
 import { QueryVersion, type DataSet, type DataSetResponse } from '$lib/models/Dataset';
 import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
 import { QueryV3, serializeQueryV3 } from '$lib/models/query/Query';
+import { SessionEndedError } from '$lib/services/exportStatus';
 
 const EXPORT_RESULT_TYPES = ['DATAFRAME', 'DATAFRAME_TIMESERIES', 'DATAFRAME_PFB'] as const;
 
@@ -129,8 +130,9 @@ export function offeredExportTypes(
  * @param signal Cancels the submit when it aborts.
  * @returns The id of the variant's query: the listed one, or the one the submit answered with.
  * @throws An error when the dataset's stored query is not a V3 query of an export type, in
- * which case nothing is sent, when the submit answers without a query id, or whatever the
- * submit rejects with.
+ * which case nothing is sent, an error matching `isSessionEnded` when the submit was answered
+ * 401 and the user was logged out, an error when the submit answers without a query id, or
+ * whatever the submit rejects with.
  */
 export async function requestVariant(
   dataset: DataSet,
@@ -170,7 +172,10 @@ export async function requestVariant(
     undefined,
     options,
   );
-  const queryId = response?.picsureResultId;
+  if (response === undefined) {
+    throw new SessionEndedError();
+  }
+  const queryId = response.picsureResultId;
   if (!queryId) {
     throw new Error('The query submit returned no query id.');
   }

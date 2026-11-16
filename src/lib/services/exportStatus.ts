@@ -19,23 +19,24 @@ export const SAMPLE_DISABLED_MESSAGE =
   'Sample datasets are not available in this PIC-SURE environment. Remove the sample option to run the full export.';
 
 /**
- * Rejects a status wait whose request found the session over. A 401 makes the request log the
- * user out, start the redirect to the login page and resolve with nothing, so there is no
- * status to read and no later attempt can succeed.
+ * Rejects a query submit or a status wait whose request found the session over. A 401 makes the
+ * request log the user out, start the redirect to the login page and resolve with nothing, so
+ * there is no answer to read and no later attempt can succeed.
  */
 export class SessionEndedError extends Error {
   constructor() {
-    super('The session ended while waiting for the export.');
+    super('The session ended while preparing the export.');
     this.name = 'SessionEndedError';
   }
 }
 
 /**
- * Tells a wait that stopped because the session ended apart from every other failure. The login
- * page the user is sent to explains the logout, so a caller shows no message of its own.
+ * Tells a submit or a wait that stopped because the session ended apart from every other
+ * failure. The login page the user is sent to explains the logout, so a caller shows no message
+ * of its own.
  *
- * @param e The value a rejected {@link waitUntilAvailable} call rejected with.
- * @returns True when a status request was answered 401 and the user was logged out.
+ * @param e The value a rejected query submit or {@link waitUntilAvailable} call rejected with.
+ * @returns True when the request was answered 401 and the user was logged out.
  */
 export function isSessionEnded(e: unknown): boolean {
   return e instanceof SessionEndedError;
