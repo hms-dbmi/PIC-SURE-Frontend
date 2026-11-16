@@ -22,7 +22,7 @@ export const privileges = createResource({
     ),
   // PSAMA's response isn't read: the list keeps the privilege as sent.
   update: async (privilege) => {
-    await access.privileges.update(privilege);
+    await access.privileges.update({ ...privilege, application: { uuid: privilege.application } });
     return privilege;
   },
   remove: { send: access.privileges.remove },
@@ -37,7 +37,10 @@ export const roles = createResource({
     mapRole(
       await access.roles.add({ ...role, privileges: role.privileges.map((uuid) => ({ uuid })) }),
     ),
-  update: async (role) => mapRole(await access.roles.update(role)),
+  update: async (role) =>
+    mapRole(
+      await access.roles.update({ ...role, privileges: role.privileges.map((uuid) => ({ uuid })) }),
+    ),
   remove: { send: access.roles.remove },
   label: (role) => role.name,
 });

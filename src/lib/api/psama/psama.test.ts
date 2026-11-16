@@ -99,8 +99,12 @@ const calls: [string, () => Promise<unknown>, Sent][] = [
   ],
   [
     'privileges.update',
-    () => access.privileges.update(privilege),
-    { method: 'PATCH', path: 'psama/privilege', body: [privilege] },
+    () => access.privileges.update({ ...privilege, application: { uuid: 'app-1' } }),
+    {
+      method: 'PATCH',
+      path: 'psama/privilege',
+      body: [{ ...privilege, application: { uuid: 'app-1' } }],
+    },
   ],
   [
     'privileges.remove',
@@ -116,8 +120,8 @@ const calls: [string, () => Promise<unknown>, Sent][] = [
   ],
   [
     'roles.update',
-    () => access.roles.update(role),
-    { method: 'PATCH', path: 'psama/role', body: [role] },
+    () => access.roles.update({ ...role, privileges: [{ uuid: 'p-1' }] }),
+    { method: 'PATCH', path: 'psama/role', body: [{ ...role, privileges: [{ uuid: 'p-1' }] }] },
   ],
   ['roles.remove', () => access.roles.remove('r-1'), { method: 'DELETE', path: 'psama/role/r-1' }],
   ['applications.list', () => access.applications.list(), { path: 'psama/application' }],

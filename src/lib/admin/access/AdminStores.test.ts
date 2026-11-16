@@ -159,10 +159,9 @@ describe('Privileges store', () => {
       post: [
         ['psama/privilege', [{ name: 'NEW', description: '', application: { uuid: 'app-2' } }]],
       ],
-      // Quirk: update sends the application as a bare uuid string, unlike add.
       patch: [
-        ['psama/privilege', [edited]],
-        ['psama/privilege', [{ ...mapped, uuid: 'p-3' }]],
+        ['psama/privilege', [{ ...edited, application: { uuid: 'app-1' } }]],
+        ['psama/privilege', [{ ...mapped, uuid: 'p-3', application: { uuid: 'app-1' } }]],
       ],
       del: [['psama/privilege/p-2']],
     });
@@ -222,8 +221,7 @@ describe('Roles store', () => {
     expect(calls()).toEqual({
       get: [['psama/role']],
       post: [['psama/role', [{ name: 'New', description: '', privileges: [{ uuid: 'p-2' }] }]]],
-      // Quirk: update sends privileges as bare uuid strings, unlike add.
-      patch: [['psama/role', [{ ...mapped, description: 'sent' }]]],
+      patch: [['psama/role', [{ ...raw, description: 'sent' }]]],
       del: [['psama/role/r-2']],
     });
     expect(s.items).toEqual([{ ...mapped, description: 'edited' }]);
