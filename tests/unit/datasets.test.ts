@@ -329,8 +329,8 @@ describe('exportResultType', () => {
 });
 
 describe('offeredExportTypes', () => {
-  const allOn = { enableExportTimeseries: true, enablePfbExport: true };
-  const allOff = { enableExportTimeseries: false, enablePfbExport: false };
+  const allOn = { allowDownload: true, enableExportTimeseries: true, enablePfbExport: true };
+  const allOff = { allowDownload: true, enableExportTimeseries: false, enablePfbExport: false };
 
   it('lists every export type when both switches are on', () => {
     expect(offeredExportTypes(makeDataset(), allOn)).toEqual([
@@ -348,7 +348,18 @@ describe('offeredExportTypes', () => {
     { enableExportTimeseries: true, enablePfbExport: false, extra: 'DATAFRAME_TIMESERIES' },
     { enableExportTimeseries: false, enablePfbExport: true, extra: 'DATAFRAME_PFB' },
   ])('lists $extra when only its switch is on', ({ extra, ...switches }) => {
-    expect(offeredExportTypes(makeDataset(), switches)).toEqual(['DATAFRAME', extra]);
+    expect(offeredExportTypes(makeDataset(), { allowDownload: true, ...switches })).toEqual([
+      'DATAFRAME',
+      extra,
+    ]);
+  });
+
+  it('lists no CSV type for a PFB dataset when downloads are off', () => {
+    const dataset = makeDataset({ query: storedQuery('DATAFRAME_PFB') });
+
+    expect(offeredExportTypes(dataset, { ...allOn, allowDownload: false })).toEqual([
+      'DATAFRAME_PFB',
+    ]);
   });
 
   it.each(['DATAFRAME_TIMESERIES', 'DATAFRAME_PFB'] as const)(

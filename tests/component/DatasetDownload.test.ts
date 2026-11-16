@@ -608,6 +608,34 @@ describe('DatasetDownload', () => {
     expect(typeControl().value).toBe('DATAFRAME_TIMESERIES');
   });
 
+  it('lists only PFB for a PFB dataset when downloads are off', () => {
+    features.explorer.allowDownload = false;
+    render(DatasetDownload, { dataset: makeDataset('DATAFRAME_PFB') });
+
+    expect(offeredTypes()).toEqual(['DATAFRAME_PFB']);
+    expect(typeControl().value).toBe('DATAFRAME_PFB');
+  });
+
+  it.each(['DATAFRAME', 'DATAFRAME_TIMESERIES'])(
+    'submits no %s export of a PFB dataset when downloads are off',
+    async (csvType) => {
+      features.explorer.allowDownload = false;
+      get.mockResolvedValueOnce({ status: 'AVAILABLE' });
+      render(DatasetDownload, {
+        dataset: makeDataset('DATAFRAME_PFB', [{ ...FULL_LINK, resultType: 'DATAFRAME_PFB' }]),
+      });
+
+      await chooseType(csvType);
+      await fireEvent.click(fullButton());
+      await screen.findByRole('button', { name: 'Export to Terra' });
+
+      expect(post).not.toHaveBeenCalled();
+      expect(paths(get)).toEqual([statusPath('full-id')]);
+      expect(typeControl().value).toBe('DATAFRAME_PFB');
+      expect(toastError).not.toHaveBeenCalled();
+    },
+  );
+
   it('submits the chosen type with sample set when the sample is clicked', async () => {
     post.mockResolvedValueOnce({ picsureResultId: 'sample-timeseries' });
     get.mockResolvedValueOnce({ status: 'AVAILABLE' }).mockResolvedValueOnce('a,b\n1,2\n');

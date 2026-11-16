@@ -11,6 +11,8 @@ export type ExportResultType = (typeof EXPORT_RESULT_TYPES)[number];
 
 /** The feature switches that decide which export types the explorer offers. */
 export interface ExportTypeSwitches {
+  /** True when a result file may be downloaded, which is the only way to fetch a CSV export. */
+  allowDownload: boolean;
   /** True when the timeseries export is offered. */
   enableExportTimeseries: boolean;
   /** True when the PFB export is offered. */
@@ -84,7 +86,9 @@ export function exportResultType(dataset: DataSet): ExportResultType | undefined
 /**
  * Lists the export types a dataset can be downloaded as: the plain data frame, the timeseries
  * and PFB types whose feature switch is on, and the type the dataset was stored with whether
- * or not its switch is on.
+ * or not its switch is on. The data frame and the timeseries are CSV exports, which can only
+ * be fetched as a file download, so neither is listed while downloads are off unless it is the
+ * stored type.
  *
  * @param dataset The named dataset.
  * @param switches The export feature switches.
@@ -99,8 +103,8 @@ export function offeredExportTypes(
     return [];
   }
   const enabled: Record<ExportResultType, boolean> = {
-    DATAFRAME: true,
-    DATAFRAME_TIMESERIES: switches.enableExportTimeseries,
+    DATAFRAME: switches.allowDownload,
+    DATAFRAME_TIMESERIES: switches.allowDownload && switches.enableExportTimeseries,
     DATAFRAME_PFB: switches.enablePfbExport,
   };
   return EXPORT_RESULT_TYPES.filter((type) => type === stored || enabled[type]);
