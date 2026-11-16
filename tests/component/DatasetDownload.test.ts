@@ -484,6 +484,75 @@ describe('DatasetDownload', () => {
     expect(sampleButton()).not.toHaveAttribute('aria-busy');
   });
 
+  it('has an empty polite status region before anything is asked for', () => {
+    render(DatasetDownload, { dataset: makeDataset() });
+
+    const status = screen.getByRole('status');
+    expect(status).toHaveAttribute('aria-atomic', 'true');
+    expect(status.textContent?.trim()).toBe('');
+  });
+
+  it.each([
+    { label: 'sample', queryId: 'sample-id' },
+    { label: 'full', queryId: 'full-id' },
+  ])(
+    'announces that the $label dataset is being prepared and then that it is ready',
+    async ({ label, queryId }) => {
+      let finishSubmit: (value: { picsureResultId: string }) => void = () => {};
+      post.mockReturnValueOnce(new Promise((resolve) => (finishSubmit = resolve)));
+      get.mockResolvedValueOnce({ status: 'AVAILABLE' });
+      render(DatasetDownload, { dataset: makeDataset('DATAFRAME', []) });
+      const status = screen.getByRole('status');
+
+      await fireEvent.click(label === 'sample' ? sampleButton() : fullButton());
+
+      expect(status).toHaveTextContent(
+        `Your ${label} dataset is being prepared. This can take several minutes.`,
+      );
+      expect(screen.queryByTestId('dataset-download-ready')).not.toBeInTheDocument();
+
+      finishSubmit({ picsureResultId: queryId });
+      await screen.findByRole('button', { name: /Download as CSV/ });
+
+      expect(screen.getByRole('status')).toBe(status);
+      expect(status).toHaveTextContent(`Your ${label} dataset is ready.`);
+      expect(status).not.toHaveClass('sr-only');
+      expect(screen.getAllByText(`Your ${label} dataset is ready.`)).toHaveLength(1);
+    },
+  );
+
+  it('clears the status region when preparing fails, leaving the toast to report it', async () => {
+    post.mockRejectedValueOnce({ status: 500, body: { message: 'Server Error' } });
+    render(DatasetDownload, { dataset: makeDataset() });
+
+    await fireEvent.click(sampleButton());
+
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith(PREPARE_FAILED_TOAST));
+    await waitFor(() => expect(sampleButton()).toBeEnabled());
+    expect(screen.getByRole('status').textContent?.trim()).toBe('');
+  });
+
+  it('replaces the ready announcement when another export is asked for', async () => {
+    let finishSubmit: (value: { picsureResultId: string }) => void = () => {};
+    post.mockReturnValueOnce(new Promise((resolve) => (finishSubmit = resolve)));
+    get.mockResolvedValue({ status: 'AVAILABLE' });
+    render(DatasetDownload, { dataset: makeDataset() });
+
+    await fireEvent.click(fullButton());
+    await screen.findByRole('button', { name: /Download as CSV/ });
+    await waitFor(() => expect(sampleButton()).toBeEnabled());
+    await fireEvent.click(sampleButton());
+
+    expect(screen.getByRole('status')).toHaveTextContent(
+      /^Your sample dataset is being prepared\./,
+    );
+
+    finishSubmit({ picsureResultId: 'sample-id' });
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent('Your sample dataset is ready.'),
+    );
+  });
+
   it('hands a PFB dataset to the signed URL export with the linked query id', async () => {
     const samplePfb: LinkedQuery = {
       queryId: 'sample-pfb',

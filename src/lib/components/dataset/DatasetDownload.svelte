@@ -73,6 +73,23 @@
       : []),
   ]);
 
+  const statusText = $derived.by(() => {
+    if (preparing) {
+      return `Your ${variantName(preparing.sample)} dataset is being prepared. This can take several minutes.`;
+    }
+    return ready ? `Your ${variantName(ready.sample)} dataset is ready.` : '';
+  });
+
+  /**
+   * Names a variant the way the status sentences do.
+   *
+   * @param sample True for the sample variant, false for the full one.
+   * @returns The word placed before "dataset".
+   */
+  function variantName(sample: boolean): string {
+    return sample ? 'sample' : 'full';
+  }
+
   /**
    * Builds the query handed to the export controls, which read its result type and log its
    * `sample` flag. The controls fetch by query id and never send this query.
@@ -212,9 +229,16 @@
         </button>
       {/each}
     </div>
+    <p
+      role="status"
+      aria-atomic="true"
+      data-testid="dataset-download-status"
+      class={ready ? 'mt-4' : 'sr-only'}
+    >
+      {statusText}
+    </p>
     {#if ready}
-      <div data-testid="dataset-download-ready" class="flex flex-col items-start mt-4">
-        <p>Your {ready.sample ? 'sample' : 'full'} dataset is ready.</p>
+      <div data-testid="dataset-download-ready" class="flex flex-col items-start">
         {#key ready.queryId}
           {@const query = variantQuery(ready)}
           {#if ready.resultType === 'DATAFRAME_PFB'}
