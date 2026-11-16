@@ -18,7 +18,6 @@ import { findSessionProvider, saveSessionProvider } from '#lib/auth/providers/Au
 import { createInstance } from '#lib/auth/providerRegistry.ts';
 import AUTH0 from '#lib/auth/providers/AUTH0.ts';
 import FENCE from '#lib/auth/providers/FENCE.ts';
-import { FENCE_REAUTH_KEY } from '#lib/auth/token.ts';
 
 /** An unsigned JWT for `sub` that expires in an hour. */
 function jwt(sub: string): string {
@@ -108,11 +107,6 @@ describe('logout', () => {
       'AUTH0',
       () => new AUTH0({ ...common, name: 'AUTH0', type: 'AUTH0', clientid: 'c', connection: 'x' }),
     ],
-    [
-      'FENCE',
-      () =>
-        new FENCE({ ...common, name: 'FENCE', type: 'FENCE', uri: 'u', clientid: 'c', idp: 'i' }),
-    ],
   ])('through %s, which returns no logout URL', (_, create) => {
     it('ends the session once, without an error', async () => {
       vi.stubGlobal(
@@ -140,7 +134,7 @@ describe('logout', () => {
     });
   });
 
-  it('leaves the flag that makes the next FENCE login ask for the account again', async () => {
+  it('sends the browser to FENCE to end its session, then back to the login page', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(() => Promise.resolve(new Response('{}'))),
@@ -149,15 +143,20 @@ describe('logout', () => {
       ...common,
       name: 'FENCE',
       type: 'FENCE',
-      uri: 'u',
+      uri: 'https://fence.example',
       clientid: 'c',
       idp: 'i',
     });
     saveSessionProvider(fence);
+    const replace = vi.spyOn(location, 'replace').mockImplementation(() => {});
 
     await session.logout(fence);
 
-    expect(localStorage.getItem(FENCE_REAUTH_KEY)).toBe('true');
+    expect(replace).toHaveBeenCalledExactlyOnceWith(
+      `https://fence.example/user/logout?next=${encodeURIComponent(location.origin + '/login')}`,
+    );
+    expect(navigate).not.toHaveBeenCalled();
+    expect(localStorage.getItem('token')).toBeNull();
   });
 
   it('ends the session once when another user logs in through another provider, and once on logout', async () => {

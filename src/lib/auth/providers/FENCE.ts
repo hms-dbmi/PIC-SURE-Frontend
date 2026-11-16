@@ -4,7 +4,6 @@ import { browser } from '$app/env';
 import * as psamaUser from '#lib/api/psama/user.ts';
 import type { User } from '#lib/auth/model/user.ts';
 import { newLoginState, verifyLoginState } from '#lib/auth/loginState.ts';
-import { FENCE_REAUTH_KEY } from '#lib/auth/token.ts';
 
 interface FenceData extends AuthData {
   uri: string;
@@ -46,8 +45,7 @@ class Fence extends AuthProvider implements FenceData {
         `&client_id=${this.clientid}` +
         `&redirect_uri=${redirectUrl}` +
         `&idp=${this.idp}` +
-        `&state=${newLoginState()}` +
-        (this.consumeReauthFlag() ? '&prompt=login' : '');
+        `&state=${newLoginState()}`;
       window.location.href = encodeURI(fenceUrl);
     } else {
       throw new Error('Only browser supported');
@@ -55,26 +53,19 @@ class Fence extends AuthProvider implements FenceData {
   };
 
   /**
-   * Marks the next login to force Fence to clear its own session and ask the identity provider
-   * again, so a user who logged out is not silently signed back in as the same account.
+   * Returns Fence's own logout URL, so the browser ends the Fence session and the next login asks
+   * for the account again instead of signing the same user back in. Fence sends the browser on to
+   * `logouturl`, or to this application's login page, and refuses a host that is not in its
+   * `LOGIN_REDIRECT_WHITELIST`.
    */
-  logout = async (): Promise<void> => {
-    try {
-      localStorage.setItem(FENCE_REAUTH_KEY, 'true');
-    } catch {
-      return;
-    }
+  logout = (): Promise<string> => {
+    const next =
+      this.logouturl ||
+      `${window.location.protocol}//${window.location.hostname}${
+        window.location.port ? ':' + window.location.port : ''
+      }/login`;
+    return Promise.resolve(`${this.uri}/user/logout?next=${encodeURIComponent(next)}`);
   };
-
-  private consumeReauthFlag(): boolean {
-    try {
-      const flagged = localStorage.getItem(FENCE_REAUTH_KEY) === 'true';
-      localStorage.removeItem(FENCE_REAUTH_KEY);
-      return flagged;
-    } catch {
-      return false;
-    }
-  }
 }
 
 export default Fence;
