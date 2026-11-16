@@ -15,7 +15,8 @@ export const EXPORT_NOT_READY_MESSAGE =
   'The export is not ready yet. Please try again in a few minutes.';
 
 /** Shown when a sample is asked for while sampling is switched off on the server. */
-export const SAMPLE_DISABLED_MESSAGE = 'Sample datasets are not available at this time';
+export const SAMPLE_DISABLED_MESSAGE =
+  'Sample datasets are not available in this PIC-SURE environment. Remove the sample option to run the full export.';
 
 /**
  * Rejects a status wait whose request found the session over. A 401 makes the request log the

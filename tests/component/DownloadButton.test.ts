@@ -58,7 +58,8 @@ function httpError(status: number, body: string | App.Error): unknown {
 const SAMPLE_DISABLED_BODY = '{"errorType":"sample_disabled","message":"Sampling is off"}';
 const CONSENT_DENIED_BODY = { message: 'You no longer have consent', errorType: 'consent_denied' };
 const SAMPLE_DISABLED_TOAST = {
-  title: 'Sample datasets are not available at this time',
+  title:
+    'Sample datasets are not available in this PIC-SURE environment. Remove the sample option to run the full export.',
   closable: true,
 };
 const CONSENT_DENIED_TOAST = { title: 'You no longer have consent', closable: true };
