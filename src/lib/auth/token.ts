@@ -15,8 +15,6 @@ export const USER_KEY = 'user';
 export const LOGOUT_REASON_KEY = 'logout-reason';
 /** sessionStorage: the OAuth `state` of the login this tab started. Its callback removes it. */
 export const LOGIN_STATE_KEY = 'loginState';
-/** localStorage: set by a FENCE logout so the next FENCE login asks for the account again. */
-export const FENCE_REAUTH_KEY = 'fence-reauth';
 /**
  * localStorage, for an instant: a logout here is discarding the query, so other tabs discard
  * theirs. Removed as soon as it is written; the other tabs act on the storage event.
