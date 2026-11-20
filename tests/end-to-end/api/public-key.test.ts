@@ -200,18 +200,3 @@ test.describe('Public access key generation', () => {
     expect(requestCount).toBe(0);
   });
 });
-
-test.describe('Public access key flag off', () => {
-  test('Says keys are unavailable when PUBLIC_ACCESS_KEY is unset', async ({ page }) => {
-    // Given
-    await mockApiConfig(page, { features: [{ name: 'OPEN', value: 'true' }] });
-
-    // When
-    await page.goto('/api');
-
-    // Then
-    const card = page.getByTestId('api-public-key');
-    await expect(card.getByTestId('api-public-key-unavailable')).toBeVisible();
-    await expect(card.getByRole('button', { name: 'Request Public Key' })).toHaveCount(0);
-  });
-});

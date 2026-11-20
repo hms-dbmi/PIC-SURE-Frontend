@@ -12,7 +12,7 @@
 
   type View = 'idle' | 'form' | 'revealed' | 'error';
 
-  // the PUBLIC_ACCESS_KEY feature flag; PSAMA independently enforces its own
+  // Display only; PSAMA gates key generation itself (API_KEY_GENERATION_ENABLED)
   let { enabled = false }: { enabled?: boolean } = $props();
 
   // when a Turnstile sitekey is configured the widget gates submission; empty keeps the
