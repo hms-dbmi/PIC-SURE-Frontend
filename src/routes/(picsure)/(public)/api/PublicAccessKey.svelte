@@ -12,7 +12,7 @@
 
   type View = 'idle' | 'form' | 'revealed' | 'error';
 
-  // deployment capability from branding config; the backend independently enforces its own flag
+  // the PUBLIC_ACCESS_KEY feature flag; PSAMA independently enforces its own
   let { enabled = false }: { enabled?: boolean } = $props();
 
   // when a Turnstile sitekey is configured the widget gates submission; empty keeps the

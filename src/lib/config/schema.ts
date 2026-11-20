@@ -41,6 +41,7 @@ export type Features = {
   login: {
     open: boolean;
   };
+  publicAccessKey: boolean;
   restoreV2queries: boolean;
   termsOfService: boolean;
   wafCaptchaRecovery: boolean;
@@ -149,6 +150,13 @@ export const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
       default: false,
       description:
         'Enables the Terms of Service feature: adds a footer link to view it, and an admin link to edit it.',
+    },
+    PUBLIC_ACCESS_KEY: {
+      group: 'access',
+      type: 'boolean',
+      default: false,
+      description:
+        "Lets logged-out visitors request a public access key on the API page; when off, the page says keys aren't available here. PSAMA must also enable key generation (API_KEY_GENERATION_ENABLED), or requests fail.",
     },
     // --- Explorer & Search ---
     ALLOW_EXPORT: {
@@ -467,6 +475,7 @@ export function mapFeatures(apiFeatures: ConfigObject[]): Features {
     login: {
       open: parse('OPEN'),
     },
+    publicAccessKey: parse('PUBLIC_ACCESS_KEY'),
     restoreV2queries: parse('RESTORE_V2_QUERY'),
     termsOfService: parse('ENABLE_TOS'),
     wafCaptchaRecovery: parse('WAF_CAPTCHA_RECOVERY'),

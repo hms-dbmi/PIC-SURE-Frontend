@@ -50,7 +50,12 @@ async function openForm(page: Page) {
 test.describe('Public access key generation', () => {
   test.beforeEach(async ({ page }) => {
     // OPEN keeps the root layout from redirecting anonymous visitors to /login.
-    await mockApiConfig(page, { features: [{ name: 'OPEN', value: 'true' }] });
+    await mockApiConfig(page, {
+      features: [
+        { name: 'OPEN', value: 'true' },
+        { name: 'PUBLIC_ACCESS_KEY', value: 'true' },
+      ],
+    });
   });
 
   test('Logged-out api page shows the card with an enabled request button', async ({ page }) => {
@@ -193,5 +198,20 @@ test.describe('Public access key generation', () => {
     await expect(page.getByRole('button', { name: 'Request Public Key' })).toBeEnabled();
     await expect(page.getByTestId('api-public-key-value')).not.toBeVisible();
     expect(requestCount).toBe(0);
+  });
+});
+
+test.describe('Public access key flag off', () => {
+  test('Says keys are unavailable when PUBLIC_ACCESS_KEY is unset', async ({ page }) => {
+    // Given
+    await mockApiConfig(page, { features: [{ name: 'OPEN', value: 'true' }] });
+
+    // When
+    await page.goto('/api');
+
+    // Then
+    const card = page.getByTestId('api-public-key');
+    await expect(card.getByTestId('api-public-key-unavailable')).toBeVisible();
+    await expect(card.getByRole('button', { name: 'Request Public Key' })).toHaveCount(0);
   });
 });
