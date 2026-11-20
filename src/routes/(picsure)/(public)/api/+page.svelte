@@ -258,7 +258,7 @@
           </div>
         {:else}
           <div class="flex-1 basis-96 min-w-0 max-w-full">
-            <PublicAccessKey enabled={config.branding.apiPage?.publicKeyEnabled ?? false} />
+            <PublicAccessKey enabled={config.features.publicAccessKey} />
           </div>
         {/if}
         <div id="capabilities" class="flex-1 min-w-64">

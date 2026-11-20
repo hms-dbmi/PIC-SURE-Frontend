@@ -12,7 +12,6 @@
 
   type View = 'idle' | 'form' | 'revealed' | 'error';
 
-  // deployment capability from branding config; the backend independently enforces its own flag
   let { enabled = false }: { enabled?: boolean } = $props();
 
   // when a Turnstile sitekey is configured the widget gates submission; empty keeps the
