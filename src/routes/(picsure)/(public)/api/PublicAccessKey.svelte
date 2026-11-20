@@ -12,7 +12,6 @@
 
   type View = 'idle' | 'form' | 'revealed' | 'error';
 
-  // Display only; PSAMA gates key generation itself (API_KEY_GENERATION_ENABLED)
   let { enabled = false }: { enabled?: boolean } = $props();
 
   // when a Turnstile sitekey is configured the widget gates submission; empty keeps the
