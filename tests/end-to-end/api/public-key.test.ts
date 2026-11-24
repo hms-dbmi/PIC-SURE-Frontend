@@ -50,7 +50,12 @@ async function openForm(page: Page) {
 test.describe('Public access key generation', () => {
   test.beforeEach(async ({ page }) => {
     // OPEN keeps the root layout from redirecting anonymous visitors to /login.
-    await mockApiConfig(page, { features: [{ name: 'OPEN', value: 'true' }] });
+    await mockApiConfig(page, {
+      features: [
+        { name: 'OPEN', value: 'true' },
+        { name: 'PUBLIC_ACCESS_KEY', value: 'true' },
+      ],
+    });
   });
 
   test('Logged-out api page shows the card with an enabled request button', async ({ page }) => {
