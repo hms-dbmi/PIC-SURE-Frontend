@@ -4,6 +4,7 @@
   import ClientTable from '#lib/ui/datatable/ClientTable.svelte';
   import DashboardLink from './DashboardLink.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
+  import { userMessage } from '#lib/api/errors.ts';
 
   import { Dashboard, type DashboardRow } from './dashboard.svelte.ts';
   import Drawer from '#lib/ui/dialog/Drawer.svelte';
@@ -57,8 +58,8 @@
         rowClickHandler={config.features.dashboardDrawer ? rowClickHandler : undefined}
         isClickable={config.features.dashboardDrawer}
       />
-    {:catch}
-      <ErrorAlert title="An Error Occured">
+    {:catch error}
+      <ErrorAlert title={userMessage(error, 'An Error Occured')}>
         We're having trouble fetching the data dashboard items right now. Please try again later.
       </ErrorAlert>
     {/await}

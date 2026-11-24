@@ -56,6 +56,10 @@ export type Settings = {
     tagManager: string;
   };
   maxDataPointsForExport: number;
+  rateLimits: {
+    perMinute: number;
+    perDay: number;
+  };
   tour: {
     auth: string;
     open: string;
@@ -337,6 +341,23 @@ export const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
         'System fields to bypass dictionary lookup on dataset view and restore. (Loads from dictionary/concepts/detail/{conceptPathDataset} otherwise.)',
     },
 
+    // --- Access & Login --- (joined by PUBLIC_ACCESS_KEY and others from features, once
+    // features+settings are merged in the admin UI)
+    RATE_LIMIT_PER_MINUTE: {
+      group: 'access',
+      type: 'int',
+      default: 0,
+      description:
+        'Requests per minute per open-access key, as the gateway enforces them (RATE_LIMIT_USER_BURST_PER_MINUTE). The API page publishes the limits only when this and RATE_LIMIT_PER_DAY are both above 0; set them only when the gateway limiter is on.',
+    },
+    RATE_LIMIT_PER_DAY: {
+      group: 'access',
+      type: 'int',
+      default: 0,
+      description:
+        'Requests per day per open-access key, as the gateway enforces them (RATE_LIMIT_USER_SUSTAINED_PER_DAY). Published only alongside RATE_LIMIT_PER_MINUTE.',
+    },
+
     // --- Export ---
     MAX_DATA_POINTS_FOR_EXPORT: {
       group: 'export',
@@ -501,6 +522,10 @@ export function mapSettings(apiSettings: ConfigObject[]): Settings {
       tagManager: parse.asString('GOOGLE_TAG_MANAGER_ID'),
     },
     maxDataPointsForExport: parse.asInt('MAX_DATA_POINTS_FOR_EXPORT'),
+    rateLimits: {
+      perMinute: parse.asInt('RATE_LIMIT_PER_MINUTE'),
+      perDay: parse.asInt('RATE_LIMIT_PER_DAY'),
+    },
     tour: {
       auth: parse.asString('AUTH_TOUR_NAME'),
       open: parse.asString('OPEN_TOUR_NAME'),

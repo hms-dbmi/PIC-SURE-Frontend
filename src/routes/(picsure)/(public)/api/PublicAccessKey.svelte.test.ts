@@ -5,6 +5,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 
 import PublicAccessKey from './PublicAccessKey.svelte';
 import { ApiError } from '#lib/api/errors.ts';
+import { rateLimited, WAIT_MESSAGE } from '../../../../../tests/support/helpers';
 
 const { requestPublic, log } = vi.hoisted(() => ({ requestPublic: vi.fn(), log: vi.fn() }));
 
@@ -68,6 +69,26 @@ describe('PublicAccessKey', () => {
     expect(screen.queryByRole('button', { name: 'Request Public Key' })).not.toBeInTheDocument();
     expect(screen.getByTestId('api-public-key-unavailable')).toBeInTheDocument();
     expect(requestPublic).not.toHaveBeenCalled();
+  });
+
+  it('shows the published limits beside the request button and the revealed key', async () => {
+    const limits = '60 requests per minute and 3,000 requests per day per key.';
+    requestPublic.mockResolvedValue(mockKeyResponse);
+    render(PublicAccessKey, { props: { enabled: true, rateLimits: limits } });
+
+    expect(screen.getByTestId('api-public-key-rate-limits')).toHaveTextContent(limits);
+
+    await openForm();
+    await submitForm();
+    await screen.findByTestId('api-public-key-value');
+
+    expect(screen.getByTestId('api-public-key-rate-limits')).toHaveTextContent(limits);
+  });
+
+  it('shows no limits when none are published', () => {
+    render(PublicAccessKey, { props: { enabled: true } });
+
+    expect(screen.queryByTestId('api-public-key-rate-limits')).not.toBeInTheDocument();
   });
 
   it('requests an unauthenticated key with a null captcha token and reveals it', async () => {
@@ -177,6 +198,16 @@ describe('PublicAccessKey', () => {
         metadata: { source: 'retry' },
       }),
     );
+  });
+
+  it("shows a 429's wait", async () => {
+    requestPublic.mockRejectedValue(rateLimited());
+    render(PublicAccessKey, { props: { enabled: true } });
+
+    await openForm();
+    await submitForm();
+
+    expect(await screen.findByTestId('ui-error-alert')).toHaveTextContent(WAIT_MESSAGE);
   });
 
   it('falls back to a generic message when the error body is an HTML page', async () => {

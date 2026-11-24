@@ -12,7 +12,7 @@
 
   type View = 'idle' | 'form' | 'revealed' | 'error';
 
-  let { enabled = false }: { enabled?: boolean } = $props();
+  let { enabled = false, rateLimits }: { enabled?: boolean; rateLimits?: string } = $props();
 
   // when a Turnstile sitekey is configured the widget gates submission; empty keeps the
   // ungated flow (valid against a PSAMA running captcha.provider=disabled)
@@ -110,6 +110,12 @@
   }
 </script>
 
+{#snippet limits()}
+  {#if rateLimits}
+    <p data-testid="api-public-key-rate-limits" class="mx-0 mt-4 text-sm">{rateLimits}</p>
+  {/if}
+{/snippet}
+
 <div
   data-testid="api-public-key"
   class="rounded-container border border-surface-700 bg-surface-100-900/50 p-6 min-h-80 flex flex-col"
@@ -128,6 +134,7 @@
       assessments.
     </p>
     {#if enabled}
+      {@render limits()}
       <Button class="my-auto mx-auto" onclick={() => openForm('idle')}>Request Public Key</Button>
     {:else}
       <p data-testid="api-public-key-unavailable" class="mx-0 my-auto text-center">
@@ -234,6 +241,7 @@
       <span class="font-bold">Expires:</span>
       <span data-testid="api-public-key-expires">{expires}</span>
     </div>
+    {@render limits()}
   {:else if view === 'error'}
     <!-- ErrorAlert has no live region of its own; announce the async failure -->
     <div role="alert">

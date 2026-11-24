@@ -189,6 +189,7 @@ describe('mapFeatures / mapSettings / mapBranding - regression baseline', () => 
     expect(mapFeatures([]).wafCaptchaRecovery).toBe(false);
     expect(mapFeatures([]).publicAccessKey).toBe(false);
     expect(mapSettings([]).maxDataPointsForExport).toBe(1000000);
+    expect(mapSettings([]).rateLimits).toEqual({ perMinute: 0, perDay: 0 });
     expect(mapBranding('', []).login.logoHeight).toBe(7.5);
   });
 });

@@ -3,6 +3,7 @@
   import { getDatasetDetails } from '#lib/api/picsure/dictionary.ts';
   import type { DashboardRow } from './dashboard.svelte.ts';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
+  import { userMessage } from '#lib/api/errors.ts';
   import Loading from '#lib/ui/Loading.svelte';
   import { log, createLog } from '#lib/telemetry/logger.ts';
 
@@ -75,8 +76,8 @@
       >
     </div>
   {/if}
-{:catch}
-  <ErrorAlert title="An Error Occured">
+{:catch error}
+  <ErrorAlert title={userMessage(error, 'An Error Occured')}>
     We're having trouble fetching the dataset details right now. Please try again later.
   </ErrorAlert>
 {/await}
