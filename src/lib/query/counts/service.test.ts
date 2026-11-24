@@ -10,6 +10,7 @@ vi.mock('$app/paths', () => ({
 import { createQueryCountService } from '#lib/query/counts/service.ts';
 import type { CountProvider, QueryCountProvider } from '#lib/query/counts/providers.ts';
 import type { QueryDescriptor } from '#lib/query/descriptor.svelte.ts';
+import { rateLimited, WAIT_MESSAGE } from '../../../../tests/support/helpers';
 
 const descriptor: QueryDescriptor = {
   isOpenAccess: false,
@@ -59,6 +60,17 @@ describe('QueryCountService.getCount', () => {
     const snap = await service.getCount(descriptor, makeProvider());
     expect(snap.count).toBe(0);
     expect(snap.summary.hasError).toBe(true);
+  });
+
+  it("keeps a 429's wait message on the error snapshot, and no other error's", async () => {
+    const transport = vi
+      .fn()
+      .mockRejectedValueOnce(rateLimited())
+      .mockRejectedValueOnce(new Error('network'));
+    const service = createQueryCountService({ transport });
+
+    expect((await service.getCount(descriptor, makeProvider())).errorMessage).toBe(WAIT_MESSAGE);
+    expect((await service.getCount(descriptor, makeProvider())).errorMessage).toBeUndefined();
   });
 
   it('coerces a throw from provider.buildRequest to 0 + hasError', async () => {

@@ -50,6 +50,7 @@ import type {
   DictionaryFacetResult,
 } from '#lib/api/picsure/dictionary.types.ts';
 import { ExplorerSearch, explorerSearch } from '#lib/explorer/search.svelte.ts';
+import { rateLimited, WAIT_MESSAGE } from '../../../tests/support/helpers';
 
 type LoadCallback = (state: State) => Promise<SearchResult[] | undefined>;
 
@@ -284,6 +285,14 @@ describe('error handling', () => {
     expect(search.error).not.toBe('');
   });
 
+  it("surfaces a 429's wait instead of the generic error", async () => {
+    search.setTerm('age');
+    mockState.searchDictionarySpy.mockRejectedValueOnce(rateLimited());
+
+    await load(makeState().state);
+    expect(search.error).toBe(WAIT_MESSAGE);
+  });
+
   it('does not surface an error from a superseded failure', async () => {
     search.setTerm('age');
     const dA = deferred<unknown>();
@@ -465,6 +474,19 @@ describe('facet sidebar state', () => {
     await load(makeState().state);
 
     expect(search.facetsFailed).toBe(false);
+  });
+
+  it("keeps a 429's wait for the sidebar until the next criteria change", async () => {
+    mockState.searchDictionarySpy.mockResolvedValue(conceptResponse('a'));
+    mockState.searchFacetsSpy.mockRejectedValueOnce(rateLimited());
+    await load(makeState().state);
+    await flushMicrotasks();
+    expect(search.facetsWait).toBe(WAIT_MESSAGE);
+
+    search.setTerm('age');
+    await load(makeState().state);
+
+    expect(search.facetsWait).toBeUndefined();
   });
 
   it('gives selected facets the counts of the latest response', async () => {

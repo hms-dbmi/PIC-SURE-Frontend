@@ -8,6 +8,7 @@ import { LRU } from '#lib/utils/lru.ts';
 import { log, createLog } from '#lib/telemetry/logger.ts';
 import type { QueryRequest } from '#lib/api/picsure/query.types.ts';
 import { PicsurePaths } from '#lib/api/paths.ts';
+import { rateLimitMessage } from '#lib/api/errors.ts';
 
 export type CountTransport = (request: QueryRequest, openEndpoint: boolean) => Promise<unknown>;
 
@@ -35,6 +36,7 @@ function isApiErrorEnvelope(raw: unknown): raw is { errorType: string; message?:
 interface CellOutcome {
   value: CountValue;
   error: boolean;
+  errorMessage?: string;
 }
 
 export function createQueryCountService(options: QueryCountServiceOptions): QueryCountService {
@@ -82,7 +84,7 @@ export function createQueryCountService(options: QueryCountServiceOptions): Quer
           error: String(e),
         }),
       );
-      return { value: 0, error: true };
+      return { value: 0, error: true, errorMessage: rateLimitMessage(e) };
     }
   }
 
@@ -103,6 +105,7 @@ export function createQueryCountService(options: QueryCountServiceOptions): Quer
           descriptorKey: stableHash(descriptor),
           count: outcome.value,
           summary: summarize(outcome.value, outcome.error),
+          errorMessage: outcome.errorMessage,
         };
         if (!snapshot.summary.hasError && generation === startedGeneration) {
           cache.set(key, snapshot);

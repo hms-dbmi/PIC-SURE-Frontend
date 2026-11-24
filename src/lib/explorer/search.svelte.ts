@@ -5,7 +5,7 @@ import type {
   Facet,
   SearchResult,
 } from '#lib/api/picsure/dictionary.types.ts';
-import { isAbortError } from '#lib/api/errors.ts';
+import { isAbortError, rateLimitMessage, userMessage } from '#lib/api/errors.ts';
 import { session } from '#lib/auth/session.svelte.ts';
 import { searchDictionary, searchFacets } from '#lib/explorer/Dictionary.ts';
 import { log, createLog, getPageContext } from '#lib/telemetry/logger.ts';
@@ -57,6 +57,7 @@ export class ExplorerSearch {
   // place while a refetch runs, so a facet click doesn't rebuild the sidebar.
   #facetCategories: DictionaryFacetResult[] | undefined = $state.raw();
   #facetsFailed = $state(false);
+  #facetsWait: string | undefined = $state();
   #hiddenFacets: FacetSkeleton = $state.raw({});
   #openFacets: string[] = $state.raw([]);
   // Keyed by nestedFacetKey: facet names repeat across categories. Survives facet reloads and
@@ -97,6 +98,11 @@ export class ExplorerSearch {
   }
   get facetsFailed() {
     return this.#facetsFailed;
+  }
+
+  /** A 429's wait message, when that is why the facets failed. */
+  get facetsWait() {
+    return this.#facetsWait;
   }
   get hiddenFacets() {
     return this.#hiddenFacets;
@@ -264,6 +270,7 @@ export class ExplorerSearch {
     this.#lastAutoOpened = null;
     this.#facetCategories = undefined;
     this.#facetsFailed = false;
+    this.#facetsWait = undefined;
     if (this.#table) {
       this.#table.rows = [];
       this.#table.totalRows = 0;
@@ -310,6 +317,7 @@ export class ExplorerSearch {
     const controller = new AbortController();
     this.#facetController = controller;
     this.#facetsFailed = false;
+    this.#facetsWait = undefined;
     searchFacets(term, facets, { signal: controller.signal }).then(
       (response) => {
         if (generation === this.#facetGeneration) this.#commitFacets(response);
@@ -317,6 +325,7 @@ export class ExplorerSearch {
       (e) => {
         if (isAbortError(e) || generation !== this.#facetGeneration) return;
         this.#facetsFailed = true;
+        this.#facetsWait = rateLimitMessage(e);
         // Rolled back so the next load retries: `key` was recorded before the request
         // resolved, so unchanged criteria would otherwise never refetch.
         if (this.#previousCriteria === key) this.#previousCriteria = null;
@@ -390,7 +399,7 @@ export class ExplorerSearch {
       if (!isAbortError(e) && generation === this.#conceptGeneration) {
         console.error(e);
         state.setTotalRows(0);
-        this.#error = SEARCH_ERROR;
+        this.#error = userMessage(e, SEARCH_ERROR);
       }
       throw e;
     });

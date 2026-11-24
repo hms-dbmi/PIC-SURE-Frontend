@@ -5,6 +5,7 @@ import type { State } from '@vincjo/datatables/server';
 import FacetSideBar from '#lib/explorer/components/facets/FacetSideBar.svelte';
 import { explorerSearch } from '#lib/explorer/search.svelte.ts';
 import type { Facet, DictionaryFacetResult } from '#lib/api/picsure/dictionary.types.ts';
+import { rateLimited, WAIT_MESSAGE } from '../../../../../tests/support/helpers';
 
 const mocks = vi.hoisted(() => ({ searchFacets: vi.fn() }));
 
@@ -104,6 +105,17 @@ describe('FacetSideBar', () => {
     await settle();
 
     expect(screen.getByText('Something went wrong loading your search options.')).toBeVisible();
+  });
+
+  it("shows a 429's wait without telling the visitor to refresh", async () => {
+    mocks.searchFacets.mockRejectedValueOnce(rateLimited());
+    render(FacetSideBar);
+
+    await load(state);
+    await settle();
+
+    expect(screen.getByText(WAIT_MESSAGE)).toBeVisible();
+    expect(screen.queryByText(/refresh the page/)).not.toBeInTheDocument();
   });
 
   it('groups the selected facets by category when the response has none', async () => {
