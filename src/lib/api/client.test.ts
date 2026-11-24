@@ -557,6 +557,109 @@ describe('request', () => {
     });
   });
 
+  describe('a 429', () => {
+    const tooMany = (
+      headers: Record<string, string> = {},
+      body = JSON.stringify({ errorType: 'rate_limited', message: 'x', requestId: 'r1' }),
+    ) => mockFetchResponse({ ok: false, status: 429, headers, body });
+
+    // toStrictEqual, unlike toHaveBeenCalledWith, tells a requestId: undefined key from a missing one
+    const rateLimitedLog = () =>
+      mockCreateLog.mock.calls.find((call) => call[1] === 'request.rate_limited')?.[2];
+
+    it('says how long to wait, logs request.rate_limited and keeps the session', async () => {
+      token = 'my-token';
+      fetchMock.mockResolvedValue(tooMany({ 'Retry-After': '30' }));
+
+      const e = await rejection(request('picsure/test'));
+
+      expect(e).toMatchObject({
+        status: 429,
+        code: 'rate_limited',
+        message: "You've made too many requests. Try again in 30 seconds.",
+        body: { requestId: 'r1' },
+      });
+      expect(mockCreateLog).toHaveBeenCalledWith(
+        'ERROR',
+        'request.rate_limited',
+        { retryAfter: 30, requestId: 'r1' },
+        { status: 429 },
+      );
+      expect(mockCreateLog.mock.calls.map((call) => call[1])).not.toContain('error.unknown');
+      expect(onUnauthorized).not.toHaveBeenCalled();
+      expect(onForbidden).not.toHaveBeenCalled();
+    });
+
+    it('keeps an anonymous open session', async () => {
+      mockOpenSessionToken.mockResolvedValue(SESSION);
+      fetchMock.mockResolvedValue(tooMany({ 'Retry-After': '5' }));
+
+      await rejection(request('picsure/query/sync', { auth: 'open' }));
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(mockRecoverOpenSession).not.toHaveBeenCalled();
+      expect(mockForgetOpenSession).not.toHaveBeenCalled();
+      expect(onUnauthorized).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['1', '1 second'],
+      ['59', '59 seconds'],
+      ['60', '1 minute'],
+      ['61', '2 minutes'],
+      ['3540', '59 minutes'],
+      ['3541', '1 hour'],
+      ['3600', '1 hour'],
+      ['3601', '2 hours'],
+      ['52200', '15 hours'],
+    ])('reads Retry-After: %s as %s', async (header, wait) => {
+      fetchMock.mockResolvedValue(tooMany({ 'Retry-After': header }));
+
+      const e = await rejection(request('picsure/test'));
+
+      expect(e.message).toBe(`You've made too many requests. Try again in ${wait}.`);
+    });
+
+    it.each([
+      ['no Retry-After', {}],
+      ['an HTTP-date', { 'Retry-After': 'Wed, 21 Oct 2026 07:28:00 GMT' }],
+      ['a garbage value', { 'Retry-After': '30abc' }],
+      ['a zero delay', { 'Retry-After': '0' }],
+    ])('says to try again shortly for %s', async (_, headers) => {
+      fetchMock.mockResolvedValue(tooMany(headers));
+
+      const e = await rejection(request('picsure/test'));
+
+      expect(e.message).toBe("You've made too many requests. Try again shortly.");
+      expect(rateLimitedLog()).toStrictEqual({ retryAfter: undefined, requestId: 'r1' });
+    });
+
+    it.each([
+      ['no requestId', JSON.stringify({ errorType: 'rate_limited' })],
+      ['a null requestId', JSON.stringify({ requestId: null })],
+      ['a non-JSON body', 'Too Many Requests'],
+      ['an empty body', ''],
+    ])('still reports the 429 for %s', async (_, body) => {
+      fetchMock.mockResolvedValue(tooMany({ 'Retry-After': '30' }, body));
+
+      const e = await rejection(request('picsure/test'));
+
+      expect(e.message).toBe("You've made too many requests. Try again in 30 seconds.");
+      expect(rateLimitedLog()).toStrictEqual({ retryAfter: 30, requestId: undefined });
+    });
+
+    it('still reports the 429 when its body cannot be read', async () => {
+      const response = tooMany({ 'Retry-After': '30' });
+      response.text.mockRejectedValue(new TypeError('terminated'));
+      fetchMock.mockResolvedValue(response);
+
+      const e = await rejection(request('picsure/test'));
+
+      expect(e.message).toBe("You've made too many requests. Try again in 30 seconds.");
+      expect(rateLimitedLog()).toStrictEqual({ retryAfter: 30, requestId: undefined });
+    });
+  });
+
   describe('WAF CAPTCHA recovery', () => {
     const wafResponse = (status = 405) =>
       mockFetchResponse({

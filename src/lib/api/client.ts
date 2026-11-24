@@ -218,6 +218,21 @@ async function handleResponse(
     return new Promise(() => {});
   }
 
+  // a throttled request never ends a login; waiting is the fix, so say how long
+  if (!wafCaptcha && res.status === 429) {
+    const retryAfter = retryAfterSeconds(res.headers.get('Retry-After'));
+    const body = parseBody(await res.text().catch(() => ''));
+    const requestId = errorField(body, 'requestId');
+    log(createLog('ERROR', 'request.rate_limited', { retryAfter, requestId }, { status: 429 }));
+    const wait = retryAfter === undefined ? 'shortly' : `in ${waitText(retryAfter)}`;
+    throw new ApiError(
+      429,
+      'rate_limited',
+      body,
+      `You've made too many requests. Try again ${wait}.`,
+    );
+  }
+
   // a WAF challenge comes from the WAF, not the backend, so it says nothing about the session
   if (!wafCaptcha && res.status === 401 && !openRequest) {
     // not for an anonymous open request: it has no login to end, and logging out would only
@@ -256,11 +271,38 @@ function parseBody(text: string): unknown {
   }
 }
 
-function consentDenial(body: unknown): string | undefined {
+// only the delay-seconds form; an HTTP-date or anything else counts as no usable header
+function retryAfterSeconds(header: string | null): number | undefined {
+  const value = header?.trim();
+  if (!value || !/^\d+$/.test(value)) return undefined;
+  const seconds = Number(value);
+  return seconds > 0 ? seconds : undefined;
+}
+
+// a spent daily limit waits until midnight UTC, so long waits read in minutes or hours, rounded up
+function waitText(seconds: number): string {
+  const minutes = Math.ceil(seconds / 60);
+  const [amount, unit] =
+    seconds < 60
+      ? [seconds, 'second']
+      : minutes < 60
+        ? [minutes, 'minute']
+        : [Math.ceil(seconds / 3600), 'hour'];
+  return `${amount} ${unit}${amount === 1 ? '' : 's'}`;
+}
+
+function errorField(
+  body: unknown,
+  field: 'errorType' | 'message' | 'requestId',
+): string | undefined {
   if (typeof body !== 'object' || body === null) return undefined;
-  const { errorType, message } = body as { errorType?: unknown; message?: unknown };
-  if (errorType !== 'consent_denied') return undefined;
-  return typeof message === 'string' && message ? message : CONSENT_DENIED_MESSAGE;
+  const value = (body as Record<string, unknown>)[field];
+  return typeof value === 'string' ? value : undefined;
+}
+
+function consentDenial(body: unknown): string | undefined {
+  if (errorField(body, 'errorType') !== 'consent_denied') return undefined;
+  return errorField(body, 'message') || CONSENT_DENIED_MESSAGE;
 }
 
 /**
