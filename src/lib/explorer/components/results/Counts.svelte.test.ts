@@ -19,6 +19,7 @@ const mockState = vi.hoisted(() => ({
       descriptorKey: 'k',
       count: 0 as number | string | Record<string, number | string>,
       summary: { total: 0 as number | string, hasNonZero: true, hasError: false },
+      errorMessage: undefined as string | undefined,
     },
   },
 }));
@@ -31,7 +32,12 @@ vi.mock('#lib/query/counts/resultCounts.svelte.ts', () => ({
 
 import Counts from '#lib/explorer/components/results/Counts.svelte';
 
-function setSnapshot(count: number | string, total: number | string, hasError = false) {
+function setSnapshot(
+  count: number | string,
+  total: number | string,
+  hasError = false,
+  errorMessage?: string,
+) {
   mockState.current = {
     loading: false,
     total,
@@ -40,6 +46,7 @@ function setSnapshot(count: number | string, total: number | string, hasError = 
       descriptorKey: 'k',
       count,
       summary: { total, hasNonZero: true, hasError },
+      errorMessage,
     },
   };
 }
@@ -78,5 +85,12 @@ describe('Counts.svelte rendering', () => {
     expect(node).toBeInTheDocument();
     // The numeric count span must NOT render in the error branch.
     expect(screen.queryByText('0')).not.toBeInTheDocument();
+  });
+
+  it("shows a 429's wait instead of the configured error text", async () => {
+    const wait = "You've made too many requests. Try again in 30 seconds.";
+    setSnapshot(0, 0, true, wait);
+    render(Counts);
+    expect(await screen.findByText(wait)).toBeInTheDocument();
   });
 });

@@ -9,6 +9,7 @@
   import { getApiConnectionResource } from '#lib/explorer/Resources.ts';
   import { session } from '#lib/auth/session.svelte.ts';
   import { log, createLog } from '#lib/telemetry/logger.ts';
+  import { rateLimitText } from './rateLimits.ts';
 
   import ApiDocumentation from './ApiDocumentation.svelte';
   import UserToken from '#lib/auth/components/UserToken.svelte';
@@ -24,6 +25,7 @@
   let loggedIn = $derived(mounted && session.isLoggedIn);
   const capabilities = config.branding.apiPage?.capabilities || [];
   const feedbackUrl = config.branding.apiPage?.feedbackUrl;
+  const rateLimits = rateLimitText(config.settings.rateLimits);
 
   const codeBlocks = $derived(config.branding.explorePage.codeBlocks);
 
@@ -258,7 +260,7 @@
           </div>
         {:else}
           <div class="flex-1 basis-96 min-w-0 max-w-full">
-            <PublicAccessKey enabled={config.features.publicAccessKey} />
+            <PublicAccessKey enabled={config.features.publicAccessKey} {rateLimits} />
           </div>
         {/if}
         <div id="capabilities" class="flex-1 min-w-64">
@@ -390,6 +392,9 @@
                 onclick={() => loginClick('public_notice')}>log in</a
               >.
             </p>
+            {#if rateLimits && !config.features.publicAccessKey}
+              <p class="mx-0 mt-2" data-testid="api-rate-limits">{rateLimits}</p>
+            {/if}
           </div>
         </div>
       {/if}

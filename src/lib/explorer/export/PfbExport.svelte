@@ -1,7 +1,7 @@
 <script lang="ts">
   import { config } from '#lib/config/config.svelte.ts';
   import { getSignedUrl } from '#lib/api/picsure/query.ts';
-  import { consentDeniedMessage } from '#lib/api/errors.ts';
+  import { userMessage } from '#lib/api/errors.ts';
   import DownloadButton from './DownloadButton.svelte';
   import Loading from '#lib/ui/Loading.svelte';
   import { toaster } from '#lib/ui/toaster.ts';
@@ -28,7 +28,7 @@
     } catch (error) {
       console.error('Error during export:', error);
       toaster.error({
-        title: consentDeniedMessage(error) ?? 'Export failed. Please try again.',
+        title: userMessage(error, 'Export failed. Please try again.'),
         closable: true,
       });
     } finally {

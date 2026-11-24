@@ -23,12 +23,19 @@ vi.mock('#lib/api/wafCaptcha.ts', () => ({
 }));
 
 import { request } from '#lib/api/client.ts';
-import { consentDeniedMessage, CONSENT_DENIED_MESSAGE } from '#lib/api/errors.ts';
+import {
+  ApiError,
+  CONSENT_DENIED_MESSAGE,
+  rateLimitMessage,
+  userMessage,
+} from '#lib/api/errors.ts';
 import { registerSessionHooks } from '#lib/api/sessionHooks.ts';
 
 const onForbidden = vi.fn();
 
-describe('consentDeniedMessage', () => {
+const FALLBACK = 'Something went wrong.';
+
+describe('userMessage', () => {
   let fetchMock: Mock;
 
   beforeEach(() => {
@@ -46,8 +53,12 @@ describe('consentDeniedMessage', () => {
     });
   });
 
-  async function rejectionFrom(body: string, status = 403): Promise<unknown> {
-    fetchMock.mockResolvedValue(new Response(body, { status }));
+  async function rejectionFrom(
+    body: string,
+    status = 403,
+    headers?: Record<string, string>,
+  ): Promise<unknown> {
+    fetchMock.mockResolvedValue(new Response(body, { status, headers }));
     try {
       await request('picsure/test', { auth: 'open' });
     } catch (e) {
@@ -60,7 +71,7 @@ describe('consentDeniedMessage', () => {
     const e = await rejectionFrom(
       JSON.stringify({ errorType: 'consent_denied', message: CONSENT_DENIED_MESSAGE }),
     );
-    expect(consentDeniedMessage(e)).toBe(CONSENT_DENIED_MESSAGE);
+    expect(userMessage(e, FALLBACK)).toBe(CONSENT_DENIED_MESSAGE);
   });
 
   it('keeps a study-specific message from the server', async () => {
@@ -70,12 +81,12 @@ describe('consentDeniedMessage', () => {
         message: 'Consent for phs000007 was withdrawn',
       }),
     );
-    expect(consentDeniedMessage(e)).toBe('Consent for phs000007 was withdrawn');
+    expect(userMessage(e, FALLBACK)).toBe('Consent for phs000007 was withdrawn');
   });
 
   it('falls back to the default message when the server omits one', async () => {
     const e = await rejectionFrom(JSON.stringify({ errorType: 'consent_denied' }));
-    expect(consentDeniedMessage(e)).toBe(CONSENT_DENIED_MESSAGE);
+    expect(userMessage(e, FALLBACK)).toBe(CONSENT_DENIED_MESSAGE);
   });
 
   it('preserves the session on a denial', async () => {
@@ -85,26 +96,42 @@ describe('consentDeniedMessage', () => {
 
   it('ignores a 403 that is not a consent denial', async () => {
     const e = await rejectionFrom(JSON.stringify({ errorType: 'other', message: 'nope' }));
-    expect(consentDeniedMessage(e)).toBeUndefined();
+    expect(userMessage(e, FALLBACK)).toBe(FALLBACK);
   });
 
   it('ignores a plain-text 403', async () => {
     const e = await rejectionFrom('Forbidden');
-    expect(consentDeniedMessage(e)).toBeUndefined();
+    expect(userMessage(e, FALLBACK)).toBe(FALLBACK);
+  });
+
+  it("returns a 429's wait message", async () => {
+    const e = await rejectionFrom('Too Many Requests', 429, { 'Retry-After': '30' });
+    expect(userMessage(e, FALLBACK)).toBe(
+      "You've made too many requests. Try again in 30 seconds.",
+    );
   });
 
   it('ignores a 500', async () => {
     const e = await rejectionFrom('Internal Server Error', 500);
-    expect(consentDeniedMessage(e)).toBeUndefined();
+    expect(userMessage(e, FALLBACK)).toBe(FALLBACK);
   });
 
   it('ignores an ordinary Error that happens to quote the consent wording', () => {
-    expect(consentDeniedMessage(new Error(`403: ${CONSENT_DENIED_MESSAGE}`))).toBeUndefined();
+    expect(userMessage(new Error(`403: ${CONSENT_DENIED_MESSAGE}`), FALLBACK)).toBe(FALLBACK);
   });
 
   it('ignores values that are not errors', () => {
-    expect(consentDeniedMessage(undefined)).toBeUndefined();
-    expect(consentDeniedMessage(null)).toBeUndefined();
-    expect(consentDeniedMessage('a string')).toBeUndefined();
+    expect(userMessage(undefined, FALLBACK)).toBe(FALLBACK);
+    expect(userMessage(null, FALLBACK)).toBe(FALLBACK);
+    expect(userMessage('a string', FALLBACK)).toBe(FALLBACK);
+  });
+});
+
+describe('rateLimitMessage', () => {
+  it('returns only a 429 message', () => {
+    const wait = "You've made too many requests. Try again shortly.";
+    expect(rateLimitMessage(new ApiError(429, 'rate_limited', '', wait))).toBe(wait);
+    expect(rateLimitMessage(new ApiError(403, 'consent_denied', '', 'gone'))).toBeUndefined();
+    expect(rateLimitMessage(new Error('429: slow down'))).toBeUndefined();
   });
 });

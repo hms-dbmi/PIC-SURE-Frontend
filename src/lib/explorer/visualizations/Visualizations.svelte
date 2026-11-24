@@ -21,6 +21,7 @@
     isVisualizationFilter,
   } from '#lib/explorer/visualizations/data.ts';
   import { toaster } from '#lib/ui/toaster.ts';
+  import { userMessage } from '#lib/api/errors.ts';
   import TimedLoading, { type TimedMessage } from '#lib/ui/TimedLoading.svelte';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
   import { isOpenAccess, useOpenAccess } from '#lib/explorer/mode.ts';
@@ -101,8 +102,10 @@
       .catch((error) => {
         console.error('Viusalzation failed with query: ' + JSON.stringify(query), error);
         toaster.error({
-          description:
+          description: userMessage(
+            error,
             'An error occured while loading your visualization(s). Please try again later. If this problem persists, please contact an administrator.',
+          ),
         });
       })
       .finally(() => {

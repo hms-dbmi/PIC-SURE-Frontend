@@ -15,6 +15,8 @@ export interface ResultCountSnapshot {
   descriptorKey: string;
   count: CountValue;
   summary: ResultCountSummary;
+  /** A 429's wait message, when that is why the count failed. */
+  errorMessage?: string;
 }
 
 function isNonZeroCell(value: CountValue): boolean {

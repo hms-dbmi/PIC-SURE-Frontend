@@ -1,6 +1,6 @@
 <script lang="ts">
   import Button from '#lib/ui/Button.svelte';
-  import { ApiError, consentDeniedMessage } from '#lib/api/errors.ts';
+  import { ApiError, userMessage } from '#lib/api/errors.ts';
   import { config } from '#lib/config/config.svelte.ts';
   import type { QueryRequest } from '#lib/api/picsure/query.types.ts';
   import { getQueryResult } from '#lib/api/picsure/query.ts';
@@ -68,9 +68,9 @@
       );
     } catch (error) {
       console.error('Error in onCompleteHandler', error);
-      const consentMessage = consentDeniedMessage(error);
-      if (consentMessage) {
-        toaster.error({ title: consentMessage, closable: true });
+      const message = userMessage(error, '');
+      if (message) {
+        toaster.error({ title: message, closable: true });
       }
       log(
         createLog(

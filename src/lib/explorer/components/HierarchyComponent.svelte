@@ -14,6 +14,7 @@
   } from '#lib/explorer/Dictionary.ts';
   import Loading from '#lib/ui/Loading.svelte';
   import { toaster } from '#lib/ui/toaster.ts';
+  import { userMessage } from '#lib/api/errors.ts';
   import AlertDialog from '#lib/ui/dialog/AlertDialog.svelte';
   import { exploreMode } from '#lib/explorer/mode.ts';
   import ErrorAlert from '#lib/ui/ErrorAlert.svelte';
@@ -118,8 +119,10 @@
       } else {
         console.error('Error adding selection: ', error instanceof Error ? error.message : error);
         toaster.error({
-          description:
+          description: userMessage(
+            error,
             'Something went wrong when adding the filter. If the problem persists, please contact your administrator.',
+          ),
         });
       }
     } finally {
@@ -172,7 +175,7 @@
       />
     {:catch error}
       <ErrorAlert color="error">
-        <p class="m-0">Error loading hierarchy</p>
+        <p class="m-0">{userMessage(error, 'Error loading hierarchy')}</p>
         <span class="text-sm text-gray-500 hidden"
           >{error instanceof Error ? error.message : String(error)}</span
         >

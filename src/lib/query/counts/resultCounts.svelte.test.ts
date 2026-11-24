@@ -420,6 +420,19 @@ describe('ResultCounts', () => {
       expect(mockState.toasterErrorSpy).toHaveBeenCalledTimes(1);
     });
 
+    it("toasts a 429's wait, replacing a generic toast that is showing", async () => {
+      const wait = "You've made too many requests. Try again in 30 seconds.";
+      mockService.getCount.mockResolvedValueOnce({ ...snapshot(0, true), errorMessage: wait });
+      mockState.isToastShowingSpy.mockReturnValue(true);
+      state.start(() => true);
+      await flushMicrotasks();
+      await flushMicrotasks();
+      await flushMicrotasks();
+      expect(mockState.toasterErrorSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'query-error', title: wait }),
+      );
+    });
+
     it('stop() mid-flight resets status to "idle" so spinners do not get stuck', async () => {
       const d = deferred<ResultCountSnapshot>();
       mockService.getCount.mockReturnValueOnce(d.promise);

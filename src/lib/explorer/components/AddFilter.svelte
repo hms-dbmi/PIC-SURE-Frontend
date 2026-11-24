@@ -2,6 +2,7 @@
   import { untrack } from 'svelte';
 
   import { toaster } from '#lib/ui/toaster.ts';
+  import { userMessage } from '#lib/api/errors.ts';
   import type { SearchResult } from '#lib/api/picsure/dictionary.types.ts';
   import type { Filter } from '#lib/query/filter.svelte.ts';
   import { getConceptDetails } from '#lib/explorer/Dictionary.ts';
@@ -32,7 +33,10 @@
     } catch (error) {
       console.error(error);
       toaster.error({
-        title: 'An error occured while loading the filter. Please try again later.',
+        title: userMessage(
+          error,
+          'An error occured while loading the filter. Please try again later.',
+        ),
       });
       return row;
     }

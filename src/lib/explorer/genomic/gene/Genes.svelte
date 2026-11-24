@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { toaster } from '#lib/ui/toaster.ts';
+  import { userMessage } from '#lib/api/errors.ts';
   import { searchGenes } from '#lib/api/picsure/dictionary.ts';
   import { genomicDraft } from '#lib/query/genomicDraft.svelte.ts';
 
@@ -44,7 +45,9 @@
       allOptionsLoaded = newGenes.length < pageSize;
     } catch (error) {
       console.error(error);
-      toaster.error({ title: 'An error occurred while loading genes list.' });
+      toaster.error({
+        title: userMessage(error, 'An error occurred while loading genes list.'),
+      });
     } finally {
       loading = false;
     }

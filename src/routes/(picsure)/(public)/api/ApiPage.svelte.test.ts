@@ -149,6 +149,32 @@ describe('API page logging', () => {
     }
   });
 
+  it.each([
+    { keyEnabled: false, shownIn: 'api-rate-limits', hiddenIn: 'api-public-key-rate-limits' },
+    { keyEnabled: true, shownIn: 'api-public-key-rate-limits', hiddenIn: 'api-rate-limits' },
+  ])(
+    'publishes configured limits once, in $shownIn, when the key form is enabled: $keyEnabled',
+    async ({ keyEnabled, shownIn, hiddenIn }) => {
+      config.features.publicAccessKey = keyEnabled;
+      config.settings.rateLimits = { perMinute: 60, perDay: 3000 };
+      render(ApiPage);
+      await tick();
+
+      expect(screen.getByTestId(shownIn)).toHaveTextContent(
+        '60 requests per minute and 3,000 requests per day per key.',
+      );
+      expect(screen.queryByTestId(hiddenIn)).toBeNull();
+    },
+  );
+
+  it('publishes no limits when none are configured', async () => {
+    render(ApiPage);
+    await tick();
+
+    expect(screen.queryByTestId('api-rate-limits')).toBeNull();
+    expect(screen.queryByTestId('api-public-key-rate-limits')).toBeNull();
+  });
+
   it('logs external docs links with their URL', async () => {
     window.location.hash = '#workflow-python';
     render(ApiPage);

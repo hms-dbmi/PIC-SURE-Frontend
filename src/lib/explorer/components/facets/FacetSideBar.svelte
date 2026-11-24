@@ -42,8 +42,13 @@
 </script>
 
 {#if search.facetsFailed}
-  <ErrorAlert title="Something went wrong loading your search options." color="secondary">
-    Please wait a moment, refresh the page, and try again.
+  <ErrorAlert
+    title={search.facetsWait ?? 'Something went wrong loading your search options.'}
+    color="secondary"
+  >
+    {#if !search.facetsWait}
+      Please wait a moment, refresh the page, and try again.
+    {/if}
   </ErrorAlert>
 {:else if search.facetCategories === undefined}
   <FacetSidebarPlaceholder numCategories={2} fadeEffect />
