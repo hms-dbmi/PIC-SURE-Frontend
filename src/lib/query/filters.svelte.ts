@@ -18,7 +18,7 @@ import { LogicTree } from '#lib/query/logicTree.svelte.ts';
 import { toQueryFilters, type QueryFilters } from '#lib/query/build.ts';
 
 const genomicFilterTypes = ['snp', 'genomic'];
-const HARMONIZED_PATH_PREFIX = '\\DCC Harmonized data set\\';
+const harmonizedPathPrefix = '\\DCC Harmonized data set\\';
 
 export type FilterWarningKind = 'stigmatizing' | 'notAuthorized';
 
@@ -31,7 +31,7 @@ function isGenomic(filter: Filter): boolean {
  * single study, so, as the backend's ConsentFilterBuilder does, it needs any harmonized consent.
  */
 function hasConsentForFilter(filter: Filter, consents: ConsentsMap): boolean {
-  if (filter.id.startsWith(HARMONIZED_PATH_PREFIX)) {
+  if (filter.id.startsWith(harmonizedPathPrefix)) {
     return (consents['\\_harmonized_consent\\']?.length ?? 0) > 0;
   }
   const filterDataset = filter.dataset || '';
@@ -121,8 +121,9 @@ export class FilterState {
   }
 
   /**
-   * True when a filter's study isn't among the user's consents (false until they load). Genomic
-   * filters are left out: they belong to no study, and only Explore can create them.
+   * True when the user lacks consent for a filter, as `hasConsentForFilter` decides (false until
+   * consents load). Genomic filters are left out: they belong to no study, and only Explore can
+   * create them.
    */
   get hasInvalidFilter(): boolean {
     const consents = session.user?.consents;

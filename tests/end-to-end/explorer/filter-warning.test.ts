@@ -137,6 +137,18 @@ test.describe('Filter warning navigation', () => {
     await expect(page.getByTestId('explorer-filter-warning')).toBeHidden();
   });
 
+  test('warns on moving to Explore from a page opened fresh with an unconsented filter', async ({
+    page,
+  }) => {
+    await seedDeniedFilter(page);
+
+    await page.goto('/api');
+    await page.locator('#app-nav-link-explorer').click();
+
+    await expect(page).toHaveURL(/\/api$/);
+    await expect(page.getByTestId('explorer-filter-warning')).toBeVisible();
+  });
+
   test('returns to Explore with a genomic filter without warning', async ({ page }) => {
     await seedGenomicFilter(page);
     await mockApiSuccess(page, countResultPath, 565);

@@ -22,10 +22,9 @@
   let filterWarningTrigger: HTMLElement | undefined = $state();
   setTableEvents(tableEvents);
 
-  /** Discover or Explore, whichever was visited last, so the pages between them don't count. */
-  let lastMode: ExploreMode | undefined;
+  let lastExploreMode: ExploreMode | undefined;
   $effect(() => {
-    lastMode = exploreMode() ?? lastMode;
+    lastExploreMode = exploreMode() ?? lastExploreMode;
   });
 
   onMount(() => {
@@ -41,7 +40,7 @@
   beforeNavigate(({ to, cancel }) => {
     const toMode = routeMode(to?.route.id);
     const notAuthorized =
-      lastMode === 'discover' && toMode === 'explorer' && filterState.hasInvalidFilter;
+      lastExploreMode !== 'explorer' && toMode === 'explorer' && filterState.hasInvalidFilter;
     const stigmatizing =
       toMode === 'discover' &&
       (filterState.hasGenomicOrSnpFilter || filterState.hasUnallowedFilter);
