@@ -16,6 +16,30 @@ async function seedDeniedFilter(page: Page) {
   }, deniedFilterTree);
 }
 
+async function seedHarmonizedFilter(page: Page) {
+  await page.addInitScript(() => {
+    sessionStorage.setItem(
+      'filterTree',
+      JSON.stringify({
+        uuid: 'root',
+        operator: 'AND',
+        children: [
+          {
+            uuid: 'harmonized-filter',
+            id: '\\DCC Harmonized data set\\demographic\\race\\',
+            filterType: 'Categorical',
+            displayType: 'restrict',
+            variableName: 'race',
+            allowFiltering: true,
+            dataset: 'DCC_Harmonized_data_set',
+            categoryValues: ['Black or African American'],
+          },
+        ],
+      }),
+    );
+  });
+}
+
 async function seedGenomicFilter(page: Page) {
   await page.addInitScript(() => {
     sessionStorage.setItem(
@@ -82,6 +106,35 @@ test.describe('Filter warning navigation', () => {
 
     await expect(page).toHaveURL(/\/api$/);
     await expect(page.getByTestId('explorer-filter-warning')).toBeVisible();
+  });
+
+  test('moves from Discover to Explore with a DCC Harmonized filter without warning', async ({
+    page,
+  }) => {
+    await seedHarmonizedFilter(page);
+    await mockApiSuccess(page, countResultPath, 565);
+
+    await page.goto('/discover');
+    await page.locator('#app-nav-link-explorer').click();
+
+    await expect(page).toHaveURL(/\/explorer$/);
+    await expect(page.getByTestId('explorer-filter-warning')).toBeHidden();
+  });
+
+  test('returns to Explore from another page without checking the filters again', async ({
+    page,
+  }) => {
+    await seedDeniedFilter(page);
+    await mockApiSuccess(page, countResultPath, 565);
+
+    await page.goto('/explorer');
+    await page.locator('#app-nav-link-api').click();
+    await expect(page).toHaveURL(/\/api$/);
+
+    await page.locator('#app-nav-link-explorer').click();
+
+    await expect(page).toHaveURL(/\/explorer$/);
+    await expect(page.getByTestId('explorer-filter-warning')).toBeHidden();
   });
 
   test('returns to Explore with a genomic filter without warning', async ({ page }) => {

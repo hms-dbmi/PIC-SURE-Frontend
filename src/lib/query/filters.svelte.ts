@@ -4,6 +4,7 @@ import { assertNoSsrWrite } from '#lib/utils/ssrWrite.ts';
 
 import { browser } from '$app/env';
 import { session } from '#lib/auth/session.svelte.ts';
+import type { ConsentsMap } from '#lib/auth/model/user.ts';
 import { getConceptDetails } from '#lib/explorer/Dictionary.ts';
 import {
   log,
@@ -17,6 +18,7 @@ import { LogicTree } from '#lib/query/logicTree.svelte.ts';
 import { toQueryFilters, type QueryFilters } from '#lib/query/build.ts';
 
 const genomicFilterTypes = ['snp', 'genomic'];
+const HARMONIZED_PATH_PREFIX = '\\DCC Harmonized data set\\';
 
 export type FilterWarningKind = 'stigmatizing' | 'notAuthorized';
 
@@ -24,9 +26,17 @@ function isGenomic(filter: Filter): boolean {
   return 'filterType' in filter && genomicFilterTypes.includes(filter.filterType);
 }
 
-function hasConsentForFilter(filter: Filter, consents: string[]): boolean {
+/**
+ * A study filter needs its study among the `\_consents\` grants. A DCC Harmonized filter belongs to no
+ * single study, so, as the backend's ConsentFilterBuilder does, it needs any harmonized consent.
+ */
+function hasConsentForFilter(filter: Filter, consents: ConsentsMap): boolean {
+  if (filter.id.startsWith(HARMONIZED_PATH_PREFIX)) {
+    return (consents['\\_harmonized_consent\\']?.length ?? 0) > 0;
+  }
   const filterDataset = filter.dataset || '';
-  return filterDataset.length > 0 && consents.some((consent) => consent.includes(filterDataset));
+  const studies = consents['\\_consents\\'] ?? [];
+  return filterDataset.length > 0 && studies.some((consent) => consent.includes(filterDataset));
 }
 
 function emptyTree(): LogicTree<FilterInterface> {
@@ -115,8 +125,8 @@ export class FilterState {
    * filters are left out: they belong to no study, and only Explore can create them.
    */
   get hasInvalidFilter(): boolean {
-    const consents = session.user?.consents?.['\\_consents\\'];
-    if (this.#phenotypic.length === 0 || !consents) return false;
+    const consents = session.user?.consents;
+    if (this.#phenotypic.length === 0 || !consents?.['\\_consents\\']) return false;
 
     return this.#phenotypic.some((filter) => !hasConsentForFilter(filter, consents));
   }
@@ -237,9 +247,8 @@ export class FilterState {
     assertNoSsrWrite('filters');
     if (this.#phenotypic.length === 0) return;
 
-    const consentsMap = await session.ensureConsentsLoaded();
-    const consents = consentsMap?.['\\_consents\\'];
-    if (!consents) return;
+    const consents = await session.ensureConsentsLoaded();
+    if (!consents?.['\\_consents\\']) return;
 
     const count = this.#removeWhere(
       (filter) => !isGenomic(filter) && !hasConsentForFilter(filter, consents),
