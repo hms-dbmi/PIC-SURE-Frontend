@@ -263,6 +263,53 @@ describe('consent-based filter access', () => {
     expect(filters.genomic.map((f) => f.filterType)).toEqual(['genomic', 'snp']);
   });
 
+  describe('DCC Harmonized filters', () => {
+    const harmonizedFilter = () =>
+      createCategoricalFilter(
+        mockSearchResult(
+          '\\DCC Harmonized data set\\demographic\\race\\',
+          'DCC_Harmonized_data_set',
+        ),
+        ['Black or African American'],
+      );
+
+    it('are valid when the user has any harmonized consent', () => {
+      mockSession.user = {
+        consents: {
+          '\\_consents\\': ['phs000007.c1'],
+          '\\_harmonized_consent\\': ['phs000007.c1'],
+        },
+      };
+      filters.add(harmonizedFilter());
+
+      expect(filters.hasInvalidFilter).toBe(false);
+    });
+
+    it('are invalid without harmonized consent', () => {
+      mockSession.user = { consents: { '\\_consents\\': ['phs000007.c1'] } };
+      filters.add(harmonizedFilter());
+
+      expect(filters.hasInvalidFilter).toBe(true);
+    });
+
+    it('are kept when removing invalid filters with harmonized consent', async () => {
+      filters.add(harmonizedFilter());
+      filters.add(
+        createCategoricalFilter(mockSearchResult('\\demo\\denied\\', 'denied-dataset'), ['value']),
+      );
+
+      mockSession.ensureConsentsLoaded.mockResolvedValue({
+        '\\_consents\\': ['phs000007.c1'],
+        '\\_harmonized_consent\\': ['phs000007.c1'],
+      });
+      await filters.removeInvalid();
+
+      expect(filters.phenotypic.map((filter) => filter.dataset)).toEqual([
+        'DCC_Harmonized_data_set',
+      ]);
+    });
+  });
+
   it('loads missing consents before removing invalid filters', async () => {
     mockSession.ensureConsentsLoaded.mockResolvedValue({
       '\\_consents\\': ['authorized-dataset'],

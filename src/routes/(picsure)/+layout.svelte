@@ -8,7 +8,7 @@
   import { tableEvents } from '#lib/telemetry/tableEvents.ts';
 
   import { filterState } from '#lib/query/filters.svelte.ts';
-  import { exploreMode, routeMode } from '#lib/explorer/mode.ts';
+  import { exploreMode, routeMode, type ExploreMode } from '#lib/explorer/mode.ts';
 
   import Shell from '#lib/shell/Shell.svelte';
   import Navigation from '#lib/shell/Navigation.svelte';
@@ -21,6 +21,11 @@
   let filterWarningModal: boolean = $state(false);
   let filterWarningTrigger: HTMLElement | undefined = $state();
   setTableEvents(tableEvents);
+
+  let lastExploreMode: ExploreMode | undefined;
+  $effect(() => {
+    lastExploreMode = exploreMode() ?? lastExploreMode;
+  });
 
   onMount(() => {
     document.body.classList.add('started');
@@ -35,7 +40,7 @@
   beforeNavigate(({ to, cancel }) => {
     const toMode = routeMode(to?.route.id);
     const notAuthorized =
-      exploreMode() !== 'explorer' && toMode === 'explorer' && filterState.hasInvalidFilter;
+      lastExploreMode !== 'explorer' && toMode === 'explorer' && filterState.hasInvalidFilter;
     const stigmatizing =
       toMode === 'discover' &&
       (filterState.hasGenomicOrSnpFilter || filterState.hasUnallowedFilter);
