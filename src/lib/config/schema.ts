@@ -21,6 +21,8 @@ export type Features = {
   dashboard: boolean;
   dashboardDrawer: boolean;
   discover: boolean;
+  enableAssistedSearch: boolean;
+  enableAssistedSearchDiscover: boolean;
   enableGENEQuery: boolean;
   enableSNPQuery: boolean;
   enforceTermsOfService: boolean;
@@ -78,6 +80,7 @@ export const CONFIG_GROUPS = {
   access: 'Access & Login',
   explorer: 'Explorer & Search',
   tour: 'Guided Tour',
+  assistedSearch: 'Assisted Search',
   genomic: 'Genomic Search',
   export: 'Export',
   dashboard: 'Dashboard',
@@ -215,6 +218,24 @@ export const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
       type: 'boolean',
       default: true,
       description: 'Shows the guided walkthrough tour button on the Explorer/Discover pages.',
+    },
+
+    // --- Assisted Search ---
+    // Feature level: whether the deployment offers the assistant at all.
+    // Which users get it is decided by the ASSISTED_SEARCH privilege their roles grant, the same for both pages.
+    ENABLE_ASSISTED_SEARCH: {
+      group: 'assistedSearch',
+      type: 'boolean',
+      default: false,
+      description:
+        'Offers the AI-assisted search chat on the Explorer (authorized) page, to signed-in users holding the assisted-search privilege. Needs the AI service deployed behind the gateway.',
+    },
+    ENABLE_ASSISTED_SEARCH_DISCOVER: {
+      group: 'assistedSearch',
+      type: 'boolean',
+      default: false,
+      description:
+        'Offers the AI-assisted search chat on the Discover (open access) page, to signed-in users holding the assisted-search privilege. Needs the AI service deployed behind the gateway; open-access visitors are not offered it.',
     },
 
     // --- Genomic Search ---
@@ -455,6 +476,8 @@ export function mapFeatures(apiFeatures: ConfigObject[]): Features {
     discover: parse('DISCOVER'),
     dashboard: parse('DASHBOARD'),
     dashboardDrawer: parse('DASHBOARD_DRAWER'),
+    enableAssistedSearch: parse('ENABLE_ASSISTED_SEARCH'),
+    enableAssistedSearchDiscover: parse('ENABLE_ASSISTED_SEARCH_DISCOVER'),
     enableGENEQuery: parse('ENABLE_GENE_QUERY'),
     enableSNPQuery: parse('ENABLE_SNP_QUERY'),
     enforceTermsOfService: parse('ENFORCE_TOS_ACCEPT'),

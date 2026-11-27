@@ -216,7 +216,19 @@ export default [
   ]),
   ...importBoundary(
     'explorer',
-    ['explorer', 'query', 'api', 'assets', 'auth', 'config', 'shell', 'telemetry', 'ui', 'utils'],
+    [
+      'explorer',
+      'assistedSearch/index.ts',
+      'query',
+      'api',
+      'assets',
+      'auth',
+      'config',
+      'shell',
+      'telemetry',
+      'ui',
+      'utils',
+    ],
     {},
     {
       // The dictionary helpers sit below explorer search; importing it back restores the cycle
