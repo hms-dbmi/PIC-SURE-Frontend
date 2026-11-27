@@ -40,6 +40,30 @@ export const FALLBACK_ERROR =
 export const TIMEOUT_ERROR =
   'Sorry, the assistant took too long to answer. You can send your message again, or come back to it later.';
 
+export const REPLY_UNAVAILABLE =
+  'This reply is no longer available. The service only keeps a conversation for a short while.';
+export const REPLY_NOT_LOADED = 'This reply could not be loaded. Refresh the page to try again.';
+
+// The only prose that may be saved: ours, never the model's or the service's.
+const SAVED_ERRORS = new Set([FALLBACK_ERROR, TIMEOUT_ERROR, REPLY_UNAVAILABLE]);
+
+// A reply is saved as booleans, numbers and the validated query and facets only; its text and
+// notice come back from the service. A failed turn keeps its message only when it is one of ours.
+const forStorage = (m: ChatMessage): ChatMessage => {
+  if (m.role !== 'assistant') return m;
+  const saved = { ...m, text: '' };
+  delete saved.notice;
+  delete saved.unloaded;
+  delete saved.loading;
+  if (m.failed) {
+    saved.text = SAVED_ERRORS.has(m.text) ? m.text : FALLBACK_ERROR;
+    for (const key of ['changed', 'before', 'after', 'undone', 'applyFailed'] as const) {
+      delete saved[key];
+    }
+  }
+  return saved;
+};
+
 /** Raised when the stored reply never turned up within the polling budget. */
 class TurnTimedOut extends Error {
   constructor() {
@@ -90,7 +114,9 @@ const sleep = (ms: number, signal: AbortSignal) =>
 /**
  * One researcher's chat: the thread, the in-flight turn, and the undo of what a reply changed.
  * The thread is kept in the tab's session storage so a refresh resumes it; `reset()` starts a
- * new conversation.
+ * new conversation. The assistant's prose (reply text, notice, error text) is never stored: a
+ * refresh fetches each reply back from the service by its requestId. Only the validated query and
+ * facets of a reply and its flags are kept.
  */
 export class ChatSession {
   messages = $state<ChatMessage[]>([]);
@@ -108,6 +134,8 @@ export class ChatSession {
   #conversationId: string | null = null;
   // Bumped by reset(), so a turn from the old conversation can tell it must not touch the new one.
   #epoch = 0;
+  /** When the thread last had contact with the service; the save's age counts from here. */
+  #savedAt = 0;
   #controller: AbortController | undefined;
   #deps: ChatDeps;
 
@@ -135,7 +163,7 @@ export class ChatSession {
 
   setOpen(open: boolean): void {
     this.open = open;
-    this.#persist();
+    this.#persist(false);
   }
 
   /**
@@ -148,12 +176,102 @@ export class ChatSession {
     const saved = this.#deps.store?.load();
     if (!saved) return;
     this.#conversationId = saved.conversationId;
-    this.messages = saved.messages;
+    // Through the same filter as a save, so what an older save kept is not shown or saved again.
+    this.messages = saved.messages.map(forStorage);
     this.open = saved.open;
+    this.#savedAt = saved.savedAt;
+    for (const m of this.messages) if (m.role === 'assistant' && !m.failed) m.loading = true;
+
+    const epoch = this.#epoch;
+    const refilled = await this.#refill();
+    if (epoch !== this.#epoch) return;
 
     const last = this.messages.at(-1);
+    if (!refilled && last?.role === 'user') last.stopped = true;
+    // Rewrites an older save without what it kept; a refresh keeps the save's age.
+    this.#persist(false);
     if (last?.role === 'user' && !last.stopped) {
       await this.#run(last.id, (signal) => this.#recover(last.id, signal));
+    }
+  }
+
+  // Replies are saved without their text or notice; this fetches them back, and the chat waits (as
+  // for any turn) until they are all in. Only a 404 marks a reply unavailable for good. A reply that
+  // could not be fetched (offline, stopped) is not saved as failed, so the next refresh tries it
+  // again. False when stopped.
+  async #refill(): Promise<boolean> {
+    const replies = this.messages.filter((m) => m.role === 'assistant' && !m.failed);
+    if (!replies.length) return true;
+    const controller = new AbortController();
+    this.#controller = controller;
+    this.pending = true;
+    try {
+      await Promise.all(
+        replies.map(async (reply) => {
+          try {
+            const result = await this.#fetchReply(reply.id, controller.signal);
+            if (result) {
+              reply.text = result.response;
+              if (result.notice) reply.notice = result.notice;
+              else delete reply.notice;
+            } else {
+              reply.text = REPLY_NOT_LOADED;
+              reply.unloaded = true;
+            }
+          } catch (e) {
+            if (statusOf(e) === 404 && !controller.signal.aborted) {
+              reply.text = REPLY_UNAVAILABLE;
+              reply.failed = true;
+              for (const key of [
+                'notice',
+                'changed',
+                'before',
+                'after',
+                'undone',
+                'applyFailed',
+              ] as const) {
+                delete reply[key];
+              }
+            } else {
+              reply.text = REPLY_NOT_LOADED;
+              reply.unloaded = true;
+            }
+          } finally {
+            delete reply.loading;
+          }
+        }),
+      );
+      return !controller.signal.aborted;
+    } finally {
+      if (this.#controller === controller) {
+        this.pending = false;
+        this.#controller = undefined;
+      }
+    }
+  }
+
+  // One fetch of a saved reply, with the patience a turn gets and one more try after a transient
+  // failure, so a blip does not turn a whole thread into errors and a hung request cannot hold it.
+  async #fetchReply(requestId: string, signal: AbortSignal): Promise<ChatResponse | undefined> {
+    const { patienceMs = 60_000, pollMs = 2_000 } = this.#deps;
+    for (let attempt = 0; ; attempt++) {
+      signal.throwIfAborted();
+      const bound = new AbortController();
+      const relay = () => bound.abort(signal.reason);
+      signal.addEventListener('abort', relay, { once: true });
+      const timer = setTimeout(
+        () => bound.abort(new DOMException('patience', 'TimeoutError')),
+        patienceMs,
+      );
+      try {
+        return await this.#deps.fetchResult(requestId, bound.signal);
+      } catch (e) {
+        if (signal.aborted || attempt >= 1 || !isTransient(e)) throw e;
+      } finally {
+        clearTimeout(timer);
+        signal.removeEventListener('abort', relay);
+      }
+      await sleep(pollMs, signal);
     }
   }
 
@@ -185,7 +303,7 @@ export class ChatSession {
     if (!reply?.before) return;
     if (!(await this.#reapply(reply, reply.before, 'chat.undo.error'))) return;
     reply.undone = true;
-    this.#persist();
+    this.#persist(false);
     this.#deps.log?.('chat.undo', { requestId: id });
   }
 
@@ -196,7 +314,7 @@ export class ChatSession {
     if (!reply?.after) return;
     if (!(await this.#reapply(reply, reply.after, 'chat.redo.error'))) return;
     reply.undone = false;
-    this.#persist();
+    this.#persist(false);
     this.#deps.log?.('chat.redo', { requestId: id });
   }
 
@@ -302,7 +420,10 @@ export class ChatSession {
   }
 
   // A closed, empty chat has nothing worth keeping.
-  #persist(): void {
+  // Only contact with the service moves the save's age: opening the panel or a refresh does not
+  // keep a thread alive past the conversation the service holds for it.
+  #persist(touch = true): void {
+    if (touch || !this.#savedAt) this.#savedAt = Date.now();
     const store = this.#deps.store;
     if (!store) return;
     if (!this.open && !this.messages.length) {
@@ -311,9 +432,9 @@ export class ChatSession {
     }
     store.save({
       conversationId: this.#conversationId,
-      messages: $state.snapshot(this.messages),
+      messages: $state.snapshot(this.messages).map(forStorage),
       open: this.open,
-      savedAt: Date.now(),
+      savedAt: this.#savedAt,
     });
   }
 

@@ -44,6 +44,10 @@ export type ChatMessage = {
   role: 'user' | 'assistant';
   text: string;
   failed?: boolean;
+  /** A restored reply still being fetched back; not shown until it is. Never saved. */
+  loading?: boolean;
+  /** The reply could not be fetched back after a refresh; shown as an error, never saved. */
+  unloaded?: boolean;
   /** The service's note beside the reply, shown apart from it. */
   notice?: string;
   /** Parts of the screen this reply changed. */
@@ -59,7 +63,10 @@ export type ChatMessage = {
   applyFailed?: boolean;
 };
 
-/** A chat as kept in the tab's session storage. */
+/**
+ * A chat as kept in the tab's session storage. Assistant replies are kept without their text or
+ * notice, and a failed turn keeps only our own error text; the service returns the rest.
+ */
 export type SavedChat = {
   conversationId: string | null;
   messages: ChatMessage[];

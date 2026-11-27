@@ -218,8 +218,6 @@ export default [
     'explorer',
     [
       'explorer',
-      // The assistant sets the search and filters the explorer owns, and the explorer mounts its
-      // toggle; the explorer reaches it only through the public index.
       'assistedSearch/index.ts',
       'query',
       'api',

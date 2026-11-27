@@ -1,6 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ChatSession, FALLBACK_ERROR, TIMEOUT_ERROR, type ChatDeps } from './chat.svelte.ts';
+import {
+  ChatSession,
+  FALLBACK_ERROR,
+  REPLY_NOT_LOADED,
+  REPLY_UNAVAILABLE,
+  TIMEOUT_ERROR,
+  type ChatDeps,
+} from './chat.svelte.ts';
 import type { ChatResponse, SavedChat, ScreenState } from './model/types.ts';
 
 const emptyScreen = (): ScreenState => ({
@@ -427,9 +434,50 @@ describe('ChatSession persistence', () => {
       open: false,
       messages: [
         { role: 'user', text: 'hello' },
-        { role: 'assistant', text: 'hello' },
+        { role: 'assistant', text: '' },
       ],
     });
+  });
+
+  it('never writes the assistant’s prose to the store, only the screen state it set', async () => {
+    const store = fakeStore();
+    const { chat } = setup({
+      store,
+      send: vi.fn(async () => ({
+        response: 'patient 123 has BMI 31',
+        notice: 'patient 456 notice',
+        search: 'bmi',
+      })),
+    });
+    await chat.send('q');
+    const saved = JSON.stringify(store.current());
+    expect(saved).not.toContain('patient');
+    expect(store.current()?.messages[1]).toMatchObject({ text: '', changed: ['search'] });
+    expect(store.current()?.messages[1]).not.toHaveProperty('notice');
+  });
+
+  it('saves a failed turn’s message only when it is one of ours', async () => {
+    const store = fakeStore();
+    const { chat } = setup({
+      store,
+      send: vi.fn(async () => {
+        throw { status: 500, body: { message: 'row for patient 123 failed' } };
+      }),
+    });
+    await chat.send('q');
+    expect(chat.messages[1].text).toBe('row for patient 123 failed');
+    expect(store.current()?.messages[1]).toMatchObject({ failed: true, text: FALLBACK_ERROR });
+  });
+
+  it('brings a reply’s notice back with its text after a refresh', async () => {
+    const store = fakeStore();
+    await setup({ store }).chat.send('one');
+    const second = setup({
+      store,
+      fetchResult: vi.fn(async () => ({ response: 'hello', notice: 'n' })),
+    });
+    await second.chat.restore();
+    expect(second.chat.messages[1]).toMatchObject({ text: 'hello', notice: 'n' });
   });
 
   it('saves the user message before the reply arrives', async () => {
@@ -445,8 +493,9 @@ describe('ChatSession persistence', () => {
     first.chat.setOpen(true);
     await first.chat.send('one');
 
-    const second = setup({ store });
+    const second = setup({ store, fetchResult: vi.fn(async () => ({ response: 'hello' })) });
     await second.chat.restore();
+    expect(second.deps.fetchResult).toHaveBeenCalledWith('id-1', expect.any(AbortSignal));
     expect(second.chat.open).toBe(true);
     expect(second.chat.messages.map((m) => m.text)).toEqual(['one', 'hello']);
 
@@ -460,7 +509,11 @@ describe('ChatSession persistence', () => {
     const first = setup({ store, send: vi.fn(async () => ({ response: 'ok', search: 'bmi' })) });
     await first.chat.send('bmi');
 
-    const second = setup({ store, readScreen: () => ({ ...emptyScreen(), search: 'bmi' }) });
+    const second = setup({
+      store,
+      readScreen: () => ({ ...emptyScreen(), search: 'bmi' }),
+      fetchResult: vi.fn(async () => ({ response: 'ok' })),
+    });
     await second.chat.restore();
     expect(second.chat.undoState(second.chat.messages[1].id)).toBe('undo');
   });
@@ -480,6 +533,300 @@ describe('ChatSession persistence', () => {
     expect(deps.fetchResult).toHaveBeenCalledWith('r1', expect.any(AbortSignal));
     expect(deps.send).not.toHaveBeenCalled();
     expect(chat.messages.at(-1)).toMatchObject({ role: 'assistant', text: 'finished while away' });
+  });
+
+  it('shows a reply the service no longer has as unavailable, without its undo', async () => {
+    const store = fakeStore();
+    const first = setup({ store, send: vi.fn(async () => ({ response: 'ok', search: 'bmi' })) });
+    await first.chat.send('one');
+
+    const second = setup({
+      store,
+      readScreen: () => ({ ...emptyScreen(), search: 'bmi' }),
+      fetchResult: vi.fn(async () => {
+        throw { status: 404 };
+      }),
+    });
+    await second.chat.restore();
+    expect(second.chat.messages.map((m) => m.text)).toEqual(['one', REPLY_UNAVAILABLE]);
+    expect(second.chat.messages[1].failed).toBe(true);
+    expect(second.chat.undoState(second.chat.messages[1].id)).toBe('locked');
+    expect(second.chat.pending).toBe(false);
+  });
+
+  it('does not save a reply as failed when it could not be fetched, so a refresh tries again', async () => {
+    const store = fakeStore();
+    const first = setup({ store });
+    await first.chat.send('one');
+
+    const offline = setup({
+      store,
+      fetchResult: vi.fn(async () => {
+        throw { status: 503 };
+      }),
+    });
+    await offline.chat.restore();
+    expect(offline.chat.messages[1].text).toBe(REPLY_NOT_LOADED);
+    await offline.chat.send('two');
+    expect(store.current()?.messages[1]).toMatchObject({ text: '' });
+    expect(store.current()?.messages[1].failed).toBeUndefined();
+
+    const back = setup({ store, fetchResult: vi.fn(async () => ({ response: 'hello' })) });
+    await back.chat.restore();
+    expect(back.chat.messages[1].text).toBe('hello');
+  });
+
+  it('leaves a stopped refresh without its recovery, and the reply to be fetched next time', async () => {
+    const store = fakeStore({
+      conversationId: 'c',
+      open: true,
+      savedAt: Date.now(),
+      messages: [
+        { id: 'r1', role: 'user', text: 'q1' },
+        { id: 'r1', role: 'assistant', text: '' },
+        { id: 'r2', role: 'user', text: 'q2' },
+      ],
+    });
+    const { chat, deps } = setup({
+      store,
+      fetchResult: vi.fn(
+        (_id: string, signal: AbortSignal) =>
+          new Promise<ChatResponse | undefined>((_, reject) =>
+            signal.addEventListener('abort', () => reject(signal.reason)),
+          ),
+      ),
+    });
+    const restoring = chat.restore();
+    chat.stop();
+    await restoring;
+    expect(deps.fetchResult).toHaveBeenCalledTimes(1);
+    expect(chat.pending).toBe(false);
+    expect(chat.messages[1].text).toBe(REPLY_NOT_LOADED);
+    expect(chat.messages[2].stopped).toBe(true);
+    expect(store.current()?.messages[2].stopped).toBe(true);
+  });
+
+  it('clears what an older save kept as soon as it is restored', async () => {
+    const store = fakeStore({
+      conversationId: 'c',
+      open: true,
+      savedAt: Date.now(),
+      messages: [
+        { id: 'r1', role: 'user', text: 'q' },
+        { id: 'r1', role: 'assistant', text: 'old reply', notice: 'old notice' },
+        { id: 'r2', role: 'user', text: 'q2' },
+        { id: 'r2', role: 'assistant', text: 'patient 9 failed', failed: true },
+      ],
+    });
+    const { chat } = setup({ store, fetchResult: vi.fn(async () => ({ response: 'new' })) });
+    await chat.restore();
+    expect(chat.messages[1]).toMatchObject({ text: 'new' });
+    expect(chat.messages[1]).not.toHaveProperty('notice');
+    const saved = JSON.stringify(store.current());
+    expect(saved).not.toContain('old');
+    expect(saved).not.toContain('patient');
+  });
+
+  it('clears an unavailable reply’s old undo from a save and keeps the save’s age', async () => {
+    const savedAt = Date.now() - 50 * 60 * 1000;
+    const store = fakeStore({
+      conversationId: 'c',
+      open: true,
+      savedAt,
+      messages: [
+        { id: 'r1', role: 'user', text: 'q' },
+        {
+          id: 'r1',
+          role: 'assistant',
+          text: REPLY_UNAVAILABLE,
+          failed: true,
+          changed: ['search'],
+          before: emptyScreen(),
+          after: { ...emptyScreen(), search: 'bmi' },
+        },
+      ],
+    });
+    const { chat } = setup({ store });
+    await chat.restore();
+    expect(chat.messages[1]).not.toHaveProperty('before');
+    expect(chat.messages[1]).not.toHaveProperty('changed');
+    expect(store.current()?.savedAt).toBe(savedAt);
+  });
+
+  describe('refill', () => {
+    const savedThread = (savedAt = Date.now()): SavedChat => ({
+      conversationId: 'c',
+      open: true,
+      savedAt,
+      messages: [
+        { id: 'r1', role: 'user', text: 'q' },
+        { id: 'r1', role: 'assistant', text: '' },
+      ],
+    });
+
+    it('tries a transient failure once more', async () => {
+      const fetchResult = vi
+        .fn()
+        .mockRejectedValueOnce({ status: 503 })
+        .mockResolvedValue({ response: 'hello' });
+      const { chat } = setup({ store: fakeStore(savedThread()), fetchResult });
+      await chat.restore();
+      expect(fetchResult).toHaveBeenCalledTimes(2);
+      expect(chat.messages[1]).toMatchObject({ text: 'hello' });
+    });
+
+    it('does not retry a 404, and gives up after one retry', async () => {
+      const gone = vi.fn().mockRejectedValue({ status: 404 });
+      await setup({ store: fakeStore(savedThread()), fetchResult: gone }).chat.restore();
+      expect(gone).toHaveBeenCalledTimes(1);
+
+      const down = vi.fn().mockRejectedValue({ status: 503 });
+      const { chat } = setup({ store: fakeStore(savedThread()), fetchResult: down });
+      await chat.restore();
+      expect(down).toHaveBeenCalledTimes(2);
+      expect(chat.messages[1]).toMatchObject({ text: REPLY_NOT_LOADED, unloaded: true });
+    });
+
+    it('does not wait forever on a fetch that never answers', async () => {
+      const hung = vi.fn(
+        (_id: string, signal: AbortSignal) =>
+          new Promise<ChatResponse | undefined>((_, reject) =>
+            signal.addEventListener('abort', () => reject(signal.reason)),
+          ),
+      );
+      const { chat } = setup({ store: fakeStore(savedThread()), fetchResult: hung, patienceMs: 5 });
+      await chat.restore();
+      expect(hung).toHaveBeenCalledTimes(2);
+      expect(chat.pending).toBe(false);
+      expect(chat.messages[1]).toMatchObject({ text: REPLY_NOT_LOADED, unloaded: true });
+    });
+
+    it('keeps the save’s age when the panel is toggled during a refresh', async () => {
+      const savedAt = Date.now() - 55 * 60 * 1000;
+      const store = fakeStore(savedThread(savedAt));
+      let release: (r: ChatResponse) => void = () => {};
+      const { chat } = setup({
+        store,
+        fetchResult: vi.fn(() => new Promise<ChatResponse>((resolve) => (release = resolve))),
+      });
+      const restoring = chat.restore();
+      chat.setOpen(false);
+      expect(store.current()?.savedAt).toBe(savedAt);
+      release({ response: 'hello' });
+      await restoring;
+      expect(store.current()?.savedAt).toBe(savedAt);
+    });
+  });
+
+  it('keeps a restored reply out of view until it has text, and shows one with an empty response', async () => {
+    const store = fakeStore({
+      conversationId: 'c',
+      open: true,
+      savedAt: Date.now(),
+      messages: [
+        { id: 'r1', role: 'user', text: 'q' },
+        { id: 'r1', role: 'assistant', text: '' },
+      ],
+    });
+    let release: (r: ChatResponse) => void = () => {};
+    const { chat } = setup({
+      store,
+      fetchResult: vi.fn(() => new Promise<ChatResponse>((resolve) => (release = resolve))),
+    });
+    const restoring = chat.restore();
+    expect(chat.messages[1].loading).toBe(true);
+    release({ response: '', notice: 'n' });
+    await restoring;
+    expect(chat.messages[1].loading).toBeUndefined();
+    expect(chat.messages[1]).toMatchObject({ text: '', notice: 'n' });
+    expect(store.current()?.messages[1]).not.toHaveProperty('loading');
+  });
+
+  it('does not renew the save’s age on undo', async () => {
+    const savedAt = Date.now() - 55 * 60 * 1000;
+    const first = setup({
+      store: fakeStore(),
+      send: vi.fn(async () => ({ response: 'ok', search: 'bmi' })),
+    });
+    await first.chat.send('bmi');
+    const store = fakeStore({
+      ...(first.deps.store?.load() as SavedChat),
+      savedAt,
+    });
+    const second = setup({
+      store,
+      readScreen: () => ({ ...emptyScreen(), search: 'bmi' }),
+      fetchResult: vi.fn(async () => ({ response: 'ok' })),
+    });
+    await second.chat.restore();
+    await second.chat.undo(second.chat.messages[1].id);
+    expect(second.chat.messages[1].undone).toBe(true);
+    expect(store.current()?.savedAt).toBe(savedAt);
+  });
+
+  it('shows a reply that could not be fetched as an error and never saves that', async () => {
+    const store = fakeStore();
+    await setup({ store }).chat.send('one');
+    const offline = setup({
+      store,
+      fetchResult: vi.fn(async () => {
+        throw { status: 503 };
+      }),
+    });
+    await offline.chat.restore();
+    expect(offline.chat.messages[1]).toMatchObject({ text: REPLY_NOT_LOADED, unloaded: true });
+    expect(store.current()?.messages[1]).not.toHaveProperty('unloaded');
+  });
+
+  it('drops every trace of a reply the service no longer has', async () => {
+    const store = fakeStore({
+      conversationId: 'c',
+      open: true,
+      savedAt: Date.now(),
+      messages: [
+        { id: 'r1', role: 'user', text: 'q' },
+        { id: 'r1', role: 'assistant', text: '', applyFailed: true, undone: false, notice: 'n' },
+      ],
+    });
+    const { chat } = setup({
+      store,
+      fetchResult: vi.fn(async () => {
+        throw { status: 404 };
+      }),
+    });
+    await chat.restore();
+    expect(chat.messages[1]).toEqual({
+      id: 'r1',
+      role: 'assistant',
+      text: REPLY_UNAVAILABLE,
+      failed: true,
+    });
+  });
+
+  it('keeps our own error texts as they are', async () => {
+    const store = fakeStore();
+    const { chat } = setup({
+      store,
+      send: vi.fn(async () => {
+        throw { status: 500 };
+      }),
+    });
+    await chat.send('q');
+    expect(store.current()?.messages[1]).toMatchObject({ failed: true, text: FALLBACK_ERROR });
+
+    const stored = fakeStore({
+      conversationId: 'c',
+      open: true,
+      savedAt: Date.now(),
+      messages: [
+        { id: 'r1', role: 'user', text: 'q' },
+        { id: 'r1', role: 'assistant', text: TIMEOUT_ERROR, failed: true },
+      ],
+    });
+    const second = setup({ store: stored });
+    await second.chat.restore();
+    second.chat.setOpen(true);
+    expect(stored.current()?.messages[1].text).toBe(TIMEOUT_ERROR);
   });
 
   it('says so when the stored reply is gone', async () => {
@@ -693,11 +1040,12 @@ describe('ChatSession recovery never runs a turn twice', () => {
       const first = setup({ store: s, fetchResult: vi.fn(async () => ({ response: 'ok' })) });
       await first.chat.restore();
 
-      const second = setup({ store: s });
+      // Only the saved reply's text is fetched back; the turn is not run again.
+      const second = setup({ store: s, fetchResult: vi.fn(async () => ({ response: 'ok' })) });
       await second.chat.restore();
-      expect(second.deps.fetchResult).not.toHaveBeenCalled();
+      expect(second.deps.fetchResult).toHaveBeenCalledTimes(1);
       expect(second.deps.send).not.toHaveBeenCalled();
-      expect(second.chat.messages).toHaveLength(2);
+      expect(second.chat.messages.map((m) => m.text)).toEqual([expect.any(String), 'ok']);
     });
 
     it('does not recover a failed turn after a timeout', async () => {

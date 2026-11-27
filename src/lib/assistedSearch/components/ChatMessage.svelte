@@ -48,9 +48,10 @@
       {message.text}
     </p>
   </div>
-{:else}
+{:else if !message.loading}
+  <!-- A restored reply is not shown until the service has returned it. -->
   <div class="group mt-2 max-w-[72ch]" data-testid="explorer-assistant-message-assistant">
-    {#if message.failed}
+    {#if message.failed || message.unloaded}
       <p
         class="rounded-container border border-error-500 bg-error-50 px-3 py-2"
         data-testid="explorer-assistant-message-text"

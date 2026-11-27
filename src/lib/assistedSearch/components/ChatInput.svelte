@@ -60,6 +60,7 @@
       class="chat-box w-full {focusRing}"
       rows="1"
       maxlength="4000"
+      autocomplete="off"
       placeholder="Ask the assistant…"
       aria-label="Message the search assistant"
       aria-describedby="explorer-assistant-input-hint"
