@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/env', () => ({ browser: true }));
 
@@ -16,6 +16,7 @@ function configure(...flags: string[]) {
 const BOTH = ['ENABLE_ASSISTED_SEARCH', 'ENABLE_ASSISTED_SEARCH_DISCOVER'];
 
 describe('assistedSearchEnabled', () => {
+  beforeEach(() => session.setToken('token'));
   afterEach(() => session.clear());
 
   it('is off with the feature flag off, whatever privileges the user holds', () => {
@@ -55,6 +56,14 @@ describe('assistedSearchEnabled', () => {
     session.user = { privileges: [PicsurePrivileges.ASSISTED_SEARCH] };
     expect(assistedSearchEnabled(false)).toBe(true);
     expect(assistedSearchEnabled(true)).toBe(true);
+  });
+
+  it('is off for a restored profile that holds the privilege but has no token', () => {
+    configure(...BOTH);
+    session.user = { privileges: [PicsurePrivileges.ASSISTED_SEARCH] };
+    session.removeToken();
+    expect(assistedSearchEnabled(false)).toBe(false);
+    expect(assistedSearchEnabled(true)).toBe(false);
   });
 
   it('does not let a super admin in without the privilege', () => {

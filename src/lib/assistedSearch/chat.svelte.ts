@@ -1,9 +1,10 @@
-import { changedParts, partsOf, sameScreen } from './model/screen.ts';
+import { changedParts, partsOf, pickParts, sameParts } from './model/screen.ts';
 import type {
   ChatMessage,
   ChatRequest,
   ChatResponse,
   SavedChat,
+  ScreenPart,
   ScreenState,
 } from './model/types.ts';
 
@@ -19,7 +20,8 @@ export type UndoState = 'undo' | 'redo' | 'locked';
 
 export type ChatDeps = {
   readScreen: () => ScreenState;
-  applyScreen: (parts: Partial<ScreenState>) => Promise<void>;
+  /** `stillWanted` is asked just before the first write; when it says no, nothing is written. */
+  applyScreen: (parts: Partial<ScreenState>, stillWanted?: () => boolean) => Promise<void>;
   send: (request: ChatRequest, signal: AbortSignal) => Promise<ChatResponse>;
   fetchResult: (requestId: string, signal: AbortSignal) => Promise<ChatResponse | undefined>;
   newId: () => string;
@@ -144,16 +146,17 @@ export class ChatSession {
   }
 
   /**
-   * A reply's change can be undone while the screen is as the reply left it, and redone while it is
-   * as the reply found it. Any other edit, by the researcher or a later reply, locks it.
+   * A reply's change can be undone while the parts it changed are as the reply left them, and redone
+   * while they are as the reply found them. Any other edit to those parts, by the researcher or a
+   * later reply, locks it; edits to the rest of the screen are the researcher's own.
    */
   undoState(id: string): UndoState {
     void this.#screenVersion;
     const reply = this.messages.find((m) => m.id === id && m.role === 'assistant');
-    if (!reply?.before || !reply.after) return 'locked';
+    if (!reply?.before || !reply.after || !reply.changed) return 'locked';
     const now = this.#deps.readScreen();
-    if (reply.undone) return sameScreen(now, reply.before) ? 'redo' : 'locked';
-    return sameScreen(now, reply.after) ? 'undo' : 'locked';
+    if (reply.undone) return sameParts(now, reply.before, reply.changed) ? 'redo' : 'locked';
+    return sameParts(now, reply.after, reply.changed) ? 'undo' : 'locked';
   }
 
   /** Follows the researcher's screen while the panel is showing; returns the stop. */
@@ -256,22 +259,30 @@ export class ChatSession {
     const { patienceMs = 60_000, pollMs = 2_000 } = this.#deps;
     for (let attempt = 0; ; attempt++) {
       signal.throwIfAborted();
-      const bound = new AbortController();
-      const relay = () => bound.abort(signal.reason);
-      signal.addEventListener('abort', relay, { once: true });
-      const timer = setTimeout(
-        () => bound.abort(new DOMException('patience', 'TimeoutError')),
-        patienceMs,
-      );
       try {
-        return await this.#deps.fetchResult(requestId, bound.signal);
+        return await this.#fetchWithin(requestId, signal, patienceMs);
       } catch (e) {
         if (signal.aborted || attempt >= 1 || !isTransient(e)) throw e;
-      } finally {
-        clearTimeout(timer);
-        signal.removeEventListener('abort', relay);
       }
       await sleep(pollMs, signal);
+    }
+  }
+
+  // One fetch that is given up on after `ms` (as a transient failure) or when `signal` aborts.
+  async #fetchWithin(
+    requestId: string,
+    signal: AbortSignal,
+    ms: number,
+  ): Promise<ChatResponse | undefined> {
+    const bound = new AbortController();
+    const relay = () => bound.abort(signal.reason);
+    signal.addEventListener('abort', relay, { once: true });
+    const timer = setTimeout(() => bound.abort(new DOMException('patience', 'TimeoutError')), ms);
+    try {
+      return await this.#deps.fetchResult(requestId, bound.signal);
+    } finally {
+      clearTimeout(timer);
+      signal.removeEventListener('abort', relay);
     }
   }
 
@@ -283,7 +294,8 @@ export class ChatSession {
     this.#conversationId ??= this.#deps.newId();
     const conversationId = this.#conversationId;
     this.messages.push({ id: requestId, role: 'user', text: message });
-    this.#persist();
+    // Saved so a refresh can recover the turn, but nothing has reached the service yet.
+    this.#persist(false);
     this.#deps.log?.('chat.send', { requestId, conversationId });
 
     await this.#run(requestId, (signal) =>
@@ -300,8 +312,9 @@ export class ChatSession {
   async undo(id: string): Promise<void> {
     if (this.undoState(id) !== 'undo') return;
     const reply = this.messages.find((m) => m.id === id && m.role === 'assistant');
-    if (!reply?.before) return;
-    if (!(await this.#reapply(reply, reply.before, 'chat.undo.error'))) return;
+    if (!reply?.before || !reply.changed) return;
+    const parts = pickParts(reply.before, reply.changed);
+    if (!(await this.#reapply(reply, parts, 'undo', 'chat.undo.error'))) return;
     reply.undone = true;
     this.#persist(false);
     this.#deps.log?.('chat.undo', { requestId: id });
@@ -311,18 +324,30 @@ export class ChatSession {
   async redo(id: string): Promise<void> {
     if (this.undoState(id) !== 'redo') return;
     const reply = this.messages.find((m) => m.id === id && m.role === 'assistant');
-    if (!reply?.after) return;
-    if (!(await this.#reapply(reply, reply.after, 'chat.redo.error'))) return;
+    if (!reply?.after || !reply.changed) return;
+    const parts = pickParts(reply.after, reply.changed);
+    if (!(await this.#reapply(reply, parts, 'redo', 'chat.redo.error'))) return;
     reply.undone = false;
     this.#persist(false);
     this.#deps.log?.('chat.redo', { requestId: id });
   }
 
-  // False when the screen could not be set (a concept that was selected can no longer be found,
-  // say); the reply then says so and stays as it was.
-  async #reapply(reply: ChatMessage, parts: ScreenState, errorAction: string): Promise<boolean> {
+  // Puts back only the parts the reply changed, so the researcher's other edits stay. The concept
+  // lookup takes a moment; if the screen moved on or the chat was reset meanwhile (the reply is no
+  // longer in the state it was asked in), nothing is written and the reply is left as it was.
+  // False when nothing was set, or when the screen could not be set (a concept that was selected
+  // can no longer be found, say); the reply then says so.
+  async #reapply(
+    reply: ChatMessage,
+    parts: Partial<ScreenState>,
+    expected: UndoState,
+    errorAction: string,
+  ): Promise<boolean> {
+    let declined = false;
+    const stillWanted = () => !(declined = this.undoState(reply.id) !== expected);
     try {
-      await this.#deps.applyScreen(parts);
+      await this.#deps.applyScreen(parts, stillWanted);
+      if (declined) return false;
     } catch (e) {
       console.error('Could not put the screen back', e);
       this.#deps.log?.(errorAction, { requestId: reply.id });
@@ -356,9 +381,12 @@ export class ChatSession {
     const epoch = this.#epoch;
     this.#controller = controller;
     this.pending = true;
+    // Whether the service answered, even with an error: only then does its conversation live on.
+    let contacted = false;
 
     try {
       const response = await produce(controller.signal);
+      contacted = true;
       // Stop wins over a reply that arrived in the same moment. Once the changes are being applied
       // it is too late: the screen is set, so the reply is shown with its undo.
       controller.signal.throwIfAborted();
@@ -370,6 +398,7 @@ export class ChatSession {
         if (sent) sent.stopped = true;
         this.#deps.log?.('chat.stop', { requestId });
       } else {
+        contacted = statusOf(e) !== undefined;
         const timedOut = e instanceof TurnTimedOut;
         this.#deps.log?.('chat.error', { requestId, status: statusOf(e), timedOut });
         const text = timedOut ? TIMEOUT_ERROR : messageOf(e);
@@ -382,7 +411,7 @@ export class ChatSession {
         this.recovering = false;
         this.#controller = undefined;
       }
-      this.#persist();
+      this.#persist(contacted && epoch === this.#epoch);
     }
   }
 
@@ -395,27 +424,30 @@ export class ChatSession {
     this.#deps.log?.('chat.response', { requestId, changed: partsOf(changes) });
 
     if (partsOf(changes).length) {
+      // The concept lookup is slow enough for a reset to land first; the new conversation's screen
+      // is then not the one these changes were made for, so nothing is written.
+      const stillWanted = () => epoch === this.#epoch;
       try {
-        await this.#deps.applyScreen(changes);
+        await this.#deps.applyScreen(changes, stillWanted);
+        if (!stillWanted()) return;
         this.onapply?.(changes);
         reply.changed = partsOf(changes);
         reply.before = current;
         reply.after = this.#deps.readScreen();
       } catch (e) {
         console.error('Could not apply the assistant’s changes', e);
+        if (!stillWanted()) return;
         reply.applyFailed = true;
-        // Part of the change may have landed before the failure; keep it undoable.
-        const after = this.#deps.readScreen();
-        if (!sameScreen(after, current)) {
-          reply.changed = partsOf(changes);
+        // Only the parts that were set before the failure can be taken back; none when it failed
+        // while preparing, whatever the researcher has changed meanwhile.
+        const committed = (e as { committed?: ScreenPart[] }).committed ?? [];
+        if (committed.length) {
+          reply.changed = committed;
           reply.before = current;
-          reply.after = after;
+          reply.after = this.#deps.readScreen();
         }
       }
     }
-    // A reset while the changes were being applied started a new conversation; this reply is not
-    // part of it. The screen change stays, as the researcher's own edits would.
-    if (epoch !== this.#epoch) return;
     this.messages.push(reply);
   }
 
@@ -463,12 +495,17 @@ export class ChatSession {
   async #recover(requestId: string, signal: AbortSignal): Promise<ChatResponse> {
     // About 5 minutes in all with the patience window: a turn can include authorized counts, which the
     // service waits up to 130s for each, and the stored reply is kept far longer than this.
-    const { pollMs = 2_000, maxPolls = 120 } = this.#deps;
+    const { patienceMs = 60_000, pollMs = 2_000, maxPolls = 120 } = this.#deps;
+    // The polls are bounded in time as well as in number: a GET that never returns is cut off at
+    // the deadline, so the turn ends in a timeout rather than holding the composer until Stop.
+    const deadline = Date.now() + pollMs * maxPolls + patienceMs;
     this.recovering = true;
     for (let i = 0; i < maxPolls; i++) {
       await sleep(pollMs, signal);
+      const remaining = deadline - Date.now();
+      if (remaining <= 0) break;
       try {
-        const result = await this.#deps.fetchResult(requestId, signal);
+        const result = await this.#fetchWithin(requestId, signal, Math.min(patienceMs, remaining));
         if (result) return result;
       } catch (e) {
         // One bad poll is not a lost reply; the next may find it.

@@ -10,6 +10,13 @@
 
   let { session }: { session: ChatSession } = $props();
 
+  // The close button leaves the page when the panel hides, so focus moves to the toggle that
+  // reopens it rather than falling back to the body.
+  function close() {
+    session.setOpen(false);
+    document.querySelector<HTMLElement>('[data-testid="explorer-assistant-toggle"]')?.focus();
+  }
+
   const LOADING_MESSAGES: TimedMessage[] = [
     { afterMs: 0, text: 'Thinking…' },
     { afterMs: 3000, text: 'Still working on it…' },
@@ -94,7 +101,7 @@
         data-testid="explorer-assistant-close"
         aria-label="Hide the assistant"
         title="Hide the assistant"
-        onclick={() => session.setOpen(false)}>×</button
+        onclick={close}>×</button
       >
     </div>
   </header>

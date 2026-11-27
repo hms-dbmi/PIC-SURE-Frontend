@@ -76,7 +76,7 @@ describe('ChatSession', () => {
     });
     await chat.send('find bmi');
 
-    expect(deps.applyScreen).toHaveBeenCalledWith({ search: 'bmi' });
+    expect(deps.applyScreen).toHaveBeenCalledWith({ search: 'bmi' }, expect.any(Function));
     const reply = chat.messages[1];
     expect(reply.changed).toEqual(['search']);
     expect(chat.undoState(reply.id)).toBe('undo');
@@ -407,6 +407,144 @@ describe('ChatSession', () => {
       text: 'The AI model is currently unavailable. Please try again.',
       failed: true,
     });
+  });
+});
+
+describe('ChatSession screen races', () => {
+  beforeEach(() => vi.useRealTimers());
+  afterEach(() => vi.restoreAllMocks());
+
+  const gate = () => {
+    let open!: () => void;
+    const wait = new Promise<void>((r) => (open = r));
+    return { wait, open };
+  };
+
+  it('writes nothing and adds no reply when a reset lands during the lookup', async () => {
+    const lookup = gate();
+    const onapply = vi.fn();
+    let screen = emptyScreen();
+    const { chat } = setup({
+      readScreen: () => screen,
+      applyScreen: async (parts, stillWanted) => {
+        await lookup.wait;
+        if (stillWanted?.() ?? true) screen = { ...screen, ...parts };
+      },
+      send: vi.fn(async () => ({ response: 'ok', search: 'bmi' })),
+    });
+    chat.onapply = onapply;
+    const sending = chat.send('find bmi');
+    await vi.waitFor(() => expect(chat.pending).toBe(true));
+    await Promise.resolve();
+    chat.reset();
+    lookup.open();
+    await sending;
+    expect(screen.search).toBe('');
+    expect(onapply).not.toHaveBeenCalled();
+    expect(chat.messages).toEqual([]);
+  });
+
+  it('puts back only the parts the reply changed, leaving the researcher’s other edits', async () => {
+    let screen = emptyScreen();
+    const { chat } = setup({
+      readScreen: () => screen,
+      applyScreen: async (parts) => {
+        // the researcher picks a facet while the reply is being applied
+        screen = { ...screen, ...parts, facets: [{ category: 'study', name: 'A' }] };
+      },
+      send: vi.fn(async () => ({ response: 'ok', search: 'bmi' })),
+    });
+    await chat.send('find bmi');
+    const reply = chat.messages[1];
+    await chat.undo(reply.id);
+    expect(screen.search).toBe('');
+    expect(screen.facets).toEqual([{ category: 'study', name: 'A' }]);
+    await chat.redo(reply.id);
+    expect(screen.search).toBe('bmi');
+    expect(screen.facets).toEqual([{ category: 'study', name: 'A' }]);
+  });
+
+  it('leaves the screen and the reply alone when the screen moves on during an undo', async () => {
+    let screen = emptyScreen();
+    const lookup = gate();
+    let slow = false;
+    const { chat } = setup({
+      readScreen: () => screen,
+      applyScreen: async (parts, stillWanted) => {
+        if (slow) await lookup.wait;
+        if (stillWanted?.() ?? true) screen = { ...screen, ...parts };
+      },
+      send: vi.fn(async () => ({ response: 'ok', search: 'bmi' })),
+    });
+    await chat.send('find bmi');
+    const reply = chat.messages[1];
+    slow = true;
+    const undoing = chat.undo(reply.id);
+    screen = { ...screen, search: 'bmi age' };
+    lookup.open();
+    await undoing;
+    expect(screen.search).toBe('bmi age');
+    expect(reply.undone).toBeFalsy();
+    expect(reply.applyFailed).toBeFalsy();
+  });
+
+  it('offers no undo when the apply failed before anything was set', async () => {
+    let screen = emptyScreen();
+    const { chat } = setup({
+      readScreen: () => screen,
+      applyScreen: vi.fn(async () => {
+        // the researcher types during the lookup, then it fails
+        screen = { ...screen, search: 'mine' };
+        throw new Error('lookup failed');
+      }),
+      send: vi.fn(async () => ({ response: 'ok', search: 'bmi' })),
+    });
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    await chat.send('find bmi');
+    expect(chat.messages[1]).toMatchObject({ applyFailed: true });
+    expect(chat.messages[1].before).toBeUndefined();
+    expect(chat.undoState(chat.messages[1].id)).toBe('locked');
+  });
+
+  it('keeps undo for the parts set before a later write failed', async () => {
+    let screen = emptyScreen();
+    const { chat } = setup({
+      readScreen: () => screen,
+      applyScreen: vi.fn(async () => {
+        screen = { ...screen, search: 'bmi' };
+        throw Object.assign(new Error('facets failed'), { committed: ['search'] });
+      }),
+      send: vi.fn(async () => ({
+        response: 'ok',
+        search: 'bmi',
+        facets: [{ category: 'a', name: 'b' }],
+      })),
+    });
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    await chat.send('go');
+    const reply = chat.messages[1];
+    expect(reply).toMatchObject({ applyFailed: true, changed: ['search'] });
+    expect(chat.undoState(reply.id)).toBe('undo');
+  });
+
+  it('ends recovery at its deadline even when a poll never returns', async () => {
+    const { chat } = setup({
+      send: vi.fn(async () => {
+        throw new TypeError('Failed to fetch');
+      }),
+      fetchResult: vi.fn(
+        (_id: string, signal: AbortSignal) =>
+          new Promise<never>((_, reject) =>
+            signal.addEventListener('abort', () => reject(signal.reason)),
+          ),
+      ),
+      patienceMs: 20,
+      pollMs: 1,
+      maxPolls: 3,
+    });
+    await chat.send('x');
+    expect(chat.messages[1]).toMatchObject({ failed: true, text: TIMEOUT_ERROR });
+    expect(chat.pending).toBe(false);
   });
 });
 
@@ -888,6 +1026,25 @@ describe('ChatSession persistence', () => {
     chat.setOpen(false);
     expect(store.clear).toHaveBeenCalled();
     expect(store.current()).toBeNull();
+  });
+
+  it('keeps the save’s age through a turn that never reached the service', async () => {
+    const store = fakeStore();
+    const now = vi.spyOn(Date, 'now').mockReturnValue(1_000);
+    const { chat, deps } = setup({ store });
+    await chat.send('one');
+    expect(store.current()?.savedAt).toBe(1_000);
+
+    now.mockReturnValue(5_000);
+    vi.mocked(deps.send).mockRejectedValue(new TypeError('Failed to fetch'));
+    await chat.send('two');
+    expect(chat.messages.at(-1)).toMatchObject({ failed: true });
+    expect(store.current()?.savedAt).toBe(1_000);
+
+    now.mockReturnValue(9_000);
+    vi.mocked(deps.send).mockResolvedValue({ response: 'back' });
+    await chat.send('three');
+    expect(store.current()?.savedAt).toBe(9_000);
   });
 
   it('does nothing when nothing was saved', async () => {

@@ -16,7 +16,8 @@ import {
 } from '#lib/explorer/index.ts';
 
 import { resolveFacets, toSlimFacets } from './model/facets.ts';
-import type { ChatQuery, ScreenState } from './model/types.ts';
+import { hasNegation } from './model/screen.ts';
+import type { ChatQuery, ScreenPart, ScreenState } from './model/types.ts';
 
 /** The researcher's screen as the AI service sees it: filters become a query, facets are slimmed. */
 export function readScreen(): ScreenState {
@@ -33,6 +34,9 @@ export function readScreen(): ScreenState {
 
 // Built before anything is set, so a concept that cannot be looked up leaves the screen untouched.
 async function queryToState(query: ChatQuery) {
+  // The filters cannot hold a negated clause, so restoring one would reverse it. Refuse it whole.
+  if (hasNegation(query))
+    throw new Error('The assistant sent a negated clause, which is not supported');
   const data = loadQuerySummaryData(parseQuery(query), {
     getConceptDetails,
     getConceptTree: (dataset, conceptPath) =>
@@ -54,16 +58,39 @@ async function queryToState(query: ChatQuery) {
   };
 }
 
-/** Sets each part present in `parts`, whole. The search store re-runs the search on its own. */
-export async function applyScreen(parts: Partial<ScreenState>): Promise<void> {
+/**
+ * Sets each part present in `parts`, whole. The search store re-runs the search on its own.
+ * Everything is prepared first, and `stillWanted` is asked once more just before the first write,
+ * since the lookup is slow enough for a reset or an edit to land meanwhile; when it says no,
+ * nothing is written. A failure part-way carries the parts already set, as `committed`.
+ */
+export async function applyScreen(
+  parts: Partial<ScreenState>,
+  stillWanted: () => boolean = () => true,
+): Promise<void> {
   const setQuery = parts.query ? await queryToState(parts.query) : undefined;
   const facets = parts.facets
     ? resolveFacets(parts.facets, explorerSearch.facetCategories ?? [])
     : undefined;
+  if (!stillWanted()) return;
 
-  setQuery?.();
-  if (facets) explorerSearch.setFacets(facets);
-  if (parts.search !== undefined) explorerSearch.setTerm(parts.search);
+  const committed: ScreenPart[] = [];
+  try {
+    if (setQuery) {
+      setQuery();
+      committed.push('query');
+    }
+    if (facets) {
+      explorerSearch.setFacets(facets);
+      committed.push('facets');
+    }
+    if (parts.search !== undefined) {
+      explorerSearch.setTerm(parts.search);
+      committed.push('search');
+    }
+  } catch (e) {
+    throw Object.assign(e instanceof Error ? e : new Error(String(e)), { committed });
+  }
 }
 
 /** Calls `onchange` whenever something behind the screen changes; returns the stop. */

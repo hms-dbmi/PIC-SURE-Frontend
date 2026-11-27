@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { changedParts, partsOf } from './screen.ts';
+import { changedParts, hasNegation, partsOf, pickParts } from './screen.ts';
 import { resolveFacets } from './facets.ts';
 import type { ScreenState } from './types.ts';
 import type { DictionaryFacetResult } from '#lib/api/picsure/dictionary.types.ts';
@@ -136,5 +136,25 @@ describe('resolveFacets', () => {
     expect(resolveFacets([{ category: 'study', name: 'Other' }], categories)).toEqual([
       { category: 'study', name: 'Other', display: 'Other', description: null, count: 0 },
     ]);
+  });
+});
+
+describe('hasNegation', () => {
+  it('finds a negated clause at any depth, and none in an ordinary query', () => {
+    expect(hasNegation(screen().query)).toBe(false);
+    expect(
+      hasNegation({
+        phenotypicClauses: [{ phenotypicClauses: [{ conceptPath: 'a', not: true }] }],
+      }),
+    ).toBe(true);
+    expect(hasNegation({ phenotypicClauses: [{ conceptPath: 'a', not: false }] })).toBe(false);
+  });
+});
+
+describe('pickParts', () => {
+  it('keeps only the named parts', () => {
+    const s = screen({ search: 'bmi' });
+    expect(pickParts(s, ['search'])).toEqual({ search: 'bmi' });
+    expect(pickParts(s, ['query', 'facets'])).toEqual({ query: s.query, facets: s.facets });
   });
 });

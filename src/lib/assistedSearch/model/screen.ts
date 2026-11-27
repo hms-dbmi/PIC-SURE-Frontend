@@ -44,6 +44,14 @@ export const sameSearch = (a: string, b: string) => a.trim() === b.trim();
 export const sameScreen = (a: ScreenState, b: ScreenState) =>
   same(a.query, b.query) && sameFacets(a.facets, b.facets) && sameSearch(a.search, b.search);
 
+/** Whether the given parts alone are the same on both screens; the rest is the researcher's. */
+export const sameParts = (a: ScreenState, b: ScreenState, parts: ScreenPart[]) =>
+  parts.every((part) => {
+    if (part === 'query') return same(a.query, b.query);
+    if (part === 'facets') return sameFacets(a.facets, b.facets);
+    return sameSearch(a.search, b.search);
+  });
+
 /**
  * The parts of a response that differ from what is on screen, so a reply that restates the current
  * state is not applied (and gets no undo). A present part replaces that part whole.
@@ -62,3 +70,21 @@ export function changedParts(response: ChatResponse, current: ScreenState): Part
 
 export const partsOf = (changes: Partial<ScreenState>): ScreenPart[] =>
   PARTS.filter((part) => changes[part] !== undefined);
+
+/** Whether any clause is negated. Neither the filter model nor the restore path can represent `not`. */
+export function hasNegation(value: unknown): boolean {
+  if (Array.isArray(value)) return value.some(hasNegation);
+  if (value && typeof value === 'object') {
+    return Object.entries(value).some(
+      ([key, v]) => (key === 'not' && v === true) || hasNegation(v),
+    );
+  }
+  return false;
+}
+
+/** The given parts of a screen, for putting back only what a reply changed. */
+export function pickParts(screen: ScreenState, parts: ScreenPart[]): Partial<ScreenState> {
+  const picked: Partial<ScreenState> = {};
+  for (const part of parts) (picked as Record<ScreenPart, unknown>)[part] = screen[part];
+  return picked;
+}

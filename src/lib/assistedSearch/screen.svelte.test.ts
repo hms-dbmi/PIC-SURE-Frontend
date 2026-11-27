@@ -116,3 +116,38 @@ describe('applyScreen', () => {
     expect(exportState.variables).toEqual([]);
   });
 });
+
+describe('applyScreen guards', () => {
+  it('refuses a negated clause before changing anything', async () => {
+    const query = {
+      select: [],
+      phenotypicClause: { type: 'PhenotypicFilter', conceptPath: '\\ds\\sex\\', not: true },
+      genomicFilters: [],
+    };
+    await expect(applyScreen({ query: query as never, search: 'bmi' })).rejects.toThrow(/negated/);
+    expect(loadQuerySummaryData).not.toHaveBeenCalled();
+    expect(fakeSearch.term).toBe('');
+  });
+
+  it('writes nothing when it is no longer wanted after the lookup', async () => {
+    loadQuerySummaryData.mockReturnValue(loaded());
+    await applyScreen(
+      { query: { select: [], phenotypicClause: null, genomicFilters: [] }, search: 'bmi' },
+      () => false,
+    );
+    expect(fakeSearch.term).toBe('');
+    expect(exportState.variables).toHaveLength(0);
+  });
+
+  it('reports the parts already set when a later write fails', async () => {
+    loadQuerySummaryData.mockReturnValue(loaded());
+    fakeSearch.setFacets = () => {
+      throw new Error('boom');
+    };
+    const error = await applyScreen({
+      query: { select: [], phenotypicClause: null, genomicFilters: [] },
+      facets: [{ category: 'study', name: 'NHANES' }],
+    }).catch((e) => e);
+    expect(error.committed).toEqual(['query']);
+  });
+});

@@ -48,4 +48,46 @@ describe('saved chat storage', () => {
     clearSavedChat();
     expect(loadSavedChat(2_000)).toBeNull();
   });
+
+  it('drops a reply’s damaged undo state but keeps the reply, so it can still be fetched', () => {
+    const reply = {
+      id: 'r1',
+      role: 'assistant' as const,
+      text: '',
+      changed: ['search' as const],
+      before: {
+        query: { select: [], phenotypicClause: null, genomicFilters: [] },
+        facets: {},
+        search: '',
+      },
+      after: {
+        query: { select: [], phenotypicClause: null, genomicFilters: [] },
+        facets: [],
+        search: 'a',
+      },
+      undone: false,
+    };
+    saveChat(chat({ messages: [reply as never] }));
+    const [loaded] = loadSavedChat(2_000)!.messages;
+    expect(loaded).toEqual({ id: 'r1', role: 'assistant', text: '' });
+  });
+
+  it('keeps a reply’s undo state when it is intact', () => {
+    const screen = {
+      query: { select: [], phenotypicClause: null, genomicFilters: [] },
+      facets: [],
+      search: '',
+    };
+    const reply = {
+      id: 'r1',
+      role: 'assistant' as const,
+      text: '',
+      changed: ['search' as const],
+      before: screen,
+      after: { ...screen, search: 'a' },
+      undone: true,
+    };
+    saveChat(chat({ messages: [reply] }));
+    expect(loadSavedChat(2_000)!.messages[0]).toEqual(reply);
+  });
 });

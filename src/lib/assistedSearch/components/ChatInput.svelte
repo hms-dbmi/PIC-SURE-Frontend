@@ -98,6 +98,9 @@
     border-top-right-radius: 0 !important;
     border-bottom-right-radius: 0 !important;
     margin-right: 0% !important;
+    /* A long paste scrolls inside the box rather than pushing the search and facets away. */
+    max-height: 10rem;
+    overflow-y: auto;
   }
   /* The class sits on the Button component, which scoped styles don't reach. */
   :global(.chat-button) {
